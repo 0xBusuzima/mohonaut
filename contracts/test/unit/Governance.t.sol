@@ -439,7 +439,7 @@ contract GovernanceTest is Test {
         roles[3] = admin;
         calls[4] = abi.encodeCall(MiningCore.setSequencerFeed, (address(1)));
         roles[4] = admin;
-        calls[5] = abi.encodeCall(MiningCore.resetMintBreaker, ());
+        calls[5] = abi.encodeCall(MiningCore.setParam, (MiningCore.Param.MaxTankHours, 168));
         roles[5] = admin;
         calls[6] = abi.encodeCall(MiningCore.wireLiquidityManager, (address(1)));
         roles[6] = admin;
@@ -475,7 +475,7 @@ contract GovernanceTest is Test {
     /// machines and the Market Open formula have no setter: the state-changing functions in
     /// MiningCore's compiled ABI are exactly this reviewed list (views may grow freely).
     function test_stateChangingSurfaceIsReviewed() public view {
-        string[25] memory reviewed = [
+        string[24] memory reviewed = [
             "addMachineGeneration",
             "buyFuel",
             "buyMachines",
@@ -488,7 +488,6 @@ contract GovernanceTest is Test {
             "poke",
             "refine",
             "renounceRole",
-            "resetMintBreaker",
             "revokeRole",
             "scrapMachines",
             "setActiveRigs",
@@ -526,6 +525,22 @@ contract GovernanceTest is Test {
 
     function _abiPath(uint256 i, string memory field) internal pure returns (string memory) {
         return string.concat(".abi[", vm.toString(i), "]", field);
+    }
+
+    /// Audit fix: the 96 h admin cannot grant itself the upgrader role (only upgraders can), so
+    /// upgrades always go through the 7-day Timelock.
+    function test_adminCannotGrantItselfUpgrades() public {
+        bytes32 upgraderRole = core.UPGRADER_ROLE();
+        assertEq(core.getRoleAdmin(upgraderRole), upgraderRole);
+        vm.prank(timelock);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, timelock, upgraderRole
+            )
+        );
+        core.grantRole(upgraderRole, timelock);
+        vm.prank(upgrader); // the upgrade Timelock may hand the role over (or renounce to ossify)
+        core.grantRole(upgraderRole, makeAddr("nextUpgradeTimelock"));
     }
 
     function test_upgradeOnlyByUpgraderKeepsState() public {

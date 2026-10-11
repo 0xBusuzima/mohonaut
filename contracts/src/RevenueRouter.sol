@@ -22,6 +22,9 @@ contract RevenueRouter is IRevenueRouter, AccessControl, ReentrancyGuardTransien
     bytes32 public constant BUYBACK_ROLE = keccak256("BUYBACK_ROLE"); // BuybackBurner
     bytes32 public constant POL_ROLE = keccak256("POL_ROLE"); // LiquidityManager
     bytes32 public constant OPS_ROLE = keccak256("OPS_ROLE"); // ops Safe
+    /// @notice Admin of the bucket roles after lockBucketRoles. Nobody holds it, so the wiring of
+    ///         MiningCore, LiquidityManager and BuybackBurner can never be changed afterwards.
+    bytes32 public constant LOCKED_ROLE = keccak256("LOCKED_ROLE");
 
     uint16 public constant INITIAL_BUYBACK_BPS = 5500;
     uint16 public constant INITIAL_POL_BPS = 3000; // ops gets the remainder (15 %)
@@ -33,22 +36,38 @@ contract RevenueRouter is IRevenueRouter, AccessControl, ReentrancyGuardTransien
     uint256 public polBalance;
     uint256 public opsBalance;
     uint64 public splitChangedAt;
+    bool public bucketRolesLocked;
 
     event Deposited(uint256 amount, uint256 toBuyback, uint256 toPol, uint256 toOps);
     event BuybackDeposited(uint256 amount);
     event Pulled(bytes32 indexed bucket, address indexed to, uint256 amount);
     event SplitChanged(uint16 buybackBps, uint16 polBps, uint16 opsBps);
+    event BucketRolesLocked();
 
     error ZeroAddress();
     error InsufficientBucket(uint256 available);
     error SplitOutOfBounds();
     error RateLimited(uint64 nextChange);
+    error AlreadyLocked();
 
     constructor(address admin) {
         if (admin == address(0)) revert ZeroAddress();
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         buybackBps = INITIAL_BUYBACK_BPS;
         polBps = INITIAL_POL_BPS;
+    }
+
+    /// @notice One-time, at deployment: freezes who may deposit fuel revenue and pull the buyback
+    ///         and POL buckets. Afterwards not even the Timelock can redirect those buckets; only
+    ///         the ops role (15 %) stays manageable.
+    function lockBucketRoles() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (bucketRolesLocked) revert AlreadyLocked();
+        bucketRolesLocked = true;
+        _setRoleAdmin(DEPOSITOR_ROLE, LOCKED_ROLE);
+        _setRoleAdmin(FEE_DEPOSITOR_ROLE, LOCKED_ROLE);
+        _setRoleAdmin(POL_ROLE, LOCKED_ROLE);
+        _setRoleAdmin(BUYBACK_ROLE, LOCKED_ROLE);
+        emit BucketRolesLocked();
     }
 
     /// @notice Timelock: new split for future deposits; existing buckets are not touched.

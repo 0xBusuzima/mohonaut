@@ -25,6 +25,10 @@ abstract contract MiningAccounting {
     /// @notice Share of every MOHN spend that returns to the reserve; the rest is burned forever
     ///         (docs/02 S6.3, immutable).
     uint256 public constant RESERVE_SHARE_BPS = 2000;
+    /// @notice Referral credit: 3 % of an invitee's accrual (docs/02 S9, immutable). At every
+    ///         checkpoint 3 % of the miners' share is earmarked inside the treasury share as a
+    ///         referral reserve; treasury withdrawals can only take the part that is not earmarked.
+    uint256 public constant REFERRAL_BPS = 300;
 
     struct Position {
         uint128 dp; // drill power counted while active
@@ -54,6 +58,7 @@ abstract contract MiningAccounting {
         uint256 referralPaid; // referral credit moved from the treasury share to referrers
         uint64 snapshotHour; // Market Open hour: the miners' genesis accrual is recorded there
         uint256 minersAtSnapshot; // minersDistributed at the snapshot hour boundary
+        uint256 referralReserve; // part of treasuryPending earmarked for referral credit
     }
 
     // keccak256(abi.encode(uint256(keccak256("mohonaut.storage.MiningAccounting")) - 1)) & ~bytes32(uint256(0xff))
@@ -153,6 +158,9 @@ abstract contract MiningAccounting {
         s.minersDistributed += minersSum;
         s.devPending += devSum;
         s.treasuryPending += treasurySum;
+        // Earmark 3 % of the miners' share (at most 2.7 % of emission) inside the treasury share
+        // (at least 5 %) for referrals; see REFERRAL_BPS.
+        s.referralReserve += (minersSum * REFERRAL_BPS) / 10_000;
         // split() gives the treasury the remainder, so the three sums add up to the full emission.
         s.emitted += minersSum + devSum + treasurySum;
         return last >= nowTs;
@@ -248,12 +256,14 @@ abstract contract MiningAccounting {
         s.unrefinedRefined += amount;
     }
 
-    /// @dev Pays referral credit out of the treasury share (never new emission). Pays at most what
-    ///      the treasury share holds; the rest of the credit is simply not paid (docs/02 S9).
+    /// @dev Pays referral credit out of the earmarked treasury share (never new emission,
+    ///      docs/02 S9). The earmark grows by 3 % of every miners' share, so it covers every credit
+    ///      up to rounding dust; the min() only guards that dust.
     function _creditReferral(address referrer, address invitee, uint256 amount) internal {
         AccountingStorage storage s = _accounting();
-        uint256 credit = amount < s.treasuryPending ? amount : s.treasuryPending;
+        uint256 credit = amount < s.referralReserve ? amount : s.referralReserve;
         if (credit == 0) return;
+        s.referralReserve -= credit;
         s.treasuryPending -= credit;
         s.referralPaid += credit;
         s.positions[referrer].unrefined += credit;
@@ -266,13 +276,20 @@ abstract contract MiningAccounting {
         _accounting().reserve -= amount;
     }
 
+    /// @dev Releases the earmark of an accrual that does not qualify back to the free treasury share.
+    function _returnReferral(uint256 amount) internal {
+        AccountingStorage storage s = _accounting();
+        s.referralReserve -= amount < s.referralReserve ? amount : s.referralReserve;
+    }
+
     /// @dev Takes `amount` from the dev (`dev == true`) or treasury share for a queued withdrawal.
     function _takeShare(bool dev, uint256 amount) internal {
         AccountingStorage storage s = _accounting();
-        uint256 available = dev ? s.devPending : s.treasuryPending;
+        // The treasury may not take the part earmarked for referrals.
+        uint256 available = dev ? s.devPending : s.treasuryPending - s.referralReserve;
         if (amount > available) revert InsufficientShare(available);
-        if (dev) s.devPending = available - amount;
-        else s.treasuryPending = available - amount;
+        if (dev) s.devPending -= amount;
+        else s.treasuryPending -= amount; // the earmark stays
     }
 
     function _expiryHourOf(address account) internal view returns (uint64) {
@@ -392,6 +409,11 @@ abstract contract MiningAccounting {
 
     function referralPaid() external view returns (uint256) {
         return _accounting().referralPaid;
+    }
+
+    /// @notice Part of treasuryPending earmarked for referral credit (not withdrawable).
+    function referralReserve() external view returns (uint256) {
+        return _accounting().referralReserve;
     }
 
     /// @notice MOHN credited to miners during genesis (recorded at the Market Open boundary).

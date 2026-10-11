@@ -56,6 +56,7 @@ npm komutlarını Git Bash yerine `cmd.exe /c "..."` veya PowerShell ile çalı�
 | Slither (yerel, WSL) | `wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/yazic/Desktop/crypto-game-project/contracts && forge clean && ~/halmos-venv/bin/slither . --config-file slither.config.json --fail-medium"` |
 | Halmos (yerel, WSL) | `wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/yazic/Desktop/crypto-game-project/contracts && ~/halmos-venv/bin/halmos --function prove_"` |
 | Aderyn (yerel, WSL; Windows sürümü yok) | `wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/yazic/Desktop/crypto-game-project/contracts && ~/bin/aderyn . --output /tmp/ad.md; grep '^## H-' /tmp/ad.md"` (çıktı boş olmalı) |
-| Medusa / Echidna | CI'da (Linux) |
+| Medusa / Echidna (property harness `test/recon/`) | WSL: `cd /mnt/c/.../contracts && PATH=$HOME/halmos-venv/bin:$HOME/bin:$PATH medusa fuzz --timeout 21600` ve `echidna . --contract CryticTester --config echidna.yaml`; gece CI'da 6'şar saat. Foundry'de: `forge test --match-contract CryticToFoundry` |
+| Mutasyon (Gambit) | Ayrı bir kopyada (kaynakları yerinde değiştirir): `contracts/audits/mutation/run_all.sh`; sonuçlar `audits/mutation/results/` |
 
 Sürümler: Node 24, npm 11, TypeScript 5.9, Foundry 1.8.5, solc 0.8.30 (`evm_version = prague`), OpenZeppelin 5.7.0, Solady 0.1.26, forge-std 1.17.0 (git submodule, sabit etiket).

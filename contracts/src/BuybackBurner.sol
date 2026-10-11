@@ -89,16 +89,17 @@ contract BuybackBurner is PoolActor, AccessControl, ReentrancyGuardTransient {
         router.pullBuyback(ethIn);
         // aderyn-fp-next-line(reentrancy-state-change)
         bytes memory result = poolManager.unlock(abi.encode(ethIn, minMohnOut));
-        uint256 mohnOut = abi.decode(result, (uint256));
-        uint256 unspent = address(this).balance; // only if the swap hit its price limit
-        totalEthSpent += ethIn - unspent;
+        (uint256 ethPaid, uint256 mohnOut) = abi.decode(result, (uint256, uint256));
+        totalEthSpent += ethPaid;
         totalBurned += mohnOut;
         // The only external calls are to the trusted router and Uniswap PoolManager, under
         // nonReentrant; the event needs their result.
         // forge-lint: disable-next-line(reentrancy-events)
-        emit BuybackExecuted(ethIn - unspent, mohnOut);
+        emit BuybackExecuted(ethPaid, mohnOut);
         ERC20Burnable(address(mohn)).burn(mohnOut);
-        if (unspent != 0) router.depositBuyback{value: unspent}();
+        // Any ETH left here (unspent at a price limit, or sent by anyone) goes to the bucket.
+        uint256 leftover = address(this).balance;
+        if (leftover != 0) router.depositBuyback{value: leftover}();
     }
 
     /// @notice Uniswap v4 unlock callback: exact-input ETH -> MOHN swap, then settlement.
@@ -115,7 +116,8 @@ contract BuybackBurner is PoolActor, AccessControl, ReentrancyGuardTransient {
         );
         (, uint256 mohnOut) = _settle(delta);
         if (mohnOut < minMohnOut) revert SlippageExceeded(mohnOut);
-        return abi.encode(mohnOut);
+        // The ETH actually paid into the pool (exact input, unless the price limit was hit).
+        return abi.encode(SafeCast.toUint256(-int256(delta.amount0())), mohnOut);
     }
 
     function _key() internal view override returns (PoolKey memory) {

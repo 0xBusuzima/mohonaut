@@ -15,7 +15,8 @@ coverage/
 # foundry
 contracts/out/
 contracts/cache/
-contracts/broadcast/*/31337/
+contracts/broadcast/
+contracts/slither_results.json
 deployments/31337.json
 contracts/broadcast/**/dry-run/
 contracts/crytic-export/

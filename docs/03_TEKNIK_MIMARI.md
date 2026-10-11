@@ -73,7 +73,7 @@ Araçlar: **npm workspaces + Turborepo** (pnpm 12 Windows'ta takıldığı için
 - `ERC20("…","MOHN")`, `ERC20Permit`, `ERC20Burnable`; `CAP = 100_000_000e18`.
 - `minter` **constructor'da immutable** olarak MiningCore proxy adresine ayarlanır (adres deploy script'inde önceden hesaplanır ve doğrulanır). Setter yok, owner yok.
 - `mint(to, amount)`: `msg.sender == minter`, `totalSupply + amount ≤ CAP` ve **o UTC gününde basılan + amount ≤ `DAILY_MINT_CAP` (500K, immutable)**.
-- MiningCore ayrıca saatlik mint devre kesicisi taşır (`MINT_BREAKER_LIMIT` = 150K / kayan 60 dk): eşik aşılırsa mint yolları otomatik durur, yalnızca Timelock açar (04 §5.2). Uygulama: 5 dakikalık 13 kovalık halka; pencere 60–65 dakikayı kapsar (güvenli tarafta fazla sayar). Eşiği aşacak mint **yapılmaz**, kesici atar ve çağrı revert etmeden döner (atma durumu kalıcı olsun diye); sonraki her mint `MintPaused` ile revert eder. Faz 2.7'ye kadar `resetMintBreaker` admin rolündedir.
+- MiningCore ayrıca saatlik mint sınırı taşır (`MINT_BREAKER_LIMIT` = 150K / kayan 60 dk, 04 §5.2). Uygulama: 5 dakikalık 13 kovalık halka; pencere 60–65 dakikayı kapsar (güvenli tarafta fazla sayar). Sınırı aşacak mint `MintWindowFull` ile geri çevrilir; global bir "durdurma" durumu yoktur (iç denetim: eski tasarımda bakiyesi olmayan biri bile kesiciyi atıp tüm mint'leri dondurabiliyordu). Rafine isteği başına en çok 100K. Market Open LP'si pencerede kalan yere kırpılır. Acil durdurma Guardian pause'u.
 
 ### 3.3 MiningCore (UUPS proxy, ERC-7201 depolama)
 
@@ -98,7 +98,7 @@ Katalog: machineType{dp, burn, premiumBps, minLevel, generation} — eklenir, as
 
 | Fonksiyon | Kim | Açıklama |
 |---|---|---|
-| `register(referrer)` | herkes | Saha L1 + Pilot Rig; referrer bir kez ayarlanır. `buyFuel` kayıtlı olmayan hesabı otomatik kaydeder → **ilk giriş tek işlem** |
+| (kayıt) | herkes | Ayrı bir `register` fonksiyonu yok: ilk `buyFuel(referrer)` sahayı (L1 + Pilot Rig) açar ve referrer'ı bir kez ayarlar → **ilk giriş tek işlem** |
 | `buyFuel()` payable | oyuncu | ETH → ℓ (Chainlink, 26s bayatlık kontrolü; sequencer feed adresi tanımlıysa onu da kontrol eder); gerekirse önce kayıt; ETH Router'a |
 | `buyMachines(typeId, qty, maxCost, payFromWallet)` | oyuncu | VRGDA kapalı form maliyet × (1 + prim), yuvarlama yukarı; işlem başı ≤ 10.000 DP birimi; ped, yakıt hattı ve saha seviyesi kontrolü; alınan makineler hemen çalışır. Ödeme sırası: hurda kredisi → rafine edilmemiş bakiye → (isteğe bağlı) cüzdan (`burnFrom`, onay/permit gerekir). MOHN kısmı %80 kalıcı yakım / %20 rezerv |
 | `setActiveRigs(typeId, active)` | oyuncu | Bir türden tam olarak `active` adet makine çalışır (yakıt hattı kontrolü); Pilot Rig de kapatılabilir |

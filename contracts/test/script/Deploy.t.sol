@@ -140,6 +140,21 @@ contract DeployScriptTest is Test {
         fresh.run();
     }
 
+    /// Audit fix: a genesis whose Market Open moment has already passed is refused (openMarket
+    /// could never succeed), unless explicitly allowed for a testnet playground.
+    function test_lateGenesisRefused() public {
+        vm.warp(1_800_000_000);
+        uint64 late = uint64(((block.timestamp - 72 hours) / 1 hours) * 1 hours);
+        vm.setEnv("GENESIS_TIME", vm.toString(late));
+        Deploy fresh = Deploy(deployCode("Deploy.s.sol:Deploy"));
+        Deploy.Config memory cfg = fresh.configFromEnv();
+        vm.expectRevert(abi.encodeWithSelector(Deploy.GenesisTooLate.selector, late));
+        fresh.deploy(cfg, address(fresh));
+        vm.setEnv("ALLOW_CLOSED_GENESIS", "true");
+        fresh.deploy(cfg, address(fresh)); // testnet playground: allowed
+        vm.setEnv("ALLOW_CLOSED_GENESIS", "false");
+    }
+
     function test_manualFeedOnlyOwner() public {
         vm.expectRevert(ManualEthUsdFeed.NotOwner.selector);
         ManualEthUsdFeed(d.ethUsdFeed).set(1);

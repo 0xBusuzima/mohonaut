@@ -6,6 +6,8 @@
 
 ## 1. Tehdit modeli
 
+> "Kanıt" sütunundaki dosya adları planlama aşamasından kalmadır; gerçek test dosyaları ve fonksiyonları için güncel eşleme: `contracts/audits/TRACEABILITY.md` (Faz 2.9).
+
 | # | Tehdit | Örnek olay | Önlem | Kanıt (test) |
 |---|---|---|---|---|
 | T1 | Yetkili anahtarla sınırsız mint | Gala (2024), PlayDapp (2024) | Token immutable, tek minter = MiningCore, CAP | `MohnToken.t.sol`, Halmos `prove_capNeverExceeded` |
@@ -33,7 +35,7 @@
 | T1 | `totalSupply ≤ CAP` |
 | T2 | Yalnızca `minter` mint edebilir; `minter` değişmez |
 | T3 | Bir UTC gününde basılan toplam ≤ `DAILY_MINT_CAP` (500K MOHN, immutable) |
-| B1 | Bir saatte basılan > `hourlyMintBreaker` olursa mint yolları durur; yalnızca Timelock açar (test: handler her mint'i zamanıyla kaydeder, kayan 60 dakikada toplam ≤ 150K) |
+| B1 | Kayan 60 dakikada basılan ≤ 150K; aşacak mint geri çevrilir (v1.0.1; test: handler her mint'i zamanıyla kaydeder, kayan 60 dakikada toplam ≤ 150K; bakiyesi olmayan çağıran pencereye dokunamaz) |
 | E1 | `Σ pending_madenci + Σ claimed_madenci ≤ Σ dağıtılan_madenci` |
 | E2 | `totalSupply + Σ pending(tümü) + refineKuyruğu + R + burnedForever == CAP` (± toz) |
 | E3 | `H == Σ dp_i` (yakıtı aktif olanlar) |
@@ -131,7 +133,7 @@ Branch koruması: `main`'e doğrudan push yok, en az 1 inceleme (AI + insan), t�
 | Sınır | Nerede | Değer (simülasyonla doğrulanacak) | Neyi önler |
 |---|---|---|---|
 | **Günlük mint tavanı** | MohnToken (**immutable**) | 500,000 MOHN / UTC günü (%0.5 CAP; en yüksek meşru gün 141K) | Sonsuz mint açığı bile günde en fazla %0.5 basabilir; pause için zaman kazandırır |
-| Saatlik mint devre kesicisi | MiningCore | Kayan 60 dakikada mint > 150K (`hourlyMintBreaker`) → mint yolları **otomatik durur**, Guardian'a uyarı; açma yalnızca Timelock | Anormal mint'i dakikalar içinde keser |
+| Saatlik mint sınırı | MiningCore | Kayan 60 dakikada en çok 150K; aşacak mint geri çevrilir; izleme uyarısı → Guardian pause (≤ 15 dk hedef) | Anormal mint'i saatte 150K ile sınırlar; kimse sınırı kötüye kullanıp oyunu donduramaz |
 | ETH kovalarının günlük süpürülmesi | Router + Keeper | Ops → Safe her gün; buyback/POL günlük tavanla harcanır | Kontratlarda bekleyen ETH = birkaç günlük gelir |
 | İşlem başı ve hesap başı sınırlar | MiningCore | 02 §6.2 işlem başı üst sınır; genesis tank üst sınırı | Tek işlemle büyük hasar |
 | Pause | Guardian | ≤ 72 saat, otomatik biter | Hızlı müdahale, kalıcı hapis yok |

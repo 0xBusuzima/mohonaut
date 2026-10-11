@@ -53,11 +53,11 @@
 | Transfer vergisi / blacklist / pause | **Yok** | Honeypot şüphesi yok, DEX/aggregator uyumlu |
 | Yükseltilebilirlik | **Yok** (immutable) | — |
 | **Günlük mint tavanı** | **500,000 MOHN / UTC günü** (%0.5 CAP), immutable | Denetimsiz lansmanın son savunma hattı. Simülasyonda (3.12M koşu-günü) en yüksek meşru gün 141K, P99.9 69K; market açılış günü LP basımı ≈ 40K. Tavan hiç devreye girmedi. Bir hata olursa günlük zarar 2M'ye göre 4 kat küçük. |
-| **Saatlik mint devre kesicisi** | **150,000 MOHN / kayan 60 dk** (MiningCore) | En yüksek meşru saat 71K (market açılış saati, LP dahil); açılıştan sonra 23K. Aşılırsa mint yolları otomatik durur, yalnızca Timelock açar (bu durumda çekimler ~4 gün bekler). |
+| **Saatlik mint sınırı** | **150,000 MOHN / kayan 60 dk** (MiningCore) | En yüksek meşru saat 71K (market açılış saati, LP dahil); açılıştan sonra 23K. Sınırı aşacak mint **geri çevrilir** (`MintWindowFull`) ve pencerede yer açılınca tekrar denenir. Rafine isteği başına en çok 100K. Acil durdurma Guardian pause'udur. (v1.0.1: eski "aşılırsa her şey durur" tasarımı herkesin bedavaya oyunu dondurmasına izin veriyordu, iç denetim.) |
 
 **Invariant T1:** `totalSupply ≤ CAP` her durumda.
 **Invariant T3:** Bir UTC gününde basılan toplam ≤ `DAILY_MINT_CAP` (500K). Tavan dolarsa mint revert eder; standart kuyruktaki çekimler ertesi gün tamamlanır (kaybolmaz).
-**Invariant B1:** Kayan 60 dakikada basılan > 150K ise mint yolları durur.
+**Invariant B1:** Kayan 60 dakikada basılan hiçbir zaman 150K'yı aşmaz (aşacak mint geri çevrilir).
 **Invariant T2:** `mint` yalnızca `minter` adresinden çağrılabilir; `minter` atandıktan sonra değişmez.
 
 ---
@@ -343,8 +343,10 @@ Bu metrikler herkese açık Ekonomi sayfasında canlı yayımlanır.
 
 ```
 P0_USD   = Genesis yakıt harcaması (USD) / Genesis madenci tahakkuku (MOHN)     → madencilerin ortalama maliyeti
-MOHN_LP   = min( POL_ETH × ETHUSD / P0_USD , 1,000,000 )                         → rezervden basılır
-            (pratikte = 0.30 × genesis madenci tahakkuku ≈ 40K; 1M tavanı hiç bağlamaz)
+MOHN_LP   = min( POL_ETH × ETHUSD / P0_USD , 1,000,000 , saatlik mint sınırında kalan yer )  → rezervden basılır
+            (pratikte = 0.30 × genesis madenci tahakkuku ≈ 40K; tavanlar hiç bağlamaz)
+            LP kırpılırsa havuz yine P0'da açılır; yalnızca LP ile eşleşen POL ETH kullanılır, kalan ETH
+            POL kovasında addLiquidity için bekler (v1.0.1)
 Havuz    = Uniswap v4, ETH/MOHN, tam aralık, pozisyon NFT'si çekilemez kontratta
 ```
 
@@ -432,4 +434,5 @@ Simülasyon `/sim` altında, bu dokümandaki formüllerle **günlük adımlı, a
 | v0.1+ | 2026-10-10 | Kurucu/hazine çekimleri yalnızca 72s kuyruk; Dünya Derinliği tahakkuk eden emisyona göre, strata metre cinsinden (Kola Line, Moho Line) | Şeffaflık; marka çalışması |
 | v0.2 | 2026-10-10 | VRGDA `r` 8,000 → 2,000; ETH dağılımı 40/30/30 → 55/30/15; §12 müdahale kuralı yönü düzeltildi; genesis tank üst sınırı ve genesis buyback kovası tanımlandı; §13 tanımları netleştirildi; RCR kriterden sağlık metriğine alındı | `sim/RAPOR.md` §1, §7 |
 | v0.2+ | 2026-10-10 | Tema: enerji (kWh/kW) → dizel yakıt (ℓ, ℓ/h), üs → sondaj sahası, makine ve katman isimleri yenilendi (matematik aynı); parametre timelock'u 72s → 96s; oracle bayatlık eşiği 26s, sequencer feed opsiyonel, testnet mock (0.4 zincir doğrulaması) | Kurucu kararı (rakiplere benzememe), `docs/ZINCIR_DOGRULAMA.md` |
+| v1.0.1 | 2026-10-12 | **Güvenlik düzeltmeleri (iç denetim, ekonomi parametreleri değişmedi):** saatlik mint devre kesicisi → katı saatlik mint sınırı (aşan mint geri çevrilir; global durdurma yok); rafine isteği başına ≤ 100K; Market Open LP'si mint sınırına kırpılır (fiyat P0'da kalır); referans kredisinin %3'lük bütçesi hazine payı içinde ayrılır, hazine çekemez | `contracts/audits/FINDINGS.md` |
 | **v1.0** | **2026-10-11** | **Donduruldu.** İsim Mohonaut / $MOHN; günlük mint tavanı 2M → 500K; saatlik mint devre kesicisi 150K; kurucu/hazine çekimi talep ve gün başına ≤ 100K; VRGDA `r` değişiklikleri fiyat sürekli (yeniden çapalama); §13 sonuçları v0.2 simülasyonuyla güncellendi | `sim/RAPOR.md` "v0.2 doğrulaması", kurucu onayı |

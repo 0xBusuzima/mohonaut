@@ -1,5 +1,9 @@
-# Phase 2: properties live in test/recon (Recon Chimera layout), shared with Medusa and Foundry.
+# Properties live in test/recon (Chimera layout), shared with Medusa and Foundry.
+# Robinhood Chain accepts 96 KB contracts (ADR-011).
+codeSize: 0x18000
 testMode: assertion
+# The keeper pokes hourly; at most one day passes between calls.
+maxTimeDelay: 86400
 testLimit: 1000000
 seqLen: 100
 corpusDir: echidna-corpus

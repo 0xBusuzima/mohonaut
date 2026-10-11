@@ -184,8 +184,9 @@ contract MiningCoreRefineryTest is Test {
 
     function test_refineReverts() public {
         _aliceMinesThroughGenesis();
-        uint256 unrefined = core.pendingOf(alice);
-        vm.startPrank(alice);
+        _setUnrefined(bob, 50_000e18); // bob never mined: nothing settles on top
+        uint256 unrefined = 50_000e18;
+        vm.startPrank(bob);
         vm.expectRevert(MiningCore.ZeroValue.selector);
         core.refine(0, false);
         vm.expectRevert(
@@ -253,16 +254,37 @@ contract MiningCoreRefineryTest is Test {
         assertEq(core.referralPaid(), 0);
     }
 
-    function test_referralCappedByTreasuryShare() public {
+    /// Audit fix: the treasury cannot withdraw the referral earmark, so referrals are always paid.
+    function test_treasuryCannotStarveReferrals() public {
         _bobJoinsUnderAlice(0.004 ether);
         vm.warp(MARKET_OPEN + 5 hours);
         _catchUp();
-        uint256 treasury = core.treasuryPending();
-        vm.prank(TREASURY);
-        core.withdrawTreasuryShare(treasury); // empties the treasury share
+        uint256 earmark = core.referralReserve();
+        assertGt(earmark, 0);
+        uint256 free = core.treasuryPending() - earmark;
+        vm.startPrank(TREASURY);
+        vm.expectRevert(abi.encodeWithSelector(MiningAccounting.InsufficientShare.selector, free));
+        core.withdrawTreasuryShare(free + 1);
+        core.withdrawTreasuryShare(free); // takes everything that is not earmarked
+        vm.stopPrank();
+        assertEq(core.treasuryPending(), earmark);
+
+        uint256 credit = (core.pendingOf(bob) * 300) / 10_000;
         vm.prank(bob);
         core.refine(1e18, false);
-        assertEq(core.referralPaid(), 0, "nothing left to pay from");
+        assertEq(core.referralPaid(), credit, "still paid from the earmark");
+        _conservation();
+    }
+
+    /// An accrual that does not qualify releases its earmark back to the free treasury share.
+    function test_unqualifiedAccrualReleasesEarmark() public {
+        _aliceMinesThroughGenesis(); // Alice has no referrer
+        uint256 earmark = core.referralReserve();
+        uint256 aliceEarned = core.pendingOf(alice);
+        vm.prank(alice);
+        core.refine(1e18, false); // settles Alice's genesis accrual
+        assertEq(core.referralPaid(), 0);
+        assertApproxEqAbs(core.referralReserve(), earmark - (aliceEarned * 300) / 10_000, 1e6);
         _conservation();
     }
 
@@ -315,17 +337,40 @@ contract MiningCoreRefineryTest is Test {
 
     function test_treasuryWithdrawalSeparateLimit() public {
         _aliceMinesThroughGenesis();
-        uint256 pending = core.treasuryPending();
+        uint256 free = core.treasuryPending() - core.referralReserve();
         vm.prank(TREASURY);
-        core.withdrawTreasuryShare(pending);
-        assertEq(core.refineRequest(TREASURY, 0).amount, pending);
+        core.withdrawTreasuryShare(free);
+        assertEq(core.refineRequest(TREASURY, 0).amount, free);
         assertEq(core.devRecipient(), DEV);
         assertEq(core.treasuryRecipient(), TREASURY);
     }
 
-    // ------------------------------------------------------------------ mint breaker
+    // ------------------------------------------------------------------ hourly mint limit
 
-    function test_breakerTripsAndStopsAllMintPaths() public {
+    /// Audit fix (high): a caller without credit can no longer touch the mint window at all.
+    function test_zeroCreditCallerCannotTouchTheWindow() public {
+        _aliceMinesThroughGenesis();
+        address attacker = makeAddr("attacker");
+        vm.prank(attacker);
+        vm.expectRevert(abi.encodeWithSelector(MiningAccounting.InsufficientUnrefined.selector, 0));
+        core.refine(100_000e18, true);
+        assertEq(core.mintRoom(), 150_000e18, "window untouched");
+    }
+
+    function test_requestSizeCapped() public {
+        _aliceMinesThroughGenesis();
+        _setUnrefined(alice, 400_000e18);
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(MiningCore.RefineTooLarge.selector, 100_000e18));
+        core.refine(100_000e18 + 1, false);
+        vm.expectRevert(abi.encodeWithSelector(MiningCore.RefineTooLarge.selector, 100_000e18));
+        core.refine(100_000e18 + 1, true);
+        vm.stopPrank();
+    }
+
+    /// The limit is a rate limit: an over-limit mint reverts for its caller only, and minting goes
+    /// on for everyone else as soon as the window has room.
+    function test_overLimitMintRevertsAndOthersContinue() public {
         _aliceMinesThroughGenesis();
         _setUnrefined(alice, 400_000e18);
         vm.startPrank(alice);
@@ -333,41 +378,19 @@ contract MiningCoreRefineryTest is Test {
         core.refine(100_000e18, true); // 92K minted
         uint256 balance = mohn.balanceOf(alice);
         uint256 unrefinedBefore = core.positionOf(alice).unrefined;
-
-        vm.expectEmit(address(core));
-        emit MiningCore.MintBreakerTripped(92_000e18 + 64_400e18);
-        core.refine(70_000e18, true); // 64.4K more would make 156.4K: trips, mints nothing
-        assertTrue(core.mintBreakerTripped());
-        assertEq(mohn.balanceOf(alice), balance);
+        assertEq(core.mintRoom(), 58_000e18);
+        vm.expectRevert(abi.encodeWithSelector(MiningCore.MintWindowFull.selector, 58_000e18));
+        core.refine(70_000e18, true); // 64.4K would not fit
         assertEq(core.positionOf(alice).unrefined, unrefinedBefore, "nothing refined");
-
-        vm.expectRevert(MiningCore.MintPaused.selector);
-        core.refine(1e18, true);
+        core.refine(60_000e18, true); // 55.2K fits
         vm.stopPrank();
-
-        vm.warp(MARKET_OPEN + 72 hours);
-        _catchUp();
-        vm.expectRevert(MiningCore.MintPaused.selector);
-        core.finalizeRefine(alice, 0);
-
-        bytes32 role = core.DEFAULT_ADMIN_ROLE();
-        vm.prank(alice);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector, alice, role
-            )
-        );
-        core.resetMintBreaker();
-
-        vm.expectEmit(address(core));
-        emit MiningCore.MintBreakerReset();
-        vm.prank(admin);
-        core.resetMintBreaker();
-        core.finalizeRefine(alice, 0);
-        assertEq(mohn.balanceOf(alice), balance + 100_000e18);
+        assertEq(mohn.balanceOf(alice), balance + 55_200e18);
+        _conservation();
     }
 
-    function test_breakerTripOnFinalizeKeepsRequest() public {
+    /// Audit fix: matured requests cannot be bunched to freeze minting; a finalize that does not
+    /// fit reverts and succeeds once the window has moved on.
+    function test_finalizeWaitsForRoom() public {
         _aliceMinesThroughGenesis();
         _setUnrefined(alice, 400_000e18);
         vm.startPrank(alice);
@@ -377,13 +400,17 @@ contract MiningCoreRefineryTest is Test {
         vm.warp(MARKET_OPEN + 72 hours);
         _catchUp();
         core.finalizeRefine(alice, 0);
-        core.finalizeRefine(alice, 1); // 200K within the window: trips
-        assertTrue(core.mintBreakerTripped());
+        vm.expectRevert(abi.encodeWithSelector(MiningCore.MintWindowFull.selector, 50_000e18));
+        core.finalizeRefine(alice, 1);
         assertEq(core.refineRequest(alice, 1).amount, 100_000e18, "still queued");
-        assertEq(mohn.balanceOf(alice), 100_000e18);
+        vm.warp(vm.getBlockTimestamp() + 65 minutes);
+        _catchUp();
+        core.finalizeRefine(alice, 1);
+        assertEq(mohn.balanceOf(alice), 200_000e18);
+        _conservation();
     }
 
-    function test_breakerWindowSlides() public {
+    function test_windowSlides() public {
         _aliceMinesThroughGenesis();
         _setUnrefined(alice, 400_000e18);
         vm.startPrank(alice);
@@ -392,25 +419,24 @@ contract MiningCoreRefineryTest is Test {
         vm.warp(MARKET_OPEN + 65 minutes); // the t0 bucket has left the 13-bucket window
         _catchUp();
         core.refine(100_000e18, true); // another 92K: fine
-        assertFalse(core.mintBreakerTripped());
 
         vm.warp(MARKET_OPEN + 120 minutes); // 55 minutes later: the previous 92K still counts
         _catchUp();
+        vm.expectRevert(abi.encodeWithSelector(MiningCore.MintWindowFull.selector, 58_000e18));
         core.refine(100_000e18, true);
         vm.stopPrank();
-        assertTrue(core.mintBreakerTripped());
     }
 
-    function test_breakerSameBucketAccumulates() public {
+    function test_sameBucketAccumulates() public {
         _aliceMinesThroughGenesis();
         _setUnrefined(alice, 400_000e18);
         vm.startPrank(alice);
         for (uint256 i = 0; i < 16; ++i) {
             core.refine(10_000e18, true); // 9.2K each, all in one 5-minute bucket
         }
-        assertFalse(core.mintBreakerTripped(), "16 x 9.2K = 147.2K");
+        assertEq(core.mintRoom(), 2800e18, "16 x 9.2K = 147.2K");
+        vm.expectRevert(abi.encodeWithSelector(MiningCore.MintWindowFull.selector, 2800e18));
         core.refine(10_000e18, true);
         vm.stopPrank();
-        assertTrue(core.mintBreakerTripped(), "156.4K");
     }
 }

@@ -34,9 +34,10 @@ import {IRevenueRouter} from "./interfaces/IRevenueRouter.sol";
 ///      credit, then unrefined credit, then (opt-in) wallet tokens; every MOHN spent is 80 % burned
 ///      forever and 20 % returned to the reserve. The catalog only grows: existing machine types
 ///      never change (invariant M2).
-///      Every mint goes through the hourly mint breaker (docs/02 S2, invariant B1): if the
-///      MOHN minted in the last 60-65 minutes would exceed 150K, the breaker trips instead of
-///      minting and all mint paths stop until the admin (Phase 2.7: the Timelock) resets it.
+///      Every mint goes through the hourly mint limit (docs/02 S2, invariant B1): a mint that
+///      would take the MOHN minted in the last 60-65 minutes above 150K reverts (MintWindowFull)
+///      and can be retried later. It is a hard rate limit, not a global switch: nobody can freeze
+///      minting for others, and the Guardian pause remains the emergency stop.
 ///      Roles (docs/03 S3.8): DEFAULT_ADMIN_ROLE and CATALOG_ROLE = the 96 h Timelock (bounded,
 ///      rate-limited parameters, catalog, breaker reset, unpause); UPGRADER_ROLE = the 7-day
 ///      Timelock; GUARDIAN_ROLE = the Guardian Safe, which can only pause for at most 72 hours.
@@ -90,17 +91,17 @@ contract MiningCore is
     /// @notice World Depth: one metre per 1,000 MOHN emitted (docs/02 S3.4).
     uint256 public constant MOHN_PER_METRE = 1000e18;
 
-    /// @notice Referral: 3 % of the invitee accrual, paid from the treasury share, once the invitee
-    ///         has bought at least 0.003 ETH of fuel and while the referrer still has fuel
-    ///         (docs/02 S9).
-    uint256 public constant REFERRAL_BPS = 300;
+    /// @notice Referral (REFERRAL_BPS, MiningAccounting) qualifies once the invitee has bought at
+    ///         least 0.003 ETH of fuel and while the referrer still has fuel (docs/02 S9).
     uint256 public constant REFERRAL_MIN_FUEL_WEI = 0.003 ether;
     /// @notice Refinery defaults (docs/02 S8); Phase 2.7 adds bounded Timelock setters.
     uint16 public constant INITIAL_FAST_REFINE_FEE_BPS = 800;
     uint64 public constant INITIAL_REFINE_DELAY = 72 hours;
     /// @notice Dev and treasury withdrawals: queued only, at most 100K per request and per UTC day.
     uint256 public constant SHARE_DAILY_LIMIT = 100_000e18;
-    /// @notice Hourly mint breaker: 150K over a 60-65 minute window of 5-minute buckets.
+    /// @notice Largest single refine request; every request then fits an empty mint window.
+    uint256 public constant MAX_REFINE_PER_REQUEST = 100_000e18;
+    /// @notice Hourly mint limit: 150K over a 60-65 minute window of 5-minute buckets.
     uint256 public constant MINT_BREAKER_LIMIT = 150_000e18;
     uint256 public constant MINT_BUCKET = 5 minutes;
     uint256 public constant MINT_BUCKETS = 13;
@@ -185,7 +186,6 @@ contract MiningCore is
         address treasuryRecipient;
         uint16 fastRefineFeeBps;
         uint64 refineDelay;
-        bool mintBreakerTripped;
         uint256 refineQueued; // MOHN waiting in refine queues
         ShareWithdrawals devWithdrawals;
         ShareWithdrawals treasuryWithdrawals;
@@ -231,8 +231,6 @@ contract MiningCore is
     event Refined(address indexed account, uint256 amount, uint256 minted, uint256 fee);
     event RefineQueued(address indexed account, uint256 indexed id, uint256 amount, uint64 readyAt);
     event RefineFinalized(address indexed account, uint256 indexed id, uint256 amount);
-    event MintBreakerTripped(uint256 windowTotal);
-    event MintBreakerReset();
     event LiquidityManagerWired(address indexed liquidityManager);
     event ParamChanged(Param indexed param, uint256 oldValue, uint256 newValue);
     event VrgdaReanchored(int256 lnAnchor, uint64 anchorTime, uint256 anchorSold);
@@ -270,7 +268,8 @@ contract MiningCore is
     error NotReady(uint64 readyAt);
     error NotRecipient();
     error ShareLimitExceeded(uint256 remainingToday);
-    error MintPaused();
+    error MintWindowFull(uint256 room);
+    error RefineTooLarge(uint256 max);
     error MarketNotOpenYet();
     error MarketAlreadyOpen();
     error AlreadyWired();
@@ -305,6 +304,9 @@ contract MiningCore is
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(UPGRADER_ROLE, admin);
+        // Only upgraders manage the upgrader role, so the 96 h admin can never grant itself
+        // upgrades and skip the 7-day Timelock.
+        _setRoleAdmin(UPGRADER_ROLE, UPGRADER_ROLE);
         _grantRole(CATALOG_ROLE, admin);
         _initAccounting(genesisTime_, (genesisTime_ + GENESIS_DURATION) / HOUR);
 
@@ -723,22 +725,23 @@ contract MiningCore is
     /// @notice Turns `amount` of unrefined credit into MOHN. Fast: now, minus the fast fee (half
     ///         burned forever, half back to the reserve). Standard: free, after the refine delay.
     ///         Closed during genesis (docs/02 S11).
-    /// @dev If the mint breaker trips on a fast refine, nothing is refined and the call returns.
+    ///         At most MAX_REFINE_PER_REQUEST per call. A fast refine reverts with MintWindowFull
+    ///         if the hourly mint limit has no room for it.
     function refine(uint256 amount, bool fast) external nonReentrant whenNotPaused {
         _requireCheckpointed();
         CoreStorage storage c = _core();
         _requireRefineOpen(c);
         if (amount == 0) revert ZeroValue();
+        if (amount > MAX_REFINE_PER_REQUEST) revert RefineTooLarge(MAX_REFINE_PER_REQUEST);
         _settle(msg.sender);
+        _withdrawUnrefined(msg.sender, amount); // the caller's own credit, checked first
         if (!fast) {
-            _withdrawUnrefined(msg.sender, amount);
             _enqueue(c, msg.sender, amount);
             return;
         }
         uint256 fee = FixedPointMathLib.mulDivUp(amount, c.fastRefineFeeBps, 10_000);
         uint256 minted = amount - fee;
-        if (!_admitMint(c, minted)) return;
-        _withdrawUnrefined(msg.sender, amount);
+        _admitMint(c, minted);
         uint256 toReserve = fee / 2;
         _burnAndRecycle(fee - toReserve, toReserve);
         // forge-lint: disable-next-line(reentrancy-events)
@@ -747,7 +750,7 @@ contract MiningCore is
     }
 
     /// @notice Mints a matured queued refine to its owner. Anyone (e.g. the keeper) may call.
-    /// @dev If the mint breaker trips, the request stays queued and the call returns.
+    /// @dev Reverts with MintWindowFull (retry later) if the hourly mint limit has no room.
     function finalizeRefine(address account, uint256 id) external nonReentrant whenNotPaused {
         _requireCheckpointed();
         CoreStorage storage c = _core();
@@ -758,7 +761,7 @@ contract MiningCore is
         if (amount == 0) revert AlreadyFinalized();
         // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp < r.readyAt) revert NotReady(r.readyAt);
-        if (!_admitMint(c, amount)) return;
+        _admitMint(c, amount);
         r.amount = 0;
         c.refineQueued -= amount;
         // forge-lint: disable-next-line(reentrancy-events)
@@ -778,16 +781,6 @@ contract MiningCore is
         CoreStorage storage c = _core();
         if (msg.sender != c.treasuryRecipient) revert NotRecipient();
         _withdrawShare(c, c.treasuryWithdrawals, false, amount);
-    }
-
-    /// @notice Re-opens the mint paths after the breaker tripped. Phase 2.7: Timelock only.
-    function resetMintBreaker() external onlyRole(DEFAULT_ADMIN_ROLE) {
-        CoreStorage storage c = _core();
-        c.mintBreakerTripped = false;
-        delete c.mintBuckets;
-        // `delete` is a storage operation, not an external call.
-        // forge-lint: disable-next-line(reentrancy-events)
-        emit MintBreakerReset();
     }
 
     function _withdrawShare(
@@ -826,18 +819,25 @@ contract MiningCore is
         emit RefineQueued(account, queue.length - 1, amount, readyAt);
     }
 
-    /// @dev Hourly mint breaker (B1). Records `amount` in the current 5-minute bucket and returns
-    ///      true; or, if the last 13 buckets plus `amount` would exceed the limit, trips the breaker
-    ///      and returns false without recording (the caller then changes nothing else, so the trip
-    ///      persists). Reverts while tripped.
-    function _admitMint(CoreStorage storage c, uint256 amount) private returns (bool) {
-        if (c.mintBreakerTripped) revert MintPaused();
+    /// @dev Hourly mint limit (B1): records `amount` in the current 5-minute bucket, or reverts with
+    ///      MintWindowFull if the last 13 buckets plus `amount` would exceed MINT_BREAKER_LIMIT.
+    function _admitMint(CoreStorage storage c, uint256 amount) private {
+        (uint256 used, uint256 current, uint256 bucket) = _mintWindow(c);
+        if (used + amount > MINT_BREAKER_LIMIT) revert MintWindowFull(MINT_BREAKER_LIMIT - used);
         // Not randomness: `bucket % MINT_BUCKETS` indexes a ring buffer of time buckets.
+        // slither-disable-next-line weak-prng
+        c.mintBuckets[bucket % MINT_BUCKETS] = (bucket << 192) | (current + amount);
+    }
+
+    /// @dev MOHN minted in the current 60-65 minute window, in the current bucket, and its index.
+    function _mintWindow(CoreStorage storage c)
+        private
+        view
+        returns (uint256 used, uint256 current, uint256 bucket)
+    {
+        bucket = block.timestamp / MINT_BUCKET;
+        // Bucket indices come from block.timestamp by design: the limit is a time window.
         // slither-disable-start weak-prng
-        uint256 bucket = block.timestamp / MINT_BUCKET;
-        uint256 total = amount;
-        uint256 current = 0;
-        // Bucket indices come from block.timestamp by design: the breaker is a time window.
         // forge-lint: disable-next-line(block-timestamp)
         for (uint256 i = 0; i < MINT_BUCKETS && i <= bucket; ++i) {
             uint256 packed = c.mintBuckets[(bucket - i) % MINT_BUCKETS];
@@ -846,28 +846,26 @@ contract MiningCore is
             // Intended truncation: the low 192 bits hold the bucket amount.
             // forge-lint: disable-next-line(unsafe-typecast)
             uint256 minted = uint192(packed);
-            total += minted;
+            used += minted;
             if (i == 0) current = minted;
         }
-        if (total > MINT_BREAKER_LIMIT) {
-            c.mintBreakerTripped = true;
-            // Only storage reads precede this event; there is no external call.
-            // forge-lint: disable-next-line(reentrancy-events)
-            emit MintBreakerTripped(total);
-            return false;
-        }
-        c.mintBuckets[bucket % MINT_BUCKETS] = (bucket << 192) | (current + amount);
         // slither-disable-end weak-prng
-        return true;
     }
 
-    /// @dev MiningAccounting hook: pays the referrer 3 % of `earned` from the treasury share.
+    /// @dev MiningAccounting hook: pays the referrer 3 % of `earned` from the referral reserve,
+    ///      or returns that budget to the treasury share when the accrual does not qualify.
     function _onAccrued(address account, uint256 earned) internal override {
         Site storage s = _core().sites[account];
         address referrer = s.referrer;
-        if (referrer == address(0) || s.fuelSpentWei < REFERRAL_MIN_FUEL_WEI) return;
-        if (_expiryHourOf(referrer) <= currentHour()) return; // the referrer has no fuel
-        _creditReferral(referrer, account, (earned * REFERRAL_BPS) / 10_000);
+        uint256 owed = (earned * REFERRAL_BPS) / 10_000;
+        if (
+            referrer == address(0) || s.fuelSpentWei < REFERRAL_MIN_FUEL_WEI
+                || _expiryHourOf(referrer) <= currentHour() // the referrer has no fuel
+        ) {
+            _returnReferral(owed);
+            return;
+        }
+        _creditReferral(referrer, account, owed);
     }
 
     // ------------------------------------------------------------------ market open
@@ -886,9 +884,10 @@ contract MiningCore is
 
     /// @notice Opens the market once genesis is over (docs/02 S11). Anyone may call, once.
     ///         P0 = genesis fuel USD / genesis miner accrual; the MOHN paired with the POL ETH is
-    ///         minted from the reserve (at most 1M) and the pool opens at P0 via Chainlink ETH/USD.
+    ///         minted from the reserve (at most 1M, and at most what the hourly mint limit admits)
+    ///         and the pool opens at P0 via Chainlink ETH/USD. If the LP is clamped, only the POL
+    ///         ETH that pairs with it at P0 is used; the rest stays in the router for addLiquidity.
     ///         No AMM price is read anywhere in this calculation.
-    /// @dev If the mint breaker trips, the market stays closed and the call returns.
     function openMarket() external nonReentrant whenNotPaused {
         _requireCheckpointed();
         CoreStorage storage c = _core();
@@ -902,8 +901,15 @@ contract MiningCore is
         // aderyn-fp-next-line(reentrancy-state-change)
         uint256 polEth = c.router.polBalance();
         uint256 lp = MarketOpenMath.lpAmount(polEth, ethUsd, p0);
+        (uint256 used,,) = _mintWindow(c);
+        uint256 room = MINT_BREAKER_LIMIT - used;
+        if (lp > room) {
+            lp = room;
+            polEth = Math.mulDiv(lp, p0, ethUsd); // the ETH that pairs with `lp` at P0
+        }
+        if (lp < 1) revert MintWindowFull(0);
         uint160 sqrtPriceX96 = MarketOpenMath.sqrtPriceX96(ethUsd, p0);
-        if (!_admitMint(c, lp)) return;
+        _admitMint(c, lp);
         c.marketOpened = true;
         _mintFromReserve(lp);
         // forge-lint: disable-next-line(reentrancy-events)
@@ -1183,8 +1189,10 @@ contract MiningCore is
         return _core().maxTankHours;
     }
 
-    function mintBreakerTripped() external view returns (bool) {
-        return _core().mintBreakerTripped;
+    /// @notice Room left in the hourly mint limit right now.
+    function mintRoom() external view returns (uint256) {
+        (uint256 used,,) = _mintWindow(_core());
+        return MINT_BREAKER_LIMIT - used;
     }
 
     function devRecipient() external view returns (address) {

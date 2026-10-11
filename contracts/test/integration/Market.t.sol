@@ -269,16 +269,22 @@ contract MarketTest is Test {
         fresh.openMarket(); // nobody mined during its genesis
     }
 
-    function test_openMarketTripsBreakerOnHugeLp() public {
+    /// Audit fix: a large POL bucket (e.g. a late Market Open) no longer blocks the opening. The
+    /// LP is clamped to the hourly mint limit, the pool still opens at P0, and the POL ETH that
+    /// does not pair with the clamped LP stays in the router for addLiquidity.
+    function test_openMarketClampsLpToTheMintLimit() public {
         vm.deal(address(core), 100 ether);
         vm.prank(address(core));
-        router.deposit{value: 100 ether}(); // 30 ETH of POL: LP far above 150K
-        vm.expectEmit(address(core));
-        emit MiningCore.MintBreakerTripped(1_000_000e18);
-        core.openMarket();
-        assertFalse(core.marketOpened(), "stays closed until the breaker is reset");
-        assertTrue(core.mintBreakerTripped());
-        assertEq(mohn.totalSupply(), 0);
+        router.deposit{value: 100 ether}(); // 30 ETH more POL: the formula LP is far above 150K
+        uint256 polBefore = router.polBalance();
+        uint256 p0 = MarketOpenMath.openingPrice(core.genesisFuelUsd(), core.genesisMinerAccrual());
+        uint256 lp = _open();
+        assertEq(lp, 150_000e18, "clamped to the hourly mint limit");
+        assertTrue(core.marketOpened());
+        assertEq(_sqrtPrice(), MarketOpenMath.sqrtPriceX96(2500e18, p0), "still opens at P0");
+        uint256 used = (lp * p0) / 2500e18;
+        assertEq(router.polBalance(), polBefore - used, "the rest stays in the POL bucket");
+        _conservation();
     }
 
     // ------------------------------------------------------------------ buyback
@@ -452,6 +458,39 @@ contract MarketTest is Test {
 
         vm.prank(makeAddr("anyone"));
         lm.collectFees(); // nothing new: a no-op
+    }
+
+    /// Audit fix: ETH that reaches the BuybackBurner outside a buyback (e.g. through a
+    /// PoolManager.take by anyone) cannot block buybacks; it is swept into the buyback bucket.
+    function test_strayEthDoesNotBlockBuyback() public {
+        _open();
+        vm.deal(address(bb), 1 ether); // as if someone took ETH from the PoolManager to it
+        uint256 bucket = router.buybackBalance();
+        uint256 cap = (lm.poolEth() * 200) / 10_000;
+        vm.prank(keeper);
+        bb.executeBuyback(cap, 1);
+        assertEq(address(bb).balance, 0);
+        assertEq(router.buybackBalance(), bucket - cap + 1 ether, "stray ETH swept to the bucket");
+        assertEq(bb.totalEthSpent(), cap);
+    }
+
+    /// Audit fix: fees accrued before an addLiquidity are burned / sent to buyback, not reinvested.
+    function test_addLiquidityRoutesAccruedFees() public {
+        _open();
+        vm.deal(address(trader), 1 ether);
+        uint256 bought = trader.swap(_key(), true, lm.poolEth() / 20);
+        trader.swap(_key(), false, bought / 2);
+        vm.deal(address(core), 1 ether);
+        vm.prank(address(core));
+        router.deposit{value: 1 ether}();
+        uint256 supply = mohn.totalSupply();
+        uint256 ethIn = (lm.poolEth() * 400) / 10_000; // before the prank: a call would consume it
+        vm.prank(keeper);
+        lm.addLiquidity(ethIn, 1);
+        assertGt(lm.mohnFeesBurned(), 0, "MOHN fees burned");
+        assertGt(lm.ethFeesToBuyback(), 0, "ETH fees to buyback");
+        assertEq(mohn.totalSupply(), supply - lm.mohnFeesBurned());
+        _conservation();
     }
 
     function test_unexpectedEthRejected() public {

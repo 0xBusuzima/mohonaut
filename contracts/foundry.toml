@@ -27,6 +27,15 @@ remappings = [
     "@uniswap/v4-core/=lib/v4-core/",
 ]
 
+[profile.mutation]
+# audits/mutation/run.sh: same code, lighter fuzzing so each mutant runs fast.
+[profile.mutation.fuzz]
+runs = 256
+
+[profile.mutation.invariant]
+runs = 32
+depth = 50
+
 [profile.default.fuzz]
 runs = 10000
 

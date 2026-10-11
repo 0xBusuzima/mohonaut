@@ -61,6 +61,7 @@ contract Deploy is Script {
     error HookAddressNotFound();
     error MinterMismatch(address predicted, address actual);
     error ManualFeedOnMainnet();
+    error GenesisTooLate(uint64 genesisTime);
     error DeployerStillHasRole(address target, bytes32 role);
 
     function run() external returns (Deployment memory d) {
@@ -89,6 +90,7 @@ contract Deploy is Script {
     // ------------------------------------------------------------------ 1. deploy
 
     function deploy(Config memory cfg, address deployer) public returns (Deployment memory d) {
+        _checkGenesis(cfg.genesisTime);
         d.router = new RevenueRouter(deployer);
         d.ethUsdFeed = cfg.ethUsdFeed;
         if (d.ethUsdFeed == address(0)) {
@@ -160,6 +162,18 @@ contract Deploy is Script {
         revert HookAddressNotFound();
     }
 
+    /// @dev Market Open records the genesis miner accrual at genesis + 72 h; if that moment has
+    ///      passed with nobody mining, openMarket can never succeed. Mainnet also needs the 24 h
+    ///      pre-fill ahead. ALLOW_CLOSED_GENESIS=true skips the check for testnet playgrounds only.
+    function _checkGenesis(uint64 genesisTime) internal view {
+        bool mainnet = block.chainid == MAINNET_CHAIN_ID;
+        if (!mainnet && vm.envOr("ALLOW_CLOSED_GENESIS", false)) return;
+        uint256 earliest = mainnet
+            ? block.timestamp + 24 hours
+            : (block.timestamp > 71 hours ? block.timestamp - 71 hours : 0);
+        if (genesisTime < earliest) revert GenesisTooLate(genesisTime);
+    }
+
     // ------------------------------------------------------------------ 2. configure
 
     /// @dev The deployer still holds every admin role here; handOver moves them.
@@ -171,6 +185,7 @@ contract Deploy is Script {
         r.grantRole(r.POL_ROLE(), address(d.liquidityManager));
         r.grantRole(r.BUYBACK_ROLE(), address(d.buybackBurner));
         r.grantRole(r.OPS_ROLE(), cfg.opsSafe);
+        r.lockBucketRoles(); // nobody, not even the Timelock, can rewire the buckets afterwards
         d.liquidityManager.grantRole(d.liquidityManager.KEEPER_ROLE(), cfg.keeper);
         d.buybackBurner.grantRole(d.buybackBurner.KEEPER_ROLE(), cfg.keeper);
         d.core.grantRole(d.core.GUARDIAN_ROLE(), cfg.guardianSafe);
@@ -228,6 +243,12 @@ contract Deploy is Script {
         }
         require(c.hasRole(c.DEFAULT_ADMIN_ROLE(), address(d.paramsTimelock)), "params admin");
         require(c.hasRole(c.UPGRADER_ROLE(), address(d.upgradeTimelock)), "upgrader");
+        // Only upgraders manage upgraders: the 96 h Timelock cannot skip the 7-day one.
+        require(c.getRoleAdmin(c.UPGRADER_ROLE()) == c.UPGRADER_ROLE(), "upgrader admin");
+        RevenueRouter r = d.router;
+        require(r.bucketRolesLocked(), "buckets locked");
+        require(r.getRoleAdmin(r.POL_ROLE()) == r.LOCKED_ROLE(), "POL locked");
+        require(r.getRoleAdmin(r.BUYBACK_ROLE()) == r.LOCKED_ROLE(), "buyback locked");
         require(d.paramsTimelock.getMinDelay() == PARAMS_DELAY, "params delay");
         require(d.upgradeTimelock.getMinDelay() == UPGRADE_DELAY, "upgrade delay");
         // The Timelocks administer themselves: nobody can shorten a delay without waiting it out.
@@ -263,6 +284,11 @@ contract Deploy is Script {
         vm.serializeAddress(k, "GuardianSafe", cfg.guardianSafe);
         string memory json = vm.serializeAddress(k, "Keeper", cfg.keeper);
         string memory dir = string.concat(vm.projectRoot(), "/../deployments/");
-        vm.writeJson(json, string.concat(dir, vm.toString(block.chainid), ".json"));
+        // DEPLOYMENT_NAME separates extra deployments on one chain (e.g. a testnet playground).
+        string memory name = vm.envOr("DEPLOYMENT_NAME", string(""));
+        string memory file = bytes(name).length == 0
+            ? vm.toString(block.chainid)
+            : string.concat(vm.toString(block.chainid), "-", name);
+        vm.writeJson(json, string.concat(dir, file, ".json"));
     }
 }

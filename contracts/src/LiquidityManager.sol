@@ -118,12 +118,10 @@ contract LiquidityManager is ILiquidityManager, PoolActor, AccessControl, Reentr
         if (ethIn < 2) revert ZeroValue();
         _useDailyCap(ethIn);
         router.pullPol(ethIn);
-        // The callback emits LiquidityAdded; its (empty) result is not needed.
-        // forge-lint: disable-start(unused-return)
-        // slither-disable-start unused-return
-        poolManager.unlock(abi.encode(Action.Add, ethIn / 2, minMohnOut));
-        // slither-disable-end unused-return
-        // forge-lint: disable-end(unused-return)
+        // aderyn-fp-next-line(reentrancy-state-change)
+        bytes memory result = poolManager.unlock(abi.encode(Action.Add, ethIn / 2, minMohnOut));
+        (uint256 ethFee, uint256 mohnFee) = abi.decode(result, (uint256, uint256));
+        _routeFees(ethFee, mohnFee); // fees accrued before this addition are not reinvested
     }
 
     /// @notice Collects the position's fees: MOHN is burned, ETH goes to the buyback bucket.
@@ -133,6 +131,11 @@ contract LiquidityManager is ILiquidityManager, PoolActor, AccessControl, Reentr
         // aderyn-fp-next-line(reentrancy-state-change)
         bytes memory result = poolManager.unlock(abi.encode(Action.Collect, uint256(0), uint256(0)));
         (uint256 ethFee, uint256 mohnFee) = abi.decode(result, (uint256, uint256));
+        _routeFees(ethFee, mohnFee);
+    }
+
+    /// @dev MOHN fees are burned, ETH fees go to the router's buyback bucket.
+    function _routeFees(uint256 ethFee, uint256 mohnFee) private {
         mohnFeesBurned += mohnFee;
         ethFeesToBuyback += ethFee;
         // The only external calls are to the trusted router and Uniswap PoolManager, under
@@ -151,10 +154,10 @@ contract LiquidityManager is ILiquidityManager, PoolActor, AccessControl, Reentr
             // A zero liquidity change returns exactly the accrued fees as the caller delta.
             // forge-lint: disable-start(unused-return)
             // slither-disable-start unused-return
-            (BalanceDelta fees,) = poolManager.modifyLiquidity(_key(), _params(0), "");
+            (BalanceDelta accrued,) = poolManager.modifyLiquidity(_key(), _params(0), "");
             // slither-disable-end unused-return
             // forge-lint: disable-end(unused-return)
-            (uint256 ethFee, uint256 mohnFee) = _settle(fees);
+            (uint256 ethFee, uint256 mohnFee) = _settle(accrued);
             return abi.encode(ethFee, mohnFee);
         }
         BalanceDelta total = BalanceDeltaLibrary.ZERO_DELTA;
@@ -178,13 +181,10 @@ contract LiquidityManager is ILiquidityManager, PoolActor, AccessControl, Reentr
             _sqrtPrice(), ethBudget, mohn.balanceOf(address(this)) + mohnBought
         );
         if (liquidity < 1) revert ZeroLiquidity();
-        // The caller delta already includes any fees; the separate fee delta is not needed.
-        // forge-lint: disable-start(unused-return)
-        // slither-disable-start unused-return
-        (BalanceDelta added,) =
+        // The caller delta includes the fees accrued so far; they are netted against what we owe,
+        // stay in this contract's balance (outside the liquidity budget) and are routed afterwards.
+        (BalanceDelta added, BalanceDelta fees) =
             poolManager.modifyLiquidity(_key(), _params(SafeCast.toInt256(liquidity)), "");
-        // slither-disable-end unused-return
-        // forge-lint: disable-end(unused-return)
         _settle(total + added);
         // Calls above go only to the Uniswap PoolManager that invoked this callback.
         // forge-lint: disable-start(reentrancy-events)
@@ -199,7 +199,9 @@ contract LiquidityManager is ILiquidityManager, PoolActor, AccessControl, Reentr
             emit LiquidityAdded(swapEth * 2, mohnBought, liquidity);
         }
         // forge-lint: disable-end(reentrancy-events)
-        return "";
+        return abi.encode(
+            SafeCast.toUint256(int256(fees.amount0())), SafeCast.toUint256(int256(fees.amount1()))
+        );
     }
 
     function poolKey() external view returns (PoolKey memory) {

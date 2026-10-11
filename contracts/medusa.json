@@ -4,14 +4,36 @@
     "timeout": 21600,
     "callSequenceLength": 100,
     "corpusDirectory": "medusa-corpus",
-    "targetContracts": ["CryticTester"],
+    "targetContracts": [
+      "CryticTester"
+    ],
     "testing": {
-      "assertionTesting": { "enabled": true },
-      "propertyTesting": { "enabled": true, "testPrefixes": ["invariant_"] }
-    }
+      "assertionTesting": {
+        "enabled": true
+      },
+      "propertyTesting": {
+        "enabled": true,
+        "testPrefixes": [
+          "invariant_"
+        ]
+      }
+    },
+    "chainConfig": {
+      "codeSizeCheckDisabled": true,
+      "cheatCodes": {
+        "cheatCodesEnabled": true,
+        "enableFFI": false
+      }
+    },
+    "blockTimestampDelayMax": 86400
   },
   "compilation": {
     "platform": "crytic-compile",
-    "platformConfig": { "target": ".", "args": ["--foundry-compile-all"] }
+    "platformConfig": {
+      "target": ".",
+      "args": [
+        "--foundry-compile-all"
+      ]
+    }
   }
 }

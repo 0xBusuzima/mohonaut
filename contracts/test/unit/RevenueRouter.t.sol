@@ -133,6 +133,40 @@ contract RevenueRouterTest is Test {
         _r1();
     }
 
+    /// Audit fix: after lockBucketRoles not even the admin (the 96 h Timelock) can redirect the
+    /// fuel revenue, buyback or POL buckets; the ops role stays manageable.
+    function test_lockBucketRoles() public {
+        vm.startPrank(admin);
+        router.lockBucketRoles();
+        vm.expectRevert(RevenueRouter.AlreadyLocked.selector);
+        router.lockBucketRoles();
+        bytes32 locked = router.LOCKED_ROLE();
+        bytes32[4] memory frozen = [
+            router.DEPOSITOR_ROLE(),
+            router.FEE_DEPOSITOR_ROLE(),
+            router.POL_ROLE(),
+            router.BUYBACK_ROLE()
+        ];
+        for (uint256 i = 0; i < frozen.length; ++i) {
+            assertEq(router.getRoleAdmin(frozen[i]), locked);
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    IAccessControl.AccessControlUnauthorizedAccount.selector, admin, locked
+                )
+            );
+            router.grantRole(frozen[i], admin);
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    IAccessControl.AccessControlUnauthorizedAccount.selector, admin, locked
+                )
+            );
+            router.revokeRole(frozen[i], pol);
+        }
+        router.grantRole(router.OPS_ROLE(), makeAddr("newOpsSafe"));
+        vm.stopPrank();
+        assertTrue(router.bucketRolesLocked());
+    }
+
     function testFuzz_r1(uint96 a, uint96 b, uint96 fee) public {
         vm.deal(core, uint256(a) + b);
         vm.deal(lm, fee);

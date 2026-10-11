@@ -147,7 +147,7 @@ docs/02 §10–§11 ve docs/03 §3.5–§3.7'ye göre RevenueRouter (kovalar, bp
 docs/03 §3.8 ve docs/02 §12'ye göre roller: TimelockController (96 saat; upgradeTo için 7 gün — ayrı bir gecikme mekanizması veya ayrı timelock), Guardian pause (en fazla 72 saat, otomatik biter, Guardian unpause edemez), KEEPER, tüm set* fonksiyonlarında kodlanmış sınırlar + hız limitleri (son değişiklik zamanı ve oranı), değiştirilemez parametrelerin gerçekten değiştirilemediğinin testi. UUPS _authorizeUpgrade yalnızca uzun timelock. Testler: her rol için yetkisiz çağrı revert matrisi (otomatik üretilen tablo testi), invariant P1/P2, storage layout uyumluluğu (V1→V2 sahte yükseltme), slither-check-upgradeability.
 ```
 
-### 2.8 Deploy script'leri ve testnet — 🟡 2026-10-11: script + yerel anvil uçtan uca ✅; testnet deploy kurucunun deployer hesabı, testnet ETH ve Safe adreslerini bekliyor
+### 2.8 Deploy script'leri ve testnet — ✅ 2026-10-11/12: anvil + testnet 46630 (`deployments/46630*.json`, 9 kontrat Blockscout'ta doğrulandı); oyuncu akışı testnet'te gerçek işlemlerle (yakıt, makine, hızlı ve standart rafine). Denetim düzeltmeli kodla testnet yeniden deploy edilecek
 
 > Uygulama: tek `Deploy.s.sol` (deploy → configure → hand over + `assertHandedOver`), `contracts/script/README.md`, `contracts/.env.example`. Anvil `--code-size-limit 98304` ile (ADR-011). Testnet'te Chainlink yok → keeper'ın güncellediği `ManualEthUsdFeed` (mainnet'te reddedilir).
 
@@ -155,7 +155,9 @@ docs/03 §3.8 ve docs/02 §12'ye göre roller: TimelockController (96 saat; upgr
 docs/04 §4'e göre contracts/script altında Deploy.s.sol (adres ön hesaplama: token minter = MiningCore proxy; assert), Configure.s.sol (Gen-1 katalog, parametreler), Handover.s.sol (tüm rolleri Timelock/Safe'e devret; deployer'ın hiçbir rolü kalmadığını assert et), Verify (Blockscout). Ortam değişkenleri .env.example ile belgelensin, gerçek anahtar asla dosyada olmasın (forge --account / donanım cüzdanı ile). Önce yerel anvil'de, sonra testnet 46630'da uçtan uca koş; deploy çıktısını deployments/testnet.json'a yaz; tüm kontratları Blockscout'ta doğrula. Testnet'te bir oyuncu akışını (register → yakıt → makine → bekle → rafine) cast komutlarıyla gerçekleştir ve tx linklerini raporla.
 ```
 
-### 2.9 İç denetim turu
+### 2.9 İç denetim turu — ✅ 2026-10-12 (`contracts/audits/`: SCOPE, TRACEABILITY, FINDINGS; `test/recon/` property harness)
+
+> Çok ajanlı iç denetim: 7 uzman inceleyici + bulgu başına 3 karşıt doğrulayıcı + tamlık eleştirmeni → 14 doğrulanmış bulgu (1 yüksek), hepsi düzeltildi ya da gerekçeyle kabul edildi (`audits/FINDINGS.md`). Medusa ve Echidna kısa kampanyaları temiz; 6 saatlik kampanyalar gece CI'da. Mutasyon (Gambit) düzeltilmiş kodla yeniden koşuyor; sonuçlar `audits/mutation/results/`. Kalan: E2/P2/L1 için Halmos ispatları (bağımsız denetime not edildi).
 
 ```text
 Denetçi gözüyle tüm contracts/src'yi incele: Slither ve Aderyn'i koştur ve her bulguyu düzelt ya da gerekçeli istisna dosyasına yaz; Medusa ve Echidna'yı 6'şar saat koştur; mutasyon testini çalıştır ve hayatta kalan her mutant için ya test ekle ya da eşdeğer mutant olduğunu gerekçelendir; docs/04 §1 tehdit modelindeki her satır için "nasıl test edildiğini" gösteren bir izlenebilirlik tablosu üret (contracts/audits/TRACEABILITY.md). Ölü kod, kullanılmayan değişken/olay/hata, gereksiz yetki, sınırsız döngü, yuvarlama yönü hatası ara. Sonra denetim kapsam dokümanını hazırla: contracts/audits/SCOPE.md (nSLOC, kontrat listesi, invariant listesi, bilinen sorunlar, güven varsayımları, harici bağımlılıklar).
