@@ -1,0 +1,22 @@
+{
+  "name": "@mohonaut/admin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Operator panel (Refine in Phase 5). Holds no private keys.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@mohonaut/config": "*"
+  }
+}

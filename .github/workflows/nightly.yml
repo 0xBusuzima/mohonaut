@@ -1,0 +1,77 @@
+name: nightly
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deep-fuzz:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.5
+      - name: Deep fuzz and invariant campaign
+        run: FOUNDRY_PROFILE=deep forge test -vv
+
+  property-fuzzers:
+    # Activates once Phase 2 adds test/recon/CryticTester.sol (Chimera layout).
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Check for property harness
+        id: harness
+        run: |
+          if [ -f test/recon/CryticTester.sol ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: foundry-rs/foundry-toolchain@v1
+        if: steps.harness.outputs.present == 'true'
+        with:
+          version: v1.8.5
+      - name: Medusa (6h)
+        if: steps.harness.outputs.present == 'true'
+        run: |
+          go install github.com/crytic/medusa@latest
+          pip install crytic-compile
+          ~/go/bin/medusa fuzz --timeout 21600
+      - name: Echidna
+        if: steps.harness.outputs.present == 'true'
+        uses: crytic/echidna-action@v2
+        with:
+          files: contracts
+          contract: CryticTester
+          config: contracts/echidna.yaml
+
+  formal:
+    # Halmos proofs (functions named prove_*) arrive with the token in Phase 2.1.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Halmos
+        run: |
+          if grep -rq "function prove_" test/; then pip install halmos && halmos --function prove_; else echo "No prove_ functions yet"; fi

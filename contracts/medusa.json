@@ -1,0 +1,17 @@
+{
+  "fuzzing": {
+    "workers": 8,
+    "timeout": 21600,
+    "callSequenceLength": 100,
+    "corpusDirectory": "medusa-corpus",
+    "targetContracts": ["CryticTester"],
+    "testing": {
+      "assertionTesting": { "enabled": true },
+      "propertyTesting": { "enabled": true, "testPrefixes": ["invariant_"] }
+    }
+  },
+  "compilation": {
+    "platform": "crytic-compile",
+    "platformConfig": { "target": ".", "args": ["--foundry-compile-all"] }
+  }
+}

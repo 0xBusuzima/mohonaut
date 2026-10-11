@@ -1,0 +1,22 @@
+{
+  "name": "@mohonaut/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Game client, landing, docs and economy pages (Next.js in Phase 4).",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@mohonaut/config": "*"
+  }
+}

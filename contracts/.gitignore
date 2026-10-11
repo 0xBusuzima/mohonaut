@@ -1,0 +1,10 @@
+out/
+cache/
+broadcast/*/31337/
+broadcast/**/dry-run/
+crytic-export/
+medusa-corpus/
+echidna-corpus/
+lcov.info
+report/
+.env

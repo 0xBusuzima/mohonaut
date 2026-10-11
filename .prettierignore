@@ -1,0 +1,11 @@
+package-lock.json
+contracts/lib/
+contracts/out/
+sim/
+docs/
+reports/
+research_notes/
+*.md
+contracts/
+tools/
+.github/

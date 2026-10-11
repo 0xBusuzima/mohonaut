@@ -1,0 +1,124 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.5
+      - name: Format
+        run: forge fmt --check
+      - name: Lint
+        run: forge lint
+      - name: Build (with sizes)
+        run: forge build --sizes
+      - name: Test (fuzz 10k, invariant 1k)
+        run: forge test -vv
+      - name: Coverage gate (src >= 95% lines and branches)
+        run: |
+          forge coverage --report lcov --report-file lcov.info --no-match-coverage "(test|script)/"
+          python3 ../tools/check_coverage.py lcov.info
+
+  slither:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: crytic/slither-action@v0.4.0
+        with:
+          target: contracts
+          slither-config: contracts/slither.config.json
+          fail-on: medium
+
+  aderyn:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.5
+      - name: Aderyn
+        working-directory: contracts
+        run: |
+          npm install -g @cyfrin/aderyn
+          aderyn . --output aderyn-report.md
+          if grep -q "^## H-" aderyn-report.md; then echo "High severity findings"; cat aderyn-report.md; exit 1; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: aderyn-report
+          path: contracts/aderyn-report.md
+
+  sim:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sim
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - name: Lint (ruff)
+        run: ruff check .
+      - name: Dead code (vulture)
+        run: vulture engine tests run_scenarios.py make_vectors.py --min-confidence 80
+      - name: Unit tests
+        run: python -m unittest discover -s tests -t .
+      - name: Vectors are reproducible
+        run: |
+          python make_vectors.py
+          git diff --exit-code -- vectors/
+
+  ts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build, typecheck, lint, test
+        run: npx turbo run build typecheck lint test
+      - name: Dead code (knip)
+        run: npx knip
+      - name: Format
+        run: npx prettier --check .
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Secret scan (gitleaks)
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest git /repo --redact --exit-code 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Dependency audit
+        run: npm audit --audit-level=high

@@ -1,0 +1,6 @@
+# Phase 2: properties live in test/recon (Recon Chimera layout), shared with Medusa and Foundry.
+testMode: assertion
+testLimit: 1000000
+seqLen: 100
+corpusDir: echidna-corpus
+cryticArgs: ["--foundry-compile-all"]

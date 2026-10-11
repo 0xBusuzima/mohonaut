@@ -1,0 +1,6 @@
+{
+  "filter_paths": "lib/|test/|script/",
+  "exclude_dependencies": true,
+  "fail_on": "medium",
+  "triage_database": "slither.db.json"
+}

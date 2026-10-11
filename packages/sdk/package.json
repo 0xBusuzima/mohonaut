@@ -1,0 +1,22 @@
+{
+  "name": "@mohonaut/sdk",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared formulas, types and ABIs. Economy math must match sim/vectors bit-for-bit.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@mohonaut/config": "*"
+  }
+}
