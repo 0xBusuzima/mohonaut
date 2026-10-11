@@ -186,6 +186,10 @@ abstract contract MiningAccounting {
         emit PositionUpdated(account, dp, expiryHour);
     }
 
+    function _expiryHourOf(address account) internal view returns (uint64) {
+        return _accounting().positions[account].expiryHour;
+    }
+
     // ------------------------------------------------------------------ views
 
     /// @notice MOHN earned by `account` and not yet refined, as of the current block.
