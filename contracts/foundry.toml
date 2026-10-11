@@ -17,6 +17,7 @@ fs_permissions = [
     { access = "read", path = "../sim/vectors" },
     { access = "read", path = "./test/fixtures" }, # on-chain Uniswap v4 PoolManager runtime code
     { access = "read", path = "./out" }, # ABI checks (no liquidity-removal function, invariant L1)
+    { access = "write", path = "../deployments" }, # Deploy.s.sol output
 ]
 remappings = [
     "forge-std/=lib/forge-std/src/",
