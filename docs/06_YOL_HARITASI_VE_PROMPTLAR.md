@@ -123,7 +123,9 @@ docs/02 §5 ve docs/03 §3.3'e göre buyFuel() ve tank modelini MiningCore'a ekl
 docs/02 §6–§7'ye göre katalog (Gen-1 tablosu, eklenebilir ama değiştirilemez), register(referrer) + ücretsiz Pilot Rig, buyMachines (LinearVRGDA kapalı form maliyet, Solady expWad/lnWad, tier primi, işlem başı üst sınır, maxCost slippage koruması, önce rafine edilmemiş bakiyeden ödeme, %80 kalıcı yakım/%20 rezerv), upgradeOutpost (150·L^2.2·idx, idx clamp), scrap (%20 hurda kredisi), slot/kapasite kısıtları, addMachineType (stratum eşiği + verim tavanı + 45 gün aralık; yalnızca timelock). Testler: sim/vectors VRGDA ve üs maliyeti vektörleriyle diferansiyel eşitlik; invariant V1, V2, S1, M1, M2; toplu alım indirimi olmadığının fuzz kanıtı; taşma sınırları (çok ileri/geri satış durumları); harcama sonrası E2 arz invariant'ı.
 ```
 
-### 2.5 Rafineri ve referans
+### 2.5 Rafineri ve referans — ✅ 2026-10-11 (`MiningCore.sol` rafineri modülü)
+
+> Uygulamadaki adlar: `claimDev`/`claimTreasury` → `withdrawDevShare`/`withdrawTreasuryShare` (oyuncu metinlerinde "claim" yasak). Saatlik mint devre kesicisi (B1) ilk mint yoluyla birlikte bu adımda eklendi. Ücret ve kuyruk süresi ayarları ile hız limitleri Faz 2.7'de.
 
 ```text
 docs/02 §8–§9'a göre refine(amount, fast) (%8 hızlı ücret: %4 yakım/%4 rezerv; standart 72 saat kuyruk), finalizeRefine (herkes çağırabilir), referans kredisi (%3, hazine payından, koşullar: davet edilen ≥0.003 ETH yakıt harcamış, davet eden aktif), claimDev/claimTreasury. Testler: kuyruk zamanlaması, çift finalize engeli, invariant R2 (referans ≤ hazine payı), E2 arz eşitliği tüm akışlarda, ücret sınırları ve hız limitleri.

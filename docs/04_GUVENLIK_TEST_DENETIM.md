@@ -33,7 +33,7 @@
 | T1 | `totalSupply ≤ CAP` |
 | T2 | Yalnızca `minter` mint edebilir; `minter` değişmez |
 | T3 | Bir UTC gününde basılan toplam ≤ `DAILY_MINT_CAP` (500K MOHN, immutable) |
-| B1 | Bir saatte basılan > `hourlyMintBreaker` olursa mint yolları durur; yalnızca Timelock açar |
+| B1 | Bir saatte basılan > `hourlyMintBreaker` olursa mint yolları durur; yalnızca Timelock açar (test: handler her mint'i zamanıyla kaydeder, kayan 60 dakikada toplam ≤ 150K) |
 | E1 | `Σ pending_madenci + Σ claimed_madenci ≤ Σ dağıtılan_madenci` |
 | E2 | `totalSupply + Σ pending(tümü) + refineKuyruğu + R + burnedForever == CAP` (± toz) |
 | E3 | `H == Σ dp_i` (yakıtı aktif olanlar) |
@@ -46,7 +46,7 @@
 | V2 | Satış önündeyken fiyat artar, gerisindeyken azalır (monotonluk) |
 | S1 | Her MOHN harcamasında: yakılan = %80, rezerve = %20 (± toz) |
 | R1 | Router: `balance == buyback + pol + ops` |
-| R2 | Referans kredisi toplamı ≤ hazine payı toplamı |
+| R2 | Referans kredisi toplamı ≤ hazine payı toplamı (test: `referralPaid ≤ %3 × minersDistributed`, yani emisyonun ≤ %2.7'si; kaynağın hazine olduğu E2 ile kanıtlanır) |
 | P1 | Her parametre kendi sınırları içinde; hız limiti aşılamaz; yalnızca Timelock |
 | P2 | Pause en fazla 72s; Guardian unpause edemez |
 | L1 | POL pozisyonundan likidite çıkarılamaz (fonksiyon yok + Halmos) |

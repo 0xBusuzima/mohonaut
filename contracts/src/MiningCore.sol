@@ -8,19 +8,21 @@ import {
 } from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ReentrancyGuardTransient} from "@openzeppelin/contracts/utils/ReentrancyGuardTransient.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
 
 import {MiningAccounting} from "./MiningAccounting.sol";
 import {SiteMath} from "./lib/SiteMath.sol";
 import {VrgdaMath} from "./lib/VrgdaMath.sol";
 import {IAggregatorV3} from "./interfaces/IAggregatorV3.sol";
+import {IMohnToken} from "./interfaces/IMohnToken.sol";
 import {IRevenueRouter} from "./interfaces/IRevenueRouter.sol";
 
 /// @title MiningCore
 /// @notice Player-facing core of Mohonaut: registration (free Pilot Rig), diesel fuel bought with
-///         ETH (docs/02 S5, S11; docs/09 S3), and rigs and drill sites bought with MOHN
-///         (docs/02 S6-S7).
+///         ETH (docs/02 S5, S11; docs/09 S3), rigs and drill sites bought with MOHN
+///         (docs/02 S6-S7), the refinery and referral credit (docs/02 S8-S9), and the dev and
+///         treasury withdrawals (docs/02 S3.3).
 /// @dev Fuel model: each site has a tank (litres, WAD) and a burn rate (L/h, WAD) from its active
 ///      rigs. Fuel burns only from genesis on and only while the site's DP is active, i.e. up to
 ///      the position's expiry hour boundary; the fractional-hour remainder stays in the tank.
@@ -30,6 +32,9 @@ import {IRevenueRouter} from "./interfaces/IRevenueRouter.sol";
 ///      credit, then unrefined credit, then (opt-in) wallet tokens; every MOHN spent is 80 % burned
 ///      forever and 20 % returned to the reserve. The catalog only grows: existing machine types
 ///      never change (invariant M2).
+///      Every mint goes through the hourly mint breaker (docs/02 S2, invariant B1): if the
+///      MOHN minted in the last 60-65 minutes would exceed 150K, the breaker trips instead of
+///      minting and all mint paths stop until the admin (Phase 2.7: the Timelock) resets it.
 ///      Roles are minimal here; Phase 2.7 wires the Timelock, Guardian and parameter bounds.
 // False positive: buyFuel forwards every wei to the router in the same call, so the core never
 // holds ETH (proved by invariant_routerReceivesAllFuelEth).
@@ -79,6 +84,21 @@ contract MiningCore is
     /// @notice World Depth: one metre per 1,000 MOHN emitted (docs/02 S3.4).
     uint256 public constant MOHN_PER_METRE = 1000e18;
 
+    /// @notice Referral: 3 % of the invitee accrual, paid from the treasury share, once the invitee
+    ///         has bought at least 0.003 ETH of fuel and while the referrer still has fuel
+    ///         (docs/02 S9).
+    uint256 public constant REFERRAL_BPS = 300;
+    uint256 public constant REFERRAL_MIN_FUEL_WEI = 0.003 ether;
+    /// @notice Refinery defaults (docs/02 S8); Phase 2.7 adds bounded Timelock setters.
+    uint16 public constant INITIAL_FAST_REFINE_FEE_BPS = 800;
+    uint64 public constant INITIAL_REFINE_DELAY = 72 hours;
+    /// @notice Dev and treasury withdrawals: queued only, at most 100K per request and per UTC day.
+    uint256 public constant SHARE_DAILY_LIMIT = 100_000e18;
+    /// @notice Hourly mint breaker: 150K over a 60-65 minute window of 5-minute buckets.
+    uint256 public constant MINT_BREAKER_LIMIT = 150_000e18;
+    uint256 public constant MINT_BUCKET = 5 minutes;
+    uint256 public constant MINT_BUCKETS = 13;
+
     struct Site {
         bool registered;
         uint8 level;
@@ -106,6 +126,16 @@ contract MiningCore is
         uint32 active;
     }
 
+    struct RefineRequest {
+        uint128 amount; // 0 once finalized
+        uint64 readyAt;
+    }
+
+    struct ShareWithdrawals {
+        uint64 day;
+        uint192 inDay;
+    }
+
     /// @custom:storage-location erc7201:mohonaut.storage.MiningCore
     struct CoreStorage {
         address token;
@@ -124,6 +154,16 @@ contract MiningCore is
         uint64 lastGenerationTime;
         uint256 bestEfficiency; // DP per L/h, WAD
         mapping(address account => mapping(uint256 typeId => Rigs)) rigs;
+        address devRecipient;
+        address treasuryRecipient;
+        uint16 fastRefineFeeBps;
+        uint64 refineDelay;
+        bool mintBreakerTripped;
+        uint256 refineQueued; // MOHN waiting in refine queues
+        ShareWithdrawals devWithdrawals;
+        ShareWithdrawals treasuryWithdrawals;
+        uint256[13] mintBuckets; // (bucket index << 192) | MOHN minted in that 5-minute bucket
+        mapping(address account => RefineRequest[]) refineQueue;
     }
 
     // keccak256(abi.encode(uint256(keccak256("mohonaut.storage.MiningCore")) - 1)) & ~bytes32(uint256(0xff))
@@ -149,6 +189,11 @@ contract MiningCore is
     event Paid(
         address indexed account, uint256 fromCredit, uint256 fromUnrefined, uint256 fromWallet
     );
+    event Refined(address indexed account, uint256 amount, uint256 minted, uint256 fee);
+    event RefineQueued(address indexed account, uint256 indexed id, uint256 amount, uint64 readyAt);
+    event RefineFinalized(address indexed account, uint256 indexed id, uint256 amount);
+    event MintBreakerTripped(uint256 windowTotal);
+    event MintBreakerReset();
 
     error ZeroAddress();
     error PreFillNotOpen();
@@ -170,6 +215,13 @@ contract MiningCore is
     error BadMachine(uint256 index);
     error StratumNotReached(uint256 generation);
     error GenerationTooSoon();
+    error RefineClosed();
+    error UnknownRequest();
+    error AlreadyFinalized();
+    error NotReady(uint64 readyAt);
+    error NotRecipient();
+    error ShareLimitExceeded(uint256 remainingToday);
+    error MintPaused();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -183,11 +235,14 @@ contract MiningCore is
         address ethUsdFeed_,
         address sequencerFeed_,
         uint64 genesisTime_,
-        uint256 fuelPriceUsdWad_
+        uint256 fuelPriceUsdWad_,
+        address devRecipient_,
+        address treasuryRecipient_
     ) external initializer {
         if (
             admin == address(0) || token_ == address(0) || router_ == address(0)
-                || ethUsdFeed_ == address(0) || fuelPriceUsdWad_ == 0
+                || ethUsdFeed_ == address(0) || fuelPriceUsdWad_ == 0 || devRecipient_ == address(0)
+                || treasuryRecipient_ == address(0)
         ) revert ZeroAddress();
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
@@ -219,6 +274,11 @@ contract MiningCore is
         c.generations = 1;
         c.lastGenerationTime = genesisTime_;
         c.bestEfficiency = 90e18; // Plasma Bore: 2,700 DP / 30 L/h
+
+        c.devRecipient = devRecipient_;
+        c.treasuryRecipient = treasuryRecipient_;
+        c.fastRefineFeeBps = INITIAL_FAST_REFINE_FEE_BPS;
+        c.refineDelay = INITIAL_REFINE_DELAY;
     }
 
     function _core() private pure returns (CoreStorage storage c) {
@@ -547,7 +607,7 @@ contract MiningCore is
     /// @dev Interaction last. The token is our own immutable MohnToken (no hooks), set at
     ///      initialization and never user-supplied.
     function _burnFromWallet(CoreStorage storage c, address account, uint256 amount) private {
-        if (amount != 0) ERC20Burnable(c.token).burnFrom(account, amount);
+        if (amount != 0) IMohnToken(c.token).burnFrom(account, amount);
     }
 
     function _unitPrice(CoreStorage storage c) private view returns (uint256) {
@@ -578,6 +638,158 @@ contract MiningCore is
     function _stratumThreshold(uint256 generation) private pure returns (uint256) {
         uint32[7] memory metres = [uint32(2000), 6000, 12_262, 20_000, 35_000, 60_000, 85_000];
         return uint256(metres[Math.min(generation, 8) - 2]) * MOHN_PER_METRE;
+    }
+
+    // ------------------------------------------------------------------ refinery
+
+    /// @notice Turns `amount` of unrefined credit into MOHN. Fast: now, minus the fast fee (half
+    ///         burned forever, half back to the reserve). Standard: free, after the refine delay.
+    ///         Closed during genesis (docs/02 S11).
+    /// @dev If the mint breaker trips on a fast refine, nothing is refined and the call returns.
+    function refine(uint256 amount, bool fast) external nonReentrant {
+        _requireCheckpointed();
+        CoreStorage storage c = _core();
+        _requireRefineOpen(c);
+        if (amount == 0) revert ZeroValue();
+        _settle(msg.sender);
+        if (!fast) {
+            _withdrawUnrefined(msg.sender, amount);
+            _enqueue(c, msg.sender, amount);
+            return;
+        }
+        uint256 fee = FixedPointMathLib.mulDivUp(amount, c.fastRefineFeeBps, 10_000);
+        uint256 minted = amount - fee;
+        if (!_admitMint(c, minted)) return;
+        _withdrawUnrefined(msg.sender, amount);
+        uint256 toReserve = fee / 2;
+        _burnAndRecycle(fee - toReserve, toReserve);
+        // forge-lint: disable-next-line(reentrancy-events)
+        emit Refined(msg.sender, amount, minted, fee);
+        IMohnToken(c.token).mint(msg.sender, minted);
+    }
+
+    /// @notice Mints a matured queued refine to its owner. Anyone (e.g. the keeper) may call.
+    /// @dev If the mint breaker trips, the request stays queued and the call returns.
+    function finalizeRefine(address account, uint256 id) external nonReentrant {
+        _requireCheckpointed();
+        CoreStorage storage c = _core();
+        RefineRequest[] storage queue = c.refineQueue[account];
+        if (id >= queue.length) revert UnknownRequest();
+        RefineRequest storage r = queue[id];
+        uint256 amount = r.amount;
+        if (amount == 0) revert AlreadyFinalized();
+        // forge-lint: disable-next-line(block-timestamp)
+        if (block.timestamp < r.readyAt) revert NotReady(r.readyAt);
+        if (!_admitMint(c, amount)) return;
+        r.amount = 0;
+        c.refineQueued -= amount;
+        // forge-lint: disable-next-line(reentrancy-events)
+        emit RefineFinalized(account, id, amount);
+        IMohnToken(c.token).mint(account, amount);
+    }
+
+    /// @notice Queues `amount` of the dev share for the dev recipient (standard queue only).
+    function withdrawDevShare(uint256 amount) external nonReentrant {
+        CoreStorage storage c = _core();
+        if (msg.sender != c.devRecipient) revert NotRecipient();
+        _withdrawShare(c, c.devWithdrawals, true, amount);
+    }
+
+    /// @notice Queues `amount` of the treasury share for the treasury recipient (standard queue).
+    function withdrawTreasuryShare(uint256 amount) external nonReentrant {
+        CoreStorage storage c = _core();
+        if (msg.sender != c.treasuryRecipient) revert NotRecipient();
+        _withdrawShare(c, c.treasuryWithdrawals, false, amount);
+    }
+
+    /// @notice Re-opens the mint paths after the breaker tripped. Phase 2.7: Timelock only.
+    function resetMintBreaker() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        CoreStorage storage c = _core();
+        c.mintBreakerTripped = false;
+        delete c.mintBuckets;
+        // `delete` is a storage operation, not an external call.
+        // forge-lint: disable-next-line(reentrancy-events)
+        emit MintBreakerReset();
+    }
+
+    function _withdrawShare(
+        CoreStorage storage c,
+        ShareWithdrawals storage w,
+        bool dev,
+        uint256 amount
+    ) private {
+        _requireCheckpointed();
+        _requireRefineOpen(c);
+        if (amount == 0) revert ZeroValue();
+        // forge-lint: disable-next-line(unsafe-typecast)
+        uint64 day = uint64(block.timestamp / 1 days);
+        uint256 inDay = w.day < day ? 0 : w.inDay; // days only move forward
+        if (inDay + amount > SHARE_DAILY_LIMIT) {
+            revert ShareLimitExceeded(SHARE_DAILY_LIMIT - inDay);
+        }
+        w.day = day;
+        w.inDay = SafeCast.toUint192(inDay + amount); // <= SHARE_DAILY_LIMIT
+        _takeShare(dev, amount);
+        _enqueue(c, msg.sender, amount);
+    }
+
+    function _requireRefineOpen(CoreStorage storage c) private view {
+        // forge-lint: disable-next-line(block-timestamp)
+        if (block.timestamp < uint256(c.genesisTime) + GENESIS_DURATION) revert RefineClosed();
+    }
+
+    function _enqueue(CoreStorage storage c, address account, uint256 amount) private {
+        // forge-lint: disable-next-line(unsafe-typecast)
+        uint64 readyAt = uint64(block.timestamp) + c.refineDelay;
+        RefineRequest[] storage queue = c.refineQueue[account];
+        queue.push(RefineRequest(SafeCast.toUint128(amount), readyAt)); // amount <= CAP
+        c.refineQueued += amount;
+        // forge-lint: disable-next-line(reentrancy-events)
+        emit RefineQueued(account, queue.length - 1, amount, readyAt);
+    }
+
+    /// @dev Hourly mint breaker (B1). Records `amount` in the current 5-minute bucket and returns
+    ///      true; or, if the last 13 buckets plus `amount` would exceed the limit, trips the breaker
+    ///      and returns false without recording (the caller then changes nothing else, so the trip
+    ///      persists). Reverts while tripped.
+    function _admitMint(CoreStorage storage c, uint256 amount) private returns (bool) {
+        if (c.mintBreakerTripped) revert MintPaused();
+        // Not randomness: `bucket % MINT_BUCKETS` indexes a ring buffer of time buckets.
+        // slither-disable-start weak-prng
+        uint256 bucket = block.timestamp / MINT_BUCKET;
+        uint256 total = amount;
+        uint256 current = 0;
+        // Bucket indices come from block.timestamp by design: the breaker is a time window.
+        // forge-lint: disable-next-line(block-timestamp)
+        for (uint256 i = 0; i < MINT_BUCKETS && i <= bucket; ++i) {
+            uint256 packed = c.mintBuckets[(bucket - i) % MINT_BUCKETS];
+            // forge-lint: disable-next-line(block-timestamp)
+            if (packed >> 192 != bucket - i) continue; // stale slot from an older window
+            // Intended truncation: the low 192 bits hold the bucket amount.
+            // forge-lint: disable-next-line(unsafe-typecast)
+            uint256 minted = uint192(packed);
+            total += minted;
+            if (i == 0) current = minted;
+        }
+        if (total > MINT_BREAKER_LIMIT) {
+            c.mintBreakerTripped = true;
+            // Only storage reads precede this event; there is no external call.
+            // forge-lint: disable-next-line(reentrancy-events)
+            emit MintBreakerTripped(total);
+            return false;
+        }
+        c.mintBuckets[bucket % MINT_BUCKETS] = (bucket << 192) | (current + amount);
+        // slither-disable-end weak-prng
+        return true;
+    }
+
+    /// @dev MiningAccounting hook: pays the referrer 3 % of `earned` from the treasury share.
+    function _onAccrued(address account, uint256 earned) internal override {
+        Site storage s = _core().sites[account];
+        address referrer = s.referrer;
+        if (referrer == address(0) || s.fuelSpentWei < REFERRAL_MIN_FUEL_WEI) return;
+        if (_expiryHourOf(referrer) <= currentHour()) return; // the referrer has no fuel
+        _creditReferral(referrer, account, (earned * REFERRAL_BPS) / 10_000);
     }
 
     // ------------------------------------------------------------------ views
@@ -650,6 +862,34 @@ contract MiningCore is
     /// @notice MOHN cost of upgrading a site from `level` to `level + 1` right now.
     function quoteSiteUpgrade(uint8 level) external view returns (uint256) {
         return _siteUpgradeCost(_core(), level);
+    }
+
+    function refineRequest(address account, uint256 id)
+        external
+        view
+        returns (RefineRequest memory)
+    {
+        return _core().refineQueue[account][id];
+    }
+
+    function refineRequestCount(address account) external view returns (uint256) {
+        return _core().refineQueue[account].length;
+    }
+
+    function refineQueued() external view returns (uint256) {
+        return _core().refineQueued;
+    }
+
+    function mintBreakerTripped() external view returns (bool) {
+        return _core().mintBreakerTripped;
+    }
+
+    function devRecipient() external view returns (address) {
+        return _core().devRecipient;
+    }
+
+    function treasuryRecipient() external view returns (address) {
+        return _core().treasuryRecipient;
     }
 
     function token() external view returns (address) {

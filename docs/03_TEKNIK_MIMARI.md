@@ -73,7 +73,7 @@ Araçlar: **npm workspaces + Turborepo** (pnpm 12 Windows'ta takıldığı için
 - `ERC20("…","MOHN")`, `ERC20Permit`, `ERC20Burnable`; `CAP = 100_000_000e18`.
 - `minter` **constructor'da immutable** olarak MiningCore proxy adresine ayarlanır (adres deploy script'inde önceden hesaplanır ve doğrulanır). Setter yok, owner yok.
 - `mint(to, amount)`: `msg.sender == minter`, `totalSupply + amount ≤ CAP` ve **o UTC gününde basılan + amount ≤ `DAILY_MINT_CAP` (500K, immutable)**.
-- MiningCore ayrıca saatlik mint devre kesicisi taşır (`hourlyMintBreaker` = 150K / kayan 60 dk): eşik aşılırsa mint yolları otomatik durur, yalnızca Timelock açar (04 §5.2).
+- MiningCore ayrıca saatlik mint devre kesicisi taşır (`MINT_BREAKER_LIMIT` = 150K / kayan 60 dk): eşik aşılırsa mint yolları otomatik durur, yalnızca Timelock açar (04 §5.2). Uygulama: 5 dakikalık 13 kovalık halka; pencere 60–65 dakikayı kapsar (güvenli tarafta fazla sayar). Eşiği aşacak mint **yapılmaz**, kesici atar ve çağrı revert etmeden döner (atma durumu kalıcı olsun diye); sonraki her mint `MintPaused` ile revert eder. Faz 2.7'ye kadar `resetMintBreaker` admin rolündedir.
 
 ### 3.3 MiningCore (UUPS proxy, ERC-7201 depolama)
 
@@ -104,11 +104,13 @@ Katalog: machineType{dp, burn, premiumBps, minLevel, generation} — eklenir, as
 | `setActiveRigs(typeId, active)` | oyuncu | Bir türden tam olarak `active` adet makine çalışır (yakıt hattı kontrolü); Pilot Rig de kapatılabilir |
 | `upgradeSite(maxCost, payFromWallet)` | oyuncu | `150·L^2.2·idx`, idx = clamp(p/p0, 0.25, 4), yuvarlama yukarı; L30 sonrası revert |
 | `scrapMachines(typeId, qty)` | oyuncu | Önce boştaki makineler sökülür; kredi = DP × güncel p(t,n) × %20 (aşağı yuvarlanır). Ücretsiz Pilot Rig kredi vermez, yalnızca pedi boşaltır. Söküm `vrgdaSold`'u azaltmaz |
-| `refine(amount, fast)` | oyuncu | Hızlı: %8 ücret, anında mint · Standart: 72s kuyruk |
-| `finalizeRefine(user, id)` | herkes | Süresi dolan kuyruğu mint eder |
+| `refine(amount, fast)` | oyuncu | Hızlı: %8 ücret (yukarı yuvarlanır; yarısı kalıcı yakım, yarısı rezerv), anında mint · Standart: ücretsiz, 72s kuyruk. Genesis boyunca kapalı (`RefineClosed`) |
+| `finalizeRefine(account, id)` | herkes | Süresi dolan isteği sahibine mint eder; çift finalize `AlreadyFinalized` |
 | `poke()` | herkes | Global checkpoint (en fazla 168 saat/çağrı) |
 | `openMarket()` | herkes | Genesis bitince formülle POL oluşturur (LiquidityManager) |
-| `claimDev()` / `claimTreasury()` | ilgili alıcı | Payları **yalnızca 72s standart kuyruğa** alır (hızlı seçenek yok); kuyruk herkese açık |
+| `withdrawDevShare(amount)` / `withdrawTreasuryShare(amount)` | ilgili alıcı (`initialize`'da verilir; Faz 2.7'de Timelock ile değişir) | Payları **yalnızca 72s standart kuyruğa** alır (hızlı seçenek yok); talep ve UTC günü başına ≤ 100K; kuyruk herkese açık |
+| `resetMintBreaker()` | admin → Faz 2.7'de Timelock | Atmış mint devre kesicisini sıfırlar ve pencereyi temizler |
+| Referans kredisi (iç kanca) | — | Davet edilenin her tahakkukunda (`_settle` → `_onAccrued`) %3, hazine payından davet edenin rafine edilmemiş bakiyesine; hazine payında yeterli yoksa olan kadarı ödenir |
 | `set*` parametreler | Timelock | Kodlanmış sınır + hız limiti kontrolü |
 | `addMachineGeneration(types[])` | `CATALOG_ROLE` → Faz 2.7'de Timelock | Bir seferde bir nesil (1–8 tür): Dünya Derinliği nesnin stratum eşiğine ulaşmış olmalı (Gen-2: 2.000 m … Gen-8+: 85.000 m), son nesilden ≥ 45 gün, her türün verimi ≤ en iyi × 1,15, DP ≤ 10.000, prim ≤ %100, minLevel 1–30. Mevcut türler asla değişmez (M2) |
 | `pause()` / `unpause()` | Guardian / Timelock | Pause en fazla 72s, sonra otomatik biter; uzatma yalnızca Timelock |

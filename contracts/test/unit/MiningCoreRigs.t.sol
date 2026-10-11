@@ -52,6 +52,7 @@ contract MiningCoreRigsTest is Test {
     /// @param tokenMinter address(0): the core mints (production wiring); otherwise a token whose
     ///        minter is this test, so wallet payments can be exercised before refining exists.
     function _deploy(address tokenMinter) internal returns (MiningCore c, MohnToken t) {
+        MockRouter router = new MockRouter();
         MiningCore impl = new MiningCore();
         address proxyAddr = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
         t = new MohnToken(tokenMinter == address(0) ? proxyAddr : tokenMinter);
@@ -60,14 +61,17 @@ contract MiningCoreRigsTest is Test {
             (
                 admin,
                 address(t),
-                address(new MockRouter()),
+                address(router),
                 address(ethUsd),
                 address(0),
                 GENESIS,
-                0.1e18
+                0.1e18,
+                address(0xDE7),
+                address(0x7EA5)
             )
         );
         c = MiningCore(address(new ERC1967Proxy(address(impl), init)));
+        if (tokenMinter == address(0)) assertEq(address(c), proxyAddr, "token minter == proxy");
     }
 
     function _fresh() internal {

@@ -76,7 +76,9 @@ contract MiningCoreFuelInvariantTest is Test {
                             address(feed),
                             address(0),
                             genesis,
-                            0.1e18
+                            0.1e18,
+                            address(0xDE7),
+                            address(0x7EA5)
                         )
                     )
                 )
@@ -108,10 +110,12 @@ contract MiningCoreFuelInvariantTest is Test {
         assertEq(core.activeDp(), sum);
     }
 
-    /// Supply conservation still holds with real fuel flows.
+    /// Supply conservation still holds with real fuel flows. Fuel bought with a referrer moves
+    /// referral credit from the treasury share to the referrer (no spending or refining here).
     function invariant_supplyConservation() public view {
         assertEq(
-            core.reserve() + core.minersDistributed() + core.devPending() + core.treasuryPending(),
+            core.reserve() + core.minersDistributed() + core.referralPaid() + core.devPending()
+                + core.treasuryPending(),
             EmissionMath.CAP
         );
     }

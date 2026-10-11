@@ -50,6 +50,8 @@ abstract contract MiningAccounting {
         uint256 emitted; // cumulative emission, recycled reserve included (World Depth source)
         uint256 burnedForever; // 80 % of every MOHN spend
         uint256 unrefinedSpent; // miners' credit spent in game without being minted
+        uint256 unrefinedRefined; // miners' credit sent to the refinery (fast or queued)
+        uint256 referralPaid; // referral credit moved from the treasury share to referrers
     }
 
     // keccak256(abi.encode(uint256(keccak256("mohonaut.storage.MiningAccounting")) - 1)) & ~bytes32(uint256(0xff))
@@ -62,9 +64,12 @@ abstract contract MiningAccounting {
     event Accrued(address indexed account, uint256 amount);
     event PositionUpdated(address indexed account, uint256 dp, uint64 expiryHour);
     event SpendSettled(uint256 burned, uint256 toReserve);
+    event ReferralCredited(address indexed referrer, address indexed invitee, uint256 amount);
 
     error GenesisNotHourAligned();
     error CheckpointBehind();
+    error InsufficientUnrefined(uint256 available);
+    error InsufficientShare(uint256 available);
 
     function _accounting() private pure returns (AccountingStorage storage s) {
         assembly {
@@ -168,6 +173,7 @@ abstract contract MiningAccounting {
                 p.unrefined += earned;
                 // forge-lint: disable-next-line(reentrancy-events)
                 emit Accrued(account, earned);
+                _onAccrued(account, earned);
             }
         }
         p.debt = endAcc;
@@ -212,13 +218,51 @@ abstract contract MiningAccounting {
     ///      to the reserve (rounded down), the rest burned forever (docs/02 S6.3, invariant S1).
     function _settleSpend(uint256 spent) internal {
         if (spent < 1) return; // nothing spent (the cost was covered by scrap credit)
-        AccountingStorage storage s = _accounting();
         uint256 toReserve = (spent * RESERVE_SHARE_BPS) / 10_000;
-        uint256 burned = spent - toReserve;
+        _burnAndRecycle(spent - toReserve, toReserve);
+    }
+
+    /// @dev Books MOHN that leaves circulation: `burned` forever, `toReserve` back to the reserve.
+    function _burnAndRecycle(uint256 burned, uint256 toReserve) internal {
+        AccountingStorage storage s = _accounting();
         s.reserve += toReserve;
         s.burnedForever += burned;
         // forge-lint: disable-next-line(reentrancy-events)
         emit SpendSettled(burned, toReserve);
+    }
+
+    /// @dev Hook for every accrual credited in `_settle` (MiningCore pays referral credit here).
+    function _onAccrued(address account, uint256 earned) internal virtual;
+
+    /// @dev Moves `amount` of `account`'s settled unrefined credit to the refinery.
+    function _withdrawUnrefined(address account, uint256 amount) internal {
+        AccountingStorage storage s = _accounting();
+        Position storage p = s.positions[account];
+        if (amount > p.unrefined) revert InsufficientUnrefined(p.unrefined);
+        p.unrefined -= amount;
+        s.unrefinedRefined += amount;
+    }
+
+    /// @dev Pays referral credit out of the treasury share (never new emission). Pays at most what
+    ///      the treasury share holds; the rest of the credit is simply not paid (docs/02 S9).
+    function _creditReferral(address referrer, address invitee, uint256 amount) internal {
+        AccountingStorage storage s = _accounting();
+        uint256 credit = amount < s.treasuryPending ? amount : s.treasuryPending;
+        if (credit == 0) return;
+        s.treasuryPending -= credit;
+        s.referralPaid += credit;
+        s.positions[referrer].unrefined += credit;
+        // forge-lint: disable-next-line(reentrancy-events)
+        emit ReferralCredited(referrer, invitee, credit);
+    }
+
+    /// @dev Takes `amount` from the dev (`dev == true`) or treasury share for a queued withdrawal.
+    function _takeShare(bool dev, uint256 amount) internal {
+        AccountingStorage storage s = _accounting();
+        uint256 available = dev ? s.devPending : s.treasuryPending;
+        if (amount > available) revert InsufficientShare(available);
+        if (dev) s.devPending = available - amount;
+        else s.treasuryPending = available - amount;
     }
 
     function _expiryHourOf(address account) internal view returns (uint64) {
@@ -299,7 +343,7 @@ abstract contract MiningAccounting {
         return _accounting().activeDp;
     }
 
-    function currentHour() external view returns (uint64) {
+    function currentHour() public view returns (uint64) {
         return _accounting().currentHour;
     }
 
@@ -330,6 +374,14 @@ abstract contract MiningAccounting {
 
     function unrefinedSpent() external view returns (uint256) {
         return _accounting().unrefinedSpent;
+    }
+
+    function unrefinedRefined() external view returns (uint256) {
+        return _accounting().unrefinedRefined;
+    }
+
+    function referralPaid() external view returns (uint256) {
+        return _accounting().referralPaid;
     }
 
     function accAtHour(uint64 hour) external view returns (uint256) {

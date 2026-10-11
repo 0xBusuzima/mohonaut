@@ -18,4 +18,7 @@ contract AccountingHarness is MiningAccounting {
         _requireCheckpointed();
         _settle(account);
     }
+
+    /// No referral program in the bare accounting core.
+    function _onAccrued(address, uint256) internal override {}
 }

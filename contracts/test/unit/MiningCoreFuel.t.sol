@@ -20,6 +20,8 @@ contract MiningCoreFuelTest is Test {
     address internal admin = makeAddr("admin");
     address internal alice = makeAddr("alice");
     address internal bob = makeAddr("bob");
+    address internal constant DEV = address(0xDE7);
+    address internal constant TREASURY = address(0x7EA5);
 
     uint64 internal constant GENESIS = 1_800_003_600 - (1_800_003_600 % 3600);
     uint64 internal genesisHour = GENESIS / 3600;
@@ -41,7 +43,17 @@ contract MiningCoreFuelTest is Test {
         MohnToken mohn = new MohnToken(proxyAddr);
         bytes memory init = abi.encodeCall(
             MiningCore.initialize,
-            (admin, address(mohn), router_, address(ethUsd), sequencer, GENESIS, PRICE)
+            (
+                admin,
+                address(mohn),
+                router_,
+                address(ethUsd),
+                sequencer,
+                GENESIS,
+                PRICE,
+                DEV,
+                TREASURY
+            )
         );
         MiningCore c = MiningCore(address(new ERC1967Proxy(address(impl), init)));
         assertEq(address(c), proxyAddr, "token minter == proxy");
@@ -259,13 +271,17 @@ contract MiningCoreFuelTest is Test {
 
     function test_initializeOnlyOnce() public {
         vm.expectRevert(Initializable.InvalidInitialization.selector);
-        core.initialize(admin, address(1), address(1), address(1), address(0), GENESIS, PRICE);
+        core.initialize(
+            admin, address(1), address(1), address(1), address(0), GENESIS, PRICE, DEV, TREASURY
+        );
     }
 
     function test_implementationCannotBeInitialized() public {
         MiningCore impl = new MiningCore();
         vm.expectRevert(Initializable.InvalidInitialization.selector);
-        impl.initialize(admin, address(1), address(1), address(1), address(0), GENESIS, PRICE);
+        impl.initialize(
+            admin, address(1), address(1), address(1), address(0), GENESIS, PRICE, DEV, TREASURY
+        );
     }
 
     function test_onlyUpgraderCanUpgrade() public {
@@ -284,12 +300,27 @@ contract MiningCoreFuelTest is Test {
 
     function test_initializeRejectsZeroAddresses() public {
         MiningCore impl = new MiningCore();
-        bytes memory init = abi.encodeCall(
-            MiningCore.initialize,
-            (admin, address(0), address(router), address(ethUsd), address(0), GENESIS, PRICE)
-        );
-        vm.expectRevert(MiningCore.ZeroAddress.selector);
-        new ERC1967Proxy(address(impl), init);
+        address[3] memory tokens = [address(0), address(1), address(1)];
+        address[3] memory devs = [DEV, address(0), DEV];
+        address[3] memory treasuries = [TREASURY, TREASURY, address(0)];
+        for (uint256 i = 0; i < 3; ++i) {
+            bytes memory init = abi.encodeCall(
+                MiningCore.initialize,
+                (
+                    admin,
+                    tokens[i],
+                    address(router),
+                    address(ethUsd),
+                    address(0),
+                    GENESIS,
+                    PRICE,
+                    devs[i],
+                    treasuries[i]
+                )
+            );
+            vm.expectRevert(MiningCore.ZeroAddress.selector);
+            new ERC1967Proxy(address(impl), init);
+        }
     }
 
     function test_views() public view {
