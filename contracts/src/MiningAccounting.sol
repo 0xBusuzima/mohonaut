@@ -94,7 +94,7 @@ abstract contract MiningAccounting {
 
         uint256 acc = s.acc;
         uint256 active = s.activeDp;
-        uint256 reserve = s.reserve;
+        uint256 res = s.reserve;
         uint256 emission = s.hourEmission;
         uint64 hour = s.currentHour;
         uint256 minersSum = 0;
@@ -112,30 +112,31 @@ abstract contract MiningAccounting {
                 minersSum += miners;
                 devSum += dev;
                 treasurySum += treasury;
-                reserve -= amount;
+                res -= amount;
             }
             last = segEnd;
-            if (segEnd == hourEnd) {
+            if (segEnd >= hourEnd) {
+                // segEnd <= hourEnd always: this means "boundary reached"
                 ++hour;
                 ++boundaries;
                 s.accAtHour[hour] = acc;
                 active -= s.dpEndingAt[hour];
-                emission = EmissionMath.hourlyEmission(reserve);
+                emission = EmissionMath.hourlyEmission(res);
                 // forge-lint: disable-next-line(reentrancy-events)
-                emit HourClosed(hour, acc, active, reserve, emission);
+                emit HourClosed(hour, acc, active, res, emission);
             }
         }
 
         s.acc = acc;
         s.activeDp = active;
-        s.reserve = reserve;
+        s.reserve = res;
         s.hourEmission = emission;
         s.currentHour = hour;
         s.lastUpdate = last;
         s.minersDistributed += minersSum;
         s.devPending += devSum;
         s.treasuryPending += treasurySum;
-        return last == nowTs;
+        return last >= nowTs;
     }
 
     /// @dev State-changing account actions require fully caught-up accounting; otherwise a new
@@ -218,7 +219,7 @@ abstract contract MiningAccounting {
         uint64 last = s.lastUpdate;
         acc = s.acc;
         uint256 active = s.activeDp;
-        uint256 reserve = s.reserve;
+        uint256 res = s.reserve;
         uint256 emission = s.hourEmission;
         uint64 hour = s.currentHour;
         while (last < nowTs) {
@@ -226,19 +227,20 @@ abstract contract MiningAccounting {
             uint64 segEnd = nowTs < hourEnd ? nowTs : hourEnd;
             if (active != 0) {
                 uint256 amount = (emission * (segEnd - last)) / HOUR;
-                (uint256 miners,,) = EmissionMath.split(amount);
+                uint256 miners = EmissionMath.minersShare(amount);
                 acc += (miners * PREC) / active;
-                reserve -= amount;
+                res -= amount;
             }
             last = segEnd;
-            if (segEnd == hourEnd) {
+            if (segEnd >= hourEnd) {
+                // segEnd <= hourEnd always: this means "boundary reached"
                 ++hour;
                 if (hour == watchHour) {
                     accAtWatch = acc;
                     watchCrossed = true;
                 }
                 active -= s.dpEndingAt[hour];
-                emission = EmissionMath.hourlyEmission(reserve);
+                emission = EmissionMath.hourlyEmission(res);
             }
         }
     }

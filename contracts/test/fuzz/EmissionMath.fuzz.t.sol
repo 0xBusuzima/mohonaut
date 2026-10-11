@@ -14,6 +14,13 @@ contract EmissionMathFuzzTest is Test {
         assertLe(dev, emission / 20);
     }
 
+    /// minersShare is exactly the miners' part of split.
+    function testFuzz_minersShareMatchesSplit(uint256 emission) public pure {
+        emission = bound(emission, 0, EmissionMath.CAP);
+        (uint256 miners,,) = EmissionMath.split(emission);
+        assertEq(EmissionMath.minersShare(emission), miners);
+    }
+
     /// An hour can never emit more than the reserve holds, and emits nothing from an empty reserve.
     function testFuzz_emissionBoundedByReserve(uint256 reserve) public pure {
         reserve = bound(reserve, 0, EmissionMath.CAP);
