@@ -65,7 +65,7 @@ Her invariant için: **Foundry invariant handler** (çok aktörlü rastgele işl
 | Uzun kampanya | **Medusa** + **Echidna** (Recon **Chimera**) | Gece ve denetim öncesi 24–72 saat |
 | Biçimsel | **Halmos** (açık), **Certora** (açık kaynak sürümü) | T1, T2, E2, L1, P2 |
 | Diferansiyel | `/sim/vectors/*.json` ↔ Solidity | Emisyon, VRGDA, saha maliyeti, market açılışı formülleri birebir |
-| Mutasyon | Foundry yerleşik mutasyon testi ✱ veya **Gambit**/**vertigo-rs** | Mutant öldürme oranı ≥ %90 (core) |
+| Mutasyon | **Gambit** (Certora, açık kaynak) — Foundry 1.8.5'te yerleşik mutasyon testi yok (araştırmadaki bilgi yanlıştı) | Mutant öldürme oranı ≥ %90 (core) |
 | Fork | Testnet 46630 fork | Chainlink feed, Uniswap v4, Safe, EntryPoint gerçek adresleri |
 | Statik | **Slither**, **Aderyn**, `forge lint --deny warnings`, Solhint | Sıfır yüksek/orta bulgu (veya gerekçeli istisna dosyası) |
 | Gas | `forge snapshot --check` | Regresyon > %5 → CI kırmızı |

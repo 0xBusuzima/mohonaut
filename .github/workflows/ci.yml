@@ -38,6 +38,26 @@ jobs:
           forge coverage --report lcov --report-file lcov.info --no-match-coverage "(test|script)/"
           python3 ../tools/check_coverage.py lcov.info
 
+  formal:
+    # Halmos symbolic proofs (functions named prove_*); needs Linux (does not install on Windows).
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install halmos
+      - name: Halmos
+        run: halmos --function prove_
+
   slither:
     runs-on: ubuntu-latest
     steps:

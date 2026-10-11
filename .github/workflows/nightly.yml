@@ -55,23 +55,3 @@ jobs:
           files: contracts
           contract: CryticTester
           config: contracts/echidna.yaml
-
-  formal:
-    # Halmos proofs (functions named prove_*) arrive with the token in Phase 2.1.
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: contracts
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: v1.8.5
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Halmos
-        run: |
-          if grep -rq "function prove_" test/; then pip install halmos && halmos --function prove_; else echo "No prove_ functions yet"; fi

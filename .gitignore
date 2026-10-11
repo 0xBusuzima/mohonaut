@@ -35,3 +35,6 @@ pnpm_debug.log
 .claude/settings.local.json
 .DS_Store
 Thumbs.db
+
+# python virtualenvs anywhere
+.venv/
