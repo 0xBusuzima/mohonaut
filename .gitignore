@@ -1,0 +1,37 @@
+# dependencies & builds
+node_modules/
+dist/
+.turbo/
+coverage/
+*.tsbuildinfo
+
+# environment & secrets (never commit)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/*/31337/
+contracts/broadcast/**/dry-run/
+contracts/crytic-export/
+contracts/medusa-corpus/
+contracts/echidna-corpus/
+contracts/lcov.info
+contracts/report/
+
+# python / simulator
+sim/.venv/
+__pycache__/
+*.pyc
+sim/results/**/raw/
+sim/results/**/*.npz
+pnpm_debug.log
+
+# local tooling
+.claude/settings.local.json
+.DS_Store
+Thumbs.db

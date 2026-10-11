@@ -1,0 +1,19 @@
+{
+ "seeds_spec": 200,
+ "seeds_recommended": 100,
+ "seeds_sweeps": 50,
+ "seeds_calibration": 25,
+ "total_runs": 3000,
+ "recommended": {
+  "spec.vrgda.r": 2000.0,
+  "spec.revenue.buyback": 0.55,
+  "spec.revenue.ops": 0.15
+ },
+ "max_supply_invariant_error_dig": 9.5367431640625e-07,
+ "seconds": {
+  "spec": 634.2436170578003,
+  "rec": 472.0068175792694,
+  "sweeps": 382.3747742176056,
+  "calib": 41.88411998748779
+ }
+}

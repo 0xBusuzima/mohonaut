@@ -1,0 +1,4 @@
+-r requirements.txt
+matplotlib>=3.9,<4
+ruff>=0.6
+vulture>=2.11

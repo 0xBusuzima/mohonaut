@@ -1,0 +1,346 @@
+{
+ "description": "Outpost table (spec \u00a77) at idx = 1, plus idx-scaled examples.",
+ "algorithm": [
+  "slots(L) = 3 + L; capacity(L) = 6 * 1.22^(L-1) kW",
+  "next_level_cost(L) = 150 * L^2.2 (idx = 1); L^2.2 is irrational, so contracts should store this table",
+  "cost(L, idx) = floor(next_level_cost_wad(L) * idx_wad / 1e18), idx = clamp(p(t,n)/p0, 0.25, 4)"
+ ],
+ "rows": [
+  {
+   "level": 1,
+   "slots": 4,
+   "capacity_kw_wad": "6000000000000000000",
+   "cumulative_cost_from_L1_wad": "0",
+   "next_level_cost_wad": "150000000000000000000"
+  },
+  {
+   "level": 2,
+   "slots": 5,
+   "capacity_kw_wad": "7320000000000000000",
+   "cumulative_cost_from_L1_wad": "150000000000000000000",
+   "next_level_cost_wad": "689219012998221004079"
+  },
+  {
+   "level": 3,
+   "slots": 6,
+   "capacity_kw_wad": "8930400000000000000",
+   "cumulative_cost_from_L1_wad": "839219012998221004079",
+   "next_level_cost_wad": "1681736768480948390055"
+  },
+  {
+   "level": 4,
+   "slots": 7,
+   "capacity_kw_wad": "10895088000000000000",
+   "cumulative_cost_from_L1_wad": "2520955781479169394134",
+   "next_level_cost_wad": "3166818985854946222497"
+  },
+  {
+   "level": 5,
+   "slots": 8,
+   "capacity_kw_wad": "13292007360000000000",
+   "cumulative_cost_from_L1_wad": "5687774767334115616631",
+   "next_level_cost_wad": "5173986230479555621462"
+  },
+  {
+   "level": 6,
+   "slots": 9,
+   "capacity_kw_wad": "16216248979200000000",
+   "cumulative_cost_from_L1_wad": "10861760997813671238094",
+   "next_level_cost_wad": "7727233037968379705644"
+  },
+  {
+   "level": 7,
+   "slots": 10,
+   "capacity_kw_wad": "19783823754624000000",
+   "cumulative_cost_from_L1_wad": "18588994035782050943738",
+   "next_level_cost_wad": "10846932737719957709185"
+  },
+  {
+   "level": 8,
+   "slots": 11,
+   "capacity_kw_wad": "24136264980641280000",
+   "cumulative_cost_from_L1_wad": "29435926773502008652924",
+   "next_level_cost_wad": "14550879038499821590533"
+  },
+  {
+   "level": 9,
+   "slots": 12,
+   "capacity_kw_wad": "29446243276382361600",
+   "cumulative_cost_from_L1_wad": "43986805812001830243457",
+   "next_level_cost_wad": "18854923723071620042421"
+  },
+  {
+   "level": 10,
+   "slots": 13,
+   "capacity_kw_wad": "35924416797186481152",
+   "cumulative_cost_from_L1_wad": "62841729535073450285878",
+   "next_level_cost_wad": "23773397886916702278031"
+  },
+  {
+   "level": 11,
+   "slots": 14,
+   "capacity_kw_wad": "43827788492567507005",
+   "cumulative_cost_from_L1_wad": "86615127421990152563910",
+   "next_level_cost_wad": "29319405931569530727372"
+  },
+  {
+   "level": 12,
+   "slots": 15,
+   "capacity_kw_wad": "53469901960932358546",
+   "cumulative_cost_from_L1_wad": "115934533353559683291283",
+   "next_level_cost_wad": "35505039517572076465863"
+  },
+  {
+   "level": 13,
+   "slots": 16,
+   "capacity_kw_wad": "65233280392337477426",
+   "cumulative_cost_from_L1_wad": "151439572871131759757146",
+   "next_level_cost_wad": "42341538486687443508272"
+  },
+  {
+   "level": 14,
+   "slots": 17,
+   "capacity_kw_wad": "79584602078651722460",
+   "cumulative_cost_from_L1_wad": "193781111357819203265419",
+   "next_level_cost_wad": "49839415170329603157550"
+  },
+  {
+   "level": 15,
+   "slots": 18,
+   "capacity_kw_wad": "97093214535955101402",
+   "cumulative_cost_from_L1_wad": "243620526528148806422970",
+   "next_level_cost_wad": "58008552556077408724206"
+  },
+  {
+   "level": 16,
+   "slots": 19,
+   "capacity_kw_wad": "118453721733865223710",
+   "cumulative_cost_from_L1_wad": "301629079084226215147176",
+   "next_level_cost_wad": "66858283261142333885665"
+  },
+  {
+   "level": 17,
+   "slots": 20,
+   "capacity_kw_wad": "144513540515315572927",
+   "cumulative_cost_from_L1_wad": "368487362345368549032842",
+   "next_level_cost_wad": "76397454078530942550874"
+  },
+  {
+   "level": 18,
+   "slots": 21,
+   "capacity_kw_wad": "176306519428684998970",
+   "cumulative_cost_from_L1_wad": "444884816423899491583716",
+   "next_level_cost_wad": "86634479457147763077051"
+  },
+  {
+   "level": 19,
+   "slots": 22,
+   "capacity_kw_wad": "215093953702995698744",
+   "cumulative_cost_from_L1_wad": "531519295881047254660768",
+   "next_level_cost_wad": "97577386344223255825635"
+  },
+  {
+   "level": 20,
+   "slots": 23,
+   "capacity_kw_wad": "262414623517654752468",
+   "cumulative_cost_from_L1_wad": "629096682225270510486403",
+   "next_level_cost_wad": "109233852181564815862765"
+  },
+  {
+   "level": 21,
+   "slots": 24,
+   "capacity_kw_wad": "320145840691538798011",
+   "cumulative_cost_from_L1_wad": "738330534406835326349168",
+   "next_level_cost_wad": "121611237401755788027890"
+  },
+  {
+   "level": 22,
+   "slots": 25,
+   "capacity_kw_wad": "390577925643677333573",
+   "cumulative_cost_from_L1_wad": "859941771808591114377058",
+   "next_level_cost_wad": "134716613452336922701599"
+  },
+  {
+   "level": 23,
+   "slots": 26,
+   "capacity_kw_wad": "476505069285286346960",
+   "cumulative_cost_from_L1_wad": "994658385260928037078657",
+   "next_level_cost_wad": "148556787144527936014800"
+  },
+  {
+   "level": 24,
+   "slots": 27,
+   "capacity_kw_wad": "581336184528049343291",
+   "cumulative_cost_from_L1_wad": "1143215172405455973093458",
+   "next_level_cost_wad": "163138321951759062517950"
+  },
+  {
+   "level": 25,
+   "slots": 28,
+   "capacity_kw_wad": "709230145124220198815",
+   "cumulative_cost_from_L1_wad": "1306353494357215035611408",
+   "next_level_cost_wad": "178467556754613608427763"
+  },
+  {
+   "level": 26,
+   "slots": 29,
+   "capacity_kw_wad": "865260777051548642555",
+   "cumulative_cost_from_L1_wad": "1484821051111828644039172",
+   "next_level_cost_wad": "194550622430806053533437"
+  },
+  {
+   "level": 27,
+   "slots": 30,
+   "capacity_kw_wad": "1055618148002889343917",
+   "cumulative_cost_from_L1_wad": "1679371673542634697572610",
+   "next_level_cost_wad": "211393456613288256879245"
+  },
+  {
+   "level": 28,
+   "slots": 31,
+   "capacity_kw_wad": "1287854140563524999578",
+   "cumulative_cost_from_L1_wad": "1890765130155922954451855",
+   "next_level_cost_wad": "229001816880687545710963"
+  },
+  {
+   "level": 29,
+   "slots": 32,
+   "capacity_kw_wad": "1571182051487500499486",
+   "cumulative_cost_from_L1_wad": "2119766947036610500162819",
+   "next_level_cost_wad": "247381292597891231865981"
+  },
+  {
+   "level": 30,
+   "slots": 33,
+   "capacity_kw_wad": "1916842102814750609373",
+   "cumulative_cost_from_L1_wad": "2367148239634501732028801"
+  }
+ ],
+ "idx_examples": [
+  {
+   "level": 1,
+   "idx_wad": "250000000000000000",
+   "cost_wad": "37500000000000000000"
+  },
+  {
+   "level": 8,
+   "idx_wad": "250000000000000000",
+   "cost_wad": "3637719759624955397633"
+  },
+  {
+   "level": 15,
+   "idx_wad": "250000000000000000",
+   "cost_wad": "14502138139019352181051"
+  },
+  {
+   "level": 22,
+   "idx_wad": "250000000000000000",
+   "cost_wad": "33679153363084230675399"
+  },
+  {
+   "level": 29,
+   "idx_wad": "250000000000000000",
+   "cost_wad": "61845323149472807966495"
+  },
+  {
+   "level": 1,
+   "idx_wad": "500000000000000000",
+   "cost_wad": "75000000000000000000"
+  },
+  {
+   "level": 8,
+   "idx_wad": "500000000000000000",
+   "cost_wad": "7275439519249910795266"
+  },
+  {
+   "level": 15,
+   "idx_wad": "500000000000000000",
+   "cost_wad": "29004276278038704362103"
+  },
+  {
+   "level": 22,
+   "idx_wad": "500000000000000000",
+   "cost_wad": "67358306726168461350799"
+  },
+  {
+   "level": 29,
+   "idx_wad": "500000000000000000",
+   "cost_wad": "123690646298945615932990"
+  },
+  {
+   "level": 1,
+   "idx_wad": "1000000000000000000",
+   "cost_wad": "150000000000000000000"
+  },
+  {
+   "level": 8,
+   "idx_wad": "1000000000000000000",
+   "cost_wad": "14550879038499821590533"
+  },
+  {
+   "level": 15,
+   "idx_wad": "1000000000000000000",
+   "cost_wad": "58008552556077408724206"
+  },
+  {
+   "level": 22,
+   "idx_wad": "1000000000000000000",
+   "cost_wad": "134716613452336922701599"
+  },
+  {
+   "level": 29,
+   "idx_wad": "1000000000000000000",
+   "cost_wad": "247381292597891231865981"
+  },
+  {
+   "level": 1,
+   "idx_wad": "2000000000000000000",
+   "cost_wad": "300000000000000000000"
+  },
+  {
+   "level": 8,
+   "idx_wad": "2000000000000000000",
+   "cost_wad": "29101758076999643181066"
+  },
+  {
+   "level": 15,
+   "idx_wad": "2000000000000000000",
+   "cost_wad": "116017105112154817448412"
+  },
+  {
+   "level": 22,
+   "idx_wad": "2000000000000000000",
+   "cost_wad": "269433226904673845403198"
+  },
+  {
+   "level": 29,
+   "idx_wad": "2000000000000000000",
+   "cost_wad": "494762585195782463731962"
+  },
+  {
+   "level": 1,
+   "idx_wad": "4000000000000000000",
+   "cost_wad": "600000000000000000000"
+  },
+  {
+   "level": 8,
+   "idx_wad": "4000000000000000000",
+   "cost_wad": "58203516153999286362132"
+  },
+  {
+   "level": 15,
+   "idx_wad": "4000000000000000000",
+   "cost_wad": "232034210224309634896824"
+  },
+  {
+   "level": 22,
+   "idx_wad": "4000000000000000000",
+   "cost_wad": "538866453809347690806396"
+  },
+  {
+   "level": 29,
+   "idx_wad": "4000000000000000000",
+   "cost_wad": "989525170391564927463924"
+  }
+ ]
+}

@@ -1,0 +1,342 @@
+{
+ "spec_v0.1": [
+  {
+   "criterion": "price_m24_gt_30pct_m1",
+   "scenario": "base",
+   "value": 0.955,
+   "target": "P ≥ 0.5",
+   "passed": true,
+   "detail": "median m24/m1 = 1.193"
+  },
+  {
+   "criterion": "cohort_payback_lt_365",
+   "scenario": "base",
+   "value": 0.15053763440860216,
+   "target": "≥ 0.70 of weekly cohorts",
+   "passed": false,
+   "detail": "median entry payback = inf d; cash-flow definition: 0.14 of cohorts"
+  },
+  {
+   "criterion": "sr_m12",
+   "scenario": "base",
+   "value": 0.703553850940525,
+   "target": "≥ 0.6",
+   "passed": true,
+   "detail": "P5–P95 0.48–1.08"
+  },
+  {
+   "criterion": "sr_m12",
+   "scenario": "bear",
+   "value": 0.5552702331810513,
+   "target": "≥ 0.3",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "criterion": "sr_m12",
+   "scenario": "deep_bear",
+   "value": 0.5000775122044544,
+   "target": "≥ 0.3",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "base",
+   "value": 0.7952008417155505,
+   "target": "< 0.8 (median of max over months 3–36)",
+   "passed": true,
+   "detail": "m12 0.20, m36 0.47; Nakamoto m36 104"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "bear",
+   "value": 0.8721225518170366,
+   "target": "< 0.8 (median of max over months 3–36)",
+   "passed": false,
+   "detail": "m12 0.32, m36 0.32; Nakamoto m36 2"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "deep_bear",
+   "value": 0.6971136967540006,
+   "target": "< 0.8 (median of max over months 3–36)",
+   "passed": true,
+   "detail": "m12 0.28, m36 0.10; Nakamoto m36 2"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "whale",
+   "value": 0.7674629844052767,
+   "target": "< 0.8 (median of max over months 3–36)",
+   "passed": true,
+   "detail": "m12 0.59, m36 0.47; Nakamoto m36 118"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "churn",
+   "value": 0.8179415496076312,
+   "target": "< 0.8 (median of max over months 3–36)",
+   "passed": false,
+   "detail": "m12 0.18, m36 0.15; Nakamoto m36 2"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "sybil",
+   "value": 0.769142479818391,
+   "target": "< 0.8 (median of max over months 3–36)",
+   "passed": true,
+   "detail": "m12 0.61, m36 0.45; Nakamoto m36 120"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "hype",
+   "value": 0.7699934156024155,
+   "target": "< 0.8 (median of max over months 3–36)",
+   "passed": true,
+   "detail": "m12 0.25, m36 0.44; Nakamoto m36 129"
+  },
+  {
+   "criterion": "sybil_emission_per_energy",
+   "scenario": "sybil",
+   "value": 2.2926063461851958,
+   "target": "≈ 1.0 (≤ 1.05: no advantage)",
+   "passed": false,
+   "detail": "literal: lifetime emission share / energy share (mixes genesis and later days)"
+  },
+  {
+   "criterion": "sybil_same_day_vs_auger",
+   "scenario": "sybil",
+   "value": 1.0064513839585842,
+   "target": "≤ 1.03 (referral only)",
+   "passed": true,
+   "detail": "emission per kWh vs. ordinary augers on the same days; P95 1.014"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "base",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $148,811/mo, m36 $51,133/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "bear",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $66,601/mo, m36 $13,952/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "deep_bear",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $29,765/mo, m36 $5,208/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "whale",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $144,039/mo, m36 $52,656/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "churn",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $45,989/mo, m36 $9,451/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "sybil",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $144,671/mo, m36 $50,563/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "hype",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $137,821/mo, m36 $52,154/mo"
+  }
+ ],
+ "recommended": [
+  {
+   "criterion": "price_m24_gt_30pct_m1",
+   "scenario": "base",
+   "value": 1.0,
+   "target": "P ≥ 0.5",
+   "passed": true,
+   "detail": "median m24/m1 = 6.933"
+  },
+  {
+   "criterion": "cohort_payback_lt_365",
+   "scenario": "base",
+   "value": 0.9711538461538461,
+   "target": "≥ 0.70 of weekly cohorts",
+   "passed": true,
+   "detail": "median entry payback = 79 d; cash-flow definition: 0.76 of cohorts"
+  },
+  {
+   "criterion": "sr_m12",
+   "scenario": "base",
+   "value": 0.719901383024217,
+   "target": "≥ 0.6",
+   "passed": true,
+   "detail": "P5–P95 0.61–0.99"
+  },
+  {
+   "criterion": "sr_m12",
+   "scenario": "bear",
+   "value": 0.7227912653306834,
+   "target": "≥ 0.3",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "criterion": "sr_m12",
+   "scenario": "deep_bear",
+   "value": 0.775290557087023,
+   "target": "≥ 0.3",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "base",
+   "value": 0.6342876171934143,
+   "target": "< 0.8 (median of max over months 3–36)",
+   "passed": true,
+   "detail": "m12 0.56, m36 0.54; Nakamoto m36 603"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "bear",
+   "value": 0.7419182197929788,
+   "target": "< 0.8 (median of max over months 3–36)",
+   "passed": true,
+   "detail": "m12 0.57, m36 0.65; Nakamoto m36 48"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "deep_bear",
+   "value": 0.7057331643601443,
+   "target": "< 0.8 (median of max over months 3–36)",
+   "passed": true,
+   "detail": "m12 0.54, m36 0.45; Nakamoto m36 8"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "whale",
+   "value": 0.5715414817149574,
+   "target": "< 0.8 (median of max over months 3–36)",
+   "passed": true,
+   "detail": "m12 0.53, m36 0.52; Nakamoto m36 674"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "churn",
+   "value": 0.800056106810749,
+   "target": "< 0.8 (median of max over months 3–36)",
+   "passed": false,
+   "detail": "m12 0.54, m36 0.72; Nakamoto m36 11"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "sybil",
+   "value": 0.755812580679974,
+   "target": "< 0.8 (median of max over months 3–36)",
+   "passed": true,
+   "detail": "m12 0.62, m36 0.63; Nakamoto m36 379"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "hype",
+   "value": 0.5922099788162646,
+   "target": "< 0.8 (median of max over months 3–36)",
+   "passed": true,
+   "detail": "m12 0.55, m36 0.54; Nakamoto m36 638"
+  },
+  {
+   "criterion": "sybil_emission_per_energy",
+   "scenario": "sybil",
+   "value": 0.9092524904580049,
+   "target": "≈ 1.0 (≤ 1.05: no advantage)",
+   "passed": true,
+   "detail": "literal: lifetime emission share / energy share (mixes genesis and later days)"
+  },
+  {
+   "criterion": "sybil_same_day_vs_auger",
+   "scenario": "sybil",
+   "value": 1.0254509691561422,
+   "target": "≤ 1.03 (referral only)",
+   "passed": true,
+   "detail": "emission per kWh vs. ordinary augers on the same days; P95 1.027"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "base",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $109,844/mo, m36 $43,178/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "bear",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $64,803/mo, m36 $20,172/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "deep_bear",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $30,888/mo, m36 $6,470/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "whale",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $112,451/mo, m36 $44,489/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "churn",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $38,888/mo, m36 $12,533/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "sybil",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $106,612/mo, m36 $41,765/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "hype",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $113,763/mo, m36 $46,429/mo"
+  }
+ ]
+}

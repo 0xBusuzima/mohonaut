@@ -1,0 +1,149 @@
+{
+ "spec:base": {
+  "runs": 200.0,
+  "max_daily": 126669.65625,
+  "max_hourly": 50340.0390625
+ },
+ "spec:bear": {
+  "runs": 200.0,
+  "max_daily": 126669.65625,
+  "max_hourly": 50340.0390625
+ },
+ "spec:deep_bear": {
+  "runs": 200.0,
+  "max_daily": 126669.65625,
+  "max_hourly": 50340.0390625
+ },
+ "spec:whale": {
+  "runs": 200.0,
+  "max_daily": 126669.65625,
+  "max_hourly": 50340.0390625
+ },
+ "spec:churn": {
+  "runs": 200.0,
+  "max_daily": 126669.65625,
+  "max_hourly": 50340.0390625
+ },
+ "spec:sybil": {
+  "runs": 200.0,
+  "max_daily": 120243.3828125,
+  "max_hourly": 71333.5078125
+ },
+ "spec:hype": {
+  "runs": 200.0,
+  "max_daily": 127919.75,
+  "max_hourly": 50340.0390625
+ },
+ "nogov:base": {
+  "runs": 100.0,
+  "max_daily": 121753.1953125,
+  "max_hourly": 50084.38671875
+ },
+ "nogov:bear": {
+  "runs": 100.0,
+  "max_daily": 121753.1953125,
+  "max_hourly": 50084.38671875
+ },
+ "nogov:deep_bear": {
+  "runs": 100.0,
+  "max_daily": 121753.1953125,
+  "max_hourly": 50084.38671875
+ },
+ "nogov:whale": {
+  "runs": 100.0,
+  "max_daily": 121753.1953125,
+  "max_hourly": 50084.38671875
+ },
+ "nogov:churn": {
+  "runs": 100.0,
+  "max_daily": 121753.1953125,
+  "max_hourly": 50084.38671875
+ },
+ "nogov:sybil": {
+  "runs": 100.0,
+  "max_daily": 111587.953125,
+  "max_hourly": 71333.5078125
+ },
+ "nogov:hype": {
+  "runs": 100.0,
+  "max_daily": 127919.75,
+  "max_hourly": 50084.38671875
+ },
+ "notank:base": {
+  "runs": 200.0,
+  "max_daily": 109039.890625,
+  "max_hourly": 45983.22265625
+ },
+ "sweeps:vrgda_r:1000.0": {
+  "runs": 50.0,
+  "max_daily": 120255.921875,
+  "max_hourly": 50132.765625
+ },
+ "sweeps:vrgda_r:1500.0": {
+  "runs": 50.0,
+  "max_daily": 119081.203125,
+  "max_hourly": 50103.33984375
+ },
+ "sweeps:vrgda_r:3000.0": {
+  "runs": 50.0,
+  "max_daily": 140352.828125,
+  "max_hourly": 50061.203125
+ },
+ "sweeps:vrgda_k:0.1": {
+  "runs": 50.0,
+  "max_daily": 127952.3671875,
+  "max_hourly": 50077.4140625
+ },
+ "sweeps:vrgda_k:0.25": {
+  "runs": 50.0,
+  "max_daily": 97718.8671875,
+  "max_hourly": 50096.6640625
+ },
+ "sweeps:revenue:(0.6, 0.1)": {
+  "runs": 50.0,
+  "max_daily": 117063.5078125,
+  "max_hourly": 50084.38671875
+ },
+ "sweeps:tank:72.0": {
+  "runs": 50.0,
+  "max_daily": 94546.390625,
+  "max_hourly": 45474.671875
+ },
+ "calib:spec:x0.5": {
+  "runs": 50.0,
+  "max_daily": 141007.515625,
+  "max_hourly": 44253.171875
+ },
+ "calib:nogov:x0.5": {
+  "runs": 50.0,
+  "max_daily": 141007.515625,
+  "max_hourly": 44253.171875
+ },
+ "calib:spec:x2": {
+  "runs": 50.0,
+  "max_daily": 79781.0078125,
+  "max_hourly": 50553.92578125
+ },
+ "calib:nogov:x2": {
+  "runs": 50.0,
+  "max_daily": 79781.0078125,
+  "max_hourly": 50553.92578125
+ },
+ "pooled": {
+  "run_days": 3120750.0,
+  "daily_p50": 26162.37890625,
+  "daily_p99": 46137.52734375,
+  "daily_p999": 68787.453125,
+  "daily_max": 141007.515625,
+  "hourly_p50": 2405.8896484375,
+  "hourly_p99": 3325.426025390625,
+  "hourly_p999": 20835.951171875,
+  "hourly_max": 71333.5078125,
+  "open_day_p50": 53546.859375,
+  "open_day_max": 102179.625,
+  "open_hour_p50": 46857.9375,
+  "open_hour_max": 71333.5078125,
+  "after_open_daily_max": 141007.515625,
+  "after_open_hourly_max": 22665.240234375
+ }
+}

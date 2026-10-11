@@ -1,0 +1,569 @@
+{
+ "description": "LinearVRGDA prices in DIG per DP unit (spec \u00a76.2).",
+ "algorithm": [
+  "p(t, n) = p0 * (1 - k)^(t - n/r)            (t in days = seconds / 86400, n = DP units sold so far)",
+  "unit j of a purchase costs p(t, n + j), j = 0..q-1 (spec convention; Art Gobblers uses sold + 1)",
+  "batch_cost(q) = p(t, n) * (a^q - 1) / (a - 1),  a = (1 - k)^(-1/r)",
+  "tier_cost = batch_cost(DP_tier) * (1 + premium_tier)",
+  "reference: 60-digit Decimal, floored once to 1e-18"
+ ],
+ "params": {
+  "p0_wad": "10000000000000000000",
+  "k": "0.15",
+  "r_units_per_day": "2000.0"
+ },
+ "rows": [
+  {
+   "t_days": "0",
+   "t_seconds": "0",
+   "n_units": "0",
+   "q_units": "1",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "10000000000000000000"
+  },
+  {
+   "t_days": "0",
+   "t_seconds": "0",
+   "n_units": "0",
+   "q_units": "2700",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "30189717952873112707508",
+   "tier": 5,
+   "tier_cost_wad": "42265605134022357790511"
+  },
+  {
+   "t_days": "0",
+   "t_seconds": "0",
+   "n_units": "8000",
+   "q_units": "1",
+   "unit_price_wad": "19156858754085798781",
+   "batch_cost_wad": "19156858754085798781"
+  },
+  {
+   "t_days": "0",
+   "t_seconds": "0",
+   "n_units": "8000",
+   "q_units": "2700",
+   "unit_price_wad": "19156858754085798781",
+   "batch_cost_wad": "57834016264887848962552",
+   "tier": 5,
+   "tier_cost_wad": "80967622770842988547573"
+  },
+  {
+   "t_days": "0.5",
+   "t_seconds": "43200",
+   "n_units": "0",
+   "q_units": "1",
+   "unit_price_wad": "9219544457292887310",
+   "batch_cost_wad": "9219544457292887310"
+  },
+  {
+   "t_days": "0.5",
+   "t_seconds": "43200",
+   "n_units": "0",
+   "q_units": "2700",
+   "unit_price_wad": "9219544457292887310",
+   "batch_cost_wad": "27833544681964687876779",
+   "tier": 5,
+   "tier_cost_wad": "38966962554750563027490"
+  },
+  {
+   "t_days": "0.5",
+   "t_seconds": "43200",
+   "n_units": "1000",
+   "q_units": "1",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "10000000000000000000"
+  },
+  {
+   "t_days": "0.5",
+   "t_seconds": "43200",
+   "n_units": "1000",
+   "q_units": "2700",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "30189717952873112707508",
+   "tier": 5,
+   "tier_cost_wad": "42265605134022357790511"
+  },
+  {
+   "t_days": "0.5",
+   "t_seconds": "43200",
+   "n_units": "9000",
+   "q_units": "1",
+   "unit_price_wad": "19156858754085798781",
+   "batch_cost_wad": "19156858754085798781"
+  },
+  {
+   "t_days": "0.5",
+   "t_seconds": "43200",
+   "n_units": "9000",
+   "q_units": "2700",
+   "unit_price_wad": "19156858754085798781",
+   "batch_cost_wad": "57834016264887848962552",
+   "tier": 5,
+   "tier_cost_wad": "80967622770842988547573"
+  },
+  {
+   "t_days": "1",
+   "t_seconds": "86400",
+   "n_units": "0",
+   "q_units": "1",
+   "unit_price_wad": "8500000000000000000",
+   "batch_cost_wad": "8500000000000000000"
+  },
+  {
+   "t_days": "1",
+   "t_seconds": "86400",
+   "n_units": "0",
+   "q_units": "2700",
+   "unit_price_wad": "8500000000000000000",
+   "batch_cost_wad": "25661260259942145801382",
+   "tier": 5,
+   "tier_cost_wad": "35925764363919004121935"
+  },
+  {
+   "t_days": "1",
+   "t_seconds": "86400",
+   "n_units": "2000",
+   "q_units": "1",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "10000000000000000000"
+  },
+  {
+   "t_days": "1",
+   "t_seconds": "86400",
+   "n_units": "2000",
+   "q_units": "2700",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "30189717952873112707508",
+   "tier": 5,
+   "tier_cost_wad": "42265605134022357790511"
+  },
+  {
+   "t_days": "1",
+   "t_seconds": "86400",
+   "n_units": "10000",
+   "q_units": "1",
+   "unit_price_wad": "19156858754085798781",
+   "batch_cost_wad": "19156858754085798781"
+  },
+  {
+   "t_days": "1",
+   "t_seconds": "86400",
+   "n_units": "10000",
+   "q_units": "2700",
+   "unit_price_wad": "19156858754085798781",
+   "batch_cost_wad": "57834016264887848962552",
+   "tier": 5,
+   "tier_cost_wad": "80967622770842988547573"
+  },
+  {
+   "t_days": "3",
+   "t_seconds": "259200",
+   "n_units": "0",
+   "q_units": "1",
+   "unit_price_wad": "6141250000000000000",
+   "batch_cost_wad": "6141250000000000000"
+  },
+  {
+   "t_days": "3",
+   "t_seconds": "259200",
+   "n_units": "0",
+   "q_units": "2700",
+   "unit_price_wad": "6141250000000000000",
+   "batch_cost_wad": "18540260537808200341498",
+   "tier": 5,
+   "tier_cost_wad": "25956364752931480478098"
+  },
+  {
+   "t_days": "3",
+   "t_seconds": "259200",
+   "n_units": "2000",
+   "q_units": "1",
+   "unit_price_wad": "7225000000000000000",
+   "batch_cost_wad": "7225000000000000000"
+  },
+  {
+   "t_days": "3",
+   "t_seconds": "259200",
+   "n_units": "2000",
+   "q_units": "2700",
+   "unit_price_wad": "7225000000000000000",
+   "batch_cost_wad": "21812071220950823931174",
+   "tier": 5,
+   "tier_cost_wad": "30536899709331153503644"
+  },
+  {
+   "t_days": "3",
+   "t_seconds": "259200",
+   "n_units": "6000",
+   "q_units": "1",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "10000000000000000000"
+  },
+  {
+   "t_days": "3",
+   "t_seconds": "259200",
+   "n_units": "6000",
+   "q_units": "2700",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "30189717952873112707508",
+   "tier": 5,
+   "tier_cost_wad": "42265605134022357790511"
+  },
+  {
+   "t_days": "3",
+   "t_seconds": "259200",
+   "n_units": "14000",
+   "q_units": "1",
+   "unit_price_wad": "19156858754085798781",
+   "batch_cost_wad": "19156858754085798781"
+  },
+  {
+   "t_days": "3",
+   "t_seconds": "259200",
+   "n_units": "14000",
+   "q_units": "2700",
+   "unit_price_wad": "19156858754085798781",
+   "batch_cost_wad": "57834016264887848962552",
+   "tier": 5,
+   "tier_cost_wad": "80967622770842988547573"
+  },
+  {
+   "t_days": "7.25",
+   "t_seconds": "626400",
+   "n_units": "0",
+   "q_units": "1",
+   "unit_price_wad": "3078131798837220984",
+   "batch_cost_wad": "3078131798837220984"
+  },
+  {
+   "t_days": "7.25",
+   "t_seconds": "626400",
+   "n_units": "0",
+   "q_units": "2700",
+   "unit_price_wad": "3078131798837220984",
+   "batch_cost_wad": "9292793082866565907625",
+   "tier": 5,
+   "tier_cost_wad": "13009910316013192270675"
+  },
+  {
+   "t_days": "7.25",
+   "t_seconds": "626400",
+   "n_units": "10500",
+   "q_units": "1",
+   "unit_price_wad": "7225000000000000000",
+   "batch_cost_wad": "7225000000000000000"
+  },
+  {
+   "t_days": "7.25",
+   "t_seconds": "626400",
+   "n_units": "10500",
+   "q_units": "2700",
+   "unit_price_wad": "7225000000000000000",
+   "batch_cost_wad": "21812071220950823931174",
+   "tier": 5,
+   "tier_cost_wad": "30536899709331153503644"
+  },
+  {
+   "t_days": "7.25",
+   "t_seconds": "626400",
+   "n_units": "14500",
+   "q_units": "1",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "10000000000000000000"
+  },
+  {
+   "t_days": "7.25",
+   "t_seconds": "626400",
+   "n_units": "14500",
+   "q_units": "2700",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "30189717952873112707508",
+   "tier": 5,
+   "tier_cost_wad": "42265605134022357790511"
+  },
+  {
+   "t_days": "7.25",
+   "t_seconds": "626400",
+   "n_units": "22500",
+   "q_units": "1",
+   "unit_price_wad": "19156858754085798781",
+   "batch_cost_wad": "19156858754085798781"
+  },
+  {
+   "t_days": "7.25",
+   "t_seconds": "626400",
+   "n_units": "22500",
+   "q_units": "2700",
+   "unit_price_wad": "19156858754085798781",
+   "batch_cost_wad": "57834016264887848962552",
+   "tier": 5,
+   "tier_cost_wad": "80967622770842988547573"
+  },
+  {
+   "t_days": "30",
+   "t_seconds": "2592000",
+   "n_units": "0",
+   "q_units": "1",
+   "unit_price_wad": "76307595947894878",
+   "batch_cost_wad": "76307595947894878"
+  },
+  {
+   "t_days": "30",
+   "t_seconds": "2592000",
+   "n_units": "0",
+   "q_units": "2700",
+   "unit_price_wad": "76307595947894878",
+   "batch_cost_wad": "230370479932874959514",
+   "tier": 5,
+   "tier_cost_wad": "322518671906024943320"
+  },
+  {
+   "t_days": "30",
+   "t_seconds": "2592000",
+   "n_units": "56000",
+   "q_units": "1",
+   "unit_price_wad": "7225000000000000000",
+   "batch_cost_wad": "7225000000000000000"
+  },
+  {
+   "t_days": "30",
+   "t_seconds": "2592000",
+   "n_units": "56000",
+   "q_units": "2700",
+   "unit_price_wad": "7225000000000000000",
+   "batch_cost_wad": "21812071220950823931174",
+   "tier": 5,
+   "tier_cost_wad": "30536899709331153503644"
+  },
+  {
+   "t_days": "30",
+   "t_seconds": "2592000",
+   "n_units": "60000",
+   "q_units": "1",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "10000000000000000000"
+  },
+  {
+   "t_days": "30",
+   "t_seconds": "2592000",
+   "n_units": "60000",
+   "q_units": "2700",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "30189717952873112707508",
+   "tier": 5,
+   "tier_cost_wad": "42265605134022357790511"
+  },
+  {
+   "t_days": "30",
+   "t_seconds": "2592000",
+   "n_units": "68000",
+   "q_units": "1",
+   "unit_price_wad": "19156858754085798781",
+   "batch_cost_wad": "19156858754085798781"
+  },
+  {
+   "t_days": "30",
+   "t_seconds": "2592000",
+   "n_units": "68000",
+   "q_units": "2700",
+   "unit_price_wad": "19156858754085798781",
+   "batch_cost_wad": "57834016264887848962552",
+   "tier": 5,
+   "tier_cost_wad": "80967622770842988547573"
+  },
+  {
+   "t_days": "100",
+   "t_seconds": "8640000",
+   "n_units": "0",
+   "q_units": "1",
+   "unit_price_wad": "874767363010",
+   "batch_cost_wad": "874767363010"
+  },
+  {
+   "t_days": "100",
+   "t_seconds": "8640000",
+   "n_units": "0",
+   "q_units": "2700",
+   "unit_price_wad": "874767363010",
+   "batch_cost_wad": "2640897996367646",
+   "tier": 5,
+   "tier_cost_wad": "3697257194914705"
+  },
+  {
+   "t_days": "100",
+   "t_seconds": "8640000",
+   "n_units": "196000",
+   "q_units": "1",
+   "unit_price_wad": "7225000000000000000",
+   "batch_cost_wad": "7225000000000000000"
+  },
+  {
+   "t_days": "100",
+   "t_seconds": "8640000",
+   "n_units": "196000",
+   "q_units": "2700",
+   "unit_price_wad": "7225000000000000000",
+   "batch_cost_wad": "21812071220950823931174",
+   "tier": 5,
+   "tier_cost_wad": "30536899709331153503644"
+  },
+  {
+   "t_days": "100",
+   "t_seconds": "8640000",
+   "n_units": "200000",
+   "q_units": "1",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "10000000000000000000"
+  },
+  {
+   "t_days": "100",
+   "t_seconds": "8640000",
+   "n_units": "200000",
+   "q_units": "2700",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "30189717952873112707508",
+   "tier": 5,
+   "tier_cost_wad": "42265605134022357790511"
+  },
+  {
+   "t_days": "100",
+   "t_seconds": "8640000",
+   "n_units": "208000",
+   "q_units": "1",
+   "unit_price_wad": "19156858754085798781",
+   "batch_cost_wad": "19156858754085798781"
+  },
+  {
+   "t_days": "100",
+   "t_seconds": "8640000",
+   "n_units": "208000",
+   "q_units": "2700",
+   "unit_price_wad": "19156858754085798781",
+   "batch_cost_wad": "57834016264887848962552",
+   "tier": 5,
+   "tier_cost_wad": "80967622770842988547573"
+  },
+  {
+   "t_days": "365",
+   "t_seconds": "31536000",
+   "n_units": "0",
+   "q_units": "1",
+   "unit_price_wad": "0",
+   "batch_cost_wad": "0"
+  },
+  {
+   "t_days": "365",
+   "t_seconds": "31536000",
+   "n_units": "0",
+   "q_units": "2700",
+   "unit_price_wad": "0",
+   "batch_cost_wad": "0",
+   "tier": 5,
+   "tier_cost_wad": "0"
+  },
+  {
+   "t_days": "365",
+   "t_seconds": "31536000",
+   "n_units": "726000",
+   "q_units": "1",
+   "unit_price_wad": "7225000000000000000",
+   "batch_cost_wad": "7225000000000000000"
+  },
+  {
+   "t_days": "365",
+   "t_seconds": "31536000",
+   "n_units": "726000",
+   "q_units": "2700",
+   "unit_price_wad": "7225000000000000000",
+   "batch_cost_wad": "21812071220950823931174",
+   "tier": 5,
+   "tier_cost_wad": "30536899709331153503644"
+  },
+  {
+   "t_days": "365",
+   "t_seconds": "31536000",
+   "n_units": "730000",
+   "q_units": "1",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "10000000000000000000"
+  },
+  {
+   "t_days": "365",
+   "t_seconds": "31536000",
+   "n_units": "730000",
+   "q_units": "2700",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "30189717952873112707508",
+   "tier": 5,
+   "tier_cost_wad": "42265605134022357790511"
+  },
+  {
+   "t_days": "365",
+   "t_seconds": "31536000",
+   "n_units": "738000",
+   "q_units": "1",
+   "unit_price_wad": "19156858754085798781",
+   "batch_cost_wad": "19156858754085798781"
+  },
+  {
+   "t_days": "365",
+   "t_seconds": "31536000",
+   "n_units": "738000",
+   "q_units": "2700",
+   "unit_price_wad": "19156858754085798781",
+   "batch_cost_wad": "57834016264887848962552",
+   "tier": 5,
+   "tier_cost_wad": "80967622770842988547573"
+  },
+  {
+   "t_days": "0",
+   "t_seconds": "0",
+   "n_units": "0",
+   "q_units": "50",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "500996764437935049992",
+   "tier": 1,
+   "tier_cost_wad": "500996764437935049992"
+  },
+  {
+   "t_days": "0",
+   "t_seconds": "0",
+   "n_units": "0",
+   "q_units": "10000",
+   "unit_price_wad": "10000000000000000000",
+   "batch_cost_wad": "154283215355995425955190"
+  },
+  {
+   "t_days": "12.5",
+   "t_seconds": "1080000",
+   "n_units": "200000",
+   "q_units": "1000",
+   "unit_price_wad": "14991462405349410941163963",
+   "batch_cost_wad": "15616766027871438986859109219",
+   "tier": 4,
+   "tier_cost_wad": "19833292855396727513311068708"
+  },
+  {
+   "t_days": "730",
+   "t_seconds": "63072000",
+   "n_units": "4000000",
+   "q_units": "420",
+   "unit_price_wad": "4344745507710554798992060436322607428250826487618695943261720000000000000000000000000000000000000000000000000",
+   "batch_cost_wad": "1856214145649906731731903160012001553796819345006224212642910000000000000000000000000000000000000000000000000000",
+   "tier": 3,
+   "tier_cost_wad": "2171770550410390876126326697214041817942278633657282328792200000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "t_days": "2",
+   "t_seconds": "172800",
+   "n_units": "48000",
+   "q_units": "150",
+   "unit_price_wad": "357094888987365329343",
+   "batch_cost_wad": "53889819218841410953056",
+   "tier": 2,
+   "tier_cost_wad": "58201004756348723829301"
+  }
+ ]
+}

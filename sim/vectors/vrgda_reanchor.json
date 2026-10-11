@@ -1,0 +1,63 @@
+{
+ "description": "VRGDA re-anchoring when governance changes r (spec v0.2 \u00a712): the price must not jump.",
+ "algorithm": [
+  "p(t, n) = p0 * (1 - k)^(s_a + (t - t_a) - (n - n_a)/r)   (s_a = t_a = n_a = 0 before any change)",
+  "on a change to r_new at (t, n): s_a := s_a + (t - t_a) - (n - n_a)/r_old; t_a := t; n_a := n; r := r_new",
+  "rows are applied in sequence; s_anchor_wad is floored toward -infinity",
+  "without re-anchoring, cutting r by 25 % with n = 1M sold moves the schedule ~167 days and the price by a factor of ~0.85^-167"
+ ],
+ "params": {
+  "p0": "10.0",
+  "k": "0.15"
+ },
+ "rows": [
+  {
+   "t_days": "120",
+   "n_units": "150000",
+   "r_old": "2000",
+   "r_new": "1500",
+   "s_anchor_wad": "45000000000000000000",
+   "t_anchor_days": "120",
+   "n_anchor": "150000",
+   "price_before_wad": "6665790455522195",
+   "price_after_wad": "6665790455522195",
+   "price_t_plus_1d_n_plus_1000_wad": "6314291574253171"
+  },
+  {
+   "t_days": "180",
+   "n_units": "230000",
+   "r_old": "1500",
+   "r_new": "1125",
+   "s_anchor_wad": "51666666666666666666",
+   "t_anchor_days": "180",
+   "n_anchor": "230000",
+   "price_before_wad": "2255854900901599",
+   "price_after_wad": "2255854900901599",
+   "price_t_plus_1d_n_plus_1000_wad": "2215485032355555"
+  },
+  {
+   "t_days": "400",
+   "n_units": "600000",
+   "r_old": "1125",
+   "r_new": "1406.25",
+   "s_anchor_wad": "-57222222222222222223",
+   "t_anchor_days": "400",
+   "n_anchor": "600000",
+   "price_before_wad": "109346759562292554829137",
+   "price_after_wad": "109346759562292554829137",
+   "price_t_plus_1d_n_plus_1000_wad": "104331590794793939002876"
+  },
+  {
+   "t_days": "401.5",
+   "n_units": "602500",
+   "r_old": "1406.25",
+   "r_new": "1757.8125",
+   "s_anchor_wad": "-57500000000000000000",
+   "t_anchor_days": "401.5",
+   "n_anchor": "602500",
+   "price_before_wad": "114396245589545911555755",
+   "price_after_wad": "114396245589545911555755",
+   "price_t_plus_1d_n_plus_1000_wad": "106655556497144955830194"
+  }
+ ]
+}

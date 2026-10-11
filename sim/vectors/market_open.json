@@ -1,0 +1,111 @@
+{
+ "description": "Market open (spec \u00a711): P0_USD and DIG_LP from genesis inputs. Rows 0\u20132 come from simulated v0.2 genesis runs (base scenario, seeds 0\u20132) with the genesis tank cap (Market Open + 24 h); the other rows are edge cases.",
+ "algorithm": [
+  "energy_usd = floor(kWh_wad * usd_per_kwh_wad / 1e18)   (energy is priced in USD, so its USD value is exact)",
+  "P0 = floor(energy_usd * 1e18 / miner_accrual_wad)",
+  "DIG_LP = min(floor(pol_eth_wad * eth_usd_wad / P0), 1_000_000e18)   (minted from the reserve)",
+  "Chainlink ETH/USD has 8 decimals: scale it to 18 before use (x * 1e10).",
+  "Genesis energy spend = kWh PURCHASED during pre-fill and genesis; with the v0.2 tank cap a purchase may only last until Market Open + 24 h, so purchased \u2248 consumed + one day."
+ ],
+ "rows": [
+  {
+   "genesis_kwh_wad": "55859313062000000000000",
+   "usd_per_kwh_wad": "100000000000000000",
+   "eth_usd_wad": "3057226742980000000000",
+   "pol_eth_wad": "557096383252472793",
+   "genesis_miner_accrual_wad": "134940531125125649850816",
+   "genesis_energy_usd_wad": "5585931306200000000000",
+   "p0_usd_wad": "41395504075942613",
+   "dig_lp_uncapped_wad": "41143839151525357970177",
+   "dig_lp_wad": "41143839151525357970177"
+  },
+  {
+   "genesis_kwh_wad": "59699860085000000000000",
+   "usd_per_kwh_wad": "100000000000000000",
+   "eth_usd_wad": "2994995827640000000000",
+   "pol_eth_wad": "597115688102195841",
+   "genesis_miner_accrual_wad": "134940506729577027726918",
+   "genesis_energy_usd_wad": "5969986008500000000000",
+   "p0_usd_wad": "44241615458462366",
+   "dig_lp_uncapped_wad": "40422551842925385432966",
+   "dig_lp_wad": "40422551842925385432966"
+  },
+  {
+   "genesis_kwh_wad": "54735351828000000000000",
+   "usd_per_kwh_wad": "100000000000000000",
+   "eth_usd_wad": "2871306009600000000000",
+   "pol_eth_wad": "550968485318672707",
+   "genesis_miner_accrual_wad": "134940528381976764649153",
+   "genesis_energy_usd_wad": "5473535182800000000000",
+   "p0_usd_wad": "40562574108988510",
+   "dig_lp_uncapped_wad": "39001447954091981794487",
+   "dig_lp_wad": "39001447954091981794487"
+  },
+  {
+   "genesis_kwh_wad": "170000000000000000000000",
+   "usd_per_kwh_wad": "100000000000000000",
+   "eth_usd_wad": "3000000000000000000000",
+   "pol_eth_wad": "1700000000000000000",
+   "genesis_miner_accrual_wad": "135000000000000000000000",
+   "genesis_energy_usd_wad": "17000000000000000000000",
+   "p0_usd_wad": "125925925925925925",
+   "dig_lp_uncapped_wad": "40500000000000000297794",
+   "dig_lp_wad": "40500000000000000297794"
+  },
+  {
+   "genesis_kwh_wad": "43771000000000000000000",
+   "usd_per_kwh_wad": "100000000000000000",
+   "eth_usd_wad": "3000000000000000000000",
+   "pol_eth_wad": "437700000000000000",
+   "genesis_miner_accrual_wad": "134940500000000000000000",
+   "genesis_energy_usd_wad": "4377100000000000000000",
+   "p0_usd_wad": "32437259384691771",
+   "dig_lp_uncapped_wad": "40481225137648215268385",
+   "dig_lp_wad": "40481225137648215268385"
+  },
+  {
+   "genesis_kwh_wad": "2500000000000000000000000",
+   "usd_per_kwh_wad": "100000000000000000",
+   "eth_usd_wad": "2500000000000000000000",
+   "pol_eth_wad": "30000000000000000000",
+   "genesis_miner_accrual_wad": "120000000000000000000000",
+   "genesis_energy_usd_wad": "250000000000000000000000",
+   "p0_usd_wad": "2083333333333333333",
+   "dig_lp_uncapped_wad": "36000000000000000005760",
+   "dig_lp_wad": "36000000000000000005760"
+  },
+  {
+   "genesis_kwh_wad": "170000000000000000000000",
+   "usd_per_kwh_wad": "100000000000000000",
+   "eth_usd_wad": "3000000000000000000000",
+   "pol_eth_wad": "1000000000000000000000",
+   "genesis_miner_accrual_wad": "135000000000000000000000",
+   "genesis_energy_usd_wad": "17000000000000000000000",
+   "p0_usd_wad": "125925925925925925",
+   "dig_lp_uncapped_wad": "23823529411764706057525951",
+   "dig_lp_wad": "1000000000000000000000000"
+  },
+  {
+   "genesis_kwh_wad": "1000000000000000000",
+   "usd_per_kwh_wad": "30000000000000000",
+   "eth_usd_wad": "1500000000000000000000",
+   "pol_eth_wad": "6000000000000",
+   "genesis_miner_accrual_wad": "1000000000000000000000",
+   "genesis_energy_usd_wad": "30000000000000000",
+   "p0_usd_wad": "30000000000000",
+   "dig_lp_uncapped_wad": "300000000000000000000",
+   "dig_lp_wad": "300000000000000000000"
+  },
+  {
+   "genesis_kwh_wad": "98765432100000000000000",
+   "usd_per_kwh_wad": "500000000000000000",
+   "eth_usd_wad": "4321090000000000000000",
+   "pol_eth_wad": "3456700000000000000",
+   "genesis_miner_accrual_wad": "149999990000000000000000",
+   "genesis_energy_usd_wad": "49382716050000000000000",
+   "p0_usd_wad": "329218128947875263",
+   "dig_lp_uncapped_wad": "45370259076361231680461",
+   "dig_lp_wad": "45370259076361231680461"
+  }
+ ]
+}

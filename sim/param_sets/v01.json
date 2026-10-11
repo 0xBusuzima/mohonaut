@@ -1,0 +1,9 @@
+{
+  "spec.vrgda.r": 8000.0,
+  "spec.revenue.buyback": 0.40,
+  "spec.revenue.ops": 0.30,
+  "spec.genesis.revenue_buyback": 0.40,
+  "spec.genesis.revenue_ops": 0.30,
+  "spec.genesis.tank_until_hours_after_open": 0,
+  "spec.governance.enabled": false
+}

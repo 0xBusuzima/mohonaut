@@ -1,0 +1,179 @@
+{
+  "spec": {
+    "cap": 100000000,
+    "emission": {
+      "delta_d": 0.0005,
+      "split_miners": 0.90,
+      "split_dev": 0.05,
+      "split_treasury": 0.05
+    },
+    "referral": {
+      "rate": 0.03,
+      "min_invitee_energy_eth": 0.003
+    },
+    "energy": {
+      "price_usd_per_kwh": 0.10,
+      "tank_cap_hours": 720
+    },
+    "machines": {
+      "names": ["Hand Auger", "Rotary Drill", "Percussion Rig", "Diamond Core Drill", "Thermal Lance", "Plasma Bore"],
+      "dp": [10, 50, 150, 420, 1000, 2700],
+      "kw": [0.25, 1.0, 2.5, 6.0, 12.5, 30.0],
+      "premium": [0.0, 0.0, 0.08, 0.17, 0.27, 0.40],
+      "unlock_level": [1, 1, 3, 6, 10, 15]
+    },
+    "vrgda": {
+      "p0": 10.0,
+      "k": 0.15,
+      "r": 2000.0,
+      "max_units_per_tx": 10000,
+      "price_floor": 0.0
+    },
+    "spend": {
+      "burn_share": 0.80,
+      "cosmetic_burn_share": 1.0,
+      "scrap_credit_rate": 0.20
+    },
+    "outpost": {
+      "slot_base": 3,
+      "cap_base_kw": 6.0,
+      "cap_growth": 1.22,
+      "cost_base": 150.0,
+      "cost_exp": 2.2,
+      "idx_min": 0.25,
+      "idx_max": 4.0,
+      "max_level": 30
+    },
+    "refinery": {
+      "fast_fee": 0.08,
+      "fast_fee_burn_share": 0.5,
+      "queue_days": 3
+    },
+    "revenue": {
+      "buyback": 0.55,
+      "pol": 0.30,
+      "ops": 0.15
+    },
+    "genesis": {
+      "days": 3,
+      "dig_lp_cap": 1000000,
+      "revenue_buyback": 0.55,
+      "revenue_pol": 0.30,
+      "revenue_ops": 0.15,
+      "tank_until_hours_after_open": 24
+    },
+    "token": {
+      "daily_mint_cap": 2000000
+    },
+    "governance": {
+      "enabled": true,
+      "delay_days": 3,
+      "weeks": 4,
+      "sr_low": 0.5,
+      "price_ratio_low": 0.25,
+      "price_ratio_high": 4.0,
+      "step": 0.25,
+      "cooldown_days": 30,
+      "r_min": 1000.0,
+      "r_max": 100000.0
+    }
+  },
+  "model": {
+    "days": 1095,
+    "eth_usd": {
+      "initial": 3000.0,
+      "daily_vol": 0.02
+    },
+    "amm": {
+      "fee": 0.003,
+      "rounds_per_day": 8,
+      "swap_haircut": 0.85,
+      "max_daily_buy_frac_of_pool_eth": 0.10
+    },
+    "buyback_max_daily_frac_of_pool_eth": 0.02,
+    "ops_monthly_cost_usd": 15000.0,
+    "dev_sell_frac": 0.5,
+    "tank_days": 7.0,
+    "genesis_p0_basis": "purchased",
+    "adoption": {
+      "genesis_players": 2000,
+      "wave_players": 20000,
+      "mid_day": 150,
+      "width_days": 45,
+      "tail_per_day": 25,
+      "noise_sigma": 0.25,
+      "noise_ar": 0.9
+    },
+    "price_response": {
+      "ema_days": 30,
+      "full_at_ratio": 4.0,
+      "extra_impatience": 0.1,
+      "hold_strength": 0.5
+    },
+    "type_mix": {
+      "casual": 0.60,
+      "optimizer": 0.25,
+      "cosmetic": 0.15
+    },
+    "whales": {
+      "rate_per_day": 0.03,
+      "accounts": 5
+    },
+    "bots": {
+      "rate_per_day": 0.02,
+      "wallets": 50
+    },
+    "referred_share": 0.4,
+    "speculators": {
+      "usd_per_active_player": 25.0,
+      "speed": 0.1,
+      "sentiment_sigma": 0.08,
+      "sentiment_ar": 0.97,
+      "momentum": 0.5,
+      "value_elasticity": 0.5,
+      "value_clip_low": 0.1,
+      "value_clip_high": 10.0
+    },
+    "churn_loss_mult": 4.0,
+    "fast_refine_width": 0.03,
+    "purchase_iterations": 3,
+    "payback_entry_days": 14,
+    "mint_profile": {
+      "diurnal_amplitude": 0.8,
+      "peak_hour_utc": 15,
+      "open_hour_share": 0.5
+    },
+    "types": {
+      "casual": {
+        "budget_usd": 150, "capex_share": 0.6, "capex_days": 2, "tau_max": 180, "growth_awareness": 0.5,
+        "reinvest_mined": true, "refine_frac": 0.5, "sell_frac": 0.7, "impatience": 0.025, "op_tolerance": 0.2,
+        "churn_base": 0.006, "exit_dump": 0.7, "drawdown_exit": 1.0, "cosmetic_usd_day": 0.0
+      },
+      "optimizer": {
+        "budget_usd": 800, "capex_share": 0.7, "capex_days": 5, "tau_max": 270, "growth_awareness": 1.0,
+        "reinvest_mined": true, "refine_frac": 0.15, "sell_frac": 0.3, "impatience": 0.01, "op_tolerance": 0.0,
+        "churn_base": 0.002, "exit_dump": 0.5, "drawdown_exit": 1.0, "cosmetic_usd_day": 0.0
+      },
+      "whale": {
+        "budget_usd": 60000, "capex_share": 0.8, "capex_days": 7, "tau_max": 150, "growth_awareness": 1.0,
+        "reinvest_mined": true, "refine_frac": 0.3, "sell_frac": 0.6, "impatience": 0.03, "op_tolerance": 0.0,
+        "churn_base": 0.002, "exit_dump": 1.0, "drawdown_exit": 0.5, "cosmetic_usd_day": 0.0
+      },
+      "bot": {
+        "budget_usd": 4000, "capex_share": 0.6, "capex_days": 2, "tau_max": 120, "growth_awareness": 1.0,
+        "reinvest_mined": false, "refine_frac": 1.0, "sell_frac": 1.0, "impatience": 0.1, "op_tolerance": 0.0,
+        "churn_base": 0.004, "exit_dump": 1.0, "drawdown_exit": 1.0, "cosmetic_usd_day": 0.0
+      },
+      "cosmetic": {
+        "budget_usd": 150, "capex_share": 0.3, "capex_days": 2, "tau_max": 180, "growth_awareness": 0.5,
+        "reinvest_mined": true, "refine_frac": 0.5, "sell_frac": 0.3, "impatience": 0.02, "op_tolerance": 0.2,
+        "churn_base": 0.004, "exit_dump": 0.5, "drawdown_exit": 1.0, "cosmetic_usd_day": 0.3
+      },
+      "sybil": {
+        "budget_usd": 15, "capex_share": 0.0, "capex_days": 1, "tau_max": -1, "growth_awareness": 1.0,
+        "reinvest_mined": false, "refine_frac": 1.0, "sell_frac": 1.0, "impatience": 0.1, "op_tolerance": 0.0,
+        "churn_base": 0.0, "exit_dump": 1.0, "drawdown_exit": 1.0, "cosmetic_usd_day": 0.0
+      }
+    }
+  }
+}
