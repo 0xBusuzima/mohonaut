@@ -23,6 +23,11 @@ library EmissionMath {
         return (reserve * DELTA_H_WAD) / WAD;
     }
 
+    /// @notice The miners' part of an emission; equals `split(emission).miners`.
+    function minersShare(uint256 emission) internal pure returns (uint256) {
+        return (emission * MINERS_BPS) / BPS;
+    }
+
     /// @notice Splits an emission into miners / dev / treasury shares.
     function split(uint256 emission)
         internal
