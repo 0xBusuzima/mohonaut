@@ -115,7 +115,9 @@ docs/02 §3–§4 ve docs/03 §3.4'e göre MiningCore'un emisyon/muhasebe çekir
 docs/02 §5 ve docs/03 §3.3'e göre buyFuel() ve tank modelini MiningCore'a ekle: ETH → ℓ (Chainlink ETH/USD proxy adresi docs/ZINCIR_DOGRULAMA.md'den; bayatlık eşiği 26 saat; sequencer uptime feed bu zincirde YOK → feed adresi address(0) ise kontrol atlanır, tanımlıysa kontrol edilir; testnet'te MockV3Aggregator deploy et); buyFuel kayıtlı olmayan hesabı otomatik kaydeder (ilk giriş tek işlem), tank tüketimi, saat sınırına hizalı expiry, setActive(type,count), kapasite kontrolü, ETH'nin RevenueRouter'a iletimi (şimdilik basit bir mock router), π_ℓ parametresi (sınır + hız limiti). Testler: mock feed ile bayat/negatif/sequencer down senaryoları (yalnızca yakıt alımı durmalı, kazım devam etmeli), tank matematiği fuzz, expiry yuvarlama, invariant E3/E4'ün yakıt akışıyla korunması, reentrancy saldırgan kontratı, fork testi (testnet gerçek feed).
 ```
 
-### 2.4 Kuleler, saha ve VRGDA
+### 2.4 Kuleler, saha ve VRGDA — ✅ 2026-10-11 (`MiningCore.sol` makine/saha modülü, `lib/VrgdaMath.sol`)
+
+> Uygulamadaki adlar (tema v0.2): `upgradeOutpost` → `upgradeSite`, `scrap` → `scrapMachines`, `setActive` → `setActiveRigs`, `addMachineType` → `addMachineGeneration` (bir seferde bir nesil). Kod boyutu için ADR-011.
 
 ```text
 docs/02 §6–§7'ye göre katalog (Gen-1 tablosu, eklenebilir ama değiştirilemez), register(referrer) + ücretsiz Pilot Rig, buyMachines (LinearVRGDA kapalı form maliyet, Solady expWad/lnWad, tier primi, işlem başı üst sınır, maxCost slippage koruması, önce rafine edilmemiş bakiyeden ödeme, %80 kalıcı yakım/%20 rezerv), upgradeOutpost (150·L^2.2·idx, idx clamp), scrap (%20 hurda kredisi), slot/kapasite kısıtları, addMachineType (stratum eşiği + verim tavanı + 45 gün aralık; yalnızca timelock). Testler: sim/vectors VRGDA ve üs maliyeti vektörleriyle diferansiyel eşitlik; invariant V1, V2, S1, M1, M2; toplu alım indirimi olmadığının fuzz kanıtı; taşma sınırları (çok ileri/geri satış durumları); harcama sonrası E2 arz invariant'ı.

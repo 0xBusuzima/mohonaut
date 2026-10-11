@@ -86,11 +86,12 @@ Araçlar: **npm workspaces + Turborepo** (pnpm 12 Windows'ta takıldığı için
 **Durum (özet):**
 
 ```
-Global:  acc, lastUpdate, currentHour, H, R, E_h, burnedForever, devPending, treasuryPending,
-         dpEndingAt[hour], accAtHour[hour], vrgdaSold, genesis{fuelUsd, minerDig}, params{...}
-Hesap:   dp, burn, tankKWh, lastSettle, expiryHour, debt, unrefined, level, owned[type], active[type],
-         referrer, fuelSpentWei, refineQueue[]
-Katalog: machineType{dp, burn, premiumBps, minLevel, generation, enabled} — eklenir, asla değiştirilmez
+Global:  acc, lastUpdate, currentHour, H, R, E_h, emitted, burnedForever, unrefinedSpent, devPending,
+         treasuryPending, dpEndingAt[hour], accAtHour[hour], vrgda{lnP0, decay, r, sold},
+         generations, lastGenerationTime, bestEfficiency, genesis{fuelUsd, minerDig}, params{...}
+Hesap:   dp, burn, tank, lastFuelSettle, expiryHour, debt, unrefined, level, rigs, scrapCredit,
+         rigs[type]{owned, active}, referrer, fuelSpentWei, refineQueue[]
+Katalog: machineType{dp, burn, premiumBps, minLevel, generation} — eklenir, asla değiştirilmez
 ```
 
 **Dış fonksiyonlar:**
@@ -99,17 +100,17 @@ Katalog: machineType{dp, burn, premiumBps, minLevel, generation, enabled} — ek
 |---|---|---|
 | `register(referrer)` | herkes | Saha L1 + Pilot Rig; referrer bir kez ayarlanır. `buyFuel` kayıtlı olmayan hesabı otomatik kaydeder → **ilk giriş tek işlem** |
 | `buyFuel()` payable | oyuncu | ETH → ℓ (Chainlink, 26s bayatlık kontrolü; sequencer feed adresi tanımlıysa onu da kontrol eder); gerekirse önce kayıt; ETH Router'a |
-| `buyMachines(type, qty, maxCost, payFromWallet)` | oyuncu | VRGDA kapalı form maliyet; önce rafine edilmemiş bakiye; %80 yak/%20 rezerv |
-| `setActive(type, count)` | oyuncu | Makineleri aç/kapa (kapasite kontrolü) |
-| `upgradeOutpost(maxCost, payFromWallet)` | oyuncu | `150·L^2.2·idx` |
-| `scrap(type, qty)` | oyuncu | %20 hurda kredisi |
+| `buyMachines(typeId, qty, maxCost, payFromWallet)` | oyuncu | VRGDA kapalı form maliyet × (1 + prim), yuvarlama yukarı; işlem başı ≤ 10.000 DP birimi; ped, yakıt hattı ve saha seviyesi kontrolü; alınan makineler hemen çalışır. Ödeme sırası: hurda kredisi → rafine edilmemiş bakiye → (isteğe bağlı) cüzdan (`burnFrom`, onay/permit gerekir). MOHN kısmı %80 kalıcı yakım / %20 rezerv |
+| `setActiveRigs(typeId, active)` | oyuncu | Bir türden tam olarak `active` adet makine çalışır (yakıt hattı kontrolü); Pilot Rig de kapatılabilir |
+| `upgradeSite(maxCost, payFromWallet)` | oyuncu | `150·L^2.2·idx`, idx = clamp(p/p0, 0.25, 4), yuvarlama yukarı; L30 sonrası revert |
+| `scrapMachines(typeId, qty)` | oyuncu | Önce boştaki makineler sökülür; kredi = DP × güncel p(t,n) × %20 (aşağı yuvarlanır). Ücretsiz Pilot Rig kredi vermez, yalnızca pedi boşaltır. Söküm `vrgdaSold`'u azaltmaz |
 | `refine(amount, fast)` | oyuncu | Hızlı: %8 ücret, anında mint · Standart: 72s kuyruk |
 | `finalizeRefine(user, id)` | herkes | Süresi dolan kuyruğu mint eder |
 | `poke()` | herkes | Global checkpoint (en fazla 168 saat/çağrı) |
 | `openMarket()` | herkes | Genesis bitince formülle POL oluşturur (LiquidityManager) |
 | `claimDev()` / `claimTreasury()` | ilgili alıcı | Payları **yalnızca 72s standart kuyruğa** alır (hızlı seçenek yok); kuyruk herkese açık |
 | `set*` parametreler | Timelock | Kodlanmış sınır + hız limiti kontrolü |
-| `addMachineType(...)` | Timelock | Stratum eşiği + verim ≤ en iyi +%15 + ≥45 gün aralık |
+| `addMachineGeneration(types[])` | `CATALOG_ROLE` → Faz 2.7'de Timelock | Bir seferde bir nesil (1–8 tür): Dünya Derinliği nesnin stratum eşiğine ulaşmış olmalı (Gen-2: 2.000 m … Gen-8+: 85.000 m), son nesilden ≥ 45 gün, her türün verimi ≤ en iyi × 1,15, DP ≤ 10.000, prim ≤ %100, minLevel 1–30. Mevcut türler asla değişmez (M2) |
 | `pause()` / `unpause()` | Guardian / Timelock | Pause en fazla 72s, sonra otomatik biter; uzatma yalnızca Timelock |
 
 ### 3.4 Ödül muhasebesi algoritması
@@ -288,3 +289,4 @@ if (expiryHour > currentHour) { dpEndingAt[expiryHour] += dp; H += dp; debt = ac
 | ADR-008 | Cüzdan girişi (RainbowKit + SIWE) birincil; e-posta/Google ücretsiz kademeli Dynamic/Privy adaptörüyle; X yalnızca bağlı kimlik; v1'de sponsorlu gas yok | Sıfır bütçe; cüzdan girişi sınırsız ve ücretsiz | Baştan Privy ücretli kademe |
 | ADR-009 | Korumalı lansman: immutable günlük mint tavanı + saatlik devre kesicisi + "Unaudited" bandı; bağımsız denetim gelirle yapılır | Lansman öncesi denetim bütçesi yok; hata olasılığı sıfırlanamıyorsa zarar boyutu sınırlanır | Lansmanı denetime kadar ertelemek |
 | ADR-010 | İndeksleyici: kendi log okuyucumuz (getLogs, ~10 sn) | ~843K blok/gün; Ponder'in her bloğu çekmesi ücretsiz RPC kotasını aşar; az olaylı tek kontrat seti için basit okuyucu yeterli | Ponder + ücretli RPC, Goldsky, Envio |
+| ADR-011 | MiningCore tek kontrat kalır; kod boyutu sınırı olarak zincirin doğrulanmış 96 KB sınırı kullanılır (`code_size_limit = 98304`) | Faz 2.4 sonunda MiningCore 23.7 KB; rafineri, market açılışı ve timelock eklenince 24 KB (EIP-170) aşılır. Robinhood Chain 98.304 bayta kadar kabul ediyor (mainnet + testnet, `ZINCIR_DOGRULAMA.md` §6). Bölmek delegatecall/kütüphane bağlama ve ek denetim yüzeyi getirir. Bedel: kod başka EVM zincirlerine olduğu gibi taşınamaz | Modül başına ayrı kontrat, harici kütüphaneler, diamond |

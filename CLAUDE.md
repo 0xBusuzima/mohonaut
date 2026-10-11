@@ -48,7 +48,7 @@ npm komutlarını Git Bash yerine `cmd.exe /c "..."` veya PowerShell ile çalı�
 | Ölü kod (TS) | `npx knip` |
 | Biçim | `npx prettier --check .` (düzelt: `--write`) |
 | Kontratlar: biçim / lint / derle / test | `cd contracts && forge fmt --check && forge lint && forge build --sizes && forge test` |
-| Kontrat kapsam kapısı (%95) | `cd contracts && forge coverage --report lcov --report-file lcov.info --no-match-coverage "(test|script)/" && python ../tools/check_coverage.py lcov.info` |
+| Kontrat kapsam kapısı (%95; `--code-size-limit` yalnızca optimizasyonsuz kapsam derlemesi için) | `cd contracts && forge coverage --report lcov --report-file lcov.info --no-match-coverage "(test|script)/" --code-size-limit 300000 && python ../tools/check_coverage.py lcov.info` |
 | Derin fuzz | `cd contracts && FOUNDRY_PROFILE=deep forge test` |
 | Simülatör testleri | `cd sim && .venv\Scripts\python.exe -m unittest discover -s tests -t .` |
 | Simülatör lint / ölü kod | `cd sim && .venv\Scripts\python.exe -m ruff check . && .venv\Scripts\python.exe -m vulture engine tests run_scenarios.py make_vectors.py --min-confidence 80` |

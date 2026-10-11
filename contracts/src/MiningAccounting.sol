@@ -22,6 +22,9 @@ abstract contract MiningAccounting {
     uint64 internal constant HOUR = 1 hours;
     /// @notice Maximum hour boundaries processed per checkpoint call (bounded gas).
     uint256 public constant MAX_HOURS_PER_POKE = 168;
+    /// @notice Share of every MOHN spend that returns to the reserve; the rest is burned forever
+    ///         (docs/02 S6.3, immutable).
+    uint256 public constant RESERVE_SHARE_BPS = 2000;
 
     struct Position {
         uint128 dp; // drill power counted while active
@@ -44,6 +47,9 @@ abstract contract MiningAccounting {
         mapping(uint64 hour => uint256 dp) dpEndingAt;
         mapping(uint64 hour => uint256 acc) accAtHour;
         mapping(address account => Position) positions;
+        uint256 emitted; // cumulative emission, recycled reserve included (World Depth source)
+        uint256 burnedForever; // 80 % of every MOHN spend
+        uint256 unrefinedSpent; // miners' credit spent in game without being minted
     }
 
     // keccak256(abi.encode(uint256(keccak256("mohonaut.storage.MiningAccounting")) - 1)) & ~bytes32(uint256(0xff))
@@ -55,6 +61,7 @@ abstract contract MiningAccounting {
     );
     event Accrued(address indexed account, uint256 amount);
     event PositionUpdated(address indexed account, uint256 dp, uint64 expiryHour);
+    event SpendSettled(uint256 burned, uint256 toReserve);
 
     error GenesisNotHourAligned();
     error CheckpointBehind();
@@ -136,6 +143,8 @@ abstract contract MiningAccounting {
         s.minersDistributed += minersSum;
         s.devPending += devSum;
         s.treasuryPending += treasurySum;
+        // split() gives the treasury the remainder, so the three sums add up to the full emission.
+        s.emitted += minersSum + devSum + treasurySum;
         return last >= nowTs;
     }
 
@@ -185,6 +194,31 @@ abstract contract MiningAccounting {
         p.debt = s.acc;
         // forge-lint: disable-next-line(reentrancy-events)
         emit PositionUpdated(account, dp, expiryHour);
+    }
+
+    /// @dev Spends up to `amount` of `account`'s settled unrefined credit. Caller must have settled.
+    /// @return used The part of `amount` covered by the credit.
+    function _spendUnrefined(address account, uint256 amount) internal returns (uint256 used) {
+        AccountingStorage storage s = _accounting();
+        Position storage p = s.positions[account];
+        used = amount < p.unrefined ? amount : p.unrefined;
+        if (used != 0) {
+            p.unrefined -= used;
+            s.unrefinedSpent += used;
+        }
+    }
+
+    /// @dev Books a MOHN spend (unrefined credit or burned wallet tokens): RESERVE_SHARE_BPS back
+    ///      to the reserve (rounded down), the rest burned forever (docs/02 S6.3, invariant S1).
+    function _settleSpend(uint256 spent) internal {
+        if (spent < 1) return; // nothing spent (the cost was covered by scrap credit)
+        AccountingStorage storage s = _accounting();
+        uint256 toReserve = (spent * RESERVE_SHARE_BPS) / 10_000;
+        uint256 burned = spent - toReserve;
+        s.reserve += toReserve;
+        s.burnedForever += burned;
+        // forge-lint: disable-next-line(reentrancy-events)
+        emit SpendSettled(burned, toReserve);
     }
 
     function _expiryHourOf(address account) internal view returns (uint64) {
@@ -283,6 +317,19 @@ abstract contract MiningAccounting {
 
     function treasuryPending() external view returns (uint256) {
         return _accounting().treasuryPending;
+    }
+
+    /// @notice Cumulative emission (recycled reserve included); World Depth = emitted / 1,000 MOHN.
+    function emitted() public view returns (uint256) {
+        return _accounting().emitted;
+    }
+
+    function burnedForever() external view returns (uint256) {
+        return _accounting().burnedForever;
+    }
+
+    function unrefinedSpent() external view returns (uint256) {
+        return _accounting().unrefinedSpent;
     }
 
     function accAtHour(uint64 hour) external view returns (uint256) {
