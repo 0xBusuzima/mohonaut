@@ -8,6 +8,8 @@ solc_version = "0.8.30"
 evm_version = "prague"          # verified on Robinhood Chain (docs/ZINCIR_DOGRULAMA.md)
 optimizer = true
 optimizer_runs = 200
+# Off: Foundry 1.8 otherwise rewrites `new X()` in tests to vm.deployCode, which Halmos cannot run.
+dynamic_test_linking = false
 fs_permissions = [{ access = "read", path = "../sim/vectors" }]
 remappings = [
     "forge-std/=lib/forge-std/src/",
