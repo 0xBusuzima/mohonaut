@@ -55,6 +55,7 @@ npm komutlarını Git Bash yerine `cmd.exe /c "..."` veya PowerShell ile çalı�
 | Vektörleri yeniden üret | `cd sim && .venv\Scripts\python.exe make_vectors.py` (çıktı değişmemeli) |
 | Slither (yerel, WSL) | `wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/yazic/Desktop/crypto-game-project/contracts && forge clean && ~/halmos-venv/bin/slither . --config-file slither.config.json --fail-medium"` |
 | Halmos (yerel, WSL) | `wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/yazic/Desktop/crypto-game-project/contracts && ~/halmos-venv/bin/halmos --function prove_"` |
-| Aderyn / Medusa / Echidna | CI'da (Linux) |
+| Aderyn (yerel, WSL; Windows sürümü yok) | `wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/yazic/Desktop/crypto-game-project/contracts && ~/bin/aderyn . --output /tmp/ad.md; grep '^## H-' /tmp/ad.md"` (çıktı boş olmalı) |
+| Medusa / Echidna | CI'da (Linux) |
 
 Sürümler: Node 24, npm 11, TypeScript 5.9, Foundry 1.8.5, solc 0.8.30 (`evm_version = prague`), OpenZeppelin 5.7.0, Solady 0.1.26, forge-std 1.17.0 (git submodule, sabit etiket).

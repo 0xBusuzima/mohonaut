@@ -22,6 +22,9 @@ import {IRevenueRouter} from "./interfaces/IRevenueRouter.sol";
 ///      the position's expiry hour boundary; the fractional-hour remainder stays in the tank.
 ///      Consumption rounds up and runtime rounds down (protocol-favourable).
 ///      Roles are minimal here; Phase 2.7 wires the Timelock, Guardian and parameter bounds.
+// False positive: buyFuel forwards every wei to the router in the same call, so the core never
+// holds ETH (proved by invariant_routerReceivesAllFuelEth).
+// aderyn-fp-next-line(contract-locks-ether)
 contract MiningCore is
     Initializable,
     UUPSUpgradeable,
