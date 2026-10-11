@@ -9,7 +9,7 @@ import {MohnToken} from "../../src/MohnToken.sol";
 import {EmissionMath} from "../../src/lib/EmissionMath.sol";
 import {SiteMath} from "../../src/lib/SiteMath.sol";
 import {MockAggregator} from "../mocks/MockAggregator.sol";
-import {MockRouter} from "../mocks/MockRouter.sol";
+import {RevenueRouter} from "../../src/RevenueRouter.sol";
 
 /// @notice Random fuel (with referrers), rig purchases, switches, scraps, site upgrades, refines,
 ///         finalizations, dev/treasury withdrawals and time jumps.
@@ -171,6 +171,7 @@ contract EconomyHandler is Test {
 contract MiningCoreEconomyInvariantTest is Test {
     MiningCore internal core;
     MohnToken internal mohn;
+    RevenueRouter internal router;
     EconomyHandler internal handler;
     MiningCore.MachineType[] internal catalogAtStart;
 
@@ -178,7 +179,7 @@ contract MiningCoreEconomyInvariantTest is Test {
         uint64 genesis = 1_800_003_600 - (1_800_003_600 % 3600);
         vm.warp(genesis - 12 hours);
         MockAggregator feed = new MockAggregator(8, 2500e8);
-        MockRouter router = new MockRouter();
+        router = new RevenueRouter(address(this));
         MiningCore impl = new MiningCore();
         address proxyAddr = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
         mohn = new MohnToken(proxyAddr);
@@ -204,6 +205,7 @@ contract MiningCoreEconomyInvariantTest is Test {
             )
         );
         assertEq(address(core), proxyAddr, "token minter == proxy");
+        router.grantRole(router.DEPOSITOR_ROLE(), address(core));
         for (uint256 i = 0; i < core.machineTypeCount(); ++i) {
             catalogAtStart.push(core.machineType(i));
         }
@@ -236,6 +238,14 @@ contract MiningCoreEconomyInvariantTest is Test {
             assertEq(s.burn, burn, "site burn");
             assertEq(core.positionOf(a).dp, s.dp, "accounting DP");
         }
+    }
+
+    /// R1: the router's ETH balance equals its three buckets.
+    function invariant_routerBuckets() public view {
+        assertEq(
+            address(router).balance,
+            router.buybackBalance() + router.polBalance() + router.opsBalance()
+        );
     }
 
     /// M2: existing machine types never change.

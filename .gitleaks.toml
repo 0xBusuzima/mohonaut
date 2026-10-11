@@ -9,3 +9,7 @@ description = "Simulator metric identifier compared as a dict key, not a secret"
 condition = "AND"
 regexes = ['''price_m24_gt_30pct_m2''']
 paths = ['''^sim/run_scenarios\.py$''']
+
+[[allowlists]]
+description = "Public on-chain runtime bytecode of the Uniswap v4 PoolManager (codehash checked in tests)"
+paths = ['''^contracts/test/fixtures/PoolManager\.runtime\.hex$''']

@@ -131,7 +131,9 @@ docs/02 §6–§7'ye göre katalog (Gen-1 tablosu, eklenebilir ama değiştirile
 docs/02 §8–§9'a göre refine(amount, fast) (%8 hızlı ücret: %4 yakım/%4 rezerv; standart 72 saat kuyruk), finalizeRefine (herkes çağırabilir), referans kredisi (%3, hazine payından, koşullar: davet edilen ≥0.003 ETH yakıt harcamış, davet eden aktif), claimDev/claimTreasury. Testler: kuyruk zamanlaması, çift finalize engeli, invariant R2 (referans ≤ hazine payı), E2 arz eşitliği tüm akışlarda, ücret sınırları ve hız limitleri.
 ```
 
-### 2.6 Gelir yönlendirme, buyback, POL ve Market Open
+### 2.6 Gelir yönlendirme, buyback, POL ve Market Open — ✅ 2026-10-11 (`RevenueRouter`, `BuybackBurner`, `LiquidityManager`, `MiningCore.openMarket`)
+
+> Uygulama farkları: PositionManager yok, PoolManager ile doğrudan (ADR-013); LiquidityManager havuzun `beforeInitialize` hook'u (ADR-012). Fork testi yerine zincirdeki PoolManager kodu hash kontrollü yerleştirilir. L1 için Halmos Faz 2.9'da.
 
 ```text
 docs/02 §10–§11 ve docs/03 §3.5–§3.7'ye göre RevenueRouter (kovalar, bps sınırları, pull ödeme), BuybackBurner (KEEPER, günlük tavan, minOut, Uniswap v4 swap, %100 yakım), LiquidityManager (openMarket: formül fiyatı → sqrtPriceX96, tam aralık pozisyon, likidite ÇEKME FONKSİYONU YOK; addLiquidity tavanlı; collectFees) ve MiningCore.openMarket() (genesis bitişinden sonra, bir kez, P0_USD ve MOHN_LP formülleri, 1M MOHN üst sınırı). Uniswap v4 adresleri docs/ZINCIR_DOGRULAMA.md'den. Testler: fork testleri (testnet v4), invariant R1, L1 (Halmos: likidite azaltılamaz), market open formülünün sim/vectors ile eşitliği, keeper tavan aşımı revert'leri, fiyat manipülasyonu senaryosu (havuzu pompalayıp buyback tetikleme → tavan zararı sınırlıyor mu).

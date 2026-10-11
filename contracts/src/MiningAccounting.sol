@@ -52,6 +52,8 @@ abstract contract MiningAccounting {
         uint256 unrefinedSpent; // miners' credit spent in game without being minted
         uint256 unrefinedRefined; // miners' credit sent to the refinery (fast or queued)
         uint256 referralPaid; // referral credit moved from the treasury share to referrers
+        uint64 snapshotHour; // Market Open hour: the miners' genesis accrual is recorded there
+        uint256 minersAtSnapshot; // minersDistributed at the snapshot hour boundary
     }
 
     // keccak256(abi.encode(uint256(keccak256("mohonaut.storage.MiningAccounting")) - 1)) & ~bytes32(uint256(0xff))
@@ -80,9 +82,11 @@ abstract contract MiningAccounting {
     // ------------------------------------------------------------------ init
 
     /// @dev `genesisTime` must be an exact hour boundary. Nothing is emitted before it.
-    function _initAccounting(uint64 genesisTime) internal {
+    ///      `snapshotHour`: the hour boundary at which minersDistributed is recorded (Market Open).
+    function _initAccounting(uint64 genesisTime, uint64 snapshotHour) internal {
         if (genesisTime % HOUR != 0) revert GenesisNotHourAligned();
         AccountingStorage storage s = _accounting();
+        s.snapshotHour = snapshotHour;
         s.reserve = EmissionMath.CAP;
         s.hourEmission = EmissionMath.hourlyEmission(EmissionMath.CAP);
         s.currentHour = genesisTime / HOUR;
@@ -132,6 +136,7 @@ abstract contract MiningAccounting {
                 ++hour;
                 ++boundaries;
                 s.accAtHour[hour] = acc;
+                if (hour == s.snapshotHour) s.minersAtSnapshot = s.minersDistributed + minersSum;
                 active -= s.dpEndingAt[hour];
                 emission = EmissionMath.hourlyEmission(res);
                 // forge-lint: disable-next-line(reentrancy-events)
@@ -254,6 +259,11 @@ abstract contract MiningAccounting {
         s.positions[referrer].unrefined += credit;
         // forge-lint: disable-next-line(reentrancy-events)
         emit ReferralCredited(referrer, invitee, credit);
+    }
+
+    /// @dev Books MOHN minted straight from the reserve (the Market Open liquidity).
+    function _mintFromReserve(uint256 amount) internal {
+        _accounting().reserve -= amount;
     }
 
     /// @dev Takes `amount` from the dev (`dev == true`) or treasury share for a queued withdrawal.
@@ -382,6 +392,11 @@ abstract contract MiningAccounting {
 
     function referralPaid() external view returns (uint256) {
         return _accounting().referralPaid;
+    }
+
+    /// @notice MOHN credited to miners during genesis (recorded at the Market Open boundary).
+    function genesisMinerAccrual() public view returns (uint256) {
+        return _accounting().minersAtSnapshot;
     }
 
     function accAtHour(uint64 hour) external view returns (uint256) {

@@ -49,7 +49,7 @@
 | R2 | Referans kredisi toplamı ≤ hazine payı toplamı (test: `referralPaid ≤ %3 × minersDistributed`, yani emisyonun ≤ %2.7'si; kaynağın hazine olduğu E2 ile kanıtlanır) |
 | P1 | Her parametre kendi sınırları içinde; hız limiti aşılamaz; yalnızca Timelock |
 | P2 | Pause en fazla 72s; Guardian unpause edemez |
-| L1 | POL pozisyonundan likidite çıkarılamaz (fonksiyon yok + Halmos) |
+| L1 | POL pozisyonundan likidite çıkarılamaz (fonksiyon yok + Halmos). Faz 2.6 testleri: derlenmiş ABI'nin izinli fonksiyon listesine birebir eşitliği (yeni fonksiyon eklenirse test kırılır) ve işlem/ücret/ekleme döngülerinde pozisyon likiditesinin hiç azalmaması. Halmos ispatı sembolik PoolManager gerektirdiği için Faz 2.9'da |
 
 Her invariant için: **Foundry invariant handler** (çok aktörlü rastgele işlem dizileri + zaman atlama) + gece **Medusa/Echidna** kampanyası (Chimera iskeleti, aynı özellikler) + kritik olanlar (T1, T2, E2, L1, P2) için **Halmos/Certora** biçimsel ispat.
 
@@ -66,7 +66,7 @@ Her invariant için: **Foundry invariant handler** (çok aktörlü rastgele işl
 | Biçimsel | **Halmos** (açık), **Certora** (açık kaynak sürümü) | T1, T2, E2, L1, P2 |
 | Diferansiyel | `/sim/vectors/*.json` ↔ Solidity | Emisyon, VRGDA, saha maliyeti, market açılışı formülleri birebir |
 | Mutasyon | **Gambit** (Certora, açık kaynak) — Foundry 1.8.5'te yerleşik mutasyon testi yok (araştırmadaki bilgi yanlıştı) | Mutant öldürme oranı ≥ %90 (core) |
-| Fork | Testnet 46630 fork | Chainlink feed, Uniswap v4, Safe, EntryPoint gerçek adresleri |
+| Fork | Testnet 46630 fork | Chainlink feed, Uniswap v4, Safe, EntryPoint gerçek adresleri. Uniswap v4: PoolManager'ın zincirdeki runtime kodu `test/fixtures`'ta; testler onu kanonik adrese yerleştirir ve kod hash'ini mainnet/testnet'ten okunan `0xbd38…5626` ile karşılaştırır (CI'da RPC gerekmez) |
 | Statik | **Slither**, **Aderyn**, `forge lint --deny warnings`, Solhint | Sıfır yüksek/orta bulgu (veya gerekçeli istisna dosyası) |
 | Gas | `forge snapshot --check` | Regresyon > %5 → CI kırmızı |
 | AI ön tarama | 2–3 farklı AI denetçi (yalnızca ön tarama) | Bulgular issue'ya; denetimin yerini **tutmaz** |

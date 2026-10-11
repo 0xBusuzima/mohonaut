@@ -14,15 +14,17 @@ import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
 import {MiningAccounting} from "./MiningAccounting.sol";
 import {SiteMath} from "./lib/SiteMath.sol";
 import {VrgdaMath} from "./lib/VrgdaMath.sol";
+import {MarketOpenMath} from "./lib/MarketOpenMath.sol";
 import {IAggregatorV3} from "./interfaces/IAggregatorV3.sol";
 import {IMohnToken} from "./interfaces/IMohnToken.sol";
+import {ILiquidityManager} from "./interfaces/ILiquidityManager.sol";
 import {IRevenueRouter} from "./interfaces/IRevenueRouter.sol";
 
 /// @title MiningCore
 /// @notice Player-facing core of Mohonaut: registration (free Pilot Rig), diesel fuel bought with
 ///         ETH (docs/02 S5, S11; docs/09 S3), rigs and drill sites bought with MOHN
-///         (docs/02 S6-S7), the refinery and referral credit (docs/02 S8-S9), and the dev and
-///         treasury withdrawals (docs/02 S3.3).
+///         (docs/02 S6-S7), the refinery and referral credit (docs/02 S8-S9), the dev and
+///         treasury withdrawals (docs/02 S3.3), and Market Open (docs/02 S11).
 /// @dev Fuel model: each site has a tank (litres, WAD) and a burn rate (L/h, WAD) from its active
 ///      rigs. Fuel burns only from genesis on and only while the site's DP is active, i.e. up to
 ///      the position's expiry hour boundary; the fractional-hour remainder stays in the tank.
@@ -164,6 +166,9 @@ contract MiningCore is
         ShareWithdrawals treasuryWithdrawals;
         uint256[13] mintBuckets; // (bucket index << 192) | MOHN minted in that 5-minute bucket
         mapping(address account => RefineRequest[]) refineQueue;
+        uint256 genesisFuelUsd; // USD (WAD) of fuel bought before Market Open
+        address liquidityManager;
+        bool marketOpened;
     }
 
     // keccak256(abi.encode(uint256(keccak256("mohonaut.storage.MiningCore")) - 1)) & ~bytes32(uint256(0xff))
@@ -194,6 +199,10 @@ contract MiningCore is
     event RefineFinalized(address indexed account, uint256 indexed id, uint256 amount);
     event MintBreakerTripped(uint256 windowTotal);
     event MintBreakerReset();
+    event LiquidityManagerWired(address indexed liquidityManager);
+    event MarketOpened(
+        uint256 p0Usd, uint256 ethUsd, uint256 polEth, uint256 mohnLp, uint160 sqrtPriceX96
+    );
 
     error ZeroAddress();
     error PreFillNotOpen();
@@ -222,6 +231,9 @@ contract MiningCore is
     error NotRecipient();
     error ShareLimitExceeded(uint256 remainingToday);
     error MintPaused();
+    error MarketNotOpenYet();
+    error MarketAlreadyOpen();
+    error AlreadyWired();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -248,7 +260,7 @@ contract MiningCore is
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(UPGRADER_ROLE, admin);
         _grantRole(CATALOG_ROLE, admin);
-        _initAccounting(genesisTime_);
+        _initAccounting(genesisTime_, (genesisTime_ + GENESIS_DURATION) / HOUR);
 
         CoreStorage storage c = _core();
         c.token = token_;
@@ -311,6 +323,10 @@ contract MiningCore is
         if (newTank > maxTank) revert TankCapExceeded(maxTank);
         s.tank = newTank;
         s.fuelSpentWei += msg.value;
+        // forge-lint: disable-next-line(block-timestamp)
+        if (block.timestamp < uint256(c.genesisTime) + GENESIS_DURATION) {
+            c.genesisFuelUsd += Math.mulDiv(litres, c.fuelPriceUsdWad, 1e18);
+        }
         uint64 expiryHour = _refreshPosition(c, s, msg.sender);
 
         // The only earlier external calls are view reads of the price feeds (staticcall).
@@ -792,6 +808,48 @@ contract MiningCore is
         _creditReferral(referrer, account, (earned * REFERRAL_BPS) / 10_000);
     }
 
+    // ------------------------------------------------------------------ market open
+
+    /// @notice One-time wiring of the LiquidityManager (deployed after this proxy, because the
+    ///         LiquidityManager needs this address and a mined hook address).
+    function wireLiquidityManager(address liquidityManager_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        CoreStorage storage c = _core();
+        if (c.liquidityManager != address(0)) revert AlreadyWired();
+        if (liquidityManager_ == address(0)) revert ZeroAddress();
+        c.liquidityManager = liquidityManager_;
+        // No external call precedes this event in this function.
+        // forge-lint: disable-next-line(reentrancy-events)
+        emit LiquidityManagerWired(liquidityManager_);
+    }
+
+    /// @notice Opens the market once genesis is over (docs/02 S11). Anyone may call, once.
+    ///         P0 = genesis fuel USD / genesis miner accrual; the MOHN paired with the POL ETH is
+    ///         minted from the reserve (at most 1M) and the pool opens at P0 via Chainlink ETH/USD.
+    ///         No AMM price is read anywhere in this calculation.
+    /// @dev If the mint breaker trips, the market stays closed and the call returns.
+    function openMarket() external nonReentrant {
+        _requireCheckpointed();
+        CoreStorage storage c = _core();
+        // forge-lint: disable-next-line(block-timestamp)
+        if (block.timestamp < uint256(c.genesisTime) + GENESIS_DURATION) revert MarketNotOpenYet();
+        if (c.marketOpened) revert MarketAlreadyOpen();
+        if (c.liquidityManager == address(0)) revert ZeroAddress();
+        uint256 p0 = MarketOpenMath.openingPrice(c.genesisFuelUsd, genesisMinerAccrual());
+        uint256 ethUsd = _ethUsdWad(c);
+        // A view read of our own router (staticcall); no state can change through it.
+        // aderyn-fp-next-line(reentrancy-state-change)
+        uint256 polEth = c.router.polBalance();
+        uint256 lp = MarketOpenMath.lpAmount(polEth, ethUsd, p0);
+        uint160 sqrtPriceX96 = MarketOpenMath.sqrtPriceX96(ethUsd, p0);
+        if (!_admitMint(c, lp)) return;
+        c.marketOpened = true;
+        _mintFromReserve(lp);
+        // forge-lint: disable-next-line(reentrancy-events)
+        emit MarketOpened(p0, ethUsd, polEth, lp, sqrtPriceX96);
+        IMohnToken(c.token).mint(c.liquidityManager, lp);
+        ILiquidityManager(c.liquidityManager).openMarket(sqrtPriceX96, polEth);
+    }
+
     // ------------------------------------------------------------------ views
 
     function siteOf(address account) external view returns (Site memory) {
@@ -878,6 +936,18 @@ contract MiningCore is
 
     function refineQueued() external view returns (uint256) {
         return _core().refineQueued;
+    }
+
+    function genesisFuelUsd() external view returns (uint256) {
+        return _core().genesisFuelUsd;
+    }
+
+    function liquidityManager() external view returns (address) {
+        return _core().liquidityManager;
+    }
+
+    function marketOpened() external view returns (bool) {
+        return _core().marketOpened;
     }
 
     function mintBreakerTripped() external view returns (bool) {

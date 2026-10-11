@@ -169,12 +169,14 @@ if (expiryHour > currentHour) { dpEndingAt[expiryHour] += dp; H += dp; debt = ac
 - `deposit()` (yalnızca MiningCore) → kovalar: `buyback`, `pol`, `ops` (bps; sınırlar 02 §10).
 - `withdrawOps()` → Ops Safe (pull). `pullBuyback(amount)` / `pullPol(amount)` yalnızca ilgili kontratlar.
 - ETH muhasebesi invariant'ı: `balance == buyback + pol + ops` (toz hariç).
+- Uygulama (Faz 2.6): roller `DEPOSITOR_ROLE` (MiningCore), `FEE_DEPOSITOR_ROLE` ve `POL_ROLE` (LiquidityManager), `BUYBACK_ROLE` (BuybackBurner), `OPS_ROLE` (ops Safe). Bölüşüm yuvarlama tozu ops kovasına gider. Oran ayarı (sınır + hız limiti + Timelock) Faz 2.7'de.
 
 ### 3.6 BuybackBurner
 
 - `executeBuyback(ethIn, minMohnOut)`: yalnızca KEEPER; `ethIn ≤ dailyCap`, günlük toplam tavanı; Uniswap v4 swap; alınan MOHN'un **%100'ü yakılır**.
 - Keeper anahtarı ele geçirilirse en kötü durum: günlük tavan dahilinde kötü fiyatla alım (sınırlı kayıp). Keeper başka hiçbir yetkiye sahip değil.
 - Mint/ödül miktarı **asla** AMM fiyatından hesaplanmaz.
+- Uygulama (Faz 2.6): günlük tavan = havuzun ETH derinliğinin **%2'si** (`sim/params.json` `buyback_max_daily_frac_of_pool_eth`). Havuz derinliği yalnızca tavanı boyutlamak için okunur. Genesis'te biriken kova bu tavanla günlere yayılarak harcanır.
 
 ### 3.7 LiquidityManager (POL)
 
@@ -182,6 +184,8 @@ if (expiryHour > currentHour) { dpEndingAt[expiryHour] += dp; H += dp; debt = ac
 - `addLiquidity(ethIn, minDig)`: KEEPER, tavanlı; yarım-swap + ekleme.
 - `collectFees()`: herkes; MOHN ücretleri yakılır, ETH ücretleri buyback kovasına.
 - **Likidite çekme fonksiyonu yok.** Pozisyon NFT'si kontratta kalıcı kilitli.
+- Uygulama (Faz 2.6, ADR-012/013): PositionManager/NFT kullanılmaz; pozisyon doğrudan PoolManager'da LiquidityManager adına tutulur ve kontratta likidite azaltan hiçbir yol yoktur. Havuz: ETH (currency0) / MOHN, ücret %0,3 (`sim/params.json` amm.fee), tick aralığı 60, tam aralık. LiquidityManager aynı zamanda havuzun hook'udur (yalnızca `beforeInitialize`); havuzu başkası Market Open'dan önce kendi fiyatıyla başlatamaz. Adresinin düşük 14 biti `0x2000` olmalıdır (deploy'da CREATE2 salt'ı aranır). `addLiquidity` günlük tavanı havuz ETH'sinin %4'ü (yarısı swap edildiği için fiyat etkisi buyback tavanıyla aynı). MiningCore, LiquidityManager'ı `wireLiquidityManager` ile **bir kez** bağlar.
+- `MiningCore.openMarket()`: Market Open'dan sonra herkes, bir kez çağırır. P0 = genesis yakıt USD'si / genesis madenci tahakkuku (Market Open saat sınırında muhasebede kaydedilir); LP MOHN'u rezervden basılır (≤ 1M, devre kesiciden geçer); fiyat Chainlink ETH/USD ile `sqrtPriceX96`'ya çevrilir. AMM fiyatı hiçbir yerde okunmaz.
 
 ### 3.8 Roller ve anahtarlar
 
@@ -291,4 +295,6 @@ if (expiryHour > currentHour) { dpEndingAt[expiryHour] += dp; H += dp; debt = ac
 | ADR-008 | Cüzdan girişi (RainbowKit + SIWE) birincil; e-posta/Google ücretsiz kademeli Dynamic/Privy adaptörüyle; X yalnızca bağlı kimlik; v1'de sponsorlu gas yok | Sıfır bütçe; cüzdan girişi sınırsız ve ücretsiz | Baştan Privy ücretli kademe |
 | ADR-009 | Korumalı lansman: immutable günlük mint tavanı + saatlik devre kesicisi + "Unaudited" bandı; bağımsız denetim gelirle yapılır | Lansman öncesi denetim bütçesi yok; hata olasılığı sıfırlanamıyorsa zarar boyutu sınırlanır | Lansmanı denetime kadar ertelemek |
 | ADR-010 | İndeksleyici: kendi log okuyucumuz (getLogs, ~10 sn) | ~843K blok/gün; Ponder'in her bloğu çekmesi ücretsiz RPC kotasını aşar; az olaylı tek kontrat seti için basit okuyucu yeterli | Ponder + ücretli RPC, Goldsky, Envio |
+| ADR-012 | LiquidityManager havuzun `beforeInitialize` hook'u | MOHN adresi lansmandan önce yayımlanır; hook'suz havuz anahtarı tahmin edilebilir ve herkes havuzu Market Open'dan önce kendi fiyatıyla başlatabilirdi (openMarket ya kilitlenir ya da yanlış fiyattan açılırdı) | Hook'suz havuz + "önceden başlatılmışsa fiyatı swap ile taşı" (likidite eklenmişse güvenilmez) |
+| ADR-013 | v4 PoolManager ile doğrudan çalışma (unlock callback); PositionManager/NFT yok | Daha az bağımlılık; pozisyon kontratın kendisinde, NFT transfer yüzeyi yok; L1 (likidite azaltılamaz) ABI'den doğrulanabilir | PositionManager + NFT'yi kontratta kilitlemek |
 | ADR-011 | MiningCore tek kontrat kalır; kod boyutu sınırı olarak zincirin doğrulanmış 96 KB sınırı kullanılır (`code_size_limit = 98304`) | Faz 2.4 sonunda MiningCore 23.7 KB; rafineri, market açılışı ve timelock eklenince 24 KB (EIP-170) aşılır. Robinhood Chain 98.304 bayta kadar kabul ediyor (mainnet + testnet, `ZINCIR_DOGRULAMA.md` §6). Bölmek delegatecall/kütüphane bağlama ve ek denetim yüzeyi getirir. Bedel: kod başka EVM zincirlerine olduğu gibi taşınamaz | Modül başına ayrı kontrat, harici kütüphaneler, diamond |
