@@ -97,13 +97,13 @@ Kök dizindeki CLAUDE.md dosyasını oku ve Faz 1 sonunda gerçek komutlarla (bu
 
 > Her alt adım: önce testler/özellikler (TDD), sonra kod. Her adım sonunda `slither`, `aderyn`, `forge coverage` raporu.
 
-### 2.1 MohnToken
+### 2.1 MohnToken — ✅ 2026-10-11
 
 ```text
 docs/02 §2 ve docs/03 §3.2'ye göre contracts/src/MohnToken.sol yaz: ERC20 + ERC20Permit + ERC20Burnable, CAP=100_000_000e18 immutable, minter constructor'da immutable, owner/blacklist/vergi/pause YOK. Testler: unit (mint yetkisi, CAP sınırı, permit, burn), fuzz (rastgele mint dizileri CAP'i aşamaz), günlük mint tavanı (DAILY_MINT_CAP = 500_000e18 / UTC günü, immutable; tavan dolunca revert). Halmos ile biçimsel özellikler: prove_onlyMinterCanMint, prove_totalSupplyNeverExceedsCap, prove_dailyMintNeverExceedsCap. Mutasyon testiyle mutantların öldürüldüğünü göster. Kapsam %100.
 ```
 
-### 2.2 Emisyon ve ödül muhasebesi çekirdeği
+### 2.2 Emisyon ve ödül muhasebesi çekirdeği — ✅ 2026-10-11 (`MiningAccounting.sol`)
 
 ```text
 docs/02 §3–§4 ve docs/03 §3.4'e göre MiningCore'un emisyon/muhasebe çekirdeğini yaz: contracts/src/lib/EmissionLib.sol (saatlik epoch, rezerv tabanlı E_h = R·δ_h, WAD sabit nokta; δ_h değerini sim/vectors'taki tam tamsayı algoritmasıyla birebir aynı hesapla) ve MiningCore'da global checkpoint (_checkpoint), dpEndingAt / accAtHour takvimi, hesap _settle, PREC=1e36 akümülatör, %90/%5/%5 dağılım, poke() (MAX_HOURS_PER_POKE=168). Bu adımda makine/yakıt alımı yerine test için iç fonksiyonları kullanan bir test harness'ı yaz (hesaba doğrudan dp ve expiry atayan). Testler: (1) diferansiyel: sim/vectors'taki ilk 2000 saatin E_h ve R_h değerleriyle birebir eşitlik; (2) invariant handler: çok aktörlü, rastgele zaman atlamalı, saat sınırlarına özel ağırlıklı; docs/04 §2'deki E1–E6 invariant'ları; (3) kenar durumlar: H=0 süreleri (emisyon rezervde kalır), dt=0, aynı blokta çoklu işlem, 168 saatten uzun boşluk + çoklu poke, expiry tam saat sınırında, 1 DP'lik hesap ile 1e9 DP'lik hesap; (4) gas: 168 saatlik poke'un gas maliyeti raporu. UUPS + ERC-7201 depolama düzenini bu adımda kur.
