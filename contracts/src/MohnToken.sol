@@ -49,8 +49,9 @@ contract MohnToken is ERC20, ERC20Burnable, ERC20Capped, ERC20Permit {
         // the few seconds of timestamp drift a sequencer could introduce.
         // forge-lint: disable-next-line(unsafe-typecast)
         uint64 today = uint64(block.timestamp / 1 days);
+        // `today` never precedes `_mintDay`, so `>` means "a new UTC day started".
         // forge-lint: disable-next-line(block-timestamp)
-        uint256 alreadyMinted = today == _mintDay ? _mintedInDay : 0;
+        uint256 alreadyMinted = today > _mintDay ? 0 : _mintedInDay;
         if (alreadyMinted + amount > DAILY_MINT_CAP) {
             revert DailyMintCapExceeded(alreadyMinted, amount);
         }
@@ -65,7 +66,7 @@ contract MohnToken is ERC20, ERC20Burnable, ERC20Capped, ERC20Permit {
     /// @notice Amount minted so far in the current UTC day.
     function mintedToday() external view returns (uint256) {
         // forge-lint: disable-next-line(unsafe-typecast,block-timestamp)
-        return uint64(block.timestamp / 1 days) == _mintDay ? _mintedInDay : 0;
+        return uint64(block.timestamp / 1 days) > _mintDay ? 0 : _mintedInDay;
     }
 
     function _update(address from, address to, uint256 value)
