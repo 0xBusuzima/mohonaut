@@ -2,8 +2,8 @@
 pragma solidity 0.8.30;
 
 /// @title SiteMath
-/// @notice Drill-site level tables (docs/02 §7). Generated from sim/vectors/outpost_costs.json
-///         (capacity = 6 · 1.22^(L−1) ℓ/h and upgrade cost = 150 · L^2.2 MOHN are irrational, so the
+/// @notice Drill-site level tables (docs/02 S7). Generated from sim/vectors/outpost_costs.json
+///         (capacity = 6 * 1.22^(L-1) L/h and upgrade cost = 150 * L^2.2 MOHN are irrational, so the
 ///         exact floored values are stored). Do not edit by hand: run tools/gen_sitemath.py.
 library SiteMath {
     uint256 internal constant MAX_LEVEL = 30;

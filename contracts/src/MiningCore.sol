@@ -16,8 +16,8 @@ import {IRevenueRouter} from "./interfaces/IRevenueRouter.sol";
 
 /// @title MiningCore
 /// @notice Player-facing core of Mohonaut. Phase 2.3 scope: registration (free Pilot Rig) and
-///         diesel fuel bought with ETH (docs/02 §5, §11; docs/09 §3).
-/// @dev Fuel model: each site has a tank (litres, WAD) and a burn rate (ℓ/h, WAD) from its active
+///         diesel fuel bought with ETH (docs/02 S5, S11; docs/09 S3).
+/// @dev Fuel model: each site has a tank (litres, WAD) and a burn rate (L/h, WAD) from its active
 ///      rigs. Fuel burns only from genesis on and only while the site's DP is active, i.e. up to
 ///      the position's expiry hour boundary; the fractional-hour remainder stays in the tank.
 ///      Consumption rounds up and runtime rounds down (protocol-favourable).
@@ -35,7 +35,7 @@ contract MiningCore is
     uint64 public constant GENESIS_DURATION = 72 hours;
     /// @notice During pre-fill and genesis a tank may last at most until Market Open + this.
     uint64 public constant GENESIS_TANK_GRACE = 24 hours;
-    /// @notice Outside genesis a tank holds at most `capacity × MAX_TANK_HOURS` litres.
+    /// @notice Outside genesis a tank holds at most `capacity x MAX_TANK_HOURS` litres.
     uint256 public constant MAX_TANK_HOURS = 720;
     /// @notice ETH/USD heartbeat on Robinhood Chain is 24 h; 2 h buffer (docs/ZINCIR_DOGRULAMA.md).
     uint256 public constant ORACLE_STALENESS = 26 hours;
@@ -43,7 +43,7 @@ contract MiningCore is
 
     /// @notice The free starter rig every site receives on registration.
     uint128 public constant PILOT_RIG_DP = 10;
-    uint256 public constant PILOT_RIG_BURN = 0.25e18; // ℓ/h
+    uint256 public constant PILOT_RIG_BURN = 0.25e18; // L/h
 
     struct Site {
         bool registered;
@@ -51,7 +51,7 @@ contract MiningCore is
         address referrer;
         uint64 lastFuelSettle;
         uint128 dp; // active drill power
-        uint256 burn; // active burn rate, ℓ/h (WAD)
+        uint256 burn; // active burn rate, L/h (WAD)
         uint256 tank; // litres (WAD)
         uint256 fuelSpentWei;
     }
@@ -125,7 +125,7 @@ contract MiningCore is
     // ------------------------------------------------------------------ fuel
 
     /// @notice Buys diesel with ETH. The first purchase also registers the site and its free
-    ///         Pilot Rig, so a new player needs exactly one transaction (docs/09 §3).
+    ///         Pilot Rig, so a new player needs exactly one transaction (docs/09 S3).
     /// @param referrer Set once, on registration only; ignored afterwards or if it is the caller.
     function buyFuel(address referrer) external payable nonReentrant {
         CoreStorage storage c = _core();
@@ -195,7 +195,7 @@ contract MiningCore is
     }
 
     /// @dev Maximum tank: during pre-fill/genesis the tank may only last until Market Open + 24 h
-    ///      (docs/02 §11); afterwards `capacity(level) × MAX_TANK_HOURS`.
+    ///      (docs/02 S11); afterwards `capacity(level) x MAX_TANK_HOURS`.
     function _maxTank(CoreStorage storage c, Site storage s) private view returns (uint256) {
         uint256 capacityTank = SiteMath.fuelLineCapacity(s.level) * MAX_TANK_HOURS;
         uint256 marketOpen = uint256(c.genesisTime) + GENESIS_DURATION;
@@ -206,7 +206,7 @@ contract MiningCore is
         return Math.min(capacityTank, genesisLimit);
     }
 
-    /// @dev litres = wei · (ETH/USD) / (USD per litre). Reverts on a bad, stale or unsafe price.
+    /// @dev litres = wei * (ETH/USD) / (USD per litre). Reverts on a bad, stale or unsafe price.
     function _litresFor(CoreStorage storage c, uint256 weiAmount) private view returns (uint256) {
         uint256 ethUsdWad = _ethUsdWad(c);
         return Math.mulDiv(weiAmount, ethUsdWad, c.fuelPriceUsdWad);
@@ -215,16 +215,20 @@ contract MiningCore is
     function _ethUsdWad(CoreStorage storage c) private view returns (uint256) {
         if (address(c.sequencerFeed) != address(0)) {
             // Only status and startedAt matter for an uptime feed.
+            // slither-disable-start unused-return
             // forge-lint: disable-next-line(unused-return)
             (, int256 status, uint256 startedAt,,) = c.sequencerFeed.latestRoundData();
+            // slither-disable-end unused-return
             // forge-lint: disable-next-line(block-timestamp)
             if (status != 0 || block.timestamp - startedAt <= SEQUENCER_GRACE) {
                 revert SequencerDown();
             }
         }
         // roundId/answeredInRound checks are deprecated by Chainlink; staleness covers liveness.
+        // slither-disable-start unused-return
         // forge-lint: disable-next-line(unused-return)
         (, int256 answer,, uint256 updatedAt,) = c.ethUsdFeed.latestRoundData();
+        // slither-disable-end unused-return
         // forge-lint: disable-next-line(block-timestamp)
         if (answer <= 0 || updatedAt > block.timestamp) revert OracleInvalid();
         // forge-lint: disable-next-line(block-timestamp)

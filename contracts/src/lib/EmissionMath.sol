@@ -2,7 +2,7 @@
 pragma solidity 0.8.30;
 
 /// @title EmissionMath
-/// @notice Reserve-based hourly emission and its fixed 90/5/5 split (docs/02 §3.1, §3.3).
+/// @notice Reserve-based hourly emission and its fixed 90/5/5 split (docs/02 S3.1, S3.3).
 /// @dev Must match sim/vectors/emission_hourly.json to the wei. Every division rounds down;
 ///      the split remainder goes to the treasury so no wei is lost.
 library EmissionMath {

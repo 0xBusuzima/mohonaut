@@ -4,9 +4,9 @@ pragma solidity 0.8.30;
 import {EmissionMath} from "./lib/EmissionMath.sol";
 
 /// @title MiningAccounting
-/// @notice Emission and reward accounting core of MiningCore (docs/02 §3–§4, docs/03 §3.4).
+/// @notice Emission and reward accounting core of MiningCore (docs/02 S3-S4, docs/03 S3.4).
 /// @dev Model:
-///      - Each UTC hour h emits E_h = floor(R_h · δ_h), fixed at the start of the hour and spread
+///      - Each UTC hour h emits E_h = floor(R_h * delta_h), fixed at the start of the hour and spread
 ///        evenly over its seconds, but only while some Drill Power (DP) is active. Unmined time
 ///        stays in the reserve R.
 ///      - Emission is split 90/5/5 (miners/dev/treasury). The miners' share is distributed pro rata

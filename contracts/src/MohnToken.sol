@@ -8,7 +8,7 @@ import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20P
 
 /// @title MohnToken
 /// @notice The Mohonaut token (MOHN). Fair-mined: zero premine, every token is minted by MiningCore.
-/// @dev Immutable by design (docs/02 §2, docs/03 §3.2):
+/// @dev Immutable by design (docs/02 S2, docs/03 S3.2):
 ///      - hard cap of 100,000,000 MOHN;
 ///      - a single minter fixed at deployment, with no setter;
 ///      - an immutable per-UTC-day mint cap (500,000 MOHN) as the last line of defence for an

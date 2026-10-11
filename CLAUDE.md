@@ -21,6 +21,9 @@ Robinhood Chain (chain ID 4663 / testnet 46630) üzerinde, adil madencilik lansm
 - Gerçek özel anahtarları, `.env` dosyalarını, seed ifadelerini repoya koymak.
 
 ## Kontrat kuralları
+- `.sol` dosyalarında **ASCII dışı karakter yok** (yorumlar dahil: ℓ, ×, —, § yazma). Solc bayt, Slither karakter ofseti sayıyor; satır içi istisnalar kayıyor.
+- `dynamic_test_linking = false` kalmalı (açıkken Foundry testlerde `new X()`'i `vm.deployCode`'a çeviriyor, Halmos çalışmıyor).
+- Satır içi istisna gerekiyorsa gerekçe yorumu şart; forge-lint `disable-next-line` ifadenin hemen üstünde, Slither için `slither-disable-start/end` bloğu.
 - Foundry; OpenZeppelin 5.x; Solady matematik. Tüm bölmeler protokol lehine aşağı yuvarlanır.
 - Her durum değiştiren fonksiyon önce global checkpoint, sonra hesap settle çağırır.
 - Her `set*` fonksiyonu: yalnızca Timelock + kodlanmış sınır + hız limiti + olay.
@@ -50,6 +53,8 @@ npm komutlarını Git Bash yerine `cmd.exe /c "..."` veya PowerShell ile çalı�
 | Simülatör testleri | `cd sim && .venv\Scripts\python.exe -m unittest discover -s tests -t .` |
 | Simülatör lint / ölü kod | `cd sim && .venv\Scripts\python.exe -m ruff check . && .venv\Scripts\python.exe -m vulture engine tests run_scenarios.py make_vectors.py --min-confidence 80` |
 | Vektörleri yeniden üret | `cd sim && .venv\Scripts\python.exe make_vectors.py` (çıktı değişmemeli) |
-| Slither / Aderyn / Medusa / Echidna / Halmos | CI'da (Linux). Yerelde Docker Desktop açıkken çalıştırılabilir. |
+| Slither (yerel, WSL) | `wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/yazic/Desktop/crypto-game-project/contracts && forge clean && ~/halmos-venv/bin/slither . --config-file slither.config.json --fail-medium"` |
+| Halmos (yerel, WSL) | `wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/yazic/Desktop/crypto-game-project/contracts && ~/halmos-venv/bin/halmos --function prove_"` |
+| Aderyn / Medusa / Echidna | CI'da (Linux) |
 
 Sürümler: Node 24, npm 11, TypeScript 5.9, Foundry 1.8.5, solc 0.8.30 (`evm_version = prague`), OpenZeppelin 5.7.0, Solady 0.1.26, forge-std 1.17.0 (git submodule, sabit etiket).
