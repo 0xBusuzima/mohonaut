@@ -12,8 +12,8 @@ import {IRevenueRouter} from "./interfaces/IRevenueRouter.sol";
 ///         liquidity and operations. Nothing is pushed: each bucket is pulled by its own role
 ///         (BuybackBurner, LiquidityManager, the ops Safe). Invariant R1: the ETH balance equals the
 ///         sum of the buckets.
-/// @dev The split is fixed at deployment for now; Phase 2.7 adds bounded, rate-limited Timelock
-///      setters (buyback 30-60 %, POL 20-50 %, ops 10-35 %).
+/// @dev The split changes only through setSplit (DEFAULT_ADMIN_ROLE = the 96 h Timelock), within
+///      buyback 30-60 %, POL 20-50 %, ops 10-35 %, at most once per 30 days (invariant P1).
 // Not locked: every bucket is paid out by a pull function (Address.sendValue).
 // aderyn-fp-next-line(contract-locks-ether)
 contract RevenueRouter is IRevenueRouter, AccessControl, ReentrancyGuardTransient {
@@ -25,25 +25,50 @@ contract RevenueRouter is IRevenueRouter, AccessControl, ReentrancyGuardTransien
 
     uint16 public constant INITIAL_BUYBACK_BPS = 5500;
     uint16 public constant INITIAL_POL_BPS = 3000; // ops gets the remainder (15 %)
+    uint64 public constant SPLIT_PERIOD = 30 days;
 
     uint16 public buybackBps;
     uint16 public polBps;
     uint256 public buybackBalance;
     uint256 public polBalance;
     uint256 public opsBalance;
+    uint64 public splitChangedAt;
 
     event Deposited(uint256 amount, uint256 toBuyback, uint256 toPol, uint256 toOps);
     event BuybackDeposited(uint256 amount);
     event Pulled(bytes32 indexed bucket, address indexed to, uint256 amount);
+    event SplitChanged(uint16 buybackBps, uint16 polBps, uint16 opsBps);
 
     error ZeroAddress();
     error InsufficientBucket(uint256 available);
+    error SplitOutOfBounds();
+    error RateLimited(uint64 nextChange);
 
     constructor(address admin) {
         if (admin == address(0)) revert ZeroAddress();
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         buybackBps = INITIAL_BUYBACK_BPS;
         polBps = INITIAL_POL_BPS;
+    }
+
+    /// @notice Timelock: new split for future deposits; existing buckets are not touched.
+    function setSplit(uint16 buybackBps_, uint16 polBps_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        uint256 opsBps = 10_000 - uint256(buybackBps_) - polBps_; // reverts if above 100 %
+        if (
+            buybackBps_ < 3000 || buybackBps_ > 6000 || polBps_ < 2000 || polBps_ > 5000
+                || opsBps < 1000 || opsBps > 3500
+        ) revert SplitOutOfBounds();
+        uint64 last = splitChangedAt;
+        // forge-lint: disable-next-line(block-timestamp)
+        if (last != 0 && block.timestamp < last + SPLIT_PERIOD) {
+            revert RateLimited(last + SPLIT_PERIOD);
+        }
+        // forge-lint: disable-next-line(unsafe-typecast)
+        splitChangedAt = uint64(block.timestamp);
+        buybackBps = buybackBps_;
+        polBps = polBps_;
+        // forge-lint: disable-next-line(unsafe-typecast)
+        emit SplitChanged(buybackBps_, polBps_, uint16(opsBps));
     }
 
     /// @inheritdoc IRevenueRouter

@@ -197,6 +197,25 @@ if (expiryHour > currentHour) { dpEndingAt[expiryHour] += dp; H += dp; debt = ac
 | Keeper | Sunucudaki sıcak anahtar, az ETH | poke, finalize, tavanlı buyback/POL | Her şey dışında |
 | Deployer | Tek kullanımlık | Deploy + rolleri devretme | Devirden sonra hiçbir şey (script doğrular) |
 
+**Kontrattaki karşılıkları (Faz 2.7):** `DEFAULT_ADMIN_ROLE` ve `CATALOG_ROLE` → 96 saatlik Timelock; `UPGRADER_ROLE` → 7 günlük ayrı Timelock (UUPS `_authorizeUpgrade`); `GUARDIAN_ROLE` → Guardian Safe; router/LM/BB'de `KEEPER_ROLE` ve kova rolleri. Devir ve "deployer'da rol kalmadı" kontrolü Faz 2.8 `Handover.s.sol`'da.
+
+**Parametreler (`setParam`, tek fonksiyon, tablo tabanlı; invariant P1):**
+
+| Parametre | Sınır | Adım | Bekleme |
+|---|---|---|---|
+| Yakıt fiyatı π_ℓ | $0,03–0,50 | ±%25 | 7 gün |
+| VRGDA `r` | 1.000–100.000 DP/gün | ±%25 | 30 gün (değişimde yeniden çapalama) |
+| VRGDA `k` | 0,05–0,35 | ±%25 | 30 gün (yeniden çapalama) |
+| Hızlı rafine ücreti | %0–12 | serbest | 7 gün |
+| Rafine kuyruğu | 24–168 saat | serbest | 7 gün |
+| Tank üst sınırı | 168–2.160 saat | serbest | 7 gün |
+| Oracle bayatlık eşiği | 25–30 saat | serbest | 7 gün |
+| Saha maliyet ölçeği | 0,5×–2× | ±%25 | 30 gün |
+
+Ayrıca: `setRecipients` (kurucu/hazine alıcıları, sıfır olamaz, 30 günde bir), `setSequencerFeed` (30 günde bir), router `setSplit` (buyback %30–60, POL %20–50, ops %10–35, 30 günde bir), BuybackBurner `setDailyBps` (havuz ETH'sinin %0,5–5'i, 7 günde bir). Saha maliyet ölçeğinin 0,5×–2× mutlak sınırı docs/02'de yok; uygulama seçimidir (kurucu onayı bekliyor). Yeniden çapalama: `r` veya `k` değiştiğinde eğri o anki fiyattan, o anki zaman ve satıştan yeniden başlar (`sim/vectors/vrgda_reanchor.json`, fiyat sıçramaz). Bunların dışında hiçbir ekonomi değeri değiştirilemez; testler MiningCore'un durum değiştiren fonksiyon listesini derlenmiş ABI ile birebir karşılaştırır.
+
+**Pause (invariant P2):** Guardian `pause()` oyuncu işlemlerini (yakıt, makine, saha, rafine, finalize, pay çekimi, openMarket) **72 saat** durdurur ve kendiliğinden biter. Guardian pause'u kaldıramaz. İki Guardian pause'u arasında en az **7 gün** olmalıdır; kaybolan bir Guardian anahtarı oyuncuları kalıcı olarak kilitleyemez. Timelock `unpause()` ile bitirir, `extendPause` ile en çok 30 gün uzatabilir. Muhasebe (`poke`) ve görünümler pause sırasında da çalışır. Bilinen bedel: pause boyunca oyuncular yakıt alamaz; tanklar boşalmaya devam eder.
+
 > Dürüst not: Tek kurucu için 2/3 Safe hâlâ fiilen tek kişi kontrolüdür. Bu ilk günden açıkça yazılır; bağımsız imzacılar eklendikçe güncellenir.
 
 ---

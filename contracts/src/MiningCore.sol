@@ -37,7 +37,9 @@ import {IRevenueRouter} from "./interfaces/IRevenueRouter.sol";
 ///      Every mint goes through the hourly mint breaker (docs/02 S2, invariant B1): if the
 ///      MOHN minted in the last 60-65 minutes would exceed 150K, the breaker trips instead of
 ///      minting and all mint paths stop until the admin (Phase 2.7: the Timelock) resets it.
-///      Roles are minimal here; Phase 2.7 wires the Timelock, Guardian and parameter bounds.
+///      Roles (docs/03 S3.8): DEFAULT_ADMIN_ROLE and CATALOG_ROLE = the 96 h Timelock (bounded,
+///      rate-limited parameters, catalog, breaker reset, unpause); UPGRADER_ROLE = the 7-day
+///      Timelock; GUARDIAN_ROLE = the Guardian Safe, which can only pause for at most 72 hours.
 // False positive: buyFuel forwards every wei to the router in the same call, so the core never
 // holds ETH (proved by invariant_routerReceivesAllFuelEth).
 // aderyn-fp-next-line(contract-locks-ether)
@@ -51,15 +53,17 @@ contract MiningCore is
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     /// @notice Adds machine generations. Phase 2.7 hands it to the Timelock.
     bytes32 public constant CATALOG_ROLE = keccak256("CATALOG_ROLE");
+    /// @notice Pauses player actions for at most 72 hours; cannot unpause (invariant P2).
+    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
 
     uint64 public constant PREFILL_WINDOW = 24 hours;
     uint64 public constant GENESIS_DURATION = 72 hours;
     /// @notice During pre-fill and genesis a tank may last at most until Market Open + this.
     uint64 public constant GENESIS_TANK_GRACE = 24 hours;
-    /// @notice Outside genesis a tank holds at most `capacity x MAX_TANK_HOURS` litres.
-    uint256 public constant MAX_TANK_HOURS = 720;
+    /// @notice Outside genesis a tank holds at most `capacity x maxTankHours` litres.
+    uint16 public constant INITIAL_MAX_TANK_HOURS = 720;
     /// @notice ETH/USD heartbeat on Robinhood Chain is 24 h; 2 h buffer (docs/ZINCIR_DOGRULAMA.md).
-    uint256 public constant ORACLE_STALENESS = 26 hours;
+    uint32 public constant INITIAL_ORACLE_STALENESS = 26 hours;
     uint256 public constant SEQUENCER_GRACE = 1 hours;
 
     /// @notice The free starter rig every site receives on registration (catalog type 0).
@@ -70,7 +74,7 @@ contract MiningCore is
     /// @notice VRGDA start price, MOHN per DP unit (fixed at deploy, docs/02 S6.2).
     uint256 public constant P0 = 10e18;
     uint256 public constant INITIAL_K = 0.15e18;
-    uint256 public constant INITIAL_R = 2000; // DP units per day
+    uint256 public constant INITIAL_R = 2000e18; // DP units per day (WAD)
     uint256 public constant MAX_UNITS_PER_TX = 10_000;
     /// @notice Scrapping a rig credits 20 % of its DP at the current unit price (docs/02 S6.4).
     uint256 public constant SCRAP_CREDIT_BPS = 2000;
@@ -100,6 +104,27 @@ contract MiningCore is
     uint256 public constant MINT_BREAKER_LIMIT = 150_000e18;
     uint256 public constant MINT_BUCKET = 5 minutes;
     uint256 public constant MINT_BUCKETS = 13;
+
+    /// @notice Guardian pause length, the minimum gap between two Guardian pauses, and the longest
+    ///         pause the Timelock may set (docs/04 S5.2: no permanent lock-up).
+    uint64 public constant GUARDIAN_PAUSE = 72 hours;
+    uint64 public constant GUARDIAN_COOLDOWN = 7 days;
+    uint64 public constant MAX_TIMELOCK_PAUSE = 30 days;
+    /// @notice Site upgrade cost scale (docs/02 S12 "site cost base"), 1x at deployment.
+    uint16 public constant INITIAL_SITE_COST_SCALE_BPS = 10_000;
+
+    /// @notice Parameters the Timelock may change, each within coded bounds and a rate limit
+    ///         (docs/02 S12, invariant P1). Everything else is immutable.
+    enum Param {
+        FuelPrice, // USD per litre (WAD): 0.03-0.50, +-25 % per 7 days
+        VrgdaR, // DP units per day (WAD): 1,000-100,000, +-25 % per 30 days, re-anchored
+        VrgdaK, // daily price decay (WAD): 0.05-0.35, +-25 % per 30 days, re-anchored
+        FastRefineFee, // bps: 0-1,200, once per 7 days
+        RefineDelay, // seconds: 24-168 hours, once per 7 days
+        MaxTankHours, // hours: 168-2,160, once per 7 days
+        OracleStaleness, // seconds: 25-30 hours, once per 7 days
+        SiteCostScale // bps: 5,000-20,000, +-25 % per 30 days
+    }
 
     struct Site {
         bool registered;
@@ -147,9 +172,9 @@ contract MiningCore is
         uint64 genesisTime;
         uint256 fuelPriceUsdWad; // USD per litre, 18 decimals
         mapping(address account => Site) sites;
-        int256 vrgdaLnP0; // ln(P0), WAD
+        int256 vrgdaLnAnchor; // ln of the price at the anchor (ln(P0) before any change), WAD
         int256 vrgdaDecay; // ln(1 - k), WAD, negative
-        uint256 vrgdaR; // DP units per day
+        uint256 vrgdaR; // DP units per day (WAD)
         uint256 vrgdaSold; // DP units sold
         MachineType[] catalog;
         uint8 generations;
@@ -169,6 +194,15 @@ contract MiningCore is
         uint256 genesisFuelUsd; // USD (WAD) of fuel bought before Market Open
         address liquidityManager;
         bool marketOpened;
+        uint64 vrgdaAnchorTime; // genesis before any change of r or k
+        uint256 vrgdaAnchorSold;
+        uint256 vrgdaK; // WAD
+        uint16 maxTankHours;
+        uint32 oracleStaleness;
+        uint16 siteCostScaleBps;
+        uint64 pausedUntil;
+        uint64 lastGuardianPause;
+        mapping(uint256 key => uint64 timestamp) changedAt; // rate limits (Param index, or 100+)
     }
 
     // keccak256(abi.encode(uint256(keccak256("mohonaut.storage.MiningCore")) - 1)) & ~bytes32(uint256(0xff))
@@ -200,6 +234,12 @@ contract MiningCore is
     event MintBreakerTripped(uint256 windowTotal);
     event MintBreakerReset();
     event LiquidityManagerWired(address indexed liquidityManager);
+    event ParamChanged(Param indexed param, uint256 oldValue, uint256 newValue);
+    event VrgdaReanchored(int256 lnAnchor, uint64 anchorTime, uint256 anchorSold);
+    event RecipientsChanged(address devRecipient, address treasuryRecipient);
+    event SequencerFeedChanged(address feed);
+    event Paused(address indexed by, uint64 until);
+    event Unpaused();
     event MarketOpened(
         uint256 p0Usd, uint256 ethUsd, uint256 polEth, uint256 mohnLp, uint160 sqrtPriceX96
     );
@@ -234,6 +274,12 @@ contract MiningCore is
     error MarketNotOpenYet();
     error MarketAlreadyOpen();
     error AlreadyWired();
+    error ParamOutOfBounds(uint256 min, uint256 max);
+    error ParamStepTooLarge(uint256 min, uint256 max);
+    error RateLimited(uint64 nextChange);
+    error ProtocolPaused(uint64 until);
+    error PauseCooldown(uint64 next);
+    error PauseTooLong(uint64 max);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -271,10 +317,15 @@ contract MiningCore is
         c.fuelPriceUsdWad = fuelPriceUsdWad_;
 
         // forge-lint: disable-next-line(unsafe-typecast)
-        c.vrgdaLnP0 = FixedPointMathLib.lnWad(int256(P0));
+        c.vrgdaLnAnchor = FixedPointMathLib.lnWad(int256(P0));
         // forge-lint: disable-next-line(unsafe-typecast)
         c.vrgdaDecay = FixedPointMathLib.lnWad(int256(1e18 - INITIAL_K));
+        c.vrgdaK = INITIAL_K;
         c.vrgdaR = INITIAL_R;
+        c.vrgdaAnchorTime = genesisTime_;
+        c.maxTankHours = INITIAL_MAX_TANK_HOURS;
+        c.oracleStaleness = INITIAL_ORACLE_STALENESS;
+        c.siteCostScaleBps = INITIAL_SITE_COST_SCALE_BPS;
 
         // Gen-1 catalog (docs/02 S6.1). Type 0 is the free Pilot Rig and is never sold.
         _addMachine(c, MachineType(PILOT_RIG_DP, 0, 1, 1, PILOT_RIG_BURN));
@@ -306,7 +357,7 @@ contract MiningCore is
     /// @notice Buys diesel with ETH. The first purchase also registers the site and its free
     ///         Pilot Rig, so a new player needs exactly one transaction (docs/09 S3).
     /// @param referrer Set once, on registration only; ignored afterwards or if it is the caller.
-    function buyFuel(address referrer) external payable nonReentrant {
+    function buyFuel(address referrer) external payable nonReentrant whenNotPaused {
         CoreStorage storage c = _core();
         // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp + PREFILL_WINDOW < c.genesisTime) revert PreFillNotOpen();
@@ -382,7 +433,7 @@ contract MiningCore is
     /// @dev Maximum tank: during pre-fill/genesis the tank may only last until Market Open + 24 h
     ///      (docs/02 S11); afterwards `capacity(level) x MAX_TANK_HOURS`.
     function _maxTank(CoreStorage storage c, Site storage s) private view returns (uint256) {
-        uint256 capacityTank = SiteMath.fuelLineCapacity(s.level) * MAX_TANK_HOURS;
+        uint256 capacityTank = SiteMath.fuelLineCapacity(s.level) * c.maxTankHours;
         uint256 marketOpen = uint256(c.genesisTime) + GENESIS_DURATION;
         // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp >= marketOpen) return capacityTank;
@@ -417,7 +468,7 @@ contract MiningCore is
         // forge-lint: disable-next-line(block-timestamp)
         if (answer <= 0 || updatedAt > block.timestamp) revert OracleInvalid();
         // forge-lint: disable-next-line(block-timestamp)
-        if (block.timestamp - updatedAt > ORACLE_STALENESS) revert OracleStale();
+        if (block.timestamp - updatedAt > c.oracleStaleness) revert OracleStale();
         uint8 dec = c.ethUsdFeed.decimals();
         // forge-lint: disable-next-line(unsafe-typecast)
         uint256 price = uint256(answer);
@@ -433,6 +484,7 @@ contract MiningCore is
     function buyMachines(uint256 typeId, uint32 qty, uint256 maxCost, bool payFromWallet)
         external
         nonReentrant
+        whenNotPaused
     {
         _requireCheckpointed();
         CoreStorage storage c = _core();
@@ -470,7 +522,7 @@ contract MiningCore is
     }
 
     /// @notice Switches rigs of `typeId` on or off so that exactly `active` of them run.
-    function setActiveRigs(uint256 typeId, uint32 active) external nonReentrant {
+    function setActiveRigs(uint256 typeId, uint32 active) external nonReentrant whenNotPaused {
         _requireCheckpointed();
         CoreStorage storage c = _core();
         Site storage s = _siteOf(c, msg.sender);
@@ -500,7 +552,7 @@ contract MiningCore is
 
     /// @notice Dismantles `qty` rigs of `typeId` (idle ones first) for a scrap credit of 20 % of
     ///         their DP at the current unit price. The free Pilot Rig earns no credit.
-    function scrapMachines(uint256 typeId, uint32 qty) external nonReentrant {
+    function scrapMachines(uint256 typeId, uint32 qty) external nonReentrant whenNotPaused {
         _requireCheckpointed();
         CoreStorage storage c = _core();
         Site storage s = _siteOf(c, msg.sender);
@@ -530,7 +582,7 @@ contract MiningCore is
     }
 
     /// @notice Upgrades the caller's drill site by one level (more pads, larger fuel line).
-    function upgradeSite(uint256 maxCost, bool payFromWallet) external nonReentrant {
+    function upgradeSite(uint256 maxCost, bool payFromWallet) external nonReentrant whenNotPaused {
         _requireCheckpointed();
         CoreStorage storage c = _core();
         Site storage s = _siteOf(c, msg.sender);
@@ -627,9 +679,18 @@ contract MiningCore is
     }
 
     function _unitPrice(CoreStorage storage c) private view returns (uint256) {
+        (uint256 elapsed, uint256 sold) = _sinceAnchor(c);
+        return VrgdaMath.unitPrice(elapsed, sold, c.vrgdaLnAnchor, c.vrgdaDecay, c.vrgdaR);
+    }
+
+    function _sinceAnchor(CoreStorage storage c)
+        private
+        view
+        returns (uint256 elapsed, uint256 sold)
+    {
         // forge-lint: disable-next-line(block-timestamp)
-        uint256 elapsed = block.timestamp > c.genesisTime ? block.timestamp - c.genesisTime : 0;
-        return VrgdaMath.unitPrice(elapsed, c.vrgdaSold, c.vrgdaLnP0, c.vrgdaDecay, c.vrgdaR);
+        elapsed = block.timestamp > c.vrgdaAnchorTime ? block.timestamp - c.vrgdaAnchorTime : 0;
+        sold = c.vrgdaSold - c.vrgdaAnchorSold;
     }
 
     /// @dev VRGDA batch cost of `units` DP with the tier premium. Rounds up.
@@ -646,7 +707,8 @@ contract MiningCore is
     ///      SiteMath.InvalidLevel at the top level.
     function _siteUpgradeCost(CoreStorage storage c, uint8 level) private view returns (uint256) {
         uint256 idx = Math.min(Math.max((_unitPrice(c) * 1e18) / P0, IDX_MIN), IDX_MAX);
-        return FixedPointMathLib.mulDivUp(SiteMath.upgradeCost(level), idx, 1e18);
+        uint256 scaled = FixedPointMathLib.mulDivUp(SiteMath.upgradeCost(level), idx, 1e18);
+        return FixedPointMathLib.mulDivUp(scaled, c.siteCostScaleBps, 10_000);
     }
 
     /// @dev Emission needed before `generation` (>= 2) may be added: the World Depth of its
@@ -662,7 +724,7 @@ contract MiningCore is
     ///         burned forever, half back to the reserve). Standard: free, after the refine delay.
     ///         Closed during genesis (docs/02 S11).
     /// @dev If the mint breaker trips on a fast refine, nothing is refined and the call returns.
-    function refine(uint256 amount, bool fast) external nonReentrant {
+    function refine(uint256 amount, bool fast) external nonReentrant whenNotPaused {
         _requireCheckpointed();
         CoreStorage storage c = _core();
         _requireRefineOpen(c);
@@ -686,7 +748,7 @@ contract MiningCore is
 
     /// @notice Mints a matured queued refine to its owner. Anyone (e.g. the keeper) may call.
     /// @dev If the mint breaker trips, the request stays queued and the call returns.
-    function finalizeRefine(address account, uint256 id) external nonReentrant {
+    function finalizeRefine(address account, uint256 id) external nonReentrant whenNotPaused {
         _requireCheckpointed();
         CoreStorage storage c = _core();
         RefineRequest[] storage queue = c.refineQueue[account];
@@ -705,14 +767,14 @@ contract MiningCore is
     }
 
     /// @notice Queues `amount` of the dev share for the dev recipient (standard queue only).
-    function withdrawDevShare(uint256 amount) external nonReentrant {
+    function withdrawDevShare(uint256 amount) external nonReentrant whenNotPaused {
         CoreStorage storage c = _core();
         if (msg.sender != c.devRecipient) revert NotRecipient();
         _withdrawShare(c, c.devWithdrawals, true, amount);
     }
 
     /// @notice Queues `amount` of the treasury share for the treasury recipient (standard queue).
-    function withdrawTreasuryShare(uint256 amount) external nonReentrant {
+    function withdrawTreasuryShare(uint256 amount) external nonReentrant whenNotPaused {
         CoreStorage storage c = _core();
         if (msg.sender != c.treasuryRecipient) revert NotRecipient();
         _withdrawShare(c, c.treasuryWithdrawals, false, amount);
@@ -827,7 +889,7 @@ contract MiningCore is
     ///         minted from the reserve (at most 1M) and the pool opens at P0 via Chainlink ETH/USD.
     ///         No AMM price is read anywhere in this calculation.
     /// @dev If the mint breaker trips, the market stays closed and the call returns.
-    function openMarket() external nonReentrant {
+    function openMarket() external nonReentrant whenNotPaused {
         _requireCheckpointed();
         CoreStorage storage c = _core();
         // forge-lint: disable-next-line(block-timestamp)
@@ -848,6 +910,169 @@ contract MiningCore is
         emit MarketOpened(p0, ethUsd, polEth, lp, sqrtPriceX96);
         IMohnToken(c.token).mint(c.liquidityManager, lp);
         ILiquidityManager(c.liquidityManager).openMarket(sqrtPriceX96, polEth);
+    }
+
+    // ------------------------------------------------------------------ governance
+
+    /// @dev Player actions stop while paused; accounting (poke) and views keep working.
+    modifier whenNotPaused() {
+        uint64 until = _core().pausedUntil;
+        // forge-lint: disable-next-line(block-timestamp)
+        if (block.timestamp < until) revert ProtocolPaused(until);
+        _;
+    }
+
+    /// @notice Changes one parameter within its coded bounds and rate limit (invariant P1).
+    ///         Changing VRGDA r or k re-anchors the curve so the price does not jump.
+    function setParam(Param param, uint256 value) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        CoreStorage storage c = _core();
+        (uint256 min, uint256 max, uint256 stepBps, uint64 period) = paramBounds(param);
+        if (value < min || value > max) revert ParamOutOfBounds(min, max);
+        _rateLimit(c, uint256(param), period);
+        uint256 old = paramValue(param);
+        if (stepBps != 0) {
+            uint256 lo = (old * (10_000 - stepBps)) / 10_000;
+            uint256 hi = (old * (10_000 + stepBps)) / 10_000;
+            if (value < lo || value > hi) revert ParamStepTooLarge(lo, hi);
+        }
+        if (param == Param.VrgdaR || param == Param.VrgdaK) _reanchorVrgda(c);
+        _storeParam(c, param, value);
+        // forge-lint: disable-next-line(reentrancy-events)
+        emit ParamChanged(param, old, value);
+    }
+
+    // The governance functions below make no external calls; the lint reads library calls and
+    // storage helpers as external.
+    // forge-lint: disable-start(reentrancy-events)
+
+    /// @notice Guardian: pauses player actions for GUARDIAN_PAUSE; ends by itself. At most one
+    ///         Guardian pause per GUARDIAN_COOLDOWN, so a lost Guardian key cannot lock players out.
+    function pause() external onlyRole(GUARDIAN_ROLE) {
+        CoreStorage storage c = _core();
+        uint64 last = c.lastGuardianPause;
+        // forge-lint: disable-next-line(block-timestamp)
+        if (last != 0 && block.timestamp < last + GUARDIAN_COOLDOWN) {
+            revert PauseCooldown(last + GUARDIAN_COOLDOWN);
+        }
+        // forge-lint: disable-next-line(unsafe-typecast)
+        uint64 nowTs = uint64(block.timestamp);
+        c.lastGuardianPause = nowTs;
+        uint64 until = nowTs + GUARDIAN_PAUSE;
+        if (until > c.pausedUntil) c.pausedUntil = until;
+        emit Paused(msg.sender, c.pausedUntil);
+    }
+
+    /// @notice Timelock: extends a pause up to MAX_TIMELOCK_PAUSE from now.
+    function extendPause(uint64 until) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        // forge-lint: disable-next-line(unsafe-typecast)
+        uint64 max = uint64(block.timestamp) + MAX_TIMELOCK_PAUSE;
+        if (until > max) revert PauseTooLong(max);
+        _core().pausedUntil = until;
+        emit Paused(msg.sender, until);
+    }
+
+    /// @notice Timelock: ends a pause now.
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _core().pausedUntil = 0;
+        emit Unpaused();
+    }
+
+    /// @notice Timelock: new dev and treasury recipients (non-zero, at most once per 30 days).
+    function setRecipients(address dev, address treasury) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (dev == address(0) || treasury == address(0)) revert ZeroAddress();
+        CoreStorage storage c = _core();
+        _rateLimit(c, 100, 30 days);
+        c.devRecipient = dev;
+        c.treasuryRecipient = treasury;
+        emit RecipientsChanged(dev, treasury);
+    }
+
+    /// @notice Timelock: connects (or disconnects, with address(0)) a sequencer uptime feed, should
+    ///         Chainlink publish one for this chain (docs/02 S5.1). At most once per 30 days.
+    function setSequencerFeed(address feed) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        CoreStorage storage c = _core();
+        _rateLimit(c, 101, 30 days);
+        c.sequencerFeed = IAggregatorV3(feed);
+        emit SequencerFeedChanged(feed);
+    }
+
+    // forge-lint: disable-end(reentrancy-events)
+
+    /// @notice Coded bounds of each parameter: [min, max], largest step per change (bps of the
+    ///         current value; 0 = any value within the bounds) and the minimum time between changes.
+    function paramBounds(Param param)
+        public
+        pure
+        returns (uint256 min, uint256 max, uint256 stepBps, uint64 period)
+    {
+        if (param == Param.FuelPrice) return (0.03e18, 0.5e18, 2500, 7 days);
+        if (param == Param.VrgdaR) return (1000e18, 100_000e18, 2500, 30 days);
+        if (param == Param.VrgdaK) return (0.05e18, 0.35e18, 2500, 30 days);
+        if (param == Param.FastRefineFee) return (0, 1200, 0, 7 days);
+        if (param == Param.RefineDelay) return (24 hours, 168 hours, 0, 7 days);
+        if (param == Param.MaxTankHours) return (168, 2160, 0, 7 days);
+        if (param == Param.OracleStaleness) return (25 hours, 30 hours, 0, 7 days);
+        return (5000, 20_000, 2500, 30 days); // SiteCostScale
+    }
+
+    /// @notice Current value of a parameter, in the units of paramBounds.
+    function paramValue(Param param) public view returns (uint256) {
+        CoreStorage storage c = _core();
+        if (param == Param.FuelPrice) return c.fuelPriceUsdWad;
+        if (param == Param.VrgdaR) return c.vrgdaR;
+        if (param == Param.VrgdaK) return c.vrgdaK;
+        if (param == Param.FastRefineFee) return c.fastRefineFeeBps;
+        if (param == Param.RefineDelay) return c.refineDelay;
+        if (param == Param.MaxTankHours) return c.maxTankHours;
+        if (param == Param.OracleStaleness) return c.oracleStaleness;
+        return c.siteCostScaleBps;
+    }
+
+    /// @dev Values are within paramBounds here, so every narrowing cast below is safe.
+    function _storeParam(CoreStorage storage c, Param param, uint256 value) private {
+        if (param == Param.FuelPrice) {
+            c.fuelPriceUsdWad = value;
+        } else if (param == Param.VrgdaR) {
+            c.vrgdaR = value;
+        } else if (param == Param.VrgdaK) {
+            c.vrgdaK = value;
+            // forge-lint: disable-next-line(unsafe-typecast)
+            c.vrgdaDecay = FixedPointMathLib.lnWad(int256(1e18 - value));
+        } else if (param == Param.FastRefineFee) {
+            c.fastRefineFeeBps = SafeCast.toUint16(value);
+        } else if (param == Param.RefineDelay) {
+            c.refineDelay = SafeCast.toUint64(value);
+        } else if (param == Param.MaxTankHours) {
+            c.maxTankHours = SafeCast.toUint16(value);
+        } else if (param == Param.OracleStaleness) {
+            c.oracleStaleness = SafeCast.toUint32(value);
+        } else {
+            c.siteCostScaleBps = SafeCast.toUint16(value);
+        }
+    }
+
+    /// @dev Reverts if `key` changed less than `period` ago, then records the change.
+    function _rateLimit(CoreStorage storage c, uint256 key, uint64 period) private {
+        uint64 last = c.changedAt[key];
+        // forge-lint: disable-next-line(block-timestamp)
+        if (last != 0 && block.timestamp < last + period) revert RateLimited(last + period);
+        // forge-lint: disable-next-line(unsafe-typecast)
+        c.changedAt[key] = uint64(block.timestamp);
+    }
+
+    /// @dev Restarts the VRGDA curve at the current price, time and sales (docs/02 S12).
+    function _reanchorVrgda(CoreStorage storage c) private {
+        (uint256 elapsed, uint256 sold) = _sinceAnchor(c);
+        c.vrgdaLnAnchor = VrgdaMath.lnPrice(elapsed, sold, c.vrgdaLnAnchor, c.vrgdaDecay, c.vrgdaR);
+        // forge-lint: disable-next-line(block-timestamp)
+        if (block.timestamp > c.vrgdaAnchorTime) {
+            // forge-lint: disable-next-line(unsafe-typecast)
+            c.vrgdaAnchorTime = uint64(block.timestamp);
+        }
+        c.vrgdaAnchorSold = c.vrgdaSold;
+        // No external call here (VrgdaMath is an internal library).
+        // forge-lint: disable-next-line(reentrancy-events)
+        emit VrgdaReanchored(c.vrgdaLnAnchor, c.vrgdaAnchorTime, c.vrgdaAnchorSold);
     }
 
     // ------------------------------------------------------------------ views
@@ -948,6 +1173,14 @@ contract MiningCore is
 
     function marketOpened() external view returns (bool) {
         return _core().marketOpened;
+    }
+
+    function pausedUntil() external view returns (uint64) {
+        return _core().pausedUntil;
+    }
+
+    function maxTankHours() external view returns (uint256) {
+        return _core().maxTankHours;
     }
 
     function mintBreakerTripped() external view returns (bool) {

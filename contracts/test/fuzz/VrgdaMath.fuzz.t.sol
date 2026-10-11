@@ -7,7 +7,7 @@ import {VrgdaMath} from "../../src/lib/VrgdaMath.sol";
 
 /// @notice V1 (no bulk discount) and V2 (price monotonicity), docs/04 S2.
 contract VrgdaMathFuzzTest is Test {
-    uint256 internal constant R = 2000;
+    uint256 internal constant R = 2000e18; // DP units per day, WAD
     int256 internal lnP0;
     int256 internal decay;
 
@@ -19,7 +19,7 @@ contract VrgdaMathFuzzTest is Test {
     /// Keeps prices inside expWad's range: at most 50 days ahead of schedule.
     function _bounded(uint256 t, uint256 n) internal pure returns (uint256, uint256) {
         t = bound(t, 0, 3650 days);
-        n = bound(n, 0, (t * R) / 1 days + 100_000);
+        n = bound(n, 0, (t * R) / 1 days / 1e18 + 100_000);
         return (t, n);
     }
 
@@ -66,6 +66,6 @@ contract VrgdaMathFuzzTest is Test {
     /// On schedule (n = t * r) the price is p0, up to rounding.
     function testFuzz_onSchedulePriceIsP0(uint256 daysElapsed) public view {
         daysElapsed = bound(daysElapsed, 0, 3650);
-        assertApproxEqRel(_price(daysElapsed * 1 days, daysElapsed * R), 10e18, 1e6);
+        assertApproxEqRel(_price(daysElapsed * 1 days, daysElapsed * R / 1e18), 10e18, 1e6);
     }
 }

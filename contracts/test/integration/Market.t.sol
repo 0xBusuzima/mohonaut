@@ -362,6 +362,34 @@ contract MarketTest is Test {
         vm.revertToState(snap);
     }
 
+    function test_buybackDailyBpsBoundedAndRateLimited() public {
+        bytes32 role = bb.DEFAULT_ADMIN_ROLE();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, address(this), role
+            )
+        );
+        bb.setDailyBps(100);
+        vm.startPrank(admin);
+        vm.expectRevert(BuybackBurner.DailyBpsOutOfBounds.selector);
+        bb.setDailyBps(49);
+        vm.expectRevert(BuybackBurner.DailyBpsOutOfBounds.selector);
+        bb.setDailyBps(501);
+        vm.expectEmit(address(bb));
+        emit BuybackBurner.DailyBpsChanged(100);
+        bb.setDailyBps(100);
+        assertEq(bb.dailyBps(), 100);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                BuybackBurner.RateLimited.selector, uint64(vm.getBlockTimestamp()) + 7 days
+            )
+        );
+        bb.setDailyBps(300);
+        vm.warp(vm.getBlockTimestamp() + 7 days);
+        bb.setDailyBps(300);
+        vm.stopPrank();
+    }
+
     // ------------------------------------------------------------------ liquidity
 
     function test_addLiquidity_growsLockedPosition() public {

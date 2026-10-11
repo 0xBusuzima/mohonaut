@@ -12,7 +12,7 @@ contract VrgdaMathDiffTest is Test {
     using stdJson for string;
 
     uint256 internal constant P0 = 10e18;
-    uint256 internal constant R = 2000;
+    uint256 internal constant R = 2000e18; // DP units per day, WAD
     uint256 internal constant REL_TOL = 1e6; // 1e-12 in forge's 1e18 scale
 
     int256 internal lnP0;

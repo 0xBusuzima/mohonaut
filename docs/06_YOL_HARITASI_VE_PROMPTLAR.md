@@ -139,7 +139,9 @@ docs/02 §8–§9'a göre refine(amount, fast) (%8 hızlı ücret: %4 yakım/%4 
 docs/02 §10–§11 ve docs/03 §3.5–§3.7'ye göre RevenueRouter (kovalar, bps sınırları, pull ödeme), BuybackBurner (KEEPER, günlük tavan, minOut, Uniswap v4 swap, %100 yakım), LiquidityManager (openMarket: formül fiyatı → sqrtPriceX96, tam aralık pozisyon, likidite ÇEKME FONKSİYONU YOK; addLiquidity tavanlı; collectFees) ve MiningCore.openMarket() (genesis bitişinden sonra, bir kez, P0_USD ve MOHN_LP formülleri, 1M MOHN üst sınırı). Uniswap v4 adresleri docs/ZINCIR_DOGRULAMA.md'den. Testler: fork testleri (testnet v4), invariant R1, L1 (Halmos: likidite azaltılamaz), market open formülünün sim/vectors ile eşitliği, keeper tavan aşımı revert'leri, fiyat manipülasyonu senaryosu (havuzu pompalayıp buyback tetikleme → tavan zararı sınırlıyor mu).
 ```
 
-### 2.7 Erişim kontrolü, timelock, pause, parametre sınırları
+### 2.7 Erişim kontrolü, timelock, pause, parametre sınırları — ✅ 2026-10-11 (`setParam`, Guardian pause, router/buyback setter'ları)
+
+> Uygulama: tek tablo tabanlı `setParam`; Guardian pause'u 72 saat + 7 gün bekleme; yükseltme V1→V2 testi. TimelockController'ların kendisi ve rol devri Faz 2.8 deploy script'lerinde. `slither-check-upgradeability` WSL'de koşuldu.
 
 ```text
 docs/03 §3.8 ve docs/02 §12'ye göre roller: TimelockController (96 saat; upgradeTo için 7 gün — ayrı bir gecikme mekanizması veya ayrı timelock), Guardian pause (en fazla 72 saat, otomatik biter, Guardian unpause edemez), KEEPER, tüm set* fonksiyonlarında kodlanmış sınırlar + hız limitleri (son değişiklik zamanı ve oranı), değiştirilemez parametrelerin gerçekten değiştirilemediğinin testi. UUPS _authorizeUpgrade yalnızca uzun timelock. Testler: her rol için yetkisiz çağrı revert matrisi (otomatik üretilen tablo testi), invariant P1/P2, storage layout uyumluluğu (V1→V2 sahte yükseltme), slither-check-upgradeability.

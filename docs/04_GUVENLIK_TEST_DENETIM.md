@@ -47,8 +47,8 @@
 | S1 | Her MOHN harcamasında: yakılan = %80, rezerve = %20 (± toz) |
 | R1 | Router: `balance == buyback + pol + ops` |
 | R2 | Referans kredisi toplamı ≤ hazine payı toplamı (test: `referralPaid ≤ %3 × minersDistributed`, yani emisyonun ≤ %2.7'si; kaynağın hazine olduğu E2 ile kanıtlanır) |
-| P1 | Her parametre kendi sınırları içinde; hız limiti aşılamaz; yalnızca Timelock |
-| P2 | Pause en fazla 72s; Guardian unpause edemez |
+| P1 | Her parametre kendi sınırları içinde; hız limiti aşılamaz; yalnızca Timelock (test: her parametre için sınır/adım/bekleme birim testi; rastgele değişiklik invariant'ı; rol matrisi; durum değiştiren fonksiyonların ABI'deki gözden geçirilmiş listeye eşitliği) |
+| P2 | Pause en fazla 72s; Guardian unpause edemez (test: Guardian pause'u hiçbir zaman şimdi + 72s'yi aşmaz invariant'ı; iki pause arası 7 gün; unpause yalnızca Timelock) |
 | L1 | POL pozisyonundan likidite çıkarılamaz (fonksiyon yok + Halmos). Faz 2.6 testleri: derlenmiş ABI'nin izinli fonksiyon listesine birebir eşitliği (yeni fonksiyon eklenirse test kırılır) ve işlem/ücret/ekleme döngülerinde pozisyon likiditesinin hiç azalmaması. Halmos ispatı sembolik PoolManager gerektirdiği için Faz 2.9'da |
 
 Her invariant için: **Foundry invariant handler** (çok aktörlü rastgele işlem dizileri + zaman atlama) + gece **Medusa/Echidna** kampanyası (Chimera iskeleti, aynı özellikler) + kritik olanlar (T1, T2, E2, L1, P2) için **Halmos/Certora** biçimsel ispat.

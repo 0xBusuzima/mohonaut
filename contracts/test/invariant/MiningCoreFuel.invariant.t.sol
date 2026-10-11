@@ -123,7 +123,7 @@ contract MiningCoreFuelInvariantTest is Test {
     /// No tank ever exceeds its capacity cap (4,320 litres at level 1).
     function invariant_tankWithinCapacity() public view {
         for (uint256 i = 0; i < handler.actorCount(); ++i) {
-            assertLe(core.siteOf(handler.actors(i)).tank, 6e18 * core.MAX_TANK_HOURS());
+            assertLe(core.siteOf(handler.actors(i)).tank, 6e18 * core.maxTankHours());
         }
     }
 }

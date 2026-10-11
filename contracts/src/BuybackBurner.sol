@@ -24,27 +24,49 @@ import {MohnPool} from "./lib/MohnPool.sol";
 // aderyn-fp-next-line(contract-locks-ether)
 contract BuybackBurner is PoolActor, AccessControl, ReentrancyGuardTransient {
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
-    uint256 public constant DAILY_BPS = 200;
+    uint16 public constant INITIAL_DAILY_BPS = 200;
+    uint64 public constant DAILY_BPS_PERIOD = 7 days;
 
     /// @notice The pool's hook (the LiquidityManager) is part of the pool key.
     address public immutable hooks;
+    /// @notice Daily cap in bps of the pool's ETH: 0.5-5 %, Timelock only, once per 7 days.
+    uint16 public dailyBps;
+    uint64 public dailyBpsChangedAt;
     uint64 public day;
     uint256 public spentInDay;
     uint256 public totalEthSpent;
     uint256 public totalBurned;
 
     event BuybackExecuted(uint256 ethIn, uint256 mohnBurned);
+    event DailyBpsChanged(uint16 dailyBps);
 
     error ZeroValue();
     error DailyCapExceeded(uint256 remaining);
     error SlippageExceeded(uint256 mohnOut);
+    error DailyBpsOutOfBounds();
+    error RateLimited(uint64 nextChange);
 
     constructor(address admin, address poolManager_, address mohn_, address router_, address hooks_)
         PoolActor(poolManager_, mohn_, router_)
     {
         if (admin == address(0) || hooks_ == address(0)) revert ZeroAddress();
         hooks = hooks_;
+        dailyBps = INITIAL_DAILY_BPS;
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
+    }
+
+    /// @notice Timelock: new daily cap, 50-500 bps of the pool's ETH, at most once per 7 days.
+    function setDailyBps(uint16 bps) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (bps < 50 || bps > 500) revert DailyBpsOutOfBounds();
+        uint64 last = dailyBpsChangedAt;
+        // forge-lint: disable-next-line(block-timestamp)
+        if (last != 0 && block.timestamp < last + DAILY_BPS_PERIOD) {
+            revert RateLimited(last + DAILY_BPS_PERIOD);
+        }
+        // forge-lint: disable-next-line(unsafe-typecast)
+        dailyBpsChangedAt = uint64(block.timestamp);
+        dailyBps = bps;
+        emit DailyBpsChanged(bps);
     }
 
     /// @notice Buys MOHN with `ethIn` from the buyback bucket and burns all of it.
@@ -56,7 +78,7 @@ contract BuybackBurner is PoolActor, AccessControl, ReentrancyGuardTransient {
         if (ethIn == 0) revert ZeroValue();
         uint64 today = SafeCast.toUint64(block.timestamp / 1 days);
         uint256 used = day < today ? 0 : spentInDay;
-        uint256 cap = (_poolEth() * DAILY_BPS) / 10_000;
+        uint256 cap = (_poolEth() * dailyBps) / 10_000;
         if (used + ethIn > cap) revert DailyCapExceeded(cap > used ? cap - used : 0);
         day = today;
         spentInDay = used + ethIn;
