@@ -37,7 +37,7 @@ function CoreColumn({ metres }: { metres: number }) {
         for (let x = COL_X; x < COL_X + COL_W; x++) {
           const n = hash(x, y, i);
           // Texture per stratum: grains, beds, crystals, banding, olivine, melt.
-          let k = 0;
+          let k: number;
           if (i === 0 || i === 1) k = n < 0.18 ? 0.25 : n > 0.9 ? -0.15 : 0;
           else if (i === 2) k = n < 0.12 ? 0.35 : n > 0.85 ? -0.25 : 0;
           else if (i === 3) k = (y - top) % 4 < 2 ? 0.18 : 0;
