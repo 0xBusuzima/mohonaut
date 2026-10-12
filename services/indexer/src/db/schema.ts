@@ -228,6 +228,8 @@ export const timelockOps = pgTable(
     value: wei('value').notNull(),
     data: text('data').notNull(),
     predecessor: text('predecessor').notNull(),
+    /** From CallSalt (null: zero salt, or not seen yet). */
+    salt: text('salt'),
     delay: int64('delay').notNull(),
     fn: text('fn'),
     args: jsonb('args').$type<Record<string, unknown> | unknown[]>(),

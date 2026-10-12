@@ -8,6 +8,11 @@ export interface GameDeployment {
   genesisTime: number;
   MiningCore: Address;
   MohnToken: Address;
+  /** Governance addresses for the operator panel (null when the record has none). */
+  ParamsTimelock: Address | null;
+  UpgradeTimelock: Address | null;
+  OpsSafe: Address | null;
+  GuardianSafe: Address | null;
 }
 
 /**
@@ -15,6 +20,9 @@ export interface GameDeployment {
  * inline another one (the end-to-end tests point at a local anvil deployment) through
  * NEXT_PUBLIC_DEPLOYMENT_JSON.
  */
+const optional = (v: unknown): Address | null =>
+  typeof v === 'string' && v !== '' ? getAddress(v) : null;
+
 function load(): GameDeployment {
   const inline = process.env['NEXT_PUBLIC_DEPLOYMENT_JSON'];
   const d = (inline !== undefined && inline !== '' ? JSON.parse(inline) : testnet) as Record<
@@ -26,6 +34,10 @@ function load(): GameDeployment {
     genesisTime: Number(d['genesisTime']),
     MiningCore: getAddress(String(d['MiningCore'])),
     MohnToken: getAddress(String(d['MohnToken'])),
+    ParamsTimelock: optional(d['ParamsTimelock']),
+    UpgradeTimelock: optional(d['UpgradeTimelock']),
+    OpsSafe: optional(d['OpsSafe']),
+    GuardianSafe: optional(d['GuardianSafe']),
   };
 }
 

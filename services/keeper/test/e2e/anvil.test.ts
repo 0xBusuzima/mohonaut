@@ -11,7 +11,14 @@ import type { ChildProcess } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { miningCoreAbi } from '@mohonaut/sdk';
+import {
+  PARAM_SPECS,
+  checkParamChange,
+  miningCoreAbi,
+  setParamData,
+  timelockControllerAbi,
+  timelockProposal,
+} from '@mohonaut/sdk';
 import {
   Indexer,
   RpcSource,
@@ -19,6 +26,7 @@ import {
   loadDeployment,
   migrate,
   openDatabase,
+  schema as indexerSchema,
 } from '@mohonaut/indexer';
 import type { Database, Deployment } from '@mohonaut/indexer';
 import {
@@ -33,6 +41,7 @@ import {
 } from 'viem';
 import type { Address, Hex } from 'viem';
 import { mnemonicToAccount } from 'viem/accounts';
+import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { makeClients } from '../../src/chain.js';
 import type { Config } from '../../src/config.js';
@@ -263,6 +272,74 @@ describe.runIf(RUN)('keeper on anvil (time travel)', { timeout: 900_000 }, () =>
     const request = await read<{ amount: bigint }>('refineRequest', [account(2).address, 0n]);
     expect(request.amount).toBe(0n);
     expect(Object.values(tick.outcomes).filter((o) => o.startsWith('error'))).toEqual([]);
+  });
+
+  it('applies a parameter change prepared by the operator panel (docs/06 Kapı 5 on anvil)', async () => {
+    // What /ops builds: setParam calldata and the schedule/execute pair, from @mohonaut/sdk.
+    const fuel = PARAM_SPECS[0];
+    if (fuel === undefined) throw new Error('no FuelPrice spec');
+    const current = await read<bigint>('paramValue', [0]);
+    const next = (current * 11n) / 10n;
+    const at = Number(await now());
+    expect(
+      checkParamChange({ spec: fuel, current, next, lastChangedAt: null, executeAt: at + 345_600 }),
+    ).toEqual([]);
+    const timelock = deployment.ParamsTimelock;
+    const delay = Number(
+      await client.readContract({
+        address: timelock,
+        abi: timelockControllerAbi,
+        functionName: 'getMinDelay',
+      }),
+    );
+    const proposal = timelockProposal({
+      chainId: 31_337,
+      safe: account(5).address,
+      timelock,
+      target: deployment.MiningCore,
+      data: setParamData(0, next),
+      salt: `0x${'5a'.repeat(32)}`,
+      delay,
+      title: 'FuelPrice +10%',
+      now: at,
+    });
+    // The Ops Safe (here its anvil stand-in) sends the schedule file's call...
+    const send = async (from: number, tx: (typeof proposal.schedule.transactions)[number]) => {
+      const inputs = tx.contractMethod.inputs.map((i) => tx.contractInputsValues[i.name] ?? '');
+      const args = inputs.map((v, k) =>
+        tx.contractMethod.inputs[k]?.type === 'uint256' ? BigInt(v) : v,
+      );
+      const wallet = createWalletClient({ chain, transport: http(RPC), account: account(from) });
+      const hash = await wallet.writeContract({
+        address: tx.to,
+        abi: timelockControllerAbi,
+        functionName: tx.contractMethod.name as 'schedule',
+        args: args as never,
+      });
+      expect((await client.waitForTransactionReceipt({ hash })).status).toBe('success');
+    };
+    await send(5, proposal.schedule.transactions[0] as never);
+    const scheduled = await client.readContract({
+      address: timelock,
+      abi: timelockControllerAbi,
+      functionName: 'isOperationPending',
+      args: [proposal.opId],
+    });
+    expect(scheduled).toBe(true);
+
+    // ...and after the delay anyone executes the execute file's call.
+    await warpTo(BigInt(proposal.readyAt) + 60n);
+    await send(7, proposal.execute.transactions[0] as never);
+    expect(await read<bigint>('paramValue', [0])).toBe(next);
+
+    // The index knows the operation, its salt and that it ran.
+    await syncIndexer();
+    const [op] = await database.db
+      .select()
+      .from(indexerSchema.timelockOps)
+      .where(eq(indexerSchema.timelockOps.opId, proposal.opId));
+    expect(op).toMatchObject({ fn: 'setParam', salt: `0x${'5a'.repeat(32)}` });
+    expect(op?.executedAt).not.toBeNull();
   });
 
   it.runIf(process.env['KEEPER_E2E_PG_URL'] !== undefined)(

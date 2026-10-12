@@ -341,6 +341,8 @@ const HANDLERS: Record<string, Handler> = {
   'ParamsTimelock.CallExecuted': (ctx, ev) => executed(ctx, ev),
   'UpgradeTimelock.CallExecuted': (ctx, ev) => executed(ctx, ev),
   'ParamsTimelock.Cancelled': (ctx, ev) => cancelled(ctx, ev),
+  'ParamsTimelock.CallSalt': (ctx, ev) => salted(ctx, ev),
+  'UpgradeTimelock.CallSalt': (ctx, ev) => salted(ctx, ev),
   'UpgradeTimelock.Cancelled': (ctx, ev) => cancelled(ctx, ev),
 
   // ------------------------------------------------------------------ pool stream
@@ -411,6 +413,14 @@ async function executed(ctx: Ctx, ev: IndexedEvent): Promise<void> {
         eq(timelockOps.opIndex, num(ev, 'index')),
       ),
     );
+}
+
+/** CallSalt follows CallScheduled in the same schedule() call: every call of the batch. */
+async function salted(ctx: Ctx, ev: IndexedEvent): Promise<void> {
+  await ctx.tx
+    .update(timelockOps)
+    .set({ salt: hex(ev, 'salt') })
+    .where(and(eq(timelockOps.timelock, ev.contract), eq(timelockOps.opId, hex(ev, 'id'))));
 }
 
 async function cancelled(ctx: Ctx, ev: IndexedEvent): Promise<void> {

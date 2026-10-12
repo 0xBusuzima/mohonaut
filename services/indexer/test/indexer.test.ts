@@ -243,6 +243,7 @@ describe('indexer on a fixed history', () => {
       timelock: 'ParamsTimelock',
       fn: 'setParam',
       args: [0, NEW_FUEL_PRICE.toString()],
+      salt: `0x${'5a'.repeat(32)}`,
     });
     expect(op.readyAt - op.scheduledAt).toBe(345_600n);
     expect(op.executedAt).not.toBeNull();

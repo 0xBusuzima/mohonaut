@@ -11,7 +11,16 @@ export default defineConfig({
   timeout: 120_000,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: { baseURL: 'http://127.0.0.1:4174', trace: 'retain-on-failure' },
-  projects: [{ name: 'desktop', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'desktop', use: { ...devices['Desktop Chrome'] }, testIgnore: 'governance.spec.ts' },
+    // Moves the chain four days ahead (the timelock delay), so it runs after the others.
+    {
+      name: 'governance',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: 'governance.spec.ts',
+      dependencies: ['desktop'],
+    },
+  ],
   webServer: {
     command: 'node e2e/play/start.mjs',
     url: 'http://127.0.0.1:4174/play/',

@@ -9,6 +9,7 @@ import type { Tab } from '../../components/Tabs';
 import { WalletProviders } from '../../game/WalletProviders';
 import { useE2EConnect } from '../../game/e2e';
 import { useNow } from '../../lib/clock';
+import { EmergencyScreen, ParamsScreen, TimelockScreen } from '../../ops/governance';
 import { can } from '../../ops/permissions';
 import {
   AnnouncementsScreen,
@@ -75,6 +76,22 @@ function OpsBody() {
   const r = me.roles;
   const all: (Tab | false)[] = [
     can(r, 'health.read') && { id: 'health', label: 'Health', content: <HealthScreen /> },
+    (r.includes('admin') || r.includes('economist')) && {
+      // Builds Safe files only; nothing is written, so no API permission is involved.
+      id: 'params',
+      label: 'Parameters',
+      content: <ParamsScreen now={now} />,
+    },
+    can(r, 'health.read') && {
+      id: 'timelock',
+      label: 'Timelock',
+      content: <TimelockScreen now={now} />,
+    },
+    can(r, 'health.read') && {
+      id: 'emergency',
+      label: 'Emergency',
+      content: <EmergencyScreen now={now} />,
+    },
     can(r, 'users.read') && {
       id: 'players',
       label: 'Players',

@@ -71,6 +71,7 @@ export const BUYBACK_BURN = 300n * E18;
 export const LP_FEE_BURN = 5n * E18;
 export const LP_FEE_ETH = E18 / 10_000n;
 export const NEW_FUEL_PRICE = 12n * 10n ** 16n;
+const OP_SALT = `0x${'5a'.repeat(32)}` as const;
 const OP_ID: Hex = `0x${'ab'.repeat(32)}`;
 
 type Log = { address: Address; abi: Abi; event: string; args: Record<string, unknown> };
@@ -233,6 +234,12 @@ export function buildChain(): FakeChain {
             predecessor: `0x${'00'.repeat(32)}`,
             delay: 345_600n,
           },
+        },
+        {
+          address: deployment.ParamsTimelock,
+          abi: timelockControllerAbi,
+          event: 'CallSalt',
+          args: { id: OP_ID, salt: OP_SALT },
         },
       ]);
       chain.tx(at(k, 600n), [

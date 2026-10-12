@@ -234,7 +234,7 @@ describe('timelock queue', () => {
       args: [0, '120000000000000000'],
     };
     await h.database.db.insert(idx.timelockOps).values([
-      { ...base, opId: '0xa', scheduledAt: 100n, readyAt: 500n },
+      { ...base, opId: '0xa', scheduledAt: 100n, readyAt: 500n, salt: '0x5a' },
       { ...base, opId: '0xb', scheduledAt: 50n, readyAt: 400n },
       { ...base, opId: '0xc', scheduledAt: 10n, readyAt: 20n, executedAt: 30n },
       { ...base, opId: '0xd', scheduledAt: 10n, readyAt: 20n, cancelledAt: 40n },
@@ -244,8 +244,31 @@ describe('timelock queue', () => {
     expect(json.pending.map((o) => o.opId)).toEqual(['0xb', '0xa']);
     expect(json.recent.map((o) => o.opId)).toEqual(['0xd', '0xc']);
     expect(res.json['pending']).toMatchObject([
-      { fn: 'setParam', args: [0, '120000000000000000'] },
-      {},
+      { fn: 'setParam', args: [0, '120000000000000000'], salt: null },
+      { salt: '0x5a', data: '0x', value: '0', predecessor: '0x00', delay: 345_600 },
     ]);
+  });
+
+  it('lists every parameter changed so far', async () => {
+    const h = await harness();
+    await h.database.db.insert(idx.params).values({
+      param: 0,
+      name: 'FuelPrice',
+      value: 12n * 10n ** 16n,
+      previous: 10n ** 17n,
+      changedAt: 1_800_000_000n,
+    });
+    const res = await call(h, 'GET', '/governance/params');
+    expect(res.json).toEqual({
+      params: [
+        {
+          param: 0,
+          name: 'FuelPrice',
+          value: '120000000000000000',
+          previous: '100000000000000000',
+          changedAt: 1_800_000_000,
+        },
+      ],
+    });
   });
 });

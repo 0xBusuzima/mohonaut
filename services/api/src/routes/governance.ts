@@ -3,7 +3,7 @@ import type { OpenAPIHono } from '@hono/zod-openapi';
 import { schema } from '@mohonaut/indexer';
 import { and, desc, isNotNull, isNull } from 'drizzle-orm';
 import type { AppEnv } from '../context.js';
-import { json } from './common.js';
+import { AmountSchema, json } from './common.js';
 
 const OpSchema = z
   .object({
@@ -12,6 +12,12 @@ const OpSchema = z
     target: z.string(),
     fn: z.string().nullable(),
     args: z.array(z.unknown()).nullable(),
+    // Everything execute() needs, so anyone can run a ready operation.
+    value: AmountSchema,
+    data: z.string(),
+    predecessor: z.string(),
+    salt: z.string().nullable(),
+    delay: z.number(),
     scheduledAt: z.number(),
     readyAt: z.number(),
     executedAt: z.number().nullable(),
@@ -27,6 +33,11 @@ const op = (r: Row) => ({
   target: r.target,
   fn: r.fn,
   args: Array.isArray(r.args) ? r.args : null,
+  value: r.value.toString(),
+  data: r.data,
+  predecessor: r.predecessor,
+  salt: r.salt,
+  delay: Number(r.delay),
   scheduledAt: Number(r.scheduledAt),
   readyAt: Number(r.readyAt),
   executedAt: r.executedAt === null ? null : Number(r.executedAt),
@@ -71,6 +82,50 @@ export function registerGovernance(app: OpenAPIHono<AppEnv>): void {
         .slice(0, 20);
       c.header('Cache-Control', 'public, max-age=60');
       return c.json({ pending: pending.map(op), recent: done }, 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: 'get',
+      path: '/governance/params',
+      tags: ['economy'],
+      summary: 'Every MiningCore parameter changed so far: value, previous value and when',
+      responses: {
+        200: json(
+          z.object({
+            params: z.array(
+              z.object({
+                param: z.number(),
+                name: z.string(),
+                value: AmountSchema,
+                previous: AmountSchema,
+                changedAt: z.number(),
+              }),
+            ),
+          }),
+          'Parameters',
+        ),
+      },
+    }),
+    async (c) => {
+      const rows = await c.var.deps.database.db
+        .select()
+        .from(schema.params)
+        .orderBy(schema.params.param);
+      c.header('Cache-Control', 'public, max-age=60');
+      return c.json(
+        {
+          params: rows.map((r) => ({
+            param: r.param,
+            name: r.name,
+            value: r.value.toString(),
+            previous: r.previous.toString(),
+            changedAt: Number(r.changedAt),
+          })),
+        },
+        200,
+      );
     },
   );
 }

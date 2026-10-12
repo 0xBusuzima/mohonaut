@@ -17,6 +17,26 @@ export { KOLA_LINE_M, MOHO_LINE_M, STRATA, formatDepth, millimetres, stratumAt }
 export type { Stratum } from './depth.js';
 export { MAX_SITE_LEVEL, fuelLineWad, sitePads } from './site.js';
 export { PARAM_NAMES } from './params.js';
+export {
+  PARAM_SPECS,
+  ZERO_HASH,
+  allowedRange,
+  batchChecksum,
+  checkParamChange,
+  formatParam,
+  operationId,
+  parseParam,
+  safeCallBatch,
+  setParamData,
+  timelockProposal,
+} from './governance.js';
+export type {
+  ParamSpec,
+  ParamUnit,
+  SafeBatchFile,
+  SafeBatchTx,
+  TimelockProposal,
+} from './governance.js';
 export type { ParamName } from './params.js';
 export {
   MOHN_POOL_FEE,
