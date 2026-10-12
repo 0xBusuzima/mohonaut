@@ -100,3 +100,29 @@ describe("Foreman Mo's guide", () => {
     expect(screen.getByRole('status').textContent).toContain('World Bore');
   });
 });
+
+describe('game windows', () => {
+  it('keep focus in a field when the game re-renders, close on Esc, keep Tab inside', async () => {
+    const { PxModal } = await import('../src/app/play/px');
+    const closed = vi.fn();
+    const ui = (n: number) => (
+      <PxModal title="Diesel tank" onClose={() => closed(n)}>
+        <input aria-label="ETH to spend" />
+        <button type="button">Buy diesel</button>
+      </PxModal>
+    );
+    const { rerender } = render(ui(1));
+    const input = screen.getByLabelText('ETH to spend');
+    input.focus();
+    rerender(ui(2)); // a fresh onClose, as every state refresh gives
+    expect(document.activeElement).toBe(input);
+
+    const buy = screen.getByRole('button', { name: 'Buy diesel' });
+    buy.focus();
+    fireEvent.keyDown(window, { key: 'Tab' });
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Close' }));
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(closed).toHaveBeenCalledWith(2);
+  });
+});

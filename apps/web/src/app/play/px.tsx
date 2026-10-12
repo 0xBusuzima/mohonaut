@@ -52,15 +52,38 @@ export function PxModal({
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  // The latest close handler, so a parent re-render (the state refreshes every few seconds)
+  // neither re-binds the keys nor pulls focus out of a field being typed in.
+  const close = useRef(onClose);
   useEffect(() => {
-    ref.current?.focus();
-    if (onClose === undefined) return undefined;
-    const esc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', esc);
-    return () => window.removeEventListener('keydown', esc);
+    close.current = onClose;
   }, [onClose]);
+  useEffect(() => {
+    const el = ref.current;
+    el?.focus();
+    const keys = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close.current?.();
+      if (e.key !== 'Tab' || el === null) return;
+      // Keep Tab inside the window.
+      const items = [
+        ...el.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex="0"]',
+        ),
+      ];
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (first === undefined || last === undefined) return;
+      if (e.shiftKey && (document.activeElement === first || document.activeElement === el)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener('keydown', keys);
+    return () => window.removeEventListener('keydown', keys);
+  }, []);
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-night/55 p-3">
       <div

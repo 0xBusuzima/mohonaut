@@ -9,7 +9,14 @@ import { tankRoom, weiForAtMostLitres, withHeadroom } from '../../game/derive';
 import { parseAmount, referrerFromUrl } from '../../game/play';
 import type { GameState } from '../../game/state';
 import { useNow } from '../../lib/clock';
-import { formatEth, formatEthInput, formatLitres, formatMohn, formatUtc } from '../../lib/format';
+import {
+  formatDuration,
+  formatEth,
+  formatEthInput,
+  formatLitres,
+  formatMohn,
+  formatUtc,
+} from '../../lib/format';
 import { PxButton, PxIcon } from './px';
 
 /** A dark read-out box: label on the left, value on the right. */
@@ -27,8 +34,19 @@ function Readout({ rows }: { rows: [string, ReactNode][] }) {
 }
 
 /** A segmented pixel gauge, `fill` in [0, 1]. */
-function Gauge({ fill, label }: { fill: number; label: string }) {
-  const n = 16;
+function Gauge({
+  fill,
+  label,
+  segments = 16,
+  progress = false,
+}: {
+  fill: number;
+  label: string;
+  segments?: number;
+  /** A progress bar (cyan) rather than a tank level (red when nearly empty). */
+  progress?: boolean;
+}) {
+  const n = segments;
   const lit = Math.round(Math.min(1, Math.max(0, fill)) * n);
   return (
     <div
@@ -36,13 +54,13 @@ function Gauge({ fill, label }: { fill: number; label: string }) {
       aria-label={label}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-valuenow={Math.round(fill * 100)}
+      aria-valuenow={Math.round(Math.min(1, Math.max(0, fill)) * 100)}
       className="flex gap-0.5 border-[3px] border-charcoal bg-night p-1"
     >
       {Array.from({ length: n }, (_, i) => (
         <span
           key={i}
-          className={`h-5 flex-1 ${i < lit ? (lit <= 3 ? 'bg-alarm' : 'bg-amber') : 'bg-steel'}`}
+          className={`h-5 flex-1 ${i < lit ? (progress ? 'bg-cyan' : lit <= 3 ? 'bg-alarm' : 'bg-amber') : 'bg-steel'}`}
         />
       ))}
     </div>
@@ -72,6 +90,9 @@ function AmountInput({
 }
 
 const DEFAULT_ETH = '0.001';
+
+/** The standard refine queue at launch (docs/02): 72 hours. Only for the progress bar. */
+const REFINE_QUEUE_S = 72 * 3600;
 
 /** The diesel tank: buy diesel with ETH. The first purchase opens the site. */
 export function FuelWindow({
@@ -303,7 +324,17 @@ export function RefineryWindow({ state, action }: { state: GameState; action: Ac
             >
               <span>{formatMohn(q.amount)}</span>
               {q.readyAt > state.at ? (
-                <span className="text-concrete">ready {formatUtc(q.readyAt)}</span>
+                <span className="flex min-w-40 flex-col items-end gap-1">
+                  <span className="text-sm text-concrete">
+                    ready in {formatDuration(q.readyAt - state.at)}
+                  </span>
+                  <Gauge
+                    fill={1 - (q.readyAt - state.at) / REFINE_QUEUE_S}
+                    label={`Refine ${q.id} in the queue`}
+                    segments={12}
+                    progress
+                  />
+                </span>
               ) : (
                 <PxButton
                   variant="light"

@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { PixelWorld } from '../../../game/pixel/PixelWorld';
 import { describeHit } from '../../../game/play';
 import type { ScenePad } from '../../../game/play';
@@ -23,6 +23,8 @@ const PADS: ScenePad[] = [
 
 /** The sample bore, a little into the Granite Basement. */
 const SAMPLE_DEPTH_MM = 7_350_000n;
+
+const noSubscribe = () => () => {};
 
 /** Rigs the preview installs one after another. */
 const DEMO_ADDS: ScenePad[] = [
@@ -87,7 +89,19 @@ export function SitePreview() {
     const id = window.setInterval(() => setStep((k) => (k + 1) % 4), 5000);
     return () => window.clearInterval(id);
   }, []);
-  const pads = useMemo(() => [...PADS, ...DEMO_ADDS.slice(0, step % 3)], [step]);
+  // ?pads=N shows a site of N pads (a big site, e.g. 33 at level 30), all drilling.
+  const big = useSyncExternalStore(
+    noSubscribe,
+    () => Number(new URLSearchParams(window.location.search).get('pads') ?? 0),
+    () => 0,
+  );
+  const pads = useMemo(
+    () =>
+      big > 0
+        ? Array.from({ length: big }, (_, i) => ({ typeId: i % 6, running: i % 7 !== 3 }))
+        : [...PADS, ...DEMO_ADDS.slice(0, step % 3)],
+    [step, big],
+  );
   // 367 MOHN/h over 980 DP, as the sample HUD says.
   const model = useMemo(
     () => ({ pads, tankFill: 0.4 + (step % 3) * 0.2, yieldPerDp: 0.375 }),
