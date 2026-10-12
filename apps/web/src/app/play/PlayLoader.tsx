@@ -2,12 +2,12 @@
 
 import dynamic from 'next/dynamic';
 import { useState, useSyncExternalStore } from 'react';
-import { PlayShell } from './PlayFrame';
+import { LoadingScreen, PlayShell } from './Shell';
 
 /** The game reads the wallet and the chain in the browser only; only its frame is prerendered. */
 const PlayApp = dynamic(() => import('./PlayApp').then((m) => m.PlayApp), {
   ssr: false,
-  loading: () => <PlayShell />,
+  loading: () => <LoadingScreen />,
 });
 
 const E2E = (process.env['NEXT_PUBLIC_E2E_ACCOUNT'] ?? '') !== '';

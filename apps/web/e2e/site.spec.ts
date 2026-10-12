@@ -87,7 +87,7 @@ test('/play/ offers a wallet connection, is accessible and is not indexed', asyn
   // No chain access in this test: the not-connected screen must not depend on the RPC.
   await page.route(/rpc\./, (route) => route.abort());
   await page.goto('/play/');
-  await expect(page.getByRole('heading', { name: 'Open your drill site' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Welcome' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Connect wallet', exact: true })).toBeVisible();
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
   const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
@@ -163,7 +163,9 @@ test('/play/ loads the wallet code on Connect, within budget and the CSP', async
   const light = (await Promise.all(sizes)).reduce((a, b) => a + b, 0);
   await page.getByRole('button', { name: 'Connect wallet', exact: true }).click();
   // The wallet list opens by itself once its code has loaded.
-  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('button', { name: 'Browser wallet' })).toBeVisible({
+    timeout: 15_000,
+  });
   await page.waitForLoadState('networkidle');
   const total = (await Promise.all(sizes)).reduce((a, b) => a + b, 0);
   console.log(

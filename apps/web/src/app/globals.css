@@ -36,6 +36,7 @@
   --font-ui: var(--face-ui), system-ui, sans-serif;
   --font-condensed: var(--face-condensed), var(--face-ui), sans-serif;
   --font-mono: var(--face-mono), ui-monospace, monospace;
+  --font-pixel: var(--face-pixel), ui-monospace, monospace;
 }
 
 /* Semantic tokens, used through the utilities below (bg-surface, text-fg, ...). */
@@ -114,4 +115,108 @@ html {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ------------------------------------------------------------------ the game (pixel art UI) */
+
+.pixel-canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.px-panel {
+  background: #ece7dc;
+  color: #16191d;
+  border: 3px solid #16191d;
+  box-shadow:
+    inset -3px -3px 0 #c9c1b1,
+    inset 3px 3px 0 #fffaf0,
+    0 5px 0 #0e1013;
+}
+
+.px-dark {
+  background: #22272d;
+  color: #ece7dc;
+  border: 3px solid #0e1013;
+  box-shadow:
+    inset -3px -3px 0 #16191d,
+    inset 3px 3px 0 #39414a,
+    0 4px 0 #0e1013;
+}
+
+.px-input {
+  font-family: var(--font-pixel);
+  background: #16191d;
+  color: #ffb31a;
+  border: 3px solid #16191d;
+  box-shadow: inset 3px 3px 0 #0e1013;
+}
+.px-input:focus {
+  outline: 3px solid #ff6b1a;
+  outline-offset: 0;
+}
+
+.px-btn {
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 3px solid #16191d;
+  box-shadow:
+    inset -3px -3px 0 rgb(0 0 0 / 0.22),
+    inset 3px 3px 0 rgb(255 255 255 / 0.35),
+    0 4px 0 #0e1013;
+  transition: transform 60ms steps(1);
+}
+.px-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow:
+    inset -3px -3px 0 rgb(0 0 0 / 0.22),
+    inset 3px 3px 0 rgb(255 255 255 / 0.35),
+    0 1px 0 #0e1013;
+}
+.px-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.px-btn-primary {
+  background: #ff6b1a;
+  color: #16191d;
+}
+.px-btn-primary:hover:not(:disabled) {
+  background: #ff8a45;
+}
+.px-btn-light {
+  background: #ece7dc;
+  color: #16191d;
+}
+.px-btn-light:hover:not(:disabled) {
+  background: #fff6e6;
+}
+.px-btn-dark {
+  background: #22272d;
+  color: #ece7dc;
+}
+.px-btn-dark:hover:not(:disabled) {
+  background: #2c323a;
+}
+
+@keyframes loadbar {
+  from {
+    width: 8%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* Panels reused inside the game windows: dark cards on the cream window, pixel face. */
+.game-panel {
+  font-family: var(--font-pixel);
+}
+.game-panel > section,
+.game-panel > div > section {
+  border: 3px solid #16191d;
+  border-radius: 0;
+  background: #22272d;
+  color: #ece7dc;
 }

@@ -1,6 +1,6 @@
 /**
  * Gen-1 rig drawings (docs/05 §2.9): one shape per rig type, in two states, as plain drawing
- * primitives so the PixiJS scene and the SVG style sheet (brand/sprites) draw the same thing.
+ * primitives so the pixel site (game/pixel) and the SVG style sheet (brand/sprites) draw the same thing.
  * Origin = the pad centre on the ground; y grows downwards. Rigs are painted safety orange while
  * running (sodium lamp lit, steam at the top) and steel grey when switched off (docs/05 §2.4).
  */

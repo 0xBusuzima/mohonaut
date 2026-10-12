@@ -30,7 +30,8 @@
 | Savunma hesapları | **@mohonauts**, **@mohonautgame**, **@mohonauthq** (gönderisiz, kilitli; §0.1) |
 | Kurucu hesabı | **@onderyazici** (bio ve içerik hijyeni, §4.2) |
 | Görsel yön | Gece aydınlatmalı 2.5D izometrik **yüzey sondaj sahası**; bütün oyuncular tek bir ortak kuyu açar: **World Bore**. İmza öğe: **kuyu logu / karot sütunu**, gerçek litoloji renk bantlarıyla. Grafit zemin, emniyet turuncusu ekipman, sodyum lamba ışığı, buhar ve yağmur; camgöbeği yalnızca enstrüman HUD'unda |
-| Kaçınılanlar | Yeraltı tüneli, şaft, asansör/kafes, alet sallayan karakter, mücevher/kristal/damar, pixel font, ay/roket/astronot görseli, pastel ve mor, lacivert-siyah zemin, "lofi" (yerine "industrial ambient") |
+| Oyun görünümü | **Tam sayfa pixel-art oyun** (kurucu kararı 2026-10-13, 01 §7): gece sondaj sahası pixel art, oyun içi yazı Pixelify Sans (OFL). Site, logo ve X görselleri bu tablodaki marka fontlarında kalır |
+| Kaçınılanlar | Yeraltı tüneli, şaft, asansör/kafes, alet sallayan karakter, mücevher/kristal/damar, ay/roket/astronot görseli, pastel ve mor, ada/ev/bilgisayar odası teması, "lofi" (yerine "industrial ambient") |
 | Paylaşım kartı | World Bore'a katkı: "I've cored 1,240 m of the World Bore · Crew X". Kişisel hashrate, sıralama, kazanç ve USD yok |
 | Lansman öncesi oyun | Bekleme listesi yok. Ücretsiz, cüzdansız **Training Site** (T−35'ten) + oynanabilir **Testnet Season 0** (T−28 → T−8) ve kozmetik, devredilemez **Pioneer** rozeti (09 §2). Beğen/RT/yanıt görevi, XP sıralaması ve cüzdan adresi yapıştırma yok |
 | Lansman mekaniği | Ön satış, dev buy, premine yok. Kontratlar T−7'de doğrulanmış olarak yayımlanır. Pre-fill T0−24 saat. **Genesis Dig 72 saat** (rafine kapalı). Havuz yalnızca **Market Open**'da (T0+72 saat) formülle kurulur → "snipe edilecek bir şey yok" |
@@ -372,7 +373,7 @@ Hex değerleri v0.1'le aynı (kontrastlar korunur), adlar yeni konsepte göre de
 | Arayüz | **Barlow** ve **Barlow Condensed** | DIN benzeri, mobilde okunaklı, çok ağırlık |
 | Sayılar / log / gösterge | **JetBrains Mono** (tabular) | Kuyu logundaki metre etiketleri, tank ve sayaçlar; sabit genişlikli rakamlar titremez |
 
-v0.1'deki VT323 (CRT/pixel fontu) **kaldırıldı**: 01 §7 pixel fontu yasaklıyor. CRT tarama çizgisi efekti de yok; gösterge dili "enstrüman paneli + kuyu logu kâğıdı" (ince ızgara, metre cetveli).
+v0.1'deki VT323 (CRT fontu) kaldırıldı. **Oyun içi** (`/play`) yazılar 2026-10-13 kurucu kararıyla **Pixelify Sans** (SIL OFL, `@fontsource/pixelify-sans`, yalnızca 500/700); site ve marka yüzeylerinde aşağıdaki fontlar kalır. CRT tarama çizgisi efekti yok; gösterge dili "enstrüman paneli + kuyu logu kâğıdı" (ince ızgara, metre cetveli).
 
 Kurallar: Rakamlarda `font-variant-numeric: tabular-nums`. Gövde metni 16 px altına inmez. Logo ve Big Shoulders yalnızca İngilizce büyük harfle; Türkçe karakter gerekirse Barlow.
 
@@ -383,7 +384,7 @@ Kurallar: Rakamlarda `font-variant-numeric: tabular-nums`. Gövde metni 16 px al
 **Genel kurallar:**
 - Sıra: **keşif** (Ideogram ücretsiz kademe, metin doğruluğu için) → **vektör taslak** (Recraft ücretsiz kademe, SVG) → **final vektör** (kurucu, Inkscape'te elle; gelirle profesyonel tasarımcı, §2.8). Midjourney ücretlidir, opsiyoneldir; Higgsfield kredi harcar, her kullanımdan önce maliyet söylenir ve onay alınır.
 - Prompt'larda başka markaların, sanatçıların, rakip projelerin ya da "Robinhood"un adı geçmez. Robinhood işaretleri AI üretimi medyada kullanılamaz (ToS §5.7(i)).
-- **Standart negatif liste** (her prompt'a eklenir): `underground tunnel, mine shaft, cave, elevator, cage lift, pickaxe, shovel, character swinging a tool, gems, crystals, ore veins, pixel art, pixel font, moon, rocket, astronaut, space helmet, pastel colors, purple, navy blue background, extra text, watermark`.
+- **Standart negatif liste** (her prompt'a eklenir): `underground tunnel, mine shaft, cave, elevator, cage lift, pickaxe, shovel, character swinging a tool, gems, crystals, ore veins, moon, rocket, astronaut, space helmet, pastel colors, purple, navy blue background, extra text, watermark`.
 
 **Yön A — "Casing Wordmark" (wordmark + kuyu ağzı monogramı).** MOHONAUT yazısı dar, kalın endüstriyel büyük harflerle; ilk "O" yukarıdan görülen bir kuyu ağzıdır: iç içe üç çelik muhafaza (casing) halkası. Kelimenin altında ince bir metre cetveli. Monogram: üç halkalı kuyu ağzı + aşağı inen kısa bir çizgi ve derinlik çentikleri. Ölçeklenebilir; favicon ve avatar için en iyisi.
 
@@ -453,7 +454,7 @@ flat vector badge, small drilling rig silhouette above a short core sample, text
 | Kule sprite setleri (6 kule × 3 durum) | Kodla çizilen özgün vektörler (`rigs.ts`, stil sayfası `brand/sprites`) | İllüstratör | Tutarlı açı, ölçek ve palet; dış paket yok |
 | Stratum tema paketleri, log dokuları | Kendi çizimimiz (kod ya da elle) | — | Özgünlük |
 | X banner, OG, paylaşım kartı şablonları | AI + Satori şablonları | — | Şablon işi |
-| Teaser / trailer | Oyun motorundan (PixiJS) ekran kaydı + ücretsiz kurgu aracı | Key art için illüstratör | "AI slop" eleştirisini önler: gerçek oyun görüntüsü |
+| Teaser / trailer | Oyunun kendisinden (pixel saha) ekran kaydı + ücretsiz kurgu aracı | Key art için illüstratör | "AI slop" eleştirisini önler: gerçek oyun görüntüsü |
 | Müzik ve SFX | CC0 / ticari kullanıma izin veren kütüphaneler; "industrial ambient" + dizel motor, çamur pompası, boru sesi | — | AI müzik araçlarının ücretsiz kademeleri genellikle ticari kullanıma izin vermez (08 §2) |
 
 Kural: Kullanılan her aracın ticari kullanım koşulları (ücretsiz kademeler dahil) ve her varlığın kaynağı `docs/legal/ASSET_LISANSLARI.md`'ye yazılır; final varlıkların kaynak dosyaları (SVG/PSD/Krita) saklanır. İleride illüstratörle sözleşmede telif devri ve "başka projede kullanmama" maddesi olur.
@@ -1071,7 +1072,7 @@ Köşeli parantezler doldurulacak alanlardır. **Tüm taslaklar yayından önce 
 ### 6.3 Görsel ve format yasakları
 
 - **Hukuki/finansal:** USD kazanç grafikleri, "profit calculator", para/altın yığını, roket/Lambo/ay görselleri, geri sayım + "kaçırma" kombinasyonu, fiyat grafiği RT'leri, "next 100x" alıntıları.
-- **Marka (01 §7, §2):** yeraltı tüneli/şaft/asansör, kazma sallayan karakter, mücevher/kristal/damar, pixel font, astronot/uzay kaskı, pastel ve mor tonlar, lacivert-siyah zemin, Robinhood işaretleri (AI üretimi medyada da).
+- **Marka (01 §7, §2):** yeraltı tüneli/şaft/asansör, kazma sallayan karakter, mücevher/kristal/damar, astronot/uzay kaskı, pastel ve mor tonlar, Robinhood işaretleri (AI üretimi medyada da).
 
 ### 6.4 İşbirliği ifşası
 

@@ -66,6 +66,30 @@ const sairaStencil = localFont({
   preload: false,
 });
 
-export const fontVariables = [barlow, barlowCondensed, bigShoulders, jetbrainsMono, sairaStencil]
+/** The game's pixel face (founder decision 2026-10-13: the game is pixel art). SIL OFL. */
+const pixelify = localFont({
+  src: [
+    {
+      path: '../../../../node_modules/@fontsource/pixelify-sans/files/pixelify-sans-latin-500-normal.woff2',
+      weight: '500',
+    },
+    {
+      path: '../../../../node_modules/@fontsource/pixelify-sans/files/pixelify-sans-latin-700-normal.woff2',
+      weight: '700',
+    },
+  ],
+  variable: '--face-pixel',
+  fallback: ['ui-monospace', 'monospace'],
+  preload: false,
+});
+
+export const fontVariables = [
+  barlow,
+  barlowCondensed,
+  bigShoulders,
+  jetbrainsMono,
+  sairaStencil,
+  pixelify,
+]
   .map((f) => f.variable)
   .join(' ');

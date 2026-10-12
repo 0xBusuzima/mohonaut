@@ -76,3 +76,5 @@ export function useGameAction(onDone: () => void) {
 
   return { run, busy };
 }
+
+export type Action = ReturnType<typeof useGameAction>;

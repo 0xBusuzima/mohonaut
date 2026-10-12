@@ -8,6 +8,7 @@ import { SiteFooter, SiteHeader } from '../components/SiteChrome';
 import { Table } from '../components/Table';
 import { GEN1_RIGS, efficiency } from '../lib/catalog';
 import { LINKS } from '../lib/site';
+import { HomeHero } from './HomeHero';
 
 const FAQ_PREVIEW = [
   {
@@ -53,39 +54,8 @@ export default function Home() {
     <>
       <SiteHeader />
       <main>
-        {/* S1 — Hero */}
-        <section className="mx-auto grid max-w-6xl gap-10 px-4 py-16 lg:grid-cols-[1fr_auto]">
-          <div className="flex flex-col justify-center gap-6">
-            <h1 className="font-display text-6xl font-black tracking-wide uppercase sm:text-7xl">
-              Not the moon. <span className="text-orange">The Moho.</span>
-            </h1>
-            <p className="max-w-2xl text-xl">
-              Mohonaut is an on-chain idle drilling game. Run a drill site, fuel your rigs with
-              diesel, and core one shared hole with every other player: the World Bore. Every $MOHN
-              comes out of the ground.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/docs/"
-                className="inline-flex h-14 items-center rounded-md bg-orange px-7 font-condensed text-lg font-semibold tracking-wide text-night uppercase"
-              >
-                How it works
-              </Link>
-              <Link
-                href="/docs/economy/"
-                className="inline-flex h-14 items-center rounded-md border border-line px-7 font-condensed text-lg font-semibold tracking-wide uppercase"
-              >
-                Read the economy paper
-              </Link>
-            </div>
-            <p className="num text-sm text-fg-muted">
-              WORLD BORE 0 m · STRATUM I — REGOLITH · GENESIS DATE TO BE ANNOUNCED
-            </p>
-          </div>
-          <div className="justify-self-center">
-            <BoreLog depthMm={0n} height={420} />
-          </div>
-        </section>
+        {/* S1 — Hero: the site at night, full height */}
+        <HomeHero />
 
         {/* S2 — Live strip */}
         <section aria-label="Live numbers" className="mx-auto max-w-6xl px-4">

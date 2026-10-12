@@ -14,6 +14,8 @@ export interface CounterProps {
   since: number;
   unit: string;
   digits?: number;
+  /** Classes for the number (size and colour). */
+  numberClass?: string;
 }
 
 /** Value at `nowMs`, derived from the formula; no chain call needed (docs/03 §4.1). */
@@ -26,19 +28,28 @@ export function counterValue(base: bigint, perHour: bigint, since: number, nowMs
  * A live counter (e.g. unrefined MOHN). Ticks every 250 ms, or every second when the player
  * prefers reduced motion or low-power mode is on. Screen readers get the rate, not a constantly changing number.
  */
-export function Counter({ base, perHour, since, unit, digits = 4 }: CounterProps) {
+export function Counter({
+  base,
+  perHour,
+  since,
+  unit,
+  digits = 4,
+  numberClass = 'text-3xl text-data',
+}: CounterProps) {
   const reduced = useReducedMotion();
   const lowPower = useLowPower();
   const nowMs = useNow(reduced || lowPower ? 1000 : 250);
   const value = counterValue(base, perHour, since, nowMs ?? since * 1000);
   return (
     <span className="inline-flex items-baseline gap-2">
-      <span className="num text-3xl text-data" aria-hidden="true">
+      <span className={`num ${numberClass}`} aria-hidden="true">
         {formatUnits18(value, digits)}
       </span>
-      <span className="font-condensed text-lg uppercase text-fg-muted" aria-hidden="true">
-        {unit}
-      </span>
+      {unit !== '' && (
+        <span className="font-condensed text-lg uppercase text-fg-muted" aria-hidden="true">
+          {unit}
+        </span>
+      )}
       <span className="sr-only">
         {`${formatUnits18(value, 2)} ${unit}, rising about ${formatUnits18(perHour, 2)} ${unit} per hour`}
       </span>

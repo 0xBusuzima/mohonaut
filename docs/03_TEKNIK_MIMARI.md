@@ -224,7 +224,7 @@ Ayrıca: `setRecipients` (kurucu/hazine alıcıları, sıfır olamaz, 30 günde 
 ## 4. Zincir dışı servisler
 
 ### 4.1 Web istemcisi (`apps/web`)
-- Next.js (App Router), React, Tailwind, **wagmi + viem**, **RainbowKit + SIWE** (opsiyonel e-posta girişi için Dynamic/Privy adaptörü), **PixiJS** (izometrik sahne), Zustand.
+- Next.js (App Router), React, Tailwind, **wagmi + viem**, **RainbowKit + SIWE** (opsiyonel e-posta girişi için Dynamic/Privy adaptörü), **Canvas 2D pixel saha** (`src/game/pixel/`, kodla çizilir; PixiJS 2026-10-13'te kaldırıldı), Zustand.
 - Kritik oyun durumu **doğrudan zincirden** (viem multicall) okunur; indeksleyici yalnızca geçmiş/toplamlar için.
 - Canlı sayaç istemcide formülden türetilir (zincir işlemi gerektirmez).
 - Dil: İngilizce birincil. Türkçe arayüz hukuki görüşe bağlı (bkz. 07).

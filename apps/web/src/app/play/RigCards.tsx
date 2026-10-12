@@ -1,0 +1,200 @@
+'use client';
+
+import { sitePads } from '@mohonaut/sdk';
+import type { ReactNode } from 'react';
+import type { Action } from '../../game/actions';
+import { efficiency, withHeadroom } from '../../game/derive';
+import { rigName } from '../../game/play';
+import { RigPortrait } from '../../game/pixel/RigPortrait';
+import type { GameState, RigType } from '../../game/state';
+import { formatLitres, formatMohn } from '../../lib/format';
+import { PxButton, PxIcon } from './px';
+
+/** One rig as a card: the drawing on its pad, the numbers, and the card's own buttons. */
+function RigCard({
+  rig,
+  running = true,
+  dim = false,
+  tag,
+  children,
+}: {
+  rig: RigType;
+  running?: boolean;
+  dim?: boolean;
+  tag?: ReactNode;
+  children: ReactNode;
+}) {
+  const eff = efficiency(rig.dp, rig.burn);
+  return (
+    <li className="px-dark flex flex-col">
+      <div className="relative flex justify-center border-b-[3px] border-[#0e1013] bg-[#18213a] pt-2">
+        <div className={dim ? 'opacity-50' : undefined}>
+          <RigPortrait typeId={rig.id} running={running && !dim} />
+        </div>
+        {tag !== undefined && (
+          <span className="absolute top-2 right-2 bg-amber px-1.5 text-sm font-bold text-night">
+            {tag}
+          </span>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col gap-1 p-3">
+        <p className="text-xl font-bold text-orange">{rigName(rig.id)}</p>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-3 text-base">
+          <dt className="text-concrete">Drill power</dt>
+          <dd className="text-right">{rig.dp.toString()} DP</dd>
+          <dt className="text-concrete">Diesel</dt>
+          <dd className="text-right">{formatLitres(rig.burn, 2)}/h</dd>
+          <dt className="text-concrete">DP per ℓ/h</dt>
+          <dd className="text-right">{eff === null ? '—' : eff.toFixed(0)}</dd>
+        </dl>
+        <div className="mt-auto pt-2">{children}</div>
+      </div>
+    </li>
+  );
+}
+
+/** The equipment market: every rig type as a card, cheapest first. */
+export function MarketWindow({ state, action }: { state: GameState; action: Action }) {
+  const p = state.player;
+  if (p === null) return null;
+  const freePads = sitePads(p.level) - p.padsUsed;
+  return (
+    <>
+      <p className="mb-4 text-center text-base text-steel">
+        Choose a rig for a free pad. Prices follow the public auction formula and move with time and
+        sales; you pay from scrap credit first, then unrefined $MOHN.
+      </p>
+      <p className="mb-4 flex items-center justify-center gap-2 text-lg">
+        <PxIcon name="rig" size={18} /> {freePads > 0 ? freePads : 'No'} free pad
+        {freePads === 1 ? '' : 's'} · Site level {p.level}
+      </p>
+      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {state.rigs
+          .filter((r) => r.id !== 0)
+          .map((r) => {
+            const locked = p.level < r.minLevel;
+            return (
+              <RigCard
+                key={r.id}
+                rig={r}
+                dim={locked}
+                tag={r.owned > 0 ? `Owned ${r.owned}` : undefined}
+              >
+                <p className="mb-2 flex items-center justify-center gap-2 text-xl font-bold">
+                  <PxIcon name="coin" size={20} /> {formatMohn(r.price, 0)}
+                </p>
+                {locked ? (
+                  <PxButton
+                    variant="dark"
+                    className="flex w-full items-center justify-center gap-2"
+                    disabled
+                  >
+                    <PxIcon name="lock" size={18} /> Site L{r.minLevel}
+                  </PxButton>
+                ) : (
+                  <PxButton
+                    className="w-full"
+                    disabled={freePads <= 0}
+                    busy={action.busy === 'buyMachines'}
+                    aria-label={`Buy one ${rigName(r.id)}`}
+                    onClick={() =>
+                      void action.run({
+                        fn: 'buyMachines',
+                        args: [BigInt(r.id), 1, withHeadroom(r.price), false],
+                        done: `${rigName(r.id)} installed`,
+                      })
+                    }
+                  >
+                    {freePads > 0 ? 'Buy' : 'No free pad'}
+                  </PxButton>
+                )}
+              </RigCard>
+            );
+          })}
+      </ul>
+    </>
+  );
+}
+
+/** The rigs on the site: start, stop or scrap them. */
+export function RigsWindow({
+  state,
+  action,
+  openMarket,
+}: {
+  state: GameState;
+  action: Action;
+  openMarket: () => void;
+}) {
+  const owned = state.rigs.filter((r) => r.owned > 0);
+  return (
+    <>
+      <p className="mb-4 text-center text-base text-steel">
+        Stop a rig when its diesel is not worth it. Scrapping credits 20% of its value as scrap
+        credit for rigs and site levels; the Pilot Rig credits nothing.
+      </p>
+      {owned.length === 0 ? (
+        <div className="text-center">
+          <p className="mb-4 text-lg">No rigs on your site yet.</p>
+          <PxButton onClick={openMarket}>Open the market</PxButton>
+        </div>
+      ) : (
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {owned.map((r) => (
+            <RigCard key={r.id} rig={r} running={r.active > 0} tag={`${r.active} / ${r.owned} on`}>
+              <div className="grid grid-cols-3 gap-2">
+                <PxButton
+                  variant="light"
+                  className="!px-1 !text-base"
+                  disabled={r.active >= r.owned}
+                  busy={action.busy === 'setActiveRigs'}
+                  aria-label={`Start one ${rigName(r.id)}`}
+                  onClick={() =>
+                    void action.run({
+                      fn: 'setActiveRigs',
+                      args: [BigInt(r.id), r.active + 1],
+                      done: 'Rig started',
+                    })
+                  }
+                >
+                  Start
+                </PxButton>
+                <PxButton
+                  variant="light"
+                  className="!px-1 !text-base"
+                  disabled={r.active === 0}
+                  busy={action.busy === 'setActiveRigs'}
+                  aria-label={`Stop one ${rigName(r.id)}`}
+                  onClick={() =>
+                    void action.run({
+                      fn: 'setActiveRigs',
+                      args: [BigInt(r.id), r.active - 1],
+                      done: 'Rig stopped',
+                    })
+                  }
+                >
+                  Stop
+                </PxButton>
+                <PxButton
+                  variant="dark"
+                  className="!px-1 !text-base"
+                  busy={action.busy === 'scrapMachines'}
+                  aria-label={`Scrap one ${rigName(r.id)}`}
+                  onClick={() =>
+                    void action.run({
+                      fn: 'scrapMachines',
+                      args: [BigInt(r.id), 1],
+                      done: 'Rig scrapped',
+                    })
+                  }
+                >
+                  Scrap
+                </PxButton>
+              </div>
+            </RigCard>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}

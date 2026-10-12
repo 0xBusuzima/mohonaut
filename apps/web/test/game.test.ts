@@ -1,5 +1,5 @@
 import { BaseError, ContractFunctionRevertedError, encodeErrorResult, zeroAddress } from 'viem';
-import { miningCoreAbi, sitePads } from '@mohonaut/sdk';
+import { MAX_SITE_LEVEL, miningCoreAbi, sitePads } from '@mohonaut/sdk';
 import { describe, expect, it } from 'vitest';
 import {
   efficiency,
@@ -13,7 +13,7 @@ import {
 } from '../src/game/derive';
 import { explain } from '../src/game/errors';
 import { parseAmount, referrerFromUrl, rigName, scenePads } from '../src/game/play';
-import { padPositions } from '../src/game/SiteScene';
+import { siteRows } from '../src/game/pixel/world';
 import { formatEthInput } from '../src/lib/format';
 import { rigShape, rigSvg } from '../src/game/rigs';
 import { GEN1_RIGS } from '../src/lib/catalog';
@@ -128,11 +128,14 @@ describe('play screen helpers', () => {
     expect(formatEthInput(2n * E18)).toBe('2');
   });
 
-  it('places pads on an isometric grid, four to a row', () => {
-    const pos = padPositions(5, 96);
-    expect(pos[0]).toEqual({ x: 0, y: 0 });
-    expect(pos[1]).toEqual({ x: 48, y: 24 });
-    expect(pos[4]).toEqual({ x: -48, y: 24 });
+  it('grows the site a row of four pads at a time, with a locked slot ahead', () => {
+    expect(siteRows(sitePads(1))).toBe(3);
+    expect(siteRows(11)).toBe(3); // 11 pads + 1 locked fill three rows
+    expect(siteRows(12)).toBe(4);
+    // Every level's pads fit, the top level included.
+    for (let level = 1; level <= MAX_SITE_LEVEL; level++) {
+      expect(siteRows(sitePads(level)) * 4).toBeGreaterThanOrEqual(sitePads(level));
+    }
   });
 
   it('draws every Gen-1 rig differently, and running differently from switched off', () => {

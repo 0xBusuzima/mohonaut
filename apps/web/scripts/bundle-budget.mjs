@@ -1,7 +1,7 @@
 /* global URL, console, process */
 // Bundle budget (docs/06 4.5): the JavaScript each page loads up front, brotli-compressed as
 // Cloudflare serves it, must stay under its budget. What /play loads after its prerendered
-// frame (wallets, wagmi, PixiJS) is measured in a browser: e2e/site.spec.ts. Run after build.
+// frame (wallets, wagmi, the pixel game) is measured in a browser: e2e/site.spec.ts. Run after build.
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -1,12 +1,12 @@
 'use client';
 
 import { WalletProviders } from '../../game/WalletProviders';
-import { PlayScreen } from './PlayScreen';
+import { Game } from './Game';
 
 export function PlayApp({ openConnect = false }: { openConnect?: boolean }) {
   return (
     <WalletProviders>
-      <PlayScreen openConnect={openConnect} />
+      <Game openConnect={openConnect} />
     </WalletProviders>
   );
 }

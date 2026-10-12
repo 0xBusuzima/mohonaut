@@ -160,12 +160,13 @@ _İç karşılaştırma `research_notes/rakip-karsilastirma.md` dosyasına taş�
 
 ## 7. Sanat ve ses yönü
 
+- **Kurucu kararı (2026-10-13): oyun tam sayfa bir pixel-art oyunudur.** `/play` açılınca ekranın tamamı izometrik pixel sahadır (yükleme ekranı → karşılama penceresi → cüzdan → imza → saha adı → saha); her ekran sahanın üstünde açılan bir pencere (Market'te "rig seç" kartları, dizel deposu, rafineri, rig'lerim), HUD sahanın kenarlarında. Saha pixel art olarak kodla çizilir (`apps/web/src/game/pixel/`), oyun içi yazı pixel fontuyla (**Pixelify Sans**, SIL OFL). Sahaya tıklamak ilgili pencereyi açar (tank → dizel, konteyner → market, kulübe → rafineri, ped → rig'ler); telefonda saha sürüklenerek gezilir. Saha seviyeyle büyür: her dört pedlik sıra açıldıkça çit genişler.
 - **Görünüm:** 2.5D izometrik **yüzey sondaj sahası, gece**. Grafit zemin, emniyet turuncusu ekipman, sodyum lamba ışığı, buhar; camgöbeği yalnızca enstrüman HUD'unda ve karot ışımasında.
 - **İmza öğe:** kuyu logu / karot sütunu. Gerçek litolojiye göre renkli bantlar: Regolith ten rengi, Sediment bej, Granite pembe-gri, Gneiss bantlı gri, Granulite koyu, Peridotite zeytin yeşili, Asthenosphere turuncu-kırmızı.
-- **Kaçınılanlar:** pixel font, alet sallayan karakterler, yeraltı tünel/asansör görselleri, pastel ada estetiği, lacivert-siyah zemin.
+- **Kaçınılanlar:** alet sallayan karakterler, yeraltı tünel/asansör görselleri, pastel ada estetiği, ada/ev/bilgisayar odası temaları. (Pixel font ve gece göğü 2026-10-13 kurucu kararıyla oyunda serbest; site ve marka yazıları Big Shoulders/Barlow'da kalır.)
 - **Maskot:** tek maskot, **Foreman Mo**. Baretli, kafa lambalı köstebek ustabaşı (sezon kostümleri, meme yüzeyi). Yan karakter kadrosu yok.
 - **Ses:** industrial ambient + kule ritmi (dizel motor, çamur pompası, boru sesi); her katman geçişinde yeni tema.
-- **Teknoloji:** PixiJS (WebGL 2D) + izometrik sprite atlasları; mobil öncelikli; düşük güçlü cihazda animasyon azaltma.
+- **Teknoloji:** Canvas 2D, düşük çözünürlüklü tuval (~470×300 sanat pikseli) tam sayı katıyla büyütülür (`image-rendering: pixelated`); yalnızca tam sayı dikdörtgenler (kenar yumuşatma yok). Mobil öncelikli (telefonda en az 2x + sürükleme); düşük güç modunda tek kare. PixiJS kaldırıldı.
 - **Varlıklar:** hepsi bizim tasarımımız ve özgün; dış görsel/sprite paketi kullanılmaz (docs/05 §2.6 özgünlük kuralı). Kuleler kodla çizilir (`apps/web/src/game/rigs.ts`).
 
 ---

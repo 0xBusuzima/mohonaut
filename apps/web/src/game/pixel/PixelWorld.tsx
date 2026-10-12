@@ -1,0 +1,166 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from '../../lib/motion';
+import { useLowPower } from '../../lib/power';
+import { drawWorld, siteRows, worldSize } from './world';
+import type { Hit, HitBox, WorldModel } from './world';
+
+/** Pointer travel (CSS px) after which a press is a drag, not a click. */
+const DRAG_PX = 6;
+
+/**
+ * The full-screen pixel world: a low-resolution canvas scaled up by a whole number with
+ * `image-rendering: pixelated`, redrawn about 12 times a second (once when motion is reduced).
+ * Clicking a building or a pad calls `onSelect`. Where the site is larger than the screen (phones)
+ * it can be dragged around. `contained`: fills its positioned parent instead of the screen, and
+ * leaves touch scrolling to the page (no dragging).
+ */
+export function PixelWorld({
+  model,
+  onSelect,
+  label,
+  contained = false,
+}: {
+  model: Omit<WorldModel, 'hover' | 'motion' | 'pan'>;
+  onSelect?: ((hit: Hit) => void) | undefined;
+  label: string;
+  contained?: boolean;
+}) {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const hits = useRef<HitBox[]>([]);
+  const press = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const [hover, setHover] = useState<Hit | null>(null);
+  const [size, setSize] = useState({ w: 640, h: 360, scale: 3, maxX: 0, maxY: 0 });
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const reduced = useReducedMotion();
+  const lowPower = useLowPower();
+  const motion = !reduced && !lowPower;
+  const rows = siteRows(model.pads.length);
+
+  useEffect(() => {
+    const box = contained ? canvas.current?.parentElement : null;
+    const fit = () => {
+      const vw = box?.clientWidth ?? window.innerWidth;
+      const vh = box?.clientHeight ?? window.innerHeight;
+      // The nearest whole-number scale at which the site fills the screen; phones get at least
+      // 2x so rigs stay readable, and the part that does not fit is reached by dragging.
+      const world = worldSize(rows);
+      const fitScale = Math.round(Math.min(vw / world.w, vh / world.h));
+      const scale = Math.max(vw < 768 ? 2 : 1, fitScale);
+      const w = Math.ceil(vw / scale);
+      const h = Math.ceil(vh / scale);
+      setSize({
+        w,
+        h,
+        scale,
+        maxX: Math.max(0, Math.ceil((world.w - w) / 2)),
+        maxY: Math.max(0, Math.ceil((world.h - h) / 2)),
+      });
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, [rows, contained]);
+
+  // The camera stays inside the site, also when the screen or the site changes size.
+  const clampX = (x: number) => Math.max(-size.maxX, Math.min(size.maxX, Math.round(x)));
+  const clampY = (y: number) => Math.max(-size.maxY, Math.min(size.maxY, Math.round(y)));
+  const vx = clampX(pan.x);
+  const vy = clampY(pan.y);
+  const canPan = !contained && (size.maxX > 0 || size.maxY > 0);
+
+  useEffect(() => {
+    const el = canvas.current;
+    const c = el?.getContext('2d');
+    if (el === null || c === null || c === undefined) return undefined;
+    c.imageSmoothingEnabled = false;
+    let frame = 0;
+    let last = 0;
+    const draw = (now: number) => {
+      hits.current = drawWorld(c, size.w, size.h, now / 1000, {
+        ...model,
+        hover,
+        motion,
+        pan: { x: vx, y: vy },
+      });
+    };
+    if (!motion) {
+      draw(0);
+      return undefined;
+    }
+    draw(performance.now());
+    const loop = (now: number) => {
+      if (now - last > 80) {
+        last = now;
+        draw(now);
+      }
+      frame = requestAnimationFrame(loop);
+    };
+    frame = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(frame);
+  }, [size, model, hover, motion, vx, vy]);
+
+  const hitAt = (clientX: number, clientY: number): Hit | null => {
+    const at = canvas.current?.getBoundingClientRect();
+    const x = (clientX - (at?.left ?? 0)) / size.scale;
+    const y = (clientY - (at?.top ?? 0)) / size.scale;
+    let best: HitBox | null = null;
+    for (const h of hits.current) {
+      if (x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h) {
+        if (best === null || h.w * h.h < best.w * best.h) best = h;
+      }
+    }
+    return best?.id ?? null;
+  };
+
+  let cursor = 'default';
+  if (dragging) cursor = 'grabbing';
+  else if (hover !== null && onSelect !== undefined) cursor = 'pointer';
+  else if (canPan) cursor = 'grab';
+
+  return (
+    <canvas
+      ref={canvas}
+      width={size.w}
+      height={size.h}
+      role="img"
+      aria-label={label}
+      className={`pixel-canvas ${contained ? 'absolute inset-0' : 'fixed inset-0 h-dvh w-screen touch-none'}`}
+      style={{ width: size.w * size.scale, height: size.h * size.scale, cursor }}
+      onPointerDown={(e) => {
+        if (!canPan) return;
+        press.current = { x: e.clientX, y: e.clientY, px: vx, py: vy };
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }}
+      onPointerMove={(e) => {
+        const p = press.current;
+        if (p !== null && canPan) {
+          const dx = e.clientX - p.x;
+          const dy = e.clientY - p.y;
+          if (dragging || Math.hypot(dx, dy) > DRAG_PX) {
+            setDragging(true);
+            setPan({ x: clampX(p.px + dx / size.scale), y: clampY(p.py + dy / size.scale) });
+            return;
+          }
+        }
+        setHover(onSelect === undefined ? null : hitAt(e.clientX, e.clientY));
+      }}
+      onPointerUp={(e) => {
+        press.current = null;
+        if (dragging) {
+          setDragging(false);
+          return;
+        }
+        const h = hitAt(e.clientX, e.clientY);
+        if (h !== null) onSelect?.(h);
+      }}
+      onPointerCancel={() => {
+        press.current = null;
+        setDragging(false);
+      }}
+      onPointerLeave={() => setHover(null)}
+    />
+  );
+}

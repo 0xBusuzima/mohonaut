@@ -2,8 +2,13 @@ import { sitePads } from '@mohonaut/sdk';
 import { isAddress, parseEther, zeroAddress } from 'viem';
 import type { Address } from 'viem';
 import { GEN1_RIGS } from '../lib/catalog';
-import type { ScenePad } from './SiteScene';
 import type { RigType } from './state';
+
+export interface ScenePad {
+  /** Rig type on this pad, or null for an empty pad. */
+  typeId: number | null;
+  running: boolean;
+}
 
 export const rigName = (id: number) => GEN1_RIGS[id]?.name ?? `Rig type ${id}`;
 
