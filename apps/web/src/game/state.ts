@@ -80,6 +80,8 @@ export function useGameState(
 ): {
   state: GameState | null;
   refetch: () => void;
+  /** The last read failed (no RPC): `state`, if any, is the previous reading. */
+  offline: boolean;
 } {
   const types = Array.from({ length: MAX_TYPES }, (_, i) => i);
   const calls: Call[] = [
@@ -136,7 +138,10 @@ export function useGameState(
     void read.refetch();
     void second.refetch();
   };
-  if (r === undefined) return { state: null, refetch };
+  // With the RPC down the multicall falls back to single calls that each fail, and the "data"
+  // is a list of failures: without the network's own numbers there is no state to show.
+  const offline = read.isError || (r !== undefined && r[0]?.status !== 'success');
+  if (r === undefined || offline) return { state: null, refetch, offline };
 
   const typeCount = Number(ok<bigint>(r[8]) ?? 0n);
   const rigs: RigType[] = [];
@@ -202,6 +207,7 @@ export function useGameState(
 
   return {
     refetch,
+    offline,
     state: {
       at: Math.floor(read.dataUpdatedAt / 1000),
       network: {

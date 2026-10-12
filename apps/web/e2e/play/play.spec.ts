@@ -67,3 +67,15 @@ test('a new player opens a drill site, then stops and restarts the Pilot Rig', a
   expect(await cspViolations()).toEqual([]);
   expect(errors).toEqual([]);
 });
+
+test('without the chain, the game says so and keeps trying', async ({ page }) => {
+  // Every JSON-RPC call to the local chain fails, as when the RPC is down.
+  const port = process.env['PLAY_ANVIL_PORT'] ?? '18546'; // e2e/play/start.mjs
+  await page.route(
+    (url) => url.port === port,
+    (route) => route.abort(),
+  );
+  await page.goto('/play/');
+  await expect(page.getByRole('dialog', { name: 'No signal' })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole('button', { name: 'Try now' })).toBeVisible();
+});

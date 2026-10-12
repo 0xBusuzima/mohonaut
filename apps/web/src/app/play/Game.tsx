@@ -49,7 +49,7 @@ function localName(a: Address): string | null {
 export function Game({ openConnect = false }: { openConnect?: boolean }) {
   const { address, chainId, isConnected } = useAccount();
   const lowPower = useLowPower();
-  const { state, refetch } = useGameState(address, lowPower);
+  const { state, refetch, offline } = useGameState(address, lowPower);
   const action = useGameAction(refetch);
   useE2EConnect();
   usePixelGame();
@@ -102,8 +102,23 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
   let onboarding: ReactNode = null;
   if (!isConnected) onboarding = <WalletStep autoOpen={openConnect} />;
   else if (wrongChain) onboarding = <ChainStep />;
-  else if (state === null) return <LoadingScreen text="Reading the chain…" />;
-  else if (address !== undefined && !named && (known === null || known === '')) {
+  else if (state === null) {
+    if (!offline) return <LoadingScreen text="Reading the chain…" />;
+    onboarding = (
+      <PxModal title="No signal">
+        <div className="flex items-center gap-3">
+          <ForemanMo scale={3} label="Foreman Mo" />
+          <p>
+            Can&apos;t reach {gameChain.name} right now. Your site is safe on-chain; the game tries
+            again every few seconds.
+          </p>
+        </div>
+        <PxButton className="mt-4 w-full" onClick={refetch}>
+          Try now
+        </PxButton>
+      </PxModal>
+    );
+  } else if (address !== undefined && !named && (known === null || known === '')) {
     onboarding = <NameStep address={address} onDone={() => setNamed(true)} />;
   } else if (p === null || !p.registered) {
     onboarding = (
