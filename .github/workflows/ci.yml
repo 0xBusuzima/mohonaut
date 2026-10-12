@@ -192,6 +192,13 @@ jobs:
         run: npx turbo run build typecheck lint test
       - name: Dead code (knip)
         run: npx knip
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Brand vectors match their generator (brand/)
+        run: |
+          pip install -q fonttools==4.66.1
+          python tools/brand/gen_brand.py --check
       - name: Copy lint (docs/05 §6)
         run: node tools/lint_copy.mjs --self-test && node tools/lint_copy.mjs
       - name: Format

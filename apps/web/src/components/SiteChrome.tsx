@@ -20,6 +20,17 @@ function Bands() {
   );
 }
 
+/** The casing mark (brand/logo/mohonaut-mark.svg): outer casing, inner casing in the text colour, bore. */
+function CasingMark() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 512 512" className="h-7 w-7 shrink-0">
+      <circle cx="256" cy="256" r="224" fill="none" stroke="var(--color-orange)" strokeWidth="64" />
+      <circle cx="256" cy="256" r="128" fill="none" stroke="var(--fg)" strokeWidth="54" />
+      <circle cx="256" cy="256" r="51" fill="var(--color-orange)" />
+    </svg>
+  );
+}
+
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 bg-surface/95 backdrop-blur">
@@ -29,8 +40,9 @@ export function SiteHeader() {
       >
         <Link
           href="/"
-          className="font-display text-2xl font-black tracking-wide text-orange uppercase"
+          className="flex items-center gap-2 font-display text-2xl font-black tracking-wide text-orange uppercase"
         >
+          <CasingMark />
           Mohonaut
         </Link>
         <ul className="flex flex-wrap gap-x-5 gap-y-1 font-condensed text-lg font-semibold uppercase">
