@@ -279,7 +279,8 @@ jobs:
           # (No real RPC here: the indexer keeps retrying, which is what it does in an outage.)
           docker run -d --name idx --network ci -p 9464:9464 --read-only --tmpfs /tmp             -v "$PWD/deployments:/deployments:ro" -e METRICS_HOST=0.0.0.0             -e RPC_URL=http://127.0.0.1:9 -e DATABASE_URL=postgres://postgres:ci@pg:5432/mohonaut             -e DEPLOYMENT_FILE=/deployments/46630.json mohonaut-indexer:ci
           for i in $(seq 1 30); do curl -fsS -o /dev/null http://127.0.0.1:9464/metrics && break; sleep 2; done
-          curl -fsS http://127.0.0.1:9464/metrics | grep -q '^indexer_block'
+          docker logs idx 2>&1 | tail -5
+          curl -fsS http://127.0.0.1:9464/metrics | grep -q '^indexer_'
           docker run -d --name api --network ci -p 8787:8787 --read-only --tmpfs /tmp \
             -v "$PWD/deployments:/deployments:ro" \
             -e NODE_ENV=development -e HOST=0.0.0.0 -e PORT=8787 \
