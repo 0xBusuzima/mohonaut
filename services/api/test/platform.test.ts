@@ -56,12 +56,19 @@ describe('OpenAPI', () => {
     const paths = Object.keys(doc.json['paths'] as object).sort();
     expect(paths).toEqual(
       [
+        '/admin/announcements',
+        '/admin/announcements/{id}/end',
         '/admin/audit',
         '/admin/crews/{id}/rename',
+        '/admin/health',
         '/admin/roles',
         '/admin/seasons',
+        '/admin/support',
+        '/admin/support/{id}',
         '/admin/users',
+        '/admin/users/{id}',
         '/admin/users/{id}/flag',
+        '/announcements',
         '/auth/external',
         '/auth/logout',
         '/auth/nonce',
@@ -81,6 +88,7 @@ describe('OpenAPI', () => {
         '/profiles/{address}',
         '/seasons',
         '/seasons/{id}/leaderboard',
+        '/support',
         '/survey',
         '/world',
       ].sort(),

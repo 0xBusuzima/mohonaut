@@ -12,8 +12,8 @@ const WHO: Who[] = ['anonymous', 'player', 'admin', 'economist', 'support', 'mod
 const ENDPOINTS: {
   permission: keyof typeof PERMISSIONS;
   method: string;
-  path: (ids: { user: number; crew: number }) => string;
-  body?: (ids: { user: number; crew: number }) => unknown;
+  path: (ids: { user: number; crew: number; ticket: number }) => string;
+  body?: (ids: { user: number; crew: number; ticket: number }) => unknown;
   ok: number;
 }[] = [
   { permission: 'users.read', method: 'GET', path: () => '/admin/users?q=0x', ok: 200 },
@@ -46,6 +46,38 @@ const ENDPOINTS: {
     }),
     ok: 201,
   },
+  { permission: 'audit.read', method: 'GET', path: () => '/admin/audit', ok: 200 },
+  { permission: 'users.read', method: 'GET', path: (ids) => `/admin/users/${ids.user}`, ok: 200 },
+  {
+    permission: 'announcements.write',
+    method: 'GET',
+    path: () => '/admin/announcements',
+    ok: 200,
+  },
+  {
+    permission: 'announcements.write',
+    method: 'POST',
+    path: () => '/admin/announcements',
+    body: () => ({
+      kind: 'banner',
+      title: 'Maintenance at 14:00 UTC',
+      body: 'The API restarts for a few minutes. The game keeps running on-chain.',
+      startsAt: 1_800_000_000,
+      endsAt: null,
+      reason: 'planned restart',
+    }),
+    ok: 201,
+  },
+  { permission: 'support.read', method: 'GET', path: () => '/admin/support', ok: 200 },
+  {
+    permission: 'support.write',
+    method: 'POST',
+    path: (ids) => `/admin/support/${ids.ticket}`,
+    body: () => ({ status: 'answered', note: 'replied by e-mail', reason: 'answered' }),
+    ok: 200,
+  },
+  { permission: 'health.read', method: 'GET', path: () => '/admin/health', ok: 200 },
+  // Last: it makes the player a support operator, which would change the rows after it.
   {
     permission: 'roles.write',
     method: 'POST',
@@ -53,13 +85,12 @@ const ENDPOINTS: {
     body: (ids) => ({ userId: ids.user, role: 'support', grant: true, reason: 'new support hire' }),
     ok: 200,
   },
-  { permission: 'audit.read', method: 'GET', path: () => '/admin/audit', ok: 200 },
 ];
 
 async function setup(): Promise<{
   h: Harness;
   cookies: Record<Who, string | undefined>;
-  ids: { user: number; crew: number };
+  ids: { user: number; crew: number; ticket: number };
 }> {
   const adminWallet = newWallet();
   const h = await harness({ adminWallets: [adminWallet.address] });
@@ -91,7 +122,15 @@ async function setup(): Promise<{
       })
     ).json['id'],
   );
-  return { h, cookies, ids: { user, crew } };
+  const ticket = Number(
+    (
+      await call(h, 'POST', '/support', {
+        cookie: cookies.player,
+        body: { topic: 'bug', body: 'The tank gauge looks wrong.', contact: null, wallet: null },
+      })
+    ).json['id'],
+  );
+  return { h, cookies, ids: { user, crew, ticket } };
 }
 
 describe('admin authorization matrix', () => {

@@ -39,13 +39,13 @@ async function main(): Promise<void> {
       });
   });
   metricsServer.listen(cfg.metricsPort, cfg.metricsHost);
+  const chain = cfg.rpcUrl === null ? null : createPublicClient({ transport: http(cfg.rpcUrl) });
   const app = createApp({
     cfg,
     database,
     store,
-    signatures: signatureVerifier(
-      cfg.rpcUrl === null ? null : createPublicClient({ transport: http(cfg.rpcUrl) }),
-    ),
+    signatures: signatureVerifier(chain),
+    chain,
     externalAuth: cfg.externalAuth === null ? null : externalAuthVerifier(cfg.externalAuth),
     turnstile: cfg.turnstileSecret === null ? null : turnstileVerifier(cfg.turnstileSecret),
     now: Date.now,

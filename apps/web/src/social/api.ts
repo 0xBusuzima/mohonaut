@@ -94,6 +94,17 @@ export interface World {
   stratum: { numeral: string; name: string; fromM: number };
 }
 
+export interface Notice {
+  id: number;
+  kind: 'banner' | 'maintenance' | 'changelog';
+  title: string;
+  body: string;
+  startsAt: number;
+  endsAt: number | null;
+}
+export const SUPPORT_TOPICS = ['account', 'transaction', 'bug', 'safety', 'other'] as const;
+export type SupportTopic = (typeof SUPPORT_TOPICS)[number];
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -114,10 +125,10 @@ export function apiMessage(err: unknown): string {
   return err.message.charAt(0).toUpperCase() + err.message.slice(1) + '.';
 }
 
-async function call<T>(
+export async function call<T>(
   method: string,
   path: string,
-  opts: { body?: unknown; botCheck?: boolean } = {},
+  opts: { body?: unknown; botCheck?: boolean; fresh?: boolean } = {},
 ): Promise<T> {
   const headers: Record<string, string> = {};
   // The API refuses cross-site writes without a JSON content type, even when there is no body.
@@ -130,6 +141,7 @@ async function call<T>(
     method,
     credentials: 'include',
     headers,
+    ...(opts.fresh === true ? { cache: 'no-cache' as const } : {}),
     ...(method === 'GET' ? {} : { body: JSON.stringify(opts.body ?? {}) }),
   });
   if (!res.ok) {
@@ -161,6 +173,15 @@ export const api = {
   profile: (address: Address) => call<Profile>('GET', `/profiles/${address}`),
   world: () => call<World>('GET', '/world'),
   cardUrl: (address: Address) => `${API_URL}/cards/${address}`,
+  /** `fresh` skips the browser cache (the API allows 60 s): a new notice shows on next load. */
+  announcements: (fresh = false) =>
+    call<{ active: Notice[]; changelog: Notice[] }>('GET', '/announcements', { fresh }),
+  support: (body: {
+    topic: SupportTopic;
+    body: string;
+    contact: string | null;
+    wallet: Address | null;
+  }) => call<{ id: number }>('POST', '/support', { body, botCheck: true }),
 };
 
 /** SIWE verification needs the bot check too (POST /auth/siwe). */

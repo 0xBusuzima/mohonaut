@@ -12,6 +12,7 @@ const PAGES = [
   '/security/',
   '/faq/',
   '/status/',
+  '/support/',
   '/terms/',
   '/privacy/',
 ];
@@ -121,7 +122,12 @@ test('every page carries a hash-based CSP and breaks none of it', async ({ page 
     );
   });
   await page.route(/rpc\./, (route) => route.abort());
-  for (const path of [...PAGES, '/play/', '/s/0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc']) {
+  for (const path of [
+    ...PAGES,
+    '/play/',
+    '/ops/',
+    '/s/0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc',
+  ]) {
     await page.goto(path);
     await page.waitForLoadState('networkidle');
     const policy = await page
@@ -164,4 +170,10 @@ test('/play/ loads the wallet code on Connect, within budget and the CSP', async
   expect(light).toBeLessThan(180 * 1024);
   expect(total).toBeLessThan(BUDGET);
   expect(await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp)).toEqual([]);
+});
+
+test('/ops/ stays out of search and needs the API', async ({ page }) => {
+  await page.goto('/ops/');
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
+  await expect(page.getByText('The API is not configured for this build')).toBeVisible();
 });

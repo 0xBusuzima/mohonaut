@@ -4,7 +4,7 @@ import { formatDepth, fuelLineWad, millimetres, sitePads, stratumAt } from '@moh
 import { ConnectButton, useConnectModal } from '@rainbow-me/rainbowkit';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Address } from 'viem';
-import { useAccount, useBalance, useConnect, useSwitchChain } from 'wagmi';
+import { useAccount, useBalance, useSwitchChain } from 'wagmi';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
@@ -18,7 +18,7 @@ import { SiteScene } from '../../game/SiteScene';
 import { useGameState } from '../../game/state';
 import type { GameState, RigType } from '../../game/state';
 import { parseAmount, referrerFromUrl, rigName, scenePads } from '../../game/play';
-import { E2E_ACCOUNT } from '../../game/wallet';
+import { useE2EConnect } from '../../game/e2e';
 import { PlayFrame, Welcome } from './PlayFrame';
 import { formatEth, formatLitres, formatMohn, formatUtc } from '../../lib/format';
 import { setLowPower, useLowPower } from '../../lib/power';
@@ -31,7 +31,6 @@ type Action = ReturnType<typeof useGameAction>;
 export function PlayScreen({ openConnect = false }: { openConnect?: boolean }) {
   const { address, chainId, isConnected } = useAccount();
   const { switchChain } = useSwitchChain();
-  const { connect, connectors } = useConnect();
   const lowPower = useLowPower();
   const { state, refetch } = useGameState(address, lowPower);
   const action = useGameAction(refetch);
@@ -45,12 +44,7 @@ export function PlayScreen({ openConnect = false }: { openConnect?: boolean }) {
     openConnectModal();
   }, [openConnect, isConnected, openConnectModal]);
 
-  // End-to-end tests: connect the local anvil account automatically.
-  useEffect(() => {
-    if (E2E_ACCOUNT === '' || isConnected) return;
-    const mock = connectors.find((c) => c.id === 'mock');
-    if (mock !== undefined) connect({ connector: mock });
-  }, [connect, connectors, isConnected]);
+  useE2EConnect();
 
   const wrongChain = isConnected && chainId !== gameChain.id;
   const paused = state !== null && state.network.pausedUntil > state.at;

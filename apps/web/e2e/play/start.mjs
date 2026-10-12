@@ -149,7 +149,7 @@ const app = createApp({
     surveySecret: randomBytes(32).toString('hex'),
     turnstileSecret: null,
     trustCloudflare: false,
-    adminWallets: [],
+    adminWallets: [ACCOUNTS[2]], // the mock wallet is also the operator (e2e/play/ops.spec.ts)
     externalAuth: null,
   },
   database,

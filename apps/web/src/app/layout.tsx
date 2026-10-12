@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
 import { fontVariables } from './fonts';
+import { AnnouncementBar } from '../components/AnnouncementBar';
 import { ErrorReporting } from '../components/ErrorReporting';
 import { ToastProvider } from '../components/Toast';
 
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </a>
         <ErrorReporting />
         <ToastProvider>
+          <AnnouncementBar />
           <div id="main">{children}</div>
         </ToastProvider>
       </body>

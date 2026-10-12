@@ -1,5 +1,5 @@
 import type { Database } from '@mohonaut/indexer';
-import type { Address } from 'viem';
+import type { Address, PublicClient } from 'viem';
 import type { ExternalAuthVerifier } from './auth/external.js';
 import type { SignatureVerifier } from './auth/siwe.js';
 import type { Config } from './config.js';
@@ -24,6 +24,8 @@ export interface AppDeps {
   /** Unix milliseconds (injectable for tests). */
   now(): number;
   metrics?: ApiMetrics;
+  /** Chain reads for the operator health view (RPC_URL); null without one. */
+  chain?: Pick<PublicClient, 'getBlockNumber' | 'getBalance'> | null;
 }
 
 export interface SessionUser {

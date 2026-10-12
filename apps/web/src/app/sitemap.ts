@@ -13,6 +13,7 @@ const PAGES = [
   'security/',
   'faq/',
   'status/',
+  'support/',
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

@@ -95,6 +95,37 @@ export const auditLog = pgTable('audit_log', {
   reason: text('reason').notNull(),
 });
 
+export const ANNOUNCEMENT_KINDS = ['banner', 'maintenance', 'changelog'] as const;
+export type AnnouncementKind = (typeof ANNOUNCEMENT_KINDS)[number];
+
+export const announcements = pgTable('announcements', {
+  id: serial('id').primaryKey(),
+  kind: text('kind').$type<AnnouncementKind>().notNull(),
+  title: text('title').notNull(),
+  body: text('body').notNull(),
+  startsAt: bigint('starts_at', { mode: 'number' }).notNull(),
+  endsAt: bigint('ends_at', { mode: 'number' }),
+  createdBy: id('created_by').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const SUPPORT_TOPICS = ['account', 'transaction', 'bug', 'safety', 'other'] as const;
+export const SUPPORT_STATUSES = ['open', 'answered', 'closed'] as const;
+export type SupportStatus = (typeof SUPPORT_STATUSES)[number];
+
+export const supportTickets = pgTable('support_tickets', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  userId: id('user_id'),
+  wallet: text('wallet'),
+  contact: text('contact'),
+  topic: text('topic').$type<(typeof SUPPORT_TOPICS)[number]>().notNull(),
+  body: text('body').notNull(),
+  status: text('status').$type<SupportStatus>().notNull().default('open'),
+  note: text('note'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const apiTables = [
   users,
   sessions,
@@ -105,4 +136,6 @@ export const apiTables = [
   seasons,
   adminRoles,
   auditLog,
+  announcements,
+  supportTickets,
 ] as const;
