@@ -327,7 +327,10 @@ Testnet betası için: deployments/testnet.json'u güncel sürüme getir, web'de
 
 > Ayrıntılı takvim ve gönderi taslakları: `docs/05_MARKA_LANSMAN_X.md`.
 
-### 8.1 Marka varlıkları
+### 8.1 Marka varlıkları — 🟡 taslaklar 2026-10-12 (`brand/`, `docs/legal/ASSET_LISANSLARI.md`)
+
+> Yön A ("Casing Wordmark") vektör taslak olarak hazır: wordmark, kuyu ağzı işareti, monogram, kilit, tek renk varyantları (`tools/brand/gen_brand.py`; harfler Big Shoulders Display'den yola çevrildi). Sitenin ikonları, OG görseli, X avatarı ve banner'ı da bu taslaktan üretildi. Altı Gen-1 kulenin çalışıyor/kapalı çizimleri oyun sahnesinde ve `brand/sprites/rig-sheet` stil sayfasında. Yapay zekâ görsel aracı ve ücretli araç kullanılmadı. Kalanlar: kurucunun taslağı Inkscape'te elle yeniden çizmesi (§2.8), maskot, saha katmanları (dizel tankı, boru rafı, lambalar), dinamik paylaşım kartları.
+
 
 ```text
 docs/05'teki marka kimliğine göre: logo yönleri için AI görsel promptlarını kullanarak 3 yön × 4 varyasyon taslak üret (önce ücretsiz: Kenney.nl CC0 izometrik paketleri temel, Recraft/Ideogram ücretsiz kademeleri; Higgsfield kredi harcar — her üretimden önce bana maliyeti söyle ve onay al), seçilen yönü vektöre çevirme planı, X avatar/banner, OG görselleri, paylaşım kartı şablonları, makine sprite stil rehberi. Telif: kullanılan her aracın ticari kullanım şartlarını docs/legal/ASSET_LISANSLARI.md'ye yaz.
