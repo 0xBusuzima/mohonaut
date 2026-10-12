@@ -1,4 +1,5 @@
 import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
@@ -51,19 +52,23 @@ export async function openDatabase(url: string): Promise<Database> {
 const MIGRATIONS_DIR = fileURLToPath(new URL('../../migrations/', import.meta.url));
 const MIGRATION_NAME = /^\d{4}_[a-z0-9_]+\.sql$/;
 
-/** Applies migrations/*.sql in name order, each once and in its own transaction. */
-export async function migrate(database: Database): Promise<string[]> {
+/**
+ * Applies `dir`/*.sql (default: this package's migrations) in name order, each once and in its
+ * own transaction. Services sharing the database use distinct file names (the API: 1xxx_).
+ */
+export async function migrate(database: Database, dir: string = MIGRATIONS_DIR): Promise<string[]> {
   await database.exec(
     'CREATE TABLE IF NOT EXISTS schema_migrations (name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())',
   );
   const applied = new Set(
     (await database.query('SELECT name FROM schema_migrations')).map((r) => String(r['name'])),
   );
-  const pending = readdirSync(MIGRATIONS_DIR)
+  const folder = join(dir, '/');
+  const pending = readdirSync(folder)
     .filter((name) => MIGRATION_NAME.test(name) && !applied.has(name))
     .sort();
   for (const name of pending) {
-    const body = readFileSync(MIGRATIONS_DIR + name, 'utf8');
+    const body = readFileSync(folder + name, 'utf8');
     await database.exec(
       `BEGIN;\n${body}\nINSERT INTO schema_migrations (name) VALUES ('${name}');\nCOMMIT;`,
     );

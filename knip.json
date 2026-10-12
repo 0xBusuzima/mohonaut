@@ -26,6 +26,11 @@
     "services/keeper": {
       "entry": ["src/index.ts", "src/main.ts"],
       "project": ["src/**/*.ts", "test/**/*.ts"]
+    },
+    "services/api": {
+      "entry": ["src/index.ts", "src/main.ts"],
+      "project": ["src/**/*.ts", "test/**/*.ts"],
+      "ignoreDependencies": ["@expo-google-fonts/inter"]
     }
   }
 }
