@@ -188,8 +188,12 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Build, typecheck, lint, test
-        run: npx turbo run build typecheck lint test
+      - name: Build, typecheck, lint
+        run: npx turbo run build typecheck lint
+      - name: Test
+        # Two packages at a time: the indexer and API suites run an embedded Postgres (PGlite)
+        # and time out when every suite competes for a small runner's CPU.
+        run: npx turbo run test --concurrency=2
       - name: Dead code (knip)
         run: npx knip
       - name: Copy lint (docs/05 §6)
