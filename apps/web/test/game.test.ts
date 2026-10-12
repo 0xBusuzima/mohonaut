@@ -3,6 +3,7 @@ import { MAX_SITE_LEVEL, miningCoreAbi, sitePads } from '@mohonaut/sdk';
 import { describe, expect, it } from 'vitest';
 import {
   efficiency,
+  maxRigsToBuy,
   minersShare,
   perHourEstimate,
   shareOfNetwork,
@@ -189,5 +190,17 @@ describe('pixel world helpers', () => {
     expect(textWidth('8')).toBe(3);
     expect(textWidth('+0.08')).toBe(17);
     expect(textWidth('')).toBe(0);
+  });
+});
+
+describe('buying several rigs', () => {
+  const L = 10n ** 18n;
+  it('fits the free pads, the fuel line and the per-purchase DP limit', () => {
+    const base = { freePads: 3, fuelLine: 6n * L, burn: L / 4n, rigBurn: L, rigDp: 50n };
+    expect(maxRigsToBuy(base)).toBe(3); // pads bind: 5.75 l/h of line room
+    expect(maxRigsToBuy({ ...base, freePads: 10 })).toBe(5); // the fuel line binds
+    expect(maxRigsToBuy({ ...base, freePads: 10, fuelLine: 100n * L, rigDp: 2_700n })).toBe(3);
+    expect(maxRigsToBuy({ ...base, freePads: 0 })).toBe(0);
+    expect(maxRigsToBuy({ ...base, burn: 6n * L })).toBe(0);
   });
 });

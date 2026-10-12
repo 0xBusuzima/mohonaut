@@ -1,5 +1,8 @@
 'use client';
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createConfig, http, WagmiProvider } from 'wagmi';
+import { gameChain } from '../../../game/network';
 import { useEffect, useMemo, useState } from 'react';
 import { PixelWorld } from '../../../game/pixel/PixelWorld';
 import { describeHit } from '../../../game/play';
@@ -61,7 +64,7 @@ const SAMPLE: GameState = {
     registered: true,
     level: 5,
     dp: 980n,
-    burn: 22n * E18,
+    burn: 7n * E18,
     tank: 1_240n * E18,
     pending: 1_234n * E18,
     scrapCredit: 0n,
@@ -71,6 +74,14 @@ const SAMPLE: GameState = {
     refines: [],
   },
 };
+
+/** Chain reads only (the market's batch quotes); no wallet in the preview. */
+const previewConfig = createConfig({
+  chains: [gameChain],
+  transports: { [gameChain.id]: http() },
+  ssr: true,
+});
+const previewQueries = new QueryClient();
 
 /** The windows open without a wallet: buttons do nothing here. */
 const NO_ACTION = { busy: null, run: () => Promise.resolve(false) };
@@ -90,43 +101,45 @@ export function SitePreview() {
   );
   const [panel, setPanel] = useState<Panel | null>(null);
   return (
-    <>
-      <PixelWorld
-        model={model}
-        onSelect={(hit) => {
-          if (hit === 'market') setPanel('market');
-          else if (hit.startsWith('pad:')) setPanel('rigs');
-        }}
-        describe={(hit) => describeHit(hit, pads)}
-        label={`Sample drill site: ${GEN1_RIGS.map((r) => r.name).join(', ')}.`}
-      />
-      <Brand />
-      <Hud state={SAMPLE} open={setPanel} />
-      {panel === null && (
-        <Guide
-          state={SAMPLE}
-          address="0x000000000000000000000000000000000000dEaD"
-          open={(t) => setPanel(t === 'market' ? 'market' : 'rigs')}
+    <WagmiProvider config={previewConfig}>
+      <QueryClientProvider client={previewQueries}>
+        <PixelWorld
+          model={model}
+          onSelect={(hit) => {
+            if (hit === 'market') setPanel('market');
+            else if (hit.startsWith('pad:')) setPanel('rigs');
+          }}
+          describe={(hit) => describeHit(hit, pads)}
+          label={`Sample drill site: ${GEN1_RIGS.map((r) => r.name).join(', ')}.`}
         />
-      )}
-      {panel === 'bore' && (
-        <PxModal title="World Bore" onClose={() => setPanel(null)}>
-          <BoreWindow depthMm={SAMPLE_DEPTH_MM} />
-        </PxModal>
-      )}
-      {(panel === 'market' || panel === 'rigs') && (
-        <PxModal
-          title={panel === 'market' ? 'Equipment market' : 'My rigs'}
-          onClose={() => setPanel(null)}
-          wide
-        >
-          {panel === 'market' ? (
-            <MarketWindow state={SAMPLE} action={NO_ACTION} />
-          ) : (
-            <RigsWindow state={SAMPLE} action={NO_ACTION} openMarket={() => setPanel('market')} />
-          )}
-        </PxModal>
-      )}
-    </>
+        <Brand />
+        <Hud state={SAMPLE} open={setPanel} />
+        {panel === null && (
+          <Guide
+            state={SAMPLE}
+            address="0x000000000000000000000000000000000000dEaD"
+            open={(t) => setPanel(t === 'market' ? 'market' : 'rigs')}
+          />
+        )}
+        {panel === 'bore' && (
+          <PxModal title="World Bore" onClose={() => setPanel(null)}>
+            <BoreWindow depthMm={SAMPLE_DEPTH_MM} />
+          </PxModal>
+        )}
+        {(panel === 'market' || panel === 'rigs') && (
+          <PxModal
+            title={panel === 'market' ? 'Equipment market' : 'My rigs'}
+            onClose={() => setPanel(null)}
+            wide
+          >
+            {panel === 'market' ? (
+              <MarketWindow state={SAMPLE} action={NO_ACTION} />
+            ) : (
+              <RigsWindow state={SAMPLE} action={NO_ACTION} openMarket={() => setPanel('market')} />
+            )}
+          </PxModal>
+        )}
+      </QueryClientProvider>
+    </WagmiProvider>
   );
 }

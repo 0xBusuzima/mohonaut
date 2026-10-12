@@ -74,3 +74,22 @@ export function weiForLitres(litres: bigint, litresPerEth: bigint): bigint {
   if (litresPerEth === 0n) return 0n;
   return (litres * 10n ** 18n + litresPerEth - 1n) / litresPerEth;
 }
+
+/** MiningCore.MAX_UNITS_PER_TX: Drill Power one purchase may add. */
+const MAX_UNITS_PER_TX = 10_000n;
+
+/**
+ * How many rigs of one type a purchase can add now, as buyMachines checks it: a free pad each,
+ * room on the fuel line for their burn, and at most 10,000 DP in one transaction.
+ */
+export function maxRigsToBuy(p: {
+  freePads: number;
+  fuelLine: bigint;
+  burn: bigint;
+  rigBurn: bigint;
+  rigDp: bigint;
+}): number {
+  const byLine = p.rigBurn === 0n ? Infinity : Number((p.fuelLine - p.burn) / p.rigBurn);
+  const byTx = p.rigDp === 0n ? Infinity : Number(MAX_UNITS_PER_TX / p.rigDp);
+  return Math.max(0, Math.min(p.freePads, byLine, byTx));
+}

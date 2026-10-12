@@ -1,9 +1,11 @@
 'use client';
 
-import { sitePads } from '@mohonaut/sdk';
+import { fuelLineWad, sitePads } from '@mohonaut/sdk';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Action } from '../../game/actions';
-import { efficiency, withHeadroom } from '../../game/derive';
+import { efficiency, maxRigsToBuy, withHeadroom } from '../../game/derive';
+import { useRigQuote } from '../../game/quote';
 import { rigName } from '../../game/play';
 import { RigPortrait } from '../../game/pixel/RigPortrait';
 import type { GameState, RigType } from '../../game/state';
@@ -61,8 +63,8 @@ export function MarketWindow({ state, action }: { state: GameState; action: Acti
   return (
     <>
       <p className="mb-4 text-center text-base text-concrete">
-        Choose a rig for a free pad. Prices follow the public auction formula and move with time and
-        sales; you pay from scrap credit first, then unrefined $MOHN.
+        Choose rigs for your free pads. Prices follow the public auction formula and move with time
+        and sales; you pay from scrap credit first, then unrefined $MOHN.
       </p>
       <p className="mb-4 flex items-center justify-center gap-2 text-lg">
         <PxIcon name="rig" size={18} /> {freePads > 0 ? freePads : 'No'} free pad
@@ -73,6 +75,13 @@ export function MarketWindow({ state, action }: { state: GameState; action: Acti
           .filter((r) => r.id !== 0)
           .map((r) => {
             const locked = p.level < r.minLevel;
+            const max = maxRigsToBuy({
+              freePads,
+              fuelLine: fuelLineWad(p.level),
+              burn: p.burn,
+              rigBurn: r.burn,
+              rigDp: r.dp,
+            });
             return (
               <RigCard
                 key={r.id}
@@ -80,38 +89,96 @@ export function MarketWindow({ state, action }: { state: GameState; action: Acti
                 dim={locked}
                 tag={r.owned > 0 ? `Owned ${r.owned}` : undefined}
               >
-                <p className="mb-2 flex items-center justify-center gap-2 text-xl font-bold">
-                  <PxIcon name="coin" size={20} /> {formatMohn(r.price, 0)}
-                </p>
                 {locked ? (
-                  <PxButton
-                    variant="dark"
-                    className="flex w-full items-center justify-center gap-2"
-                    disabled
-                  >
-                    <PxIcon name="lock" size={18} /> Site L{r.minLevel}
-                  </PxButton>
+                  <>
+                    <p className="mb-2 flex items-center justify-center gap-2 text-xl font-bold">
+                      <PxIcon name="coin" size={20} /> {formatMohn(r.price, 0)}
+                    </p>
+                    <PxButton
+                      variant="dark"
+                      className="flex w-full items-center justify-center gap-2"
+                      disabled
+                    >
+                      <PxIcon name="lock" size={18} /> Site L{r.minLevel}
+                    </PxButton>
+                  </>
                 ) : (
-                  <PxButton
-                    className="w-full"
-                    disabled={freePads <= 0}
-                    busy={action.busy === 'buyMachines'}
-                    aria-label={`Buy one ${rigName(r.id)}`}
-                    onClick={() =>
-                      void action.run({
-                        fn: 'buyMachines',
-                        args: [BigInt(r.id), 1, withHeadroom(r.price), false],
-                        done: `${rigName(r.id)} installed`,
-                      })
-                    }
-                  >
-                    {freePads > 0 ? 'Buy' : 'No free pad'}
-                  </PxButton>
+                  <BuyRig rig={r} max={max} freePads={freePads} action={action} />
                 )}
               </RigCard>
             );
           })}
       </ul>
+    </>
+  );
+}
+
+/** The price and the buy button of one card, with a count from 1 to what fits. */
+function BuyRig({
+  rig,
+  max,
+  freePads,
+  action,
+}: {
+  rig: RigType;
+  max: number;
+  freePads: number;
+  action: Action;
+}) {
+  const [wanted, setWanted] = useState(1);
+  const qty = Math.max(1, Math.min(wanted, max));
+  const { total, exact } = useRigQuote(rig.id, qty, rig.price);
+  const name = rigName(rig.id);
+  let blocked: string | null = null;
+  if (freePads <= 0) blocked = 'No free pad';
+  else if (max === 0) blocked = 'Fuel line full';
+  return (
+    <>
+      <p className="mb-2 flex items-center justify-center gap-2 text-xl font-bold">
+        <PxIcon name="coin" size={20} /> {exact ? '' : '≈ '}
+        {formatMohn(total, 0)}
+      </p>
+      {max > 1 && (
+        <div className="mb-2 flex items-center justify-center gap-2">
+          <PxButton
+            variant="dark"
+            className="!px-3 !py-0.5"
+            aria-label={`One ${name} fewer`}
+            disabled={qty <= 1}
+            onClick={() => setWanted(qty - 1)}
+          >
+            −
+          </PxButton>
+          <span aria-live="polite" className="min-w-16 text-center text-lg text-cyan">
+            × {qty}
+          </span>
+          <PxButton
+            variant="dark"
+            className="!px-3 !py-0.5"
+            aria-label={`One ${name} more`}
+            disabled={qty >= max}
+            onClick={() => setWanted(qty + 1)}
+          >
+            +
+          </PxButton>
+          <span className="text-xs text-concrete">max {max}</span>
+        </div>
+      )}
+      <PxButton
+        className="w-full"
+        disabled={blocked !== null}
+        busy={action.busy === 'buyMachines'}
+        aria-label={qty === 1 ? `Buy one ${name}` : `Buy ${qty} ${name}s`}
+        onClick={() =>
+          void action.run({
+            fn: 'buyMachines',
+            args: [BigInt(rig.id), qty, withHeadroom(total), false],
+            done: qty === 1 ? `${name} installed` : `${qty} ${name}s installed`,
+          })
+        }
+      >
+        {blocked ?? (qty === 1 ? 'Buy' : `Buy ${qty}`)}
+      </PxButton>
     </>
   );
 }
