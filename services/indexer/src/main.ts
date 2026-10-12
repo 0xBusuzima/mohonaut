@@ -22,20 +22,65 @@ function log(level: 'info' | 'error', msg: string, fields: Record<string, unknow
   else console.log(line);
 }
 
+class ChainMismatch extends Error {}
+
+/**
+ * The chain id check and the pool manager address, retried while the RPC is unreachable (an
+ * outage at boot must not stop the database migrations or the API that waits for them). A
+ * wrong chain is a configuration error and stays fatal. One-shot commands do not retry.
+ */
+async function connect(
+  source: RpcSource,
+  expectedChainId: number,
+  liquidityManager: Parameters<RpcSource['poolManager']>[0],
+  keepTrying: (() => boolean) | null,
+): Promise<{ chainId: number; poolManager: Awaited<ReturnType<RpcSource['poolManager']>> }> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const chainId = await source.chainId();
+      if (chainId !== expectedChainId) {
+        throw new ChainMismatch(
+          `RPC chain ${chainId} does not match deployment chain ${expectedChainId}`,
+        );
+      }
+      return { chainId, poolManager: await source.poolManager(liquidityManager) };
+    } catch (err) {
+      if (err instanceof ChainMismatch || keepTrying === null || !keepTrying()) throw err;
+      log('error', 'RPC unavailable, retrying', {
+        attempt,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      await sleep(Math.min(60_000, 2_000 * attempt));
+    }
+  }
+}
+
 async function main(): Promise<void> {
   const cfg = loadConfig(process.env);
   const metrics = new Metrics();
   const source = new RpcSource(cfg.rpcUrl, metrics);
-  const chainId = await source.chainId();
-  if (chainId !== cfg.deployment.chainId) {
-    throw new Error(
-      `RPC chain ${chainId} does not match deployment chain ${cfg.deployment.chainId}`,
-    );
-  }
+  const mode = process.argv[2];
   const database = await openDatabase(cfg.databaseUrl);
   const applied = await migrate(database);
   if (applied.length > 0) log('info', 'migrations applied', { applied });
-  const poolManager = await source.poolManager(cfg.deployment.LiquidityManager);
+
+  // The long-running indexer serves metrics from here on, before the chain is reachable:
+  // /healthz stays 503 until the first successful poll.
+  let lastSuccess = 0;
+  let stopping = false;
+  const server = mode === undefined ? serve(cfg, metrics, () => lastSuccess) : null;
+  const stop = () => {
+    stopping = true;
+  };
+  process.on('SIGINT', stop);
+  process.on('SIGTERM', stop);
+
+  const { chainId, poolManager } = await connect(
+    source,
+    cfg.deployment.chainId,
+    cfg.deployment.LiquidityManager,
+    mode === undefined ? () => !stopping : null,
+  );
   const contracts = contractSet(
     cfg.deployment,
     poolManager,
@@ -57,7 +102,7 @@ async function main(): Promise<void> {
           now: Date.now,
         });
 
-  if (process.argv[2] === 'rebuild') {
+  if (mode === 'rebuild') {
     const count = await rebuildProjections(database, contracts);
     log('info', 'projections rebuilt', { events: count });
     await database.close();
@@ -71,7 +116,7 @@ async function main(): Promise<void> {
     metrics,
   );
 
-  if (process.argv[2] === 'sync') {
+  if (mode === 'sync') {
     while (!(await indexer.step())) {
       // keep going until every stream reached the head
     }
@@ -79,38 +124,6 @@ async function main(): Promise<void> {
     await database.close();
     return;
   }
-  let lastSuccess = Date.now();
-  const server = createServer((req, res) => {
-    if (req.url === '/metrics') {
-      metrics.registry
-        .metrics()
-        .then((body) => {
-          res.writeHead(200, { 'content-type': metrics.registry.contentType });
-          res.end(body);
-        })
-        .catch(() => {
-          res.writeHead(500);
-          res.end();
-        });
-      return;
-    }
-    if (req.url === '/healthz') {
-      const healthy = Date.now() - lastSuccess < cfg.pollIntervalMs * 6;
-      res.writeHead(healthy ? 200 : 503);
-      res.end(healthy ? 'ok' : 'stale');
-      return;
-    }
-    res.writeHead(404);
-    res.end();
-  });
-  server.listen(cfg.metricsPort, cfg.metricsHost);
-
-  let stopping = false;
-  const stop = () => {
-    stopping = true;
-  };
-  process.on('SIGINT', stop);
-  process.on('SIGTERM', stop);
   log('info', 'indexer started', { chainId, poolManager, startBlock: cfg.deployment.startBlock });
 
   while (!stopping) {
@@ -130,9 +143,37 @@ async function main(): Promise<void> {
     }
     if (caughtUp) await sleep(cfg.pollIntervalMs);
   }
-  server.close();
+  server?.close();
   await database.close();
   log('info', 'indexer stopped');
+}
+
+function serve(cfg: ReturnType<typeof loadConfig>, metrics: Metrics, lastSuccess: () => number) {
+  const server = createServer((req, res) => {
+    if (req.url === '/metrics') {
+      metrics.registry
+        .metrics()
+        .then((body) => {
+          res.writeHead(200, { 'content-type': metrics.registry.contentType });
+          res.end(body);
+        })
+        .catch(() => {
+          res.writeHead(500);
+          res.end();
+        });
+      return;
+    }
+    if (req.url === '/healthz') {
+      const healthy = Date.now() - lastSuccess() < cfg.pollIntervalMs * 6;
+      res.writeHead(healthy ? 200 : 503);
+      res.end(healthy ? 'ok' : 'stale');
+      return;
+    }
+    res.writeHead(404);
+    res.end();
+  });
+  server.listen(cfg.metricsPort, cfg.metricsHost);
+  return server;
 }
 
 main().catch((err: unknown) => {
