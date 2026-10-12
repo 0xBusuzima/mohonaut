@@ -121,7 +121,7 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
         model={model}
         onSelect={onboarding === null ? onSelect : undefined}
         describe={(hit) => describeHit(hit, model.pads)}
-        label={`Your drill site, level ${level}.`}
+        label={siteSummary(level, model.pads)}
       />
       <Brand />
       {state !== null && onboarding === null && p !== null && <Hud state={state} open={setPanel} />}
@@ -352,4 +352,13 @@ function PanelWindow({
       {body}
     </PxModal>
   );
+}
+
+/** The site in words, for screen readers (the canvas is a picture). */
+function siteSummary(level: number, pads: { typeId: number | null; running: boolean }[]): string {
+  if (level === 0) return 'A drill site at night, not opened yet.';
+  const rigs = pads.filter((p) => p.typeId !== null);
+  const drilling = rigs.filter((p) => p.running).length;
+  const free = pads.length - rigs.length;
+  return `Your drill site, level ${level}: ${drilling} rig${drilling === 1 ? '' : 's'} drilling, ${rigs.length - drilling} stopped, ${free} free pad${free === 1 ? '' : 's'}.`;
 }

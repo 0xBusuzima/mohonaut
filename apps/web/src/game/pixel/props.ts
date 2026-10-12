@@ -61,7 +61,15 @@ export function lampPost(c: Ctx, x: number, y: number, on: boolean): void {
   }
 }
 
-export function tank(c: Ctx, x: number, y: number, fill: number, hover: boolean): void {
+export function tank(
+  c: Ctx,
+  x: number,
+  y: number,
+  fill: number,
+  hover: boolean,
+  t = 0,
+  motion = false,
+): void {
   const w = 26;
   const h = 34;
   const top = y - h;
@@ -102,6 +110,11 @@ export function tank(c: Ctx, x: number, y: number, fill: number, hover: boolean)
   rect(c, x - w / 2, top + 28, w, 3, P.orange);
   // Hose to the ground.
   polyline(c, [x + w / 2 - 1, top + 26, x + w / 2 + 4, top + 30, x + w / 2 + 6, y], P.graphite);
+  // A warning lamp on top that blinks red when the tank is nearly dry.
+  if (fill < 0.1) {
+    const on = !motion || Math.sin(t * 6) > 0;
+    rect(c, x - 2, top - 3, 4, 3, on ? P.beacon : '#6b1d18');
+  }
   if (hover) rect(c, x - w / 2 - 1, top - 1, w + 2, 1, P.amber);
 }
 

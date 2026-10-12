@@ -248,7 +248,7 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   }
   at(6, 2, () => {
     const p = iso(5, 1);
-    tank(c, p.x, p.y + 16, m.tankFill, m.hover === 'tank');
+    tank(c, p.x, p.y + 16, m.tankFill, m.hover === 'tank', t, m.motion);
     hits.push({ id: 'tank', x: p.x - 16, y: p.y - 26, w: 32, h: 50 });
   });
   at(10, 2, () => {
@@ -343,6 +343,10 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
         px(c, b.x - 1, b.y, P.beacon);
       }
     });
+  }
+  if (m.tankFill < 0.1 && (!m.motion || Math.sin(t * 6) > 0)) {
+    const p = iso(5, 1);
+    lights.push({ x: p.x, y: p.y - 18, r: 10, tint: P.beacon, power: 0.8 });
   }
   // Diesel arriving: amber sparks spiralling up around the tank.
   const tankAt = iso(5, 1);
