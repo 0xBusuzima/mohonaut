@@ -217,7 +217,8 @@ jobs:
 
   web-play-e2e:
     # The game client against a local anvil deployment (apps/web/e2e/play): the real deploy
-    # script, a build pointed at it and the wallet mock connector buying diesel and running rigs.
+    # script, the indexer and the API, a build pointed at them and the wallet mock connector
+    # (diesel, rigs, SIWE, crew, Survey, profile, alerts).
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.64.0-noble
     steps:
@@ -232,7 +233,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npx turbo run build --filter=@mohonaut/sdk
+      - run: npx turbo run build --filter=@mohonaut/api...
       - name: Playwright (local chain)
         working-directory: apps/web
         env:

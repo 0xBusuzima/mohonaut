@@ -93,3 +93,21 @@ test('/play/ offers a wallet connection, is accessible and is not indexed', asyn
   ).toEqual([]);
   expect(errors).toEqual([]);
 });
+
+test('/s/<address> shows a public drill site page with a way in', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const address = '0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc';
+  const res = await page.goto(`/s/${address}`);
+  expect(res?.status()).toBe(200);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('0x3c44…93bc');
+  await expect(page.getByRole('link', { name: 'Start drilling' })).toHaveAttribute(
+    'href',
+    `/play/?ref=${address}`,
+  );
+  const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(
+    axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`),
+  ).toEqual([]);
+  expect(errors).toEqual([]);
+});

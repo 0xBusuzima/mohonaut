@@ -1,0 +1,2 @@
+# Cloudflare Pages: public profiles are one static page; the address stays in the URL.
+/s/*  /s/  200

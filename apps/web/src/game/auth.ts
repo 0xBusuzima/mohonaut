@@ -1,6 +1,7 @@
 import { createAuthenticationAdapter } from '@rainbow-me/rainbowkit';
 import { createSiweMessage } from 'viem/siwe';
 import { API_URL } from '../lib/site';
+import { siweVerify } from '../social/api';
 
 /** Shown in the wallet next to the signature request (docs/05 §3.5). */
 const SIWE_STATEMENT = 'This signature only logs you in. It cannot move funds.';
@@ -36,17 +37,8 @@ export const siweAdapter = createAuthenticationAdapter({
       issuedAt: new Date(),
       expirationTime: new Date(Date.now() + 10 * 60 * 1000),
     }),
-  verify: async ({ message, signature }) => (await post('/auth/siwe', { message, signature })).ok,
+  verify: ({ message, signature }) => siweVerify(message, signature),
   signOut: async () => {
     await post('/auth/logout', {});
   },
 });
-
-export async function sessionActive(): Promise<boolean> {
-  if (API_URL === '') return false;
-  try {
-    return (await fetch(`${API_URL}/me`, { credentials: 'include' })).ok;
-  } catch {
-    return false;
-  }
-}

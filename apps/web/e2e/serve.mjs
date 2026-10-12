@@ -29,6 +29,10 @@ createServer((req, res) => {
     return;
   }
   if (existsSync(file) && statSync(file).isDirectory()) file = join(file, 'index.html');
+  // public/_redirects: every /s/<address> is served by the one profile page.
+  if (!existsSync(file) && path.split(sep).join('/').startsWith('/s/')) {
+    file = join(root, 's', 'index.html');
+  }
   const found = existsSync(file);
   if (!found) file = join(root, '404.html');
   res.writeHead(found ? 200 : 404, {

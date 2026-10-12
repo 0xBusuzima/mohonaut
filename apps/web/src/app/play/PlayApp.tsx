@@ -7,13 +7,13 @@ import {
   darkTheme,
 } from '@rainbow-me/rainbowkit';
 import type { AuthenticationStatus } from '@rainbow-me/rainbowkit';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { WagmiProvider } from 'wagmi';
-import { sessionActive, siweAdapter } from '../../game/auth';
+import { siweAdapter } from '../../game/auth';
 import { wagmiConfig } from '../../game/wallet';
 import { API_URL } from '../../lib/site';
+import { ME_KEY, useMe } from '../../social/session';
 import { PlayScreen } from './PlayScreen';
 
 const queryClient = new QueryClient();
@@ -27,21 +27,24 @@ const theme = darkTheme({
 
 /** Sign-in (SIWE) is offered only when the API is configured; playing needs only a wallet. */
 function Auth({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<AuthenticationStatus>('loading');
-  useEffect(() => {
-    void sessionActive().then((active) => setStatus(active ? 'authenticated' : 'unauthenticated'));
-  }, []);
+  const client = useQueryClient();
+  const { me, loading } = useMe();
   if (API_URL === '') return <>{children}</>;
+  const status: AuthenticationStatus = loading
+    ? 'loading'
+    : me === null
+      ? 'unauthenticated'
+      : 'authenticated';
   const adapter = {
     ...siweAdapter,
     verify: async (args: Parameters<typeof siweAdapter.verify>[0]) => {
       const ok = await siweAdapter.verify(args);
-      setStatus(ok ? 'authenticated' : 'unauthenticated');
+      await client.invalidateQueries({ queryKey: ME_KEY });
       return ok;
     },
     signOut: async () => {
       await siweAdapter.signOut();
-      setStatus('unauthenticated');
+      client.setQueryData(ME_KEY, null);
     },
   };
   return (

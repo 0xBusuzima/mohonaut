@@ -1,0 +1,174 @@
+import type { Address } from 'viem';
+import { API_URL } from '../lib/site';
+import { turnstileToken } from './turnstile';
+
+/** Response shapes of services/api (GET /openapi.json is the reference). */
+interface Depth {
+  mm: string;
+  text: string;
+}
+export interface Me {
+  id: number;
+  wallet: Address | null;
+  displayName: string | null;
+  roles: string[];
+  crewId: number | null;
+}
+export interface Crew {
+  id: number;
+  name: string;
+  tag: string;
+  ranked: boolean;
+  contribution: Depth;
+  members: {
+    wallet: Address | null;
+    displayName: string | null;
+    captain: boolean;
+    contribution: Depth;
+  }[];
+}
+export interface CrewRow {
+  rank: number | null;
+  id: number;
+  name: string;
+  tag: string;
+  members: number;
+  contribution: Depth;
+}
+export interface Season {
+  id: number;
+  name: string;
+  startsAt: number;
+  endsAt: number;
+}
+export interface ContributionRow {
+  rank: number;
+  address: Address;
+  displayName: string | null;
+  contribution: Depth;
+}
+export interface Find {
+  id: string;
+  name: string;
+  setId: string;
+}
+export interface Collection {
+  finds: { day: number; itemId: string }[];
+  sets: {
+    id: string;
+    name: string;
+    title: string;
+    found: number;
+    total: number;
+    complete: boolean;
+  }[];
+}
+export const NOTIFY_EVENTS = [
+  'fuel-low',
+  'refine-ready',
+  'stratum',
+  'season',
+  'announcements',
+] as const;
+export type NotifyEvent = (typeof NOTIFY_EVENTS)[number];
+export interface Prefs {
+  email: string | null;
+  telegramChatId: string | null;
+  events: NotifyEvent[];
+}
+export interface Profile {
+  address: Address;
+  displayName: string | null;
+  registered: boolean;
+  siteLevel: number;
+  activeDp: string;
+  fuelledUntilHour: string;
+  rigs: { typeId: number; owned: string; active: string }[];
+  contribution: Depth;
+  crew: { id: number; name: string; tag: string } | null;
+  badges: { id: string; name: string; description: string }[];
+  collection: { finds: number; completedSets: string[] };
+}
+export interface World {
+  depth: Depth;
+  stratum: { numeral: string; name: string; fromM: number };
+}
+
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+export const apiEnabled = API_URL !== '';
+
+/** Player-facing text for an API failure. */
+export function apiMessage(err: unknown): string {
+  if (!(err instanceof ApiError)) return 'The game server cannot be reached. Try again shortly.';
+  if (err.status === 401) return 'Sign in with your wallet first.';
+  if (err.status === 429) return 'Too many tries. Wait a little and try again.';
+  if (err.status === 403) return 'The bot check did not pass. Try again.';
+  return err.message.charAt(0).toUpperCase() + err.message.slice(1) + '.';
+}
+
+async function call<T>(
+  method: string,
+  path: string,
+  opts: { body?: unknown; botCheck?: boolean } = {},
+): Promise<T> {
+  const headers: Record<string, string> = {};
+  // The API refuses cross-site writes without a JSON content type, even when there is no body.
+  if (method !== 'GET') headers['content-type'] = 'application/json';
+  if (opts.botCheck === true) {
+    const token = await turnstileToken();
+    if (token !== null) headers['cf-turnstile-response'] = token;
+  }
+  const res = await fetch(`${API_URL}${path}`, {
+    method,
+    credentials: 'include',
+    headers,
+    ...(method === 'GET' ? {} : { body: JSON.stringify(opts.body ?? {}) }),
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new ApiError(res.status, body.error ?? `request failed (${res.status})`);
+  }
+  return (await res.json()) as T;
+}
+
+export const api = {
+  me: () => call<Me>('GET', '/me'),
+  setName: (displayName: string) => call<{ ok: true }>('PATCH', '/me', { body: { displayName } }),
+  crew: (id: number) => call<Crew>('GET', `/crews/${id}`),
+  crews: () => call<{ rows: CrewRow[] }>('GET', '/leaderboards/crews'),
+  createCrew: (name: string, tag: string) =>
+    call<{ id: number }>('POST', '/crews', { body: { name, tag }, botCheck: true }),
+  joinCrew: (id: number) => call<{ ok: true }>('POST', `/crews/${id}/join`),
+  leaveCrew: () => call<{ ok: true }>('POST', '/crews/leave'),
+  survey: () =>
+    call<{ day: number; find: Find; isNew: boolean }>('POST', '/survey', { botCheck: true }),
+  collection: () => call<Collection>('GET', '/me/collection'),
+  seasons: () => call<{ seasons: Season[] }>('GET', '/seasons'),
+  seasonBoard: (id: number) =>
+    call<{ season: Season; rows: ContributionRow[] }>('GET', `/seasons/${id}/leaderboard`),
+  contributionBoard: () =>
+    call<{ rows: ContributionRow[] }>('GET', '/leaderboards/contribution?limit=50'),
+  prefs: () => call<Prefs>('GET', '/me/notifications'),
+  setPrefs: (p: Prefs) => call<{ ok: true }>('PUT', '/me/notifications', { body: p }),
+  profile: (address: Address) => call<Profile>('GET', `/profiles/${address}`),
+  world: () => call<World>('GET', '/world'),
+  cardUrl: (address: Address) => `${API_URL}/cards/${address}`,
+};
+
+/** SIWE verification needs the bot check too (POST /auth/siwe). */
+export async function siweVerify(message: string, signature: string): Promise<boolean> {
+  try {
+    await call('POST', '/auth/siwe', { body: { message, signature }, botCheck: true });
+    return true;
+  } catch {
+    return false;
+  }
+}

@@ -3,11 +3,13 @@
 import { formatDepth, fuelLineWad, millimetres, sitePads, stratumAt } from '@mohonaut/sdk';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useEffect, useMemo, useState } from 'react';
+import type { Address } from 'viem';
 import { useAccount, useBalance, useConnect, useSwitchChain } from 'wagmi';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Counter } from '../../components/Counter';
+import { Tabs } from '../../components/Tabs';
 import { TankGauge } from '../../components/TankGauge';
 import { useGameAction } from '../../game/actions';
 import { efficiency, perHourEstimate, shareOfNetwork, withHeadroom } from '../../game/derive';
@@ -18,6 +20,8 @@ import type { GameState, RigType } from '../../game/state';
 import { parseAmount, referrerFromUrl, rigName, scenePads } from '../../game/play';
 import { E2E_ACCOUNT } from '../../game/wallet';
 import { formatEth, formatLitres, formatMohn, formatUtc } from '../../lib/format';
+import { apiEnabled } from '../../social/api';
+import { CrewPanel, ProfilePanel, SeasonsPanel, SignedIn, SurveyPanel } from '../../social/panels';
 
 type Action = ReturnType<typeof useGameAction>;
 
@@ -76,9 +80,49 @@ export function PlayScreen() {
             Reading the chain…
           </p>
         )}
-        {isConnected && !wrongChain && state !== null && <Game state={state} action={action} />}
+        {isConnected && !wrongChain && state !== null && address !== undefined && (
+          <Screens state={state} action={action} address={address} />
+        )}
       </main>
     </div>
+  );
+}
+
+/** The site, plus the off-chain social screens when the API is configured (docs/06 4.4). */
+function Screens({
+  state,
+  action,
+  address,
+}: {
+  state: GameState;
+  action: Action;
+  address: Address;
+}) {
+  const site = <Game state={state} action={action} />;
+  if (!apiEnabled) return site;
+  return (
+    <Tabs
+      label="Game screens"
+      tabs={[
+        { id: 'site', label: 'Site', content: site },
+        {
+          id: 'crew',
+          label: 'Crew',
+          content: <SignedIn>{(me) => <CrewPanel me={me} />}</SignedIn>,
+        },
+        {
+          id: 'survey',
+          label: 'Survey',
+          content: <SignedIn>{() => <SurveyPanel now={state.at} />}</SignedIn>,
+        },
+        { id: 'seasons', label: 'Seasons', content: <SeasonsPanel address={address} /> },
+        {
+          id: 'profile',
+          label: 'Profile',
+          content: <SignedIn>{(me) => <ProfilePanel me={me} address={address} />}</SignedIn>,
+        },
+      ]}
+    />
   );
 }
 
