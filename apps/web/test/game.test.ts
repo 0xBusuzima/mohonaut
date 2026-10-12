@@ -204,3 +204,29 @@ describe('buying several rigs', () => {
     expect(maxRigsToBuy({ ...base, burn: 6n * L })).toBe(0);
   });
 });
+
+describe('Survey finds', () => {
+  it('match the API catalogue: same sets, names and order, a 12x12 icon each', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const { FIND_SETS, FIND_PALETTE } = await import('../src/game/finds');
+    const api = readFileSync(
+      join(__dirname, '..', '..', '..', 'services', 'api', 'src', 'game', 'survey.ts'),
+      'utf8',
+    );
+    for (const set of FIND_SETS) {
+      expect(api).toContain(`id: '${set.id}'`);
+      const block = api.slice(api.indexOf(`id: '${set.id}'`));
+      const items = block.slice(block.indexOf('items: ['), block.indexOf(']'));
+      const names = [...items.matchAll(/'([^']*)'|"([^"]*)"/g)].map((m) => m[1] ?? m[2]);
+      expect(set.items.map((i) => i.name)).toEqual(names);
+      for (const item of set.items) {
+        expect(item.icon).toHaveLength(12);
+        for (const row of item.icon) {
+          expect(row).toHaveLength(12);
+          for (const ch of row) if (ch !== '.') expect(FIND_PALETTE[ch]).toBeDefined();
+        }
+      }
+    }
+  });
+});

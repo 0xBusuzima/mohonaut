@@ -6,10 +6,12 @@ import type { FormEvent, ReactNode } from 'react';
 import type { Address } from 'viem';
 import { PxButton, PxSection, PxTable, PxTag } from '../app/play/px';
 import { useToast } from '../components/Toast';
+import { FIND_PALETTE, FIND_SETS } from '../game/finds';
+import { PixelSvg } from '../game/pixel/PixelSvg';
 import { useSignIn } from '../game/signin';
 import { formatUtc } from '../lib/format';
 import { NOTIFY_EVENTS, api, apiMessage } from './api';
-import type { ContributionRow, Me, NotifyEvent, Prefs } from './api';
+import type { Collection, ContributionRow, Me, NotifyEvent, Prefs } from './api';
 import { ME_KEY, useMe } from './session';
 import { contributionPost, profileUrl, shortAddress, xIntentUrl } from './share';
 
@@ -29,6 +31,8 @@ const EVENT_LABELS: Record<NotifyEvent, string> = {
   season: 'Season start and end',
   announcements: 'Game announcements',
 };
+
+const FIND_ICON = new Map(FIND_SETS.flatMap((s) => s.items.map((i) => [i.id, i.icon] as const)));
 
 const INPUT = 'px-input mt-1 block w-full px-3 py-2 text-base';
 const HINT = 'text-sm text-concrete';
@@ -255,7 +259,7 @@ export function SurveyPanel({ now }: { now: number }) {
   const collection = useQuery({ queryKey: ['collection'], queryFn: api.collection });
   const toast = useToast();
   const [busy, setBusy] = useState(false);
-  const [last, setLast] = useState<string | null>(null);
+  const [last, setLast] = useState<{ text: string; id: string } | null>(null);
   const today = Math.floor(now / DAY_S);
   const doneToday = collection.data?.finds.some((f) => f.day === today) ?? false;
 
@@ -263,7 +267,10 @@ export function SurveyPanel({ now }: { now: number }) {
     setBusy(true);
     try {
       const r = await api.survey();
-      setLast(r.isNew ? `You found: ${r.find.name}` : `Today's find was: ${r.find.name}`);
+      setLast({
+        text: r.isNew ? `You found: ${r.find.name}` : `Today's find was: ${r.find.name}`,
+        id: r.find.id,
+      });
       await client.invalidateQueries({ queryKey: ['collection'] });
     } catch (err) {
       toast({ tone: 'warning', title: 'Not done', body: apiMessage(err) });
@@ -281,9 +288,14 @@ export function SurveyPanel({ now }: { now: number }) {
           economy.
         </p>
         {last !== null && (
-          <p role="status" className="text-lg text-amber">
-            {last}
-          </p>
+          <div className="flex items-center gap-3">
+            {FIND_ICON.get(last.id) !== undefined && (
+              <PixelSvg rows={FIND_ICON.get(last.id) ?? []} palette={FIND_PALETTE} size={48} />
+            )}
+            <p role="status" className="text-lg text-amber">
+              {last.text}
+            </p>
+          </div>
         )}
         <PxButton
           className="self-start"
@@ -299,23 +311,49 @@ export function SurveyPanel({ now }: { now: number }) {
         {collection.data === undefined ? (
           <Status>{collection.isError ? apiMessage(collection.error) : 'Loading…'}</Status>
         ) : (
-          <ul className="px-inset flex flex-col">
-            {collection.data.sets.map((s) => (
-              <li
-                key={s.id}
-                className="flex flex-wrap items-center justify-between gap-3 border-t border-[#262c33] px-3 py-2 first:border-t-0"
-              >
-                <span>
-                  {s.name} {s.complete && <PxTag tone="ok">{s.title}</PxTag>}
-                </span>
-                <span className="text-cyan">
-                  {s.found} / {s.total}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <CollectionBoard collection={collection.data} />
         )}
       </PxSection>
+    </div>
+  );
+}
+
+/** The four sets as shelves of six: found finds in colour, the rest as dark outlines. */
+function CollectionBoard({ collection }: { collection: Collection }) {
+  const found = new Set(collection.finds.map((f) => f.itemId));
+  return (
+    <div className="flex flex-col gap-3">
+      {FIND_SETS.map((set) => {
+        const progress = collection.sets.find((s) => s.id === set.id);
+        return (
+          <div key={set.id} className="px-inset p-3">
+            <p className="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+              <span>
+                {set.name}{' '}
+                {progress?.complete === true && <PxTag tone="ok">{progress.title}</PxTag>}
+              </span>
+              <span className="text-cyan">
+                {progress?.found ?? 0} / {progress?.total ?? set.items.length}
+              </span>
+            </p>
+            <ul className="grid grid-cols-6 gap-2">
+              {set.items.map((item) => {
+                const have = found.has(item.id);
+                return (
+                  <li
+                    key={item.id}
+                    title={have ? item.name : 'Not found yet'}
+                    className={`grid aspect-square place-items-center border-2 ${have ? 'border-steel bg-[#1b1f24]' : 'border-[#262c33]'}`}
+                  >
+                    <PixelSvg rows={item.icon} palette={FIND_PALETTE} size={36} dim={!have} />
+                    <span className="sr-only">{have ? item.name : 'Not found yet'}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })}
     </div>
   );
 }
