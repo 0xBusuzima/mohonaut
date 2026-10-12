@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { Card } from '../../components/Card';
 import { SitePage } from '../../components/SiteChrome';
+import { BADGES, BADGE_PALETTE } from '../../game/badges';
+import { PixelSvg } from '../../game/pixel/PixelSvg';
+
+const PIONEER = BADGES.find((b) => b.id === 'pioneer')?.icon ?? [];
 
 export const metadata: Metadata = {
   title: 'Season 0',
@@ -25,7 +29,8 @@ export default function Season0Page() {
         value: test ETH, test $MOHN and testnet rigs stay on testnet.
       </p>
 
-      <h2 className="mt-12 font-display text-3xl font-black tracking-wide uppercase">
+      <h2 className="mt-12 flex items-center gap-4 font-display text-3xl font-black tracking-wide uppercase">
+        <PixelSvg rows={PIONEER} palette={BADGE_PALETTE} size={48} label="The Pioneer badge" />
         The Pioneer badge
       </h2>
       <p className="mt-4">
