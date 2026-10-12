@@ -9,6 +9,7 @@ import {MohnToken} from "../../src/MohnToken.sol";
 import {EmissionMath} from "../../src/lib/EmissionMath.sol";
 import {SiteMath} from "../../src/lib/SiteMath.sol";
 import {MockAggregator} from "../mocks/MockAggregator.sol";
+import {MarketOpenCheat} from "../utils/MarketOpenCheat.sol";
 import {RevenueRouter} from "../../src/RevenueRouter.sol";
 
 /// @notice Random fuel (with referrers), rig purchases, switches, scraps, site upgrades, refines,
@@ -165,6 +166,10 @@ contract EconomyHandler is Test {
 
     function warp(uint32 dt) external {
         vm.warp(block.timestamp + bound(dt, 1, 2 days));
+        // Stands in for openMarket (no pool here): refining needs it (AI review AI-4).
+        if (!core.marketOpened() && vm.getBlockTimestamp() >= core.marketOpenTime()) {
+            MarketOpenCheat.markOpen(core);
+        }
     }
 }
 
@@ -206,6 +211,7 @@ contract MiningCoreEconomyInvariantTest is Test {
         );
         assertEq(address(core), proxyAddr, "token minter == proxy");
         router.grantRole(router.DEPOSITOR_ROLE(), address(core));
+        core.wireLiquidityManager(MarketOpenCheat.PLACEHOLDER_LM);
         for (uint256 i = 0; i < core.machineTypeCount(); ++i) {
             catalogAtStart.push(core.machineType(i));
         }

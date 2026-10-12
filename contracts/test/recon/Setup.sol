@@ -3,6 +3,7 @@ pragma solidity 0.8.30;
 
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
+import {MarketOpenCheat} from "../utils/MarketOpenCheat.sol";
 import {MiningCore} from "../../src/MiningCore.sol";
 import {MohnToken} from "../../src/MohnToken.sol";
 import {RevenueRouter} from "../../src/RevenueRouter.sol";
@@ -83,6 +84,8 @@ abstract contract Setup {
         require(address(core) == proxyAddr, "minter prediction");
         router.grantRole(router.DEPOSITOR_ROLE(), address(core));
         core.grantRole(core.GUARDIAN_ROLE(), address(this));
+        // No pool in this harness; warp() marks the market open at its time (AI review AI-4).
+        core.wireLiquidityManager(MarketOpenCheat.PLACEHOLDER_LM);
         for (uint256 i = 0; i < 4; ++i) {
             Actor a = Actor(payable(_track(address(new Actor()))));
             hevm.deal(address(a), 1000 ether);

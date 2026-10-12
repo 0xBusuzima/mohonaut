@@ -53,10 +53,10 @@ parameters; P2 Guardian pause ≤ 72 h; L1 locked liquidity.
 
 | Actor | Can | Cannot |
 |---|---|---|
-| 96 h Timelock (proposer: ops Safe; executor: anyone) | Bounded parameters, new machine generations (stratum depth, 45 days, ≤ +15 % efficiency), recipients, sequencer feed, breaker reset, unpause/extend pause (≤ 30 days), router split, buyback cap, role management | Change the token, CAP, emission schedule, 90/5/5 or 80/20 splits, referral rate, existing machines, the Market Open formula; skip its own delay |
+| 96 h Timelock (proposer: ops Safe; executor: anyone) | Bounded parameters, new machine generations (stratum depth, 45 days, ≤ +15 % efficiency), recipients, sequencer feed, unpause/extend pause (≤ 30 days), router split, buyback cap, role management | Change the token, CAP, emission schedule, 90/5/5 or 80/20 splits, referral rate, existing machines, the Market Open formula (these live in the upgradeable MiningCore: only the 7-day upgrade Timelock can change them, publicly); skip its own delay |
 | 7-day Timelock | Upgrade MiningCore | Anything else |
 | Guardian Safe | Pause player actions for 72 h, at most once per 7 days | Unpause, move funds, change parameters |
-| Keeper (hot key) | poke, finalize mature refines, buyback ≤ 2 %/day and add liquidity ≤ 4 %/day of pool ETH with its own slippage bound; testnet feed | Anything else; a stolen key loses at most one day's capped buyback to bad pricing |
+| Keeper (hot key) | poke, finalize mature refines, buyback ≤ 2 %/day and add liquidity ≤ 4 %/day of pool ETH with its own slippage bound; testnet feed | Anything else. **Known issue (AI review AI-2):** the daily caps scale with the pool's active liquidity, which just-in-time liquidity can multiply 30-60x within a block, so a stolen key can sandwich far more than one day's nominal cap (measured: 38-59 % of the spend). Fix pending a founder decision on the cap basis |
 | Deployer | Nothing after `Deploy.s.sol` (asserted on-chain in the script) | — |
 
 External dependencies: Chainlink ETH/USD (8 decimals, 24 h heartbeat; no sequencer uptime feed on

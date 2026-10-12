@@ -4,6 +4,7 @@ pragma solidity 0.8.30;
 import {MiningCore} from "../../src/MiningCore.sol";
 import {Properties} from "./Properties.sol";
 import {Actor} from "./Setup.sol";
+import {MarketOpenCheat} from "../utils/MarketOpenCheat.sol";
 
 /// @title TargetFunctions
 /// @notice The actions the fuzzers call. Inputs are clamped to useful ranges; reverts are
@@ -127,7 +128,13 @@ abstract contract TargetFunctions is Properties {
     }
 
     function warp(uint256 dt) public {
-        hevm.warp(block.timestamp + _clamp(dt, 1, 2 days));
+        // Read before the warp on purpose: t is the new time, used after it.
+        // forge-lint: disable-next-line(environment-read-across-mutation)
+        uint256 t = block.timestamp + _clamp(dt, 1, 2 days);
+        hevm.warp(t);
+        if (!core.marketOpened() && t >= core.marketOpenTime()) {
+            MarketOpenCheat.markOpen(core);
+        }
     }
 
     function poke() public {

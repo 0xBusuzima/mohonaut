@@ -249,6 +249,7 @@ contract Deploy is Script {
         require(r.bucketRolesLocked(), "buckets locked");
         require(r.getRoleAdmin(r.POL_ROLE()) == r.LOCKED_ROLE(), "POL locked");
         require(r.getRoleAdmin(r.BUYBACK_ROLE()) == r.LOCKED_ROLE(), "buyback locked");
+        require(r.getRoleAdmin(r.LOCKED_ROLE()) == r.LOCKED_ROLE(), "lock cannot be undone");
         require(d.paramsTimelock.getMinDelay() == PARAMS_DELAY, "params delay");
         require(d.upgradeTimelock.getMinDelay() == UPGRADE_DELAY, "upgrade delay");
         // The Timelocks administer themselves: nobody can shorten a delay without waiting it out.

@@ -37,7 +37,7 @@
 | T3 | Bir UTC gününde basılan toplam ≤ `DAILY_MINT_CAP` (500K MOHN, immutable) |
 | B1 | Kayan 60 dakikada basılan ≤ 150K; aşacak mint geri çevrilir (v1.0.1; test: handler her mint'i zamanıyla kaydeder, kayan 60 dakikada toplam ≤ 150K; bakiyesi olmayan çağıran pencereye dokunamaz) |
 | E1 | `Σ pending_madenci + Σ claimed_madenci ≤ Σ dağıtılan_madenci` |
-| E2 | `totalSupply + Σ pending(tümü) + refineKuyruğu + R + burnedForever == CAP` (± toz) |
+| E2 | `totalSupply + Σ pending(tümü) + refineKuyruğu + R + burnedForever + dışYakım == CAP` (± toz). `dışYakım`: kontrat dışından yakılan MOHN (oyuncunun `burn`'ü, buyback ve LP ücreti yakımları); bu terim olmadan ilk dış yakımda yanlış olur (AI review ACC-3) |
 | E3 | `H == Σ dp_i` (yakıtı aktif olanlar) |
 | E4 | Yakıtı bitmiş hesabın `pending`'i bitiş saatinden sonra artmaz |
 | E5 | Bir saatte dağıtılan ≤ `E_h` |
@@ -47,7 +47,7 @@
 | V1 | VRGDA toplu maliyet ≥ birim maliyetlerin toplamı − toz (toplu alım indirimi yok) |
 | V2 | Satış önündeyken fiyat artar, gerisindeyken azalır (monotonluk) |
 | S1 | Her MOHN harcamasında: yakılan = %80, rezerve = %20 (± toz) |
-| R1 | Router: `balance == buyback + pol + ops` |
+| R1 | Router: `balance ≥ buyback + pol + ops` (SELFDESTRUCT ile zorla gönderilen ETH bakiyeyi kovaların üstüne çıkarabilir ve orada kilitli kalır; eşitlik yalnızca zorla gönderim yoksa geçerlidir — AI review ATK-6 / ACC-2) |
 | R2 | Referans kredisi toplamı ≤ hazine payı toplamı (test: `referralPaid ≤ %3 × minersDistributed`, yani emisyonun ≤ %2.7'si; kaynağın hazine olduğu E2 ile kanıtlanır) |
 | P1 | Her parametre kendi sınırları içinde; hız limiti aşılamaz; yalnızca Timelock (test: her parametre için sınır/adım/bekleme birim testi; rastgele değişiklik invariant'ı; rol matrisi; durum değiştiren fonksiyonların ABI'deki gözden geçirilmiş listeye eşitliği) |
 | P2 | Pause en fazla 72s; Guardian unpause edemez (test: Guardian pause'u hiçbir zaman şimdi + 72s'yi aşmaz invariant'ı; iki pause arası 7 gün; unpause yalnızca Timelock) |

@@ -167,6 +167,28 @@ contract RevenueRouterTest is Test {
         assertTrue(router.bucketRolesLocked());
     }
 
+    /// AI review AI-1: the admin cannot grant itself LOCKED_ROLE and so undo the lock.
+    function test_lockCannotBeUndoneThroughLockedRole() public {
+        vm.startPrank(admin);
+        router.lockBucketRoles();
+        bytes32 locked = router.LOCKED_ROLE();
+        assertEq(router.getRoleAdmin(locked), locked);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, admin, locked
+            )
+        );
+        router.grantRole(locked, admin);
+        bytes32 pol = router.POL_ROLE();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, admin, locked
+            )
+        );
+        router.grantRole(pol, makeAddr("thief"));
+        vm.stopPrank();
+    }
+
     function testFuzz_r1(uint96 a, uint96 b, uint96 fee) public {
         vm.deal(core, uint256(a) + b);
         vm.deal(lm, fee);

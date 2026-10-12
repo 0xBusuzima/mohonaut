@@ -67,6 +67,9 @@ contract RevenueRouter is IRevenueRouter, AccessControl, ReentrancyGuardTransien
         _setRoleAdmin(FEE_DEPOSITOR_ROLE, LOCKED_ROLE);
         _setRoleAdmin(POL_ROLE, LOCKED_ROLE);
         _setRoleAdmin(BUYBACK_ROLE, LOCKED_ROLE);
+        // LOCKED_ROLE administers itself, so DEFAULT_ADMIN_ROLE cannot grant it and undo the lock
+        // (AI review AI-1: its admin was DEFAULT_ADMIN_ROLE until this line).
+        _setRoleAdmin(LOCKED_ROLE, LOCKED_ROLE);
         emit BucketRolesLocked();
     }
 

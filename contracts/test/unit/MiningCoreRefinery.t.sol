@@ -11,6 +11,7 @@ import {MohnToken} from "../../src/MohnToken.sol";
 import {EmissionMath} from "../../src/lib/EmissionMath.sol";
 import {MockAggregator} from "../mocks/MockAggregator.sol";
 import {MockRouter} from "../mocks/MockRouter.sol";
+import {MarketOpenCheat} from "../utils/MarketOpenCheat.sol";
 
 /// @notice Refinery, referral credit, dev/treasury withdrawals and the hourly mint breaker
 ///         (docs/02 S2, S3.3, S8, S9).
@@ -68,13 +69,14 @@ contract MiningCoreRefineryTest is Test {
         while (!core.poke()) {}
     }
 
-    /// Alice fuels in pre-fill and mines alone through genesis; returns at Market Open.
+    /// Alice fuels in pre-fill and mines alone through genesis; returns at Market Open, opened.
     function _aliceMinesThroughGenesis() internal {
         _fresh();
         vm.prank(alice);
         core.buyFuel{value: 0.0009 ether}(address(0)); // 22.5 L: until Market Open + 24 h
         vm.warp(MARKET_OPEN);
         _catchUp();
+        MarketOpenCheat.forceOpen(core, admin);
     }
 
     function _setUnrefined(address who, uint256 amount) internal {
@@ -118,6 +120,26 @@ contract MiningCoreRefineryTest is Test {
         vm.prank(DEV);
         vm.expectRevert(MiningCore.RefineClosed.selector);
         core.withdrawDevShare(1e18);
+    }
+
+    /// AI review AI-4: the refinery opens when openMarket has run, not merely at its time, so no
+    /// refine shares the mint window with the Market Open LP or trades before our pool exists.
+    function test_refineWaitsForOpenMarketNotTheClock() public {
+        _fresh();
+        vm.prank(alice);
+        core.buyFuel{value: 0.0009 ether}(address(0));
+        vm.warp(MARKET_OPEN + 6 hours);
+        _catchUp();
+        vm.prank(alice);
+        vm.expectRevert(MiningCore.RefineClosed.selector);
+        core.refine(1e18, true);
+        vm.prank(DEV);
+        vm.expectRevert(MiningCore.RefineClosed.selector);
+        core.withdrawDevShare(1e18);
+        MarketOpenCheat.forceOpen(core, admin);
+        vm.prank(alice);
+        core.refine(1e18, true);
+        assertGt(mohn.balanceOf(alice), 0);
     }
 
     function test_fastRefine_feeHalfBurnedHalfReserve() public {

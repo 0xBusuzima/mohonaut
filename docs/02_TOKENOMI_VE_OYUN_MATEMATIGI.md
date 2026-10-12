@@ -12,8 +12,8 @@
 
 1. **Protokol emisyon takviminden fazlasını asla borçlanmaz.** Ödül = sabit/azalan emisyonun hashpower payı (`r_i = E·h_i/H`). Makine başına sabit verim yok.
 2. **Dış gelir şart.** Yakıt (opex) ETH ile ödenir → gerçek gelir → buyback-burn + protokol likiditesi + operasyon.
-3. **Harcama ertesi günün ödülü olmaz.** Oyun içi MOHN harcamasının %80'i kalıcı yakılır, %20'si yıllara yayılan rezerve döner ([a competitor]'nin %60 → ertesi gün ödül hatası yok).
-4. **Değiştirilemeyenler değiştirilemez:** token, cap, emisyon takvimi, 90/5/5 dağılımı, %80/%20 yakım oranı, mevcut makinelerin istatistikleri.
+3. **Harcama ertesi günün ödülü olmaz.** Oyun içi MOHN harcamasının %80'i kalıcı yakılır, %20'si yıllara yayılan rezerve döner ("harcamanın bir kısmı ertesi günün ödülü olur" döngüsü burada yok).
+4. **Değiştirilemeyenler değiştirilemez:** token, cap, emisyon takvimi, 90/5/5 dağılımı, %80/%20 yakım oranı, mevcut makinelerin istatistikleri. Token ve cap kodda tamamen sabittir. Diğerleri yükseltilebilir MiningCore'da yaşar ve yalnızca **7 günlük yükseltme timelock'u** ile, herkesin göreceği şekilde değiştirilebilir; 96 saatlik parametre timelock'u bunlara dokunamaz (v1.0.2, AI review AI-6).
 5. **Ayarlanabilenler sınırlı ve timelock'lu:** her ayar kontratta kodlanmış alt/üst sınır + değişim hızı limiti + **96 saat** timelock (yükseltmeler 7 gün) + herkese açık canlı kuyruk linki.
 6. **Geriye dönük nerf yok.** Yeni nesil makineler eklenebilir; eskiler aynı kalır.
 7. **Rastgelelik ekonomide yok.** Gacha, paket, şanslı upgrade, çökme riskli overclock yok (7258 riski + Robinhood Chain'de VRF yok).
@@ -109,7 +109,7 @@ Rezerve geri dönen harcamalar (§6) bu eğriyi yukarı iter → oyun "bitmez", 
 
 **Neden takım payı emisyondan?** Takım, oyun yaşadıkça kazanır; oyun ölürse kazanmaz. Premine/unlock uçurumu yok (DFK/Hamster dersleri).
 
-**Kurucu ve hazine çekimleri de kuyruktan geçer ve sınırlıdır:** Talep başına ve gün başına **en fazla 100,000 MOHN**; hazine en az ayda bir çeker (birikmiş büyük bir tutar günlük tavana çarpmasın). Kurucu ve hazine payları yalnızca **standart 72 saatlik rafine kuyruğu** ile çekilebilir (hızlı seçenek yok). Böylece kurucunun her çekimi, token cüzdana ulaşmadan **72 saat önce** zincirde ve Ekonomi sayfasında görünür. Oyunculardan farklı bir ayrıcalık yoktur.
+**Kurucu ve hazine çekimleri de kuyruktan geçer ve sınırlıdır:** Talep başına ve gün başına **en fazla 100,000 MOHN**; hazine en az ayda bir çeker (birikmiş büyük bir tutar günlük tavana çarpmasın). Kurucu ve hazine payları yalnızca **standart rafine kuyruğu** ile çekilebilir (hızlı seçenek yok; kuyruk varsayılan 72 saat, Timelock ile 24–168 saat arasında ayarlanabilir). Böylece kurucunun her çekimi, token cüzdana ulaşmadan kuyruk süresi kadar önce zincirde ve Ekonomi sayfasında görünür. Ayrıca kuyruk süresini kısaltmak 96 saatlik timelock'tan geçer (v1.0.2, AI review AI-10). Oyunculardan farklı bir ayrıcalık yoktur.
 
 ### 3.4 "Derinlik" göstergesi ve Strata
 
@@ -139,8 +139,8 @@ Yeni nesil makine ekleme yetkisi **stratum eşiğine bağlıdır** (kontrat kont
 ## 4. Ödül muhasebesi (MasterChef tipi akümülatör + saatlik bitiş takvimi)
 
 ```
-acc  += (dağıtılan_madenci_DIG × 1e18) / H          (her checkpoint'te)
-pending_i = h_i × (acc_bitiş − debt_i) / 1e18
+acc  += (dağıtılan_madenci_DIG × PREC) / H          (her checkpoint'te; kodda PREC = 1e36)
+pending_i = h_i × (acc_bitiş − debt_i) / PREC
 acc_bitiş = (now < expiry_i) ? acc_şimdi : accAtHour[expiry_i]
 ```
 
@@ -197,7 +197,7 @@ H* = 0.90 · E · P / c_DP,        c_DP = π_ℓ · 24 / η     (USD/DP/gün)
 
 ### 6.1 Gen-1 katalog
 
-| ID | Makine | DP | ℓ/h | η (DP/(ℓ/h)) | Prim | Fiyat @ p0=10 | Kilit |
+| ID | Makine | DP | ℓ/h | η (DP/(ℓ/h)) | Prim | DP × p0 × (1 + prim), p0=10 (parti içi artış hariç; gerçek ilk alım +%0.2–11.8) | Kilit |
 |---|---|---|---|---|---|---|---|
 | 0 | Pilot Rig (başlangıç) | 10 | 0.25 | 40 | — | **Ücretsiz, hesap başı 1** | — |
 | 1 | Rotary Rig | 50 | 1.0 | 50 | %0 | 500 | Saha L1 |
@@ -206,7 +206,7 @@ H* = 0.90 · E · P / c_DP,        c_DP = π_ℓ · 24 / η     (USD/DP/gün)
 | 4 | Turbodrill | 1,000 | 12.5 | 80 | %27 | 12,700 | Saha L10 |
 | 5 | Plasma Bore | 2,700 | 30.0 | 90 | %40 | 37,800 | Saha L15 |
 
-**Kural "pahalı = daha verimli, daha ucuz hash değil":** DP başına fiyat tier ile artar (prim), karşılığında ℓ/h başına DP artar (yakıt tasarrufu) ve slot başına DP artar. [a competitor]'nin ucuz PC'lerinin kuralı bozup nerf'e yol açması burada tasarım gereği imkânsız.
+**Kural "pahalı = daha verimli, daha ucuz hash değil":** DP başına fiyat tier ile artar (prim), karşılığında ℓ/h başına DP artar (yakıt tasarrufu) ve slot başına DP artar. Ucuz makinelerin dengeyi bozup sonradan nerf gerektirmesi burada tasarım gereği imkânsız.
 
 **Prim geri dönüşü örneği:** T5'in T1'e göre yakıt tasarrufu `0.10×24×(1/50−1/90) = $0.0213/DP/gün`; prim `4 MOHN/DP`. `P=$0.15` iken prim `$0.60/DP` → **~28 günde** kendini çıkarır. Fiyat ve yakıt değiştikçe bu karar değişir → gerçek strateji.
 
@@ -435,4 +435,20 @@ Simülasyon `/sim` altında, bu dokümandaki formüllerle **günlük adımlı, a
 | v0.2 | 2026-10-10 | VRGDA `r` 8,000 → 2,000; ETH dağılımı 40/30/30 → 55/30/15; §12 müdahale kuralı yönü düzeltildi; genesis tank üst sınırı ve genesis buyback kovası tanımlandı; §13 tanımları netleştirildi; RCR kriterden sağlık metriğine alındı | `sim/RAPOR.md` §1, §7 |
 | v0.2+ | 2026-10-10 | Tema: enerji (kWh/kW) → dizel yakıt (ℓ, ℓ/h), üs → sondaj sahası, makine ve katman isimleri yenilendi (matematik aynı); parametre timelock'u 72s → 96s; oracle bayatlık eşiği 26s, sequencer feed opsiyonel, testnet mock (0.4 zincir doğrulaması) | Kurucu kararı (rakiplere benzememe), `docs/ZINCIR_DOGRULAMA.md` |
 | v1.0.1 | 2026-10-12 | **Güvenlik düzeltmeleri (iç denetim, ekonomi parametreleri değişmedi):** saatlik mint devre kesicisi → katı saatlik mint sınırı (aşan mint geri çevrilir; global durdurma yok); rafine isteği başına ≤ 100K; Market Open LP'si mint sınırına kırpılır (fiyat P0'da kalır); referans kredisinin %3'lük bütçesi hazine payı içinde ayrılır, hazine çekemez | `contracts/audits/FINDINGS.md` |
+| v1.0.2 | 2026-10-12 | **AI denetimi düzeltmeleri, ekonomi parametreleri değişmedi:** RevenueRouter kova kilidi geri alınamaz (`LOCKED_ROLE` kendi yöneticisi); rafineri ve kurucu/hazine çekimleri `openMarket` gerçekten çalıştıktan sonra açılır (yalnızca zamanı geldiğinde değil); başlatılmamış sequencer turu "kapalı" sayılır. Metin düzeltmeleri: §0 ilke 4'ün kapsamı (7 günlük yükseltme yolu), çekimlerin görünürlük süresi, §4 PREC, §6.1 fiyat sütunu, kodda olup burada yazmayan sınırlar (Ek: Kodlanmış sınırlar). Açık ekonomi kararları (POL günlük tavanı, buyback/LP tavanlarının tabanı, hurda kredisi fiyatı) ayrı sürüm olarak gelecek | `contracts/audits/AI_REVIEW.md`, `FIXES.md` |
 | **v1.0** | **2026-10-11** | **Donduruldu.** İsim Mohonaut / $MOHN; günlük mint tavanı 2M → 500K; saatlik mint devre kesicisi 150K; kurucu/hazine çekimi talep ve gün başına ≤ 100K; VRGDA `r` değişiklikleri fiyat sürekli (yeniden çapalama); §13 sonuçları v0.2 simülasyonuyla güncellendi | `sim/RAPOR.md` "v0.2 doğrulaması", kurucu onayı |
+
+## Ek: Kodlanmış sınırlar (v1.0.2, AI review AI-12 / SPEC-9, 10, 17–21)
+
+| Sınır | Değer | Kaynak |
+|---|---|---|
+| Günlük buyback harcaması | havuz ETH'sinin en çok %2'si; Timelock %0.5–5 arası, 7 günde bir | `BuybackBurner.sol` |
+| Günlük POL ekleme | havuz ETH'sinin en çok %4'ü (sabit) | `LiquidityManager.sol` |
+| Saha maliyet ölçeği | 0.5×–2× (5,000–20,000 bps), adım ±%25, 30 günde bir | `MiningCore.paramBounds` |
+| Hız limitleri | hızlı rafine ücreti, kuyruk süresi, tank saati, oracle bayatlığı: 7 günde bir; gelir dağılımı, alıcılar, sequencer beslemesi: 30 günde bir | `MiningCore`, `RevenueRouter` |
+| Guardian pause | 72 saat, kendiliğinden biter; 7 günde en çok bir kez; Timelock ile uzatma ≤ 30 gün | `MiningCore` |
+| Sequencer toparlanma süresi | 1 saat (besleme bağlıysa) | `SEQUENCER_GRACE` |
+| Yeni nesil koruması | nesil başına ≤ 8 tür, prim ≤ %100, DP ≤ 10,000; Gen-8+ yalnızca 85,000 m'den sonra | `MiningCore.addMachineGeneration` |
+| Pilot Rig hurdası | kredi vermez | `scrapMachines` |
+| VRGDA yeniden çapalama | hem `r` hem `k` değişince fiyat sıçramasın diye | `_reanchorVrgda` |
+| Bayat oracle | yakıt alımını ve `openMarket`'i durdurur; kazı devam eder | `_ethUsdWad` |

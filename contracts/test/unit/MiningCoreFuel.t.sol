@@ -249,6 +249,16 @@ contract MiningCoreFuelTest is Test {
         c.buyFuel{value: 0.0001 ether}(address(0));
     }
 
+    /// AI review ATK-7: startedAt == 0 marks an uninitialised round; it must not read as "up".
+    function test_sequencerUninitialisedRoundIsDown() public {
+        MockAggregator seq = new MockAggregator(0, 0);
+        MiningCore c = _deploy(address(router), address(seq));
+        seq.set(0, 0, block.timestamp);
+        vm.prank(alice);
+        vm.expectRevert(MiningCore.SequencerDown.selector);
+        c.buyFuel{value: 0.0001 ether}(address(0));
+    }
+
     function test_staleOracleDoesNotStopMining() public {
         vm.prank(alice);
         core.buyFuel{value: 0.0004 ether}(address(0));

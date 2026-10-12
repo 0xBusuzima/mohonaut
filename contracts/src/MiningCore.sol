@@ -39,7 +39,7 @@ import {IRevenueRouter} from "./interfaces/IRevenueRouter.sol";
 ///      and can be retried later. It is a hard rate limit, not a global switch: nobody can freeze
 ///      minting for others, and the Guardian pause remains the emergency stop.
 ///      Roles (docs/03 S3.8): DEFAULT_ADMIN_ROLE and CATALOG_ROLE = the 96 h Timelock (bounded,
-///      rate-limited parameters, catalog, breaker reset, unpause); UPGRADER_ROLE = the 7-day
+///      rate-limited parameters, catalog, unpause); UPGRADER_ROLE = the 7-day
 ///      Timelock; GUARDIAN_ROLE = the Guardian Safe, which can only pause for at most 72 hours.
 // False positive: buyFuel forwards every wei to the router in the same call, so the core never
 // holds ETH (proved by invariant_routerReceivesAllFuelEth).
@@ -457,8 +457,9 @@ contract MiningCore is
             // forge-lint: disable-next-line(unused-return)
             (, int256 status, uint256 startedAt,,) = c.sequencerFeed.latestRoundData();
             // slither-disable-end unused-return
+            // startedAt == 0 is an uninitialised round: treated as down (AI review ATK-7).
             // forge-lint: disable-next-line(block-timestamp)
-            if (status != 0 || block.timestamp - startedAt <= SEQUENCER_GRACE) {
+            if (status != 0 || startedAt == 0 || block.timestamp - startedAt <= SEQUENCER_GRACE) {
                 revert SequencerDown();
             }
         }
@@ -804,9 +805,11 @@ contract MiningCore is
         _enqueue(c, msg.sender, amount);
     }
 
+    /// @dev Open once openMarket has run, not merely at its time: refines before the pool exists
+    ///      would share the hourly mint window with the Market Open LP and could be traded on
+    ///      another pool first (AI review AI-4). openMarket is permissionless, so no liveness cost.
     function _requireRefineOpen(CoreStorage storage c) private view {
-        // forge-lint: disable-next-line(block-timestamp)
-        if (block.timestamp < uint256(c.genesisTime) + GENESIS_DURATION) revert RefineClosed();
+        if (!c.marketOpened) revert RefineClosed();
     }
 
     function _enqueue(CoreStorage storage c, address account, uint256 amount) private {
