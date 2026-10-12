@@ -1204,12 +1204,10 @@ Next update by [time] UTC on mohonaut.com/status. A full post-mortem follows wit
 ```
 Kural: Guardian yalnızca pause eder (≤ 72 saat, kendiliğinden biter); uzatma ve her düzeltme 96 saatlik timelock kuyruğundan (kontrat yükseltmesi 7 gün) geçer (`mohonaut.com/timelock`) ve /security'de görünür.
 
-**Saatlik mint devre kesicisi (S1):**
+**Saatlik mint sınırı (S2; kontrattaki davranışa göre düzeltildi, 2026-10-12):** Sınır bir şalter değil, hız sınırıdır. Son 60–65 dakikada basılan miktarı 150K'nın üstüne çıkaracak bir mint geri döner (`MintWindowFull`) ve **sonra yeniden denenebilir**. Kimse mintleri başkaları için durduramaz ve sınırı sıfırlamak için timelock gerekmez (MiningCore NatSpec, invariant B1). Bu yüzden sınırın dolması tek başına S1 değildir. Sınır, beklenmedik bir mint artışıyla birlikte doluyorsa runbook 1 (anormal mint) uygulanır.
 ```
-The hourly mint breaker stopped all minting at [time] UTC: [x] $MOHN were minted in 60 minutes, above the 150,000 limit. This is a safety limit doing its job.
-Still working: drilling and accrual. Paused: refines and anything that mints.
-Minting can only be switched back on through the public timelock, which takes at least 96 hours: mohonaut.com/timelock. Nothing in your unrefined balance is lost.
-Next update by [time] UTC on mohonaut.com/status.
+Refines are queuing for a moment: more than 150,000 $MOHN were minted in the last hour, the safety limit in the contract. Minting resumes by itself as the hour rolls on; anything that waits can simply be retried. Nothing in your unrefined balance is lost, and drilling continues as normal.
+Live numbers: mohonaut.com/status
 ```
 
 **Günlük mint tavanı doldu (S3):**

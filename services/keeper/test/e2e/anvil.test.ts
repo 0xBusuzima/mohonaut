@@ -13,6 +13,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   PARAM_SPECS,
+  ZERO_HASH,
   checkParamChange,
   miningCoreAbi,
   setParamData,
@@ -33,6 +34,7 @@ import {
   createPublicClient,
   createWalletClient,
   defineChain,
+  encodeFunctionData,
   getAddress,
   http,
   parseEther,
@@ -340,6 +342,87 @@ describe.runIf(RUN)('keeper on anvil (time travel)', { timeout: 900_000 }, () =>
       .where(eq(indexerSchema.timelockOps.opId, proposal.opId));
     expect(op).toMatchObject({ fn: 'setParam', salt: `0x${'5a'.repeat(32)}` });
     expect(op?.executedAt).not.toBeNull();
+  });
+
+  it('pause drill: Guardian pause, alert, players blocked, unpause through the timelock (docs/runbooks/tatbikat.md)', async () => {
+    const core = { address: deployment.MiningCore, abi: miningCoreAbi } as const;
+    const guardian = createWalletClient({ chain, transport: http(RPC), account: account(6) });
+    const pauseTx = await guardian.writeContract({ ...core, functionName: 'pause' });
+    expect((await client.waitForTransactionReceipt({ hash: pauseTx })).status).toBe('success');
+    expect(await read<bigint>('pausedUntil')).toBeGreaterThan(await now());
+
+    // Players are stopped before their wallet even opens (the simulation reverts).
+    await expect(
+      client.simulateContract({
+        ...core,
+        functionName: 'buyFuel',
+        args: [zeroAddress],
+        value: parseEther('0.0005'),
+        account: account(3),
+      }),
+    ).rejects.toThrow(/ProtocolPaused/);
+
+    // The indexer raises the critical alert that pages the founder.
+    await syncIndexer();
+    const raised = await database.query(
+      "SELECT severity FROM alerts WHERE rule = 'MiningCore.Paused'",
+    );
+    expect(raised.map((r) => r['severity'])).toEqual(['critical']);
+
+    // Ending it early is a public timelock change (Ops Safe here: account 5).
+    const timelock = deployment.ParamsTimelock;
+    const delay = Number(
+      await client.readContract({
+        address: timelock,
+        abi: timelockControllerAbi,
+        functionName: 'getMinDelay',
+      }),
+    );
+    const proposal = timelockProposal({
+      chainId: 31_337,
+      safe: account(5).address,
+      timelock,
+      target: deployment.MiningCore,
+      data: encodeFunctionData({ abi: miningCoreAbi, functionName: 'unpause' }),
+      salt: `0x${'0d'.repeat(32)}`,
+      delay,
+      title: 'unpause',
+      now: Number(await now()),
+    });
+    const ops = createWalletClient({ chain, transport: http(RPC), account: account(5) });
+    const scheduled = await ops.writeContract({
+      address: timelock,
+      abi: timelockControllerAbi,
+      functionName: 'schedule',
+      args: [
+        deployment.MiningCore,
+        0n,
+        proposal.execute.transactions[0]?.contractInputsValues['payload'] as Hex,
+        ZERO_HASH,
+        `0x${'0d'.repeat(32)}`,
+        BigInt(delay),
+      ],
+    });
+    expect((await client.waitForTransactionReceipt({ hash: scheduled })).status).toBe('success');
+    await warpTo(BigInt(proposal.readyAt) + 60n);
+    const executed = await ops.writeContract({
+      address: timelock,
+      abi: timelockControllerAbi,
+      functionName: 'execute',
+      args: [
+        deployment.MiningCore,
+        0n,
+        proposal.execute.transactions[0]?.contractInputsValues['payload'] as Hex,
+        ZERO_HASH,
+        `0x${'0d'.repeat(32)}`,
+      ],
+    });
+    expect((await client.waitForTransactionReceipt({ hash: executed })).status).toBe('success');
+    expect(await read<bigint>('pausedUntil')).toBe(0n);
+
+    // After the keeper refreshes the (testnet) price feed, players buy diesel again.
+    await keeper.tick();
+    await player(3).buyFuel(parseEther('0.0005'));
   });
 
   it.runIf(process.env['KEEPER_E2E_PG_URL'] !== undefined)(

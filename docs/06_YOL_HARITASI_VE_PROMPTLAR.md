@@ -283,7 +283,9 @@ docs/03 §5'teki 12 modülü apps/admin'de Refine ile kur. Kimlik: Cloudflare Ac
 infra/ altında docs/03 §6'ya göre: 2 Hetzner sunucusu için sertleştirme (SSH anahtar, firewall, otomatik güncellemeler, fail2ban, Tailscale), Coolify veya Dokploy kurulumu, servislerin docker-compose tanımları (web, api, indexer, keeper, monitor, postgres, redis), Cloudflare (DNS, proxy, WAF kuralları, rate limit, Turnstile, Access ile admin), Infisical/SOPS ile sırlar, Postgres günlük şifreli yedek → Storage Box + harici S3/R2 ve **geri yükleme testi**. GitHub Actions'tan staging (testnet) ve production (mainnet) ortamlarına deploy. Her şeyi bir RUNBOOK ile belgele.
 ```
 
-### 6.2 Runbook'lar ve tatbikat
+### 6.2 Runbook'lar ve tatbikat — ✅ 2026-10-12 (insan süresi ölçümü kurucuda)
+
+> `docs/runbooks/`: README (roller, araçlar, ortak adımlar) + 6 senaryo (anormal mint, oracle/sequencer, keeper ele geçirilmesi, site/DNS, zincir kesintisi, zincir kapanması) + `tatbikat.md`. Her adım gerçek araçlara bağlı (`/ops` *Emergency* Guardian dosyası, *Parameters*/*Timelock*, Safe Transaction Builder, `cast`, `infra/RUNBOOK.md`) ve kontrata karşı doğrulandı: pause 72 saat / 7 günde bir, `extendPause` ≤ 30 gün, `unpause` seçicisi, testnet beslemesinin `set(int256)` fonksiyonu ve `immutable` sahibi. Kontrattan sapan bir şablon düzeltildi: saatlik mint sınırı bir şalter değil, yeniden denenebilir bir hız sınırı (docs/05 §7.3). Otomatik tatbikat keeper anvil E2E'sinde (her PR'da). Kalan: testnet tatbikatında insan süresinin ölçülmesi (hedef ≤ 15 dk; KURUCU listesinde).
 
 ```text
 docs/runbooks/ altında docs/04 §6.2'deki 6 senaryonun her biri için adım adım runbook yaz (kim, hangi araç, hangi Safe işlemi, hangi iletişim şablonu — docs/05'ten). Testnet'te pause → bildirim → unpause tatbikatını yap ve süreyi ölç.

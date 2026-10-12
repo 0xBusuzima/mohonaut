@@ -168,6 +168,8 @@ Branch koruması: `main`'e doğrudan push yok, en az 1 inceleme (AI + insan), t�
 
 Yılda en az bir **tatbikat** (pause → bildirim → unpause, testnet'te).
 
+**Uygulama (Faz 6.2, 2026-10-12):** `docs/runbooks/` altında her senaryo için ayrı dosya var: kim, hangi araç, hangi Safe işlemi, hangi şablon. Tatbikat prosedürü ve sonuç tablosu `tatbikat.md`'de. Otomatik prova keeper anvil E2E'sinde: Guardian pause → oyuncu işlemi simülasyonda `ProtocolPaused` ile reddediliyor → indeksleyicide kritik `MiningCore.Paused` uyarısı → Params Timelock'tan `unpause` (96 saat) → oyuncu yeniden yakıt alıyor.
+
 ---
 
 ## 7. Gizlilik ve veri
