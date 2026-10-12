@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { migrate, openDatabase, schema as idx } from '@mohonaut/indexer';
 import type { Database, Deployment } from '@mohonaut/indexer';
@@ -56,7 +57,7 @@ export async function harness(overrides: Partial<Config> = {}): Promise<Harness>
     webOrigin: ORIGIN,
     port: 0,
     host: '127.0.0.1',
-    surveySecret: 'test-survey-secret-0123456789abcdef',
+    surveySecret: randomBytes(32).toString('hex'),
     turnstileSecret: 'x',
     trustCloudflare: false,
     adminWallets: [],
