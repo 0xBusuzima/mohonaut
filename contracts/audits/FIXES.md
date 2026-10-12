@@ -23,7 +23,7 @@ contracts (CLAUDE.md).
 | ATK-6 / ACC-2 | **Fixed (docs)** | docs/04 R1 is now `balance ≥ buckets` (forced ETH stays locked) | docs/04 §2 |
 | ATK-7 | **Fixed** | `startedAt == 0` (uninitialised round) reads as sequencer down | `unit/MiningCoreFuel.t.sol` `test_sequencerUninitialisedRoundIsDown` |
 | ACC-3 | **Fixed (docs)** | docs/04 E2 includes an external-burn term | docs/04 §2 |
-| ACC-5 | Planned | Move the accountant's NEW-1 to NEW-15 invariants into `test/invariant` and `test/recon`; add a stateful handler for the market/ETH layer | — |
+| ACC-5 | **Fixed** | NEW-1 to NEW-15 moved into the main suite (`test/invariant/system`; the handler now opens the market at its time, so refine and withdrawal paths are exercised again after AI-4); a market/ETH handler on the real PoolManager bytecode adds NEW-17 to NEW-20 and K1 to K3, in Foundry (`test/invariant/market`) and for Medusa/Echidna (`test/recon/market/CryticMarketTester`) | docs/04 §2 "Ek invariantlar" |
 | ACC-6 | Planned | Restate the tank invariant as "tank ≤ cap at the time of the last fuel purchase" | — |
 | ACC-7 | Accepted | Earmarks of accounts that never settle again stay in the treasury share; at most 3 % of their accrual | — |
 | SPEC-11 | **Fixed (docs)** | docs/02 §4 uses PREC (1e36) | docs/02 v1.0.2 |

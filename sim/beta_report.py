@@ -5,7 +5,7 @@ Usage (from the sim folder):
     .venv\\Scripts\\python.exe beta_report.py --days days.json --genesis 1791756000   # offline
 
 Compares, day by day since genesis, the 28-day flows of /economy/daily with the simulator's fan
-(results/fans.npz, scenario `spec__base` unless --scenario): emission must follow the schedule
+(results/v11/fans.npz, written by run_scenarios.py; scenario `spec__base` unless --scenario): emission must follow the schedule
 (it is deterministic), burns and the 28-day sink ratio should sit inside the 5-95 % band.
 USD figures are left out: testnet prices are fake. Output: a Markdown report on stdout.
 """
@@ -124,7 +124,7 @@ def main(argv: list[str] | None = None) -> int:
     src.add_argument("--api", help="API base URL, e.g. https://api.mohonaut.com")
     src.add_argument("--days", type=Path, help="a saved /economy/daily response")
     ap.add_argument("--genesis", type=int, required=True, help="genesis time (Unix seconds, deployments/*.json)")
-    ap.add_argument("--fans", type=Path, default=ROOT / "results" / "fans.npz")
+    ap.add_argument("--fans", type=Path, default=ROOT / "results" / "v11" / "fans.npz")
     ap.add_argument("--scenario", default="spec__base")
     args = ap.parse_args(argv)
     days = fetch_days(args.api) if args.api else json.loads(args.days.read_text(encoding="utf-8"))["days"]

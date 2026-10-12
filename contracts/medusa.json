@@ -5,7 +5,8 @@
     "callSequenceLength": 100,
     "corpusDirectory": "medusa-corpus",
     "targetContracts": [
-      "CryticTester"
+      "CryticTester",
+      "CryticMarketTester"
     ],
     "testing": {
       "assertionTesting": {

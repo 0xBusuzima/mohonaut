@@ -4,19 +4,20 @@ pragma solidity 0.8.30;
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 
-import {MiningCore} from "../../src/MiningCore.sol";
-import {MohnToken} from "../../src/MohnToken.sol";
-import {RevenueRouter} from "../../src/RevenueRouter.sol";
-import {EmissionMath} from "../../src/lib/EmissionMath.sol";
-import {MockAggregator} from "../../test/mocks/MockAggregator.sol";
+import {MiningCore} from "../../../src/MiningCore.sol";
+import {MohnToken} from "../../../src/MohnToken.sol";
+import {RevenueRouter} from "../../../src/RevenueRouter.sol";
+import {EmissionMath} from "../../../src/lib/EmissionMath.sol";
+import {MockAggregator} from "../../mocks/MockAggregator.sol";
+import {MarketOpenCheat} from "../../utils/MarketOpenCheat.sol";
 
-/// @notice Audit (ACCOUNTANT) handler. Covers the entry points the repository's handlers skip:
-///         wallet payments, holder burns and transfers, dev/treasury withdrawals together with
+/// @notice Whole-system handler (from the AI review, ACCOUNTANT). Covers the entry points the
+///         other handlers skip: wallet payments, holder burns and transfers, dev/treasury withdrawals together with
 ///         player flows, every setParam (incl. VRGDA re-anchoring), router setSplit, Guardian
 ///         pause / Timelock extendPause / unpause, oracle price moves and new machine
-///         generations. Keeps ghosts for the proposed invariants (ACCOUNTANT.md S5).
+///         generations. Keeps ghosts for the invariants NEW-1 to NEW-15 (docs/04 S2).
 /// @dev bound() logs through the console, which would consume a pending prank: bound first.
-contract AccountantHandler is Test {
+contract SystemHandler is Test {
     bytes32 internal constant HOUR_CLOSED =
         keccak256("HourClosed(uint64,uint256,uint256,uint256,uint256)");
 
@@ -347,6 +348,10 @@ contract AccountantHandler is Test {
 
     function warp(uint32 dt) external {
         vm.warp(block.timestamp + bound(dt, 1, 2 days));
+        // Stands in for openMarket (no pool here): refining needs it (AI review AI-4).
+        if (!core.marketOpened() && vm.getBlockTimestamp() >= core.marketOpenTime()) {
+            MarketOpenCheat.markOpen(core);
+        }
     }
 
     function setEthUsd(uint256 seed) external {

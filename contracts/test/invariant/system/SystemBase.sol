@@ -4,15 +4,16 @@ pragma solidity 0.8.30;
 import {Test} from "forge-std/Test.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
-import {MiningCore} from "../../src/MiningCore.sol";
-import {MohnToken} from "../../src/MohnToken.sol";
-import {RevenueRouter} from "../../src/RevenueRouter.sol";
-import {EmissionMath} from "../../src/lib/EmissionMath.sol";
-import {MockAggregator} from "../../test/mocks/MockAggregator.sol";
+import {MiningCore} from "../../../src/MiningCore.sol";
+import {MohnToken} from "../../../src/MohnToken.sol";
+import {RevenueRouter} from "../../../src/RevenueRouter.sol";
+import {EmissionMath} from "../../../src/lib/EmissionMath.sol";
+import {MockAggregator} from "../../mocks/MockAggregator.sol";
+import {MarketOpenCheat} from "../../utils/MarketOpenCheat.sol";
 
-/// @notice Audit (ACCOUNTANT): deploys MiningCore behind its proxy with the real token and router,
+/// @notice Deploys MiningCore behind its proxy with the real token and router,
 ///         exactly like test/invariant/MiningCoreEconomy.invariant.t.sol.
-abstract contract AccountantBase is Test {
+abstract contract SystemBase is Test {
     uint64 internal constant GENESIS = 1_800_003_600 - (1_800_003_600 % 3600);
     address internal constant DEV = address(0xDE7);
     address internal constant TREASURY = address(0x7EA5);
@@ -52,6 +53,7 @@ abstract contract AccountantBase is Test {
         );
         assertEq(address(core), proxyAddr, "minter == proxy");
         router.grantRole(router.DEPOSITOR_ROLE(), address(core));
+        core.wireLiquidityManager(MarketOpenCheat.PLACEHOLDER_LM);
     }
 
     function _catchUp() internal {

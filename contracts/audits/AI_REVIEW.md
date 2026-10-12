@@ -6,7 +6,7 @@ docs/02-04 and the simulator, without changing any source (docs/06 7.1):
 | Role | Report | Evidence (run from `contracts/`) |
 |---|---|---|
 | Attacker: exploit every external function, prove with a PoC | [ai/ATTACKER.md](ai/ATTACKER.md) | `FOUNDRY_TEST=audit-tests/attacker FOUNDRY_OUT=out-attacker FOUNDRY_CACHE_PATH=cache-attacker forge test` (19 tests: 10 proofs, 9 failed attacks) |
-| Accountant: break the docs/04 §2 invariants, propose new ones | [ai/ACCOUNTANT.md](ai/ACCOUNTANT.md) | `FOUNDRY_TEST=audit-tests/accountant FOUNDRY_OUT=out-accountant FOUNDRY_CACHE_PATH=cache-accountant forge test` (16,384-call campaign, 18 invariants, 25 proposed) |
+| Accountant: break the docs/04 §2 invariants, propose new ones | [ai/ACCOUNTANT.md](ai/ACCOUNTANT.md) | campaign now in the main suite: `forge test --match-path "test/invariant/system/*"` (ACC-5); finding PoCs: `FOUNDRY_TEST=audit-tests/accountant FOUNDRY_OUT=out-accountant FOUNDRY_CACHE_PATH=cache-accountant forge test` (16,384-call campaign, 18 invariants, 25 proposed) |
 | Specification auditor: every formula and constant against docs/02, `sim/params.json`, `sim/engine`, `sim/vectors` | [ai/SPEC.md](ai/SPEC.md) | `audit-tests/spec/spec_check.py` (62 checks), `SpecConformance.t.sol` (12 tests), `pol_cap_experiment.py` |
 
 This is **not** an independent audit. Like the Phase 2.9 review ([FINDINGS.md](FINDINGS.md)), it

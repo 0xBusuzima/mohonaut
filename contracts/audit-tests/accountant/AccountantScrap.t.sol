@@ -3,12 +3,12 @@ pragma solidity 0.8.30;
 
 import {console2} from "forge-std/console2.sol";
 
-import {AccountantBase} from "./AccountantBase.sol";
+import {SystemBase} from "../../test/invariant/system/SystemBase.sol";
 
 /// @notice Audit (ACCOUNTANT) ACC-4: scrap credit is priced at the VRGDA price after the player's
 ///         own purchases, so "buy first, scrap after" yields more capex value than "scrap first,
 ///         buy after" for the same final fleet. Default parameters (k = 0.15, r = 2,000).
-contract AccountantScrapTest is AccountantBase {
+contract AccountantScrapTest is SystemBase {
     uint256 internal constant TURBO = 4; // 1,000 DP, 12.5 L/h, level 10
     uint256 internal constant PLASMA = 5; // 2,700 DP, 30 L/h, level 15
     address internal whale = makeAddr("whale");

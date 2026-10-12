@@ -55,3 +55,10 @@ jobs:
           files: contracts
           contract: CryticTester
           config: contracts/echidna.yaml
+      - name: Echidna (market layer)
+        if: steps.harness.outputs.present == 'true'
+        uses: crytic/echidna-action@v2
+        with:
+          files: contracts
+          contract: CryticMarketTester
+          config: contracts/echidna.yaml

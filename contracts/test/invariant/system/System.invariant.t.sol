@@ -3,25 +3,26 @@ pragma solidity 0.8.30;
 
 import {console2} from "forge-std/console2.sol";
 
-import {MiningCore} from "../../src/MiningCore.sol";
-import {SiteMath} from "../../src/lib/SiteMath.sol";
-import {AccountantBase} from "./AccountantBase.sol";
-import {AccountantHandler} from "./AccountantHandler.sol";
+import {MiningCore} from "../../../src/MiningCore.sol";
+import {SiteMath} from "../../../src/lib/SiteMath.sol";
+import {SystemBase} from "./SystemBase.sol";
+import {SystemHandler} from "./SystemHandler.sol";
 
-/// @notice Audit (ACCOUNTANT): the proposed invariants (ACCOUNTANT.md S5) over a handler that also
-///         drives wallet payments, holder burns, transfers, dev/treasury withdrawals, every
-///         parameter, the router split, pauses, oracle moves and new generations.
+/// @notice Whole-system invariants (docs/04 S2; NEW-1 to NEW-15 from the AI review, ACCOUNTANT.md
+///         S5) over a handler that also drives wallet payments, holder burns, transfers,
+///         dev/treasury withdrawals, every parameter, the router split, pauses, oracle moves and
+///         new generations.
 /// forge-config: default.invariant.runs = 256
 /// forge-config: default.invariant.depth = 64
-contract AccountantInvariantTest is AccountantBase {
-    AccountantHandler internal handler;
+contract SystemInvariantTest is SystemBase {
+    SystemHandler internal handler;
     uint256 internal constant HOUR = 1 hours;
     /// Rounding dust allowed between distributed and assignable miner credit (wei).
     uint256 internal constant LEAK_DUST = 1e6;
 
     function setUp() public {
         _deploy();
-        handler = new AccountantHandler(core, mohn, router, feed);
+        handler = new SystemHandler(core, mohn, router, feed);
         core.grantRole(core.DEFAULT_ADMIN_ROLE(), address(handler));
         core.grantRole(core.GUARDIAN_ROLE(), address(handler));
         core.grantRole(core.CATALOG_ROLE(), address(handler));
@@ -306,7 +307,7 @@ contract AccountantInvariantTest is AccountantBase {
         handler.setSplit(4000, 3000);
         handler.buyFuel(1, 0.001 ether, 0);
         handler.guardianPause();
-        handler.extendPause(uint64(block.timestamp + 1 days));
+        handler.extendPause(uint64(vm.getBlockTimestamp() + 1 days));
         handler.unpause();
         handler.warp(2 days);
         handler.warp(2 days);

@@ -52,11 +52,36 @@
 | P1 | Her parametre kendi sınırları içinde; hız limiti aşılamaz; yalnızca Timelock (test: her parametre için sınır/adım/bekleme birim testi; rastgele değişiklik invariant'ı; rol matrisi; durum değiştiren fonksiyonların ABI'deki gözden geçirilmiş listeye eşitliği) |
 | P2 | Pause en fazla 72s; Guardian unpause edemez (test: Guardian pause'u hiçbir zaman şimdi + 72s'yi aşmaz invariant'ı; iki pause arası 7 gün; unpause yalnızca Timelock) |
 | K1 | Bir UTC gününde buyback harcaması ≤ o günün bütçesi (`spentInDay ≤ dayBudget`; bütçe günün ilk buyback'inde kovanın `dailyBps`'i). POL için aynısı: `addedInDay ≤ addBudget` (kovanın 1/7'si). Bütçe havuz likiditesine bağlı değildir (v1.1) |
-| K2 | Keeper swap'ı (buyback, LP yarım-swap) fiyatı çapanın 296 tick altından öteye taşıyamaz; fiyat zaten oradaysa işlem yapılmaz. LP ekleme yalnızca çapanın ±296 tick'i içinde (v1.1) |
+| K2 | Keeper swap'ı (buyback, LP yarım-swap) fiyatı çapanın 296 tick altından öteye taşıyamaz (karşılaştırma tick'le değil fiyatla yapılır: başlatılmış bir tick sınırında havuz, sınır fiyatının kendisi için tick − 1 gösterir; bunu Medusa buldu); fiyat zaten oradaysa işlem yapılmaz. LP ekleme yalnızca çapanın ±296 tick'i içinde (v1.1) |
 | K3 | Çapa aynı blok içinde değişmez; her güncelleme eski ortalama ile o ana kadar geçerli tick arasında kalır (`PriceAnchor.fold`) |
 | L1 | POL pozisyonundan likidite çıkarılamaz (fonksiyon yok + Halmos). Faz 2.6 testleri: derlenmiş ABI'nin izinli fonksiyon listesine birebir eşitliği (yeni fonksiyon eklenirse test kırılır) ve işlem/ücret/ekleme döngülerinde pozisyon likiditesinin hiç azalmaması. Halmos ispatı sembolik PoolManager gerektirdiği için Faz 2.9'da |
 
-K1–K3 bugün birim, fuzz ve entegrasyon testleriyle kanıtlanıyor (`unit/PriceAnchor.t.sol`, `integration/Market.t.sol`); piyasa/ETH katmanı için durum bazlı handler ve Medusa/Echidna özellikleri ACC-5 işinde ekleniyor (AI denetimi).
+**Ek invariantlar (AI denetimi, ACC-5).** Muhasebeci denetçinin önerdiği invariantlar ana pakete alındı. Kodlar `contracts/audits/ai/ACCOUNTANT.md` §5'tekilerle aynıdır.
+
+| Kod | Invariant | Foundry | Medusa / Echidna |
+|---|---|---|---|
+| NEW-1 | E2, kontrat dışı yakımlar dahil (oyuncu `burn`'ü) | `invariant/system/System.invariant.t.sol` | `CryticTester` E2 (dış yakım yok) |
+| NEW-2 | `emitted` = madenci + kurucu + hazine payları (çekilenler dahil) + referans | aynı | — |
+| NEW-3 | `reserve + emitted == CAP + geri dönüşen` | aynı | — |
+| NEW-4 | referans ayrımı ≤ hazine payı; R2 | aynı | `CryticTester` R2 |
+| NEW-5 | E1 kesin + kayıpsız (yakalama sonrası, en çok 1e6 wei toz) | aynı (durum anlık görüntüsüyle) | — (anlık görüntü yok) |
+| NEW-6 | `activeDp` = bitiş takvimindeki DP | aynı | `CryticTester` E3 |
+| NEW-7 | yakıt ödenmiş: aktif süre tankla karşılanır | aynı | — |
+| NEW-8 | VRGDA satış sayacı, yeniden çapalama sürekliliği, hurda kredisi formülü | aynı | — |
+| NEW-9 | B1 penceresi birebir; T3 bütünleşik sistemde | aynı | `CryticTester` B1 |
+| NEW-10 | Market Open girdileri genesis'ten sonra donar | aynı | — |
+| NEW-11 | R1 köken bazında (her kova, `setSplit` dahil) | aynı | `CryticTester` R1 |
+| NEW-12 | P2 modeli (pause, uzatma, kaldırma) | aynı | `CryticTester` P2 |
+| NEW-13 | E5/E6 her `HourClosed`'da | aynı | — |
+| NEW-14 | S1 cüzdan ödemesi dahil | aynı | `CryticTester` S1 |
+| NEW-15 | M2 eklemeli katalog | aynı | `CryticTester` M2 |
+| NEW-17 | L1 rastgele işlem dizilerinde (üçüncü taraf alım/satım, JIT, buyback, ekleme, ücret) | `invariant/market/Market.invariant.t.sol` | `recon/market/CryticMarketTester` |
+| NEW-18 | BuybackBurner'dan geçen ETH korunur; kontratta ETH kalmaz | aynı | aynı |
+| NEW-19 | POL kovası ve MOHN yakımları korunur; R1 | aynı | aynı |
+| NEW-20 | Market Open bir kez | aynı | aynı |
+| K1–K3 | (yukarıda) | aynı + `unit/PriceAnchor.t.sol`, `integration/Market.t.sol` | aynı |
+
+Medusa/Echidna sütununda "—" olanlar Foundry'ye özgü araçlara dayanır: durum anlık görüntüsü ya da olay okuma. Bunlar Foundry'nin derin profilinde (`FOUNDRY_PROFILE=deep`) uzun koşar. Piyasa özellikleri için ayrı bir test kontratı var: MiningCore ile Uniswap kodu tek kontrata 96 KB sınırı içinde sığmıyor. Bu kontratta MiningCore'un rolünü tester üstlenir: minter, yatıran ve `openMarket` çağıran tester'dır.
 
 Her invariant için: **Foundry invariant handler** (çok aktörlü rastgele işlem dizileri + zaman atlama) + gece **Medusa/Echidna** kampanyası (Chimera iskeleti, aynı özellikler) + kritik olanlar (T1, T2, E2, L1, P2) için **Halmos/Certora** biçimsel ispat.
 

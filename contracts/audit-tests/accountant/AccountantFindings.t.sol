@@ -6,7 +6,7 @@ import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol"
 import {MiningAccounting} from "../../src/MiningAccounting.sol";
 import {MiningCore} from "../../src/MiningCore.sol";
 import {RevenueRouter} from "../../src/RevenueRouter.sol";
-import {AccountantBase} from "./AccountantBase.sol";
+import {SystemBase} from "../../test/invariant/system/SystemBase.sol";
 
 contract EthReceiver {
     receive() external payable {}
@@ -22,7 +22,7 @@ contract ForceSend {
 }
 
 /// @notice Audit (ACCOUNTANT): concrete call sequences for findings ACC-1 to ACC-3.
-contract AccountantFindingsTest is AccountantBase {
+contract AccountantFindingsTest is SystemBase {
     function setUp() public {
         _deploy();
     }

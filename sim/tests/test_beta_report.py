@@ -1,4 +1,6 @@
+import tempfile
 import unittest
+from pathlib import Path
 
 import numpy as np
 
@@ -57,10 +59,17 @@ class BetaReportTest(unittest.TestCase):
         self.assertIn("checks outside expectations", text)
         self.assertIn("- day 0, emission: off schedule", text)
 
-    def test_reads_the_real_simulator_fans(self):
-        real = br.load_fans(br.ROOT / "results" / "fans.npz", "spec__base")
-        self.assertIn("emission", real)
-        self.assertEqual(real["emission"].shape[0], 5)
+    def test_reads_the_fans_file_layout(self):
+        # run_scenarios.py writes <part>__<scenario>__<series> (the file itself is not in git).
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "fans.npz"
+            np.savez_compressed(path, **{f"spec__base__{k}": v for k, v in fans().items()},
+                                spec__bear__emission=np.zeros((5, 3)))
+            loaded = br.load_fans(path, "spec__base")
+            self.assertEqual(set(loaded), set(fans()))
+            self.assertEqual(loaded["emission"].shape[0], 5)
+            with self.assertRaises(SystemExit):
+                br.load_fans(path, "spec__hype")
 
 
 if __name__ == "__main__":
