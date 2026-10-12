@@ -310,7 +310,7 @@ Ayrıca: `setRecipients` (kurucu/hazine alıcıları, sıfır olamaz, 30 günde 
 
 | # | Karar | Gerekçe | Alternatif |
 |---|---|---|---|
-| ADR-001 | Adil madencilik lansmanı (premine/dev buy/ön satış yok) | Sniper ve "insider" riskini ortadan kaldırır; [a competitor]'den net ayrışma | Pons/Pools.trade lansmanı |
+| ADR-001 | Adil madencilik lansmanı (premine/dev buy/ön satış yok) | Sniper ve "insider" riskini ortadan kaldırır; dev-buy ve ön satışlı lansmanlardan net ayrışma | Pons/Pools.trade lansmanı |
 | ADR-002 | Yakıt ETH ile, USD sabit fiyat (Chainlink) | Dış gelir + fiyat duyarlı hashpower + sybil-nötr | Yakıt MOHN ile (yapışkan H, gelir yok) |
 | ADR-003 | Makineler hesaba bağlı, NFT değil (v1) | Pazar yeri = KVHS riski + transfer muhasebe hataları; daha küçük denetim kapsamı | ERC-1155 makineler |
 | ADR-004 | MiningCore UUPS + 7g timelock + kemikleşme taahhüdü; token immutable | Hata düzeltme yolu ile güven dengesi | Tam immutable + göç |

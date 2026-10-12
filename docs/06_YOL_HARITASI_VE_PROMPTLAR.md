@@ -22,7 +22,7 @@
 | 9 | Mainnet lansmanı (Genesis + Market Open) | 1 hafta | — |
 | 10 | Canlı operasyon, sezonlar, büyüme | Sürekli | — |
 
-**Mainnet'e gerçekçi süre: ~4–5 ay.** ([a competitor] 13 günde çıktı ve ilk 48 saatte dokuz ayrı hata yaşadı. Hız değil, güven farklılaştırır.)
+**Mainnet'e gerçekçi süre: ~4–5 ay.** (Aynı zincirde 13 günde çıkan bir oyun ilk 48 saatte dokuz ayrı hata yaşadı. Hız değil, güven farklılaştırır.)
 
 ---
 
@@ -220,7 +220,7 @@ docs/05_MARKA_LANSMAN_X.md'deki marka kimliğine (renkler, tipografi, ton) göre
 > Landing (docs/05 §3.2 S1–S12; "saatlik devre kesici" ifadesi v1.0.1'e göre "saatte en çok 150K mint" olarak güncellendi), /docs (oyuncu rehberi, ekonomi kâğıdı, rafineri, genesis; MDX), /economy (günlük ekonomi, 28 günlük SR, canlı timelock kuyruğu: yeni API ucu `/governance/timelock`), /contracts (deployments JSON'dan; testnet etiketiyle), /security, /faq (FAQPage JSON-LD), /status, /terms ve /privacy ("Draft" yer tutucu), 404. **Metin denetimi** `tools/lint_copy.mjs`: docs/05 §6 yasak ifadeleri, §2.2 kullanılmayan terimler, $MOHO; rakip adları SHA-256 özeti olarak (açık repoda ad geçmez); onaylı kalıplar istisna; CI'da build'i kırar. SEO: sitemap, robots (/play, /design hariç), OG/Twitter, JSON-LD; PWA manifest ve ikonlar (logo tasarlanana kadar yer tutucu). Next 16 statik dışa aktarım ön yükleme dosyası adlandırma sorunu için build sonrası düzeltme betiği. Testler: rig kataloğu `MiningCore.sol`'den çapraz kontrol, her sayfada axe (0 ihlal), konsol/404 hatası yok, tüm iç bağlantılar geçerli. Kalan: /train, /s/<id>, /timelock yönlendirmesi, /brand, /collab, /support (ilgili fazlarda).
 
 ```text
-apps/web'de Next.js App Router ile: landing (docs/05'teki wireframe ve İngilizce metinler; canlı istatistikler indeksleyici API'sinden), /docs (MDX; oyuncu rehberi + docs/02'deki formüller oyuncu diliyle), /economy (docs/03 §5 herkese açık şeffaflık sayfası), /contracts (deployments/*.json'dan adresler + Blockscout linkleri + roller + timelock), /security (denetimler, bug bounty), /faq, /status linki, /terms ve /privacy (avukat metinleri gelene kadar yer tutucu ve "taslak" etiketi). docs/05 §6'daki yasaklı ifadeler listesini ve §6.4b'deki rakip adlarını ([a competitor], [a competitor], [a competitor], [a competitor], [a competitor], [a competitor] — büyük/küçük harf duyarsız) ve 05 §2/§6'daki kullanılmayan terimleri ($MOHO, superdeep, energy, kWh, outpost, claim, airdrop vb.) bir lint kuralına çevir: apps/web içeriği, MDX dokümanları ve docs/tweets altındaki gönderi taslaklarında geçerse build kırılsın. OG görselleri, SEO, PWA manifest.
+apps/web'de Next.js App Router ile: landing (docs/05'teki wireframe ve İngilizce metinler; canlı istatistikler indeksleyici API'sinden), /docs (MDX; oyuncu rehberi + docs/02'deki formüller oyuncu diliyle), /economy (docs/03 §5 herkese açık şeffaflık sayfası), /contracts (deployments/*.json'dan adresler + Blockscout linkleri + roller + timelock), /security (denetimler, bug bounty), /faq, /status linki, /terms ve /privacy (avukat metinleri gelene kadar yer tutucu ve "taslak" etiketi). docs/05 §6'daki yasaklı ifadeler listesini ve §6.4b'deki rakip adlarını (liste iç notlarda; lint'te SHA-256 özetleri, büyük/küçük harf duyarsız) ve 05 §2/§6'daki kullanılmayan terimleri ($MOHO, superdeep, energy, kWh, outpost, claim, airdrop vb.) bir lint kuralına çevir: apps/web içeriği, MDX dokümanları ve docs/tweets altındaki gönderi taslaklarında geçerse build kırılsın. OG görselleri, SEO, PWA manifest.
 ```
 
 ### 4.3 Oyun istemcisi — ✅ 2026-10-12 (çekirdek döngü; görseller yer tutucu)

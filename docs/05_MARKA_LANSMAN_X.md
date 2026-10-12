@@ -1080,10 +1080,10 @@ Köşeli parantezler doldurulacak alanlardır. **Tüm taslaklar yayından önce 
 
 ### 6.4b Rakip adları: herkese açık hiçbir yerde yok (kurucu kararı, 2026-10-10)
 
-- **[a competitor]** ([a competitor], [a competitor], @[a competitor], [a competitor]), **[a competitor]** ([a competitor]) ve diğer rakip projelerin adları, ticker'ları, handle'ları ve görselleri **sitede, oyun içinde, dokümantasyon sitesinde, X gönderilerinde, X Spaces konuşma metinlerinde, logo ve görsel prompt'larında, hibe başvurularında ve basın metinlerinde geçmez.** Dolaylı ima da yok ("diğer madencilik oyunlarının aksine…", "PC oyunu gibi değil" vb.).
+- Rakip projelerin (liste: `research_notes/rakip-karsilastirma.md`; metin denetiminde SHA-256 özetleri) adları, ticker'ları, handle'ları ve görselleri **sitede, oyun içinde, dokümantasyon sitesinde, X gönderilerinde, X Spaces konuşma metinlerinde, logo ve görsel prompt'larında, hibe başvurularında ve basın metinlerinde geçmez.** Dolaylı ima da yok ("diğer madencilik oyunlarının aksine…", "PC oyunu gibi değil" vb.).
 - Oyun mekaniği, görselleri ve isimlendirmesi de bu projelere benzememeli (CLAUDE.md).
 - Farkımızı rakibi anarak değil, **kendi doğrulanabilir özelliklerimizle** anlatırız: "No presale. No team buy. Every token comes out of the ground." / "Every contract verified a week before Genesis." / "Existing rigs never change." / "Every change waits 96 hours in a public queue."
-- Rakip karşılaştırmaları yalnızca iç dokümanlarda kalır (bu dokümanın §9'u, 01 §2, 09 §1, araştırma raporu ve notlar). Bu bölümler hiçbir zaman herkese açık siteye veya herkese açık dokümantasyon klasörüne kopyalanmaz.
+- Rakip karşılaştırmaları yalnızca iç dokümanlarda kalır (`research_notes/` ve `reports/`; repo açılmadan önce özel repoya taşınır). Bu bölümler hiçbir zaman herkese açık siteye veya herkese açık dokümantasyon klasörüne kopyalanmaz.
 - Teknik uygulama: web içeriği, MDX dokümanları ve `docs/tweets` altındaki gönderi taslakları için CI'daki yasaklı kelime kontrolü (06 → 4.2) bu adları, §6.1'deki yasak ifadeleri, §2.2'deki kullanılmayan marka terimlerini ve "$MOHO"yu yakalar.
 
 ### 6.5 Yayın öncesi kontrol listesi (12 soru)
@@ -1295,66 +1295,9 @@ Pano: İndeksleyici + X Analytics + site analitiği (PostHog ücretsiz kademe ve
 
 ---
 
-## 9. İÇ KULLANIM — Rakiplerden çıkarılan dersler
+## 9. Rakiplerden çıkarılan dersler
 
-> **İÇ KULLANIM. Bu bölüm herkese açık hiçbir içeriğe (site, dokümantasyon sitesi, X, Space, hibe başvurusu, basın metni, görsel prompt'u) taşınmaz ve alıntılanmaz (§6.4b, CLAUDE.md).** Buradaki gerekçeler, §2–§8'deki kararların neden alındığını ekip içinde açıklamak içindir.
-
-Kanıtlar araştırma raporu ve notlarından; [a competitor] verileri lansmandan sonraki ilk ~48 saatin erken anlık görüntüsüdür.
-
-### 9.1 [a competitor]: şeffafça uyarladıklarımız
-
-| Ne yaptılar (kanıt) | Bizim uygulamamız |
-|---|---|
-| Kurucu kişisel hesabından köken hikâyesiyle başladı, sonra proje hesabı açıldı ([[a competitor]](https://x.com/[a competitor]/status/2103521958931697699), 26.8K görüntülenme) | F-05 reveal thread'i; **doxx videosu reveal'da yayımlanır, vaat edilmez** (onların vaat ettiği video 2026-10-10'da bulunamadı) |
-| En büyük kaldıraç form + referans oldu: 815.5K görüntülenme, diğer gönderilerin ~10 katı ([[a competitor]](https://x.com/[a competitor]/status/2104630991939879423)) | Form yerine **Training Site + Testnet Season 0** (kanıt = oyun) + tek seviyeli davet linki (§4.10); paylaşım kartları |
-| Lansmandan sonra sıfat değil sayı paylaştılar (oyuncu, harcama, yakım) ([gün 1 özeti](https://x.com/[a competitor]/status/2108654064917701009)) | Canlı /economy + P-26/P-27 + haftalık Shift Report; yalnızca zincirde doğrulanabilir, kaynak ve dönemi belli sayılar |
-| "CA yalnızca bu hesaptan" uyarısı en az 6 kez ([[a competitor]](https://x.com/[a competitor]/status/2107531530167890360)) | Tek kaynak kuralı + "Market Open'dan önce $MOHN marketi yoktur" kuralı (P-17), T−34'ten itibaren |
-| 2 günlük gecikmeyi saat saat planla duyurdular, ivme korundu ([[a competitor]](https://x.com/[a competitor]/status/2107168365936603465)) | Gecikme şablonu (§7.3) ve F-10 taahhüdü |
-| Hızlı patch ve iade: $2 giriş ücreti ~75 dk'da kaldırıldı, 973 cüzdana iade ([iade tx](https://robinhoodchain.blockscout.com/tx/0x4ae3a544045be07b0a47c57b329678f756b7038547ad4e72343de438981a40bf)) | Rig Notes ritmi; iade/tazmin politikası önceden yazılı |
-| Dokümanlar "herkes öğrensin diye" lansmandan önce ([[a competitor]](https://x.com/[a competitor]/status/2107441847576506559)) | Ekonomi kâğıdı **T−18'de**, ilk çekim kuralları T−7'de dondurulur (onlarda rehber lansmandan 1 gün önce geldi) |
-| Gömülü viral döngü: otomatik paylaşım metinleri, cüzdansız ada görüntüleyici ([[a competitor] Patch #3](https://x.com/[a competitor]/status/2108429143029256239)) | `/s/<id>` + World Bore katkı kartları (hashrate, kazanç ve USD göstermeden) |
-| Maskot + mekân + topluluk adı (Boot, ada, Islanders) ([[a competitor]](https://x.com/[a competitor]/status/2108463190614876162)) | Foreman Mo, gece sondaj sahası + World Bore, Mohonauts ve Crews; görsel ve isimlendirme bilerek onlardan uzak (pastel ada ve PC teması yok) |
-| İlk gün patch'i WalletConnect ve iPhone düzeltmeleriydi ([[a competitor]](https://x.com/[a competitor]/status/2108428607802445852)) | Mobil öncelik, ilk günden WalletConnect + ≥ 20 günlük herkese açık Testnet Season 0 ve cihaz matrisi |
-| Proje hesabı yalnızca 2 hesabı takip ediyor ([x.com/[a competitor]](https://x.com/[a competitor])) | Proje hesabı ≤ 5 hesap takip eder |
-| Mevsimsel içerik (Cadılar Bayramı, kış) ([[a competitor]](https://x.com/[a competitor]/status/2106828855000387816)) | Stratum tema paketleri, sezonlar, mevsimsel kozmetik |
-| Kurucu fiyat konuşmaktan kaçındı ([[a competitor]](https://x.com/[a competitor]/status/2108451702718226792)) | Fiyat konuşmama kuralı kurumsal politika (§4.6, §6) |
-
-### 9.2 [a competitor]: bilerek farklı yaptıklarımız
-
-| Onlarda ne oldu (kanıt) | Bizde |
-|---|---|
-| Pons V2 `launchAndBuy` ile %60.9'luk dev buy; CA ilan saatinden 10–15 dk önce deploy; sniper'lar ([Blockscout](https://robinhoodchain.blockscout.com/address/0x0d322304A7fF44C73f12e6b098289cD178d815F6); [[a competitor]](https://x.com/[a competitor]/status/2108234561867989194)) | Dev buy yok, premine yok; kontratlar **T−7'de, ilan edildiği gibi**; havuz yalnızca T0+72 saatte formülle → snipe edilecek havuz yok |
-| Planlanan dev buy %40'tan %60'a, NFT dağılımı 1,111×3'ten 1,889/1,111/333'e değişti ([@uniquesingh__](https://x.com/uniquesingh__/status/2108607200557965685)) | Duyurulan her rakam dondurulur (02 v1.0); değişebilenler yalnızca sınırlı ve 96 saat timelock'lu parametrelerdir |
-| Ödül havuzu kontratı doğrulanmamış, treasury tek bir EOA ([Blockscout](https://robinhoodchain.blockscout.com/address/0x651dbFbD45A0681De3BBc25aAF8b81f0f8514823)) | Tüm kontratlar deploy anında Blockscout + Sourcify'da doğrulanır; Safe + 96 saat timelock (yükseltme 7 gün); /contracts ve /timelock |
-| İkinci gün $25/$50'lık PC'lere habersiz nerf → "ihanet" ([[a competitor]](https://x.com/[a competitor]/status/2108879884881690936); [@ShoshiEth](https://x.com/ShoshiEth/status/2108878124561617172)) | Mevcut kule istatistikleri için setter yok; yükseltme 7 günlük herkese açık kuyrukta (02 §12) |
-| Gacha paketleri, çökme riskli overclock, başarısızlıkta seviye kaybı ([[a competitor]](https://x.com/[a competitor]/status/2108872098911281531)) | Ücretli rastgelelik yok; Survey ücretsiz ve kozmetik |
-| "Sadece tweet atarak para kazan" Social Rewards Pool ([[a competitor]](https://x.com/[a competitor]/status/2108711417461256204)) | Paylaşmak hiçbir şey kazandırmaz; yap-to-earn yok |
-| Harcamanın %60'ı ertesi günün ödülüne: "sink ve faucet aynı boruyu paylaşıyor" ([@_groundcrypto](https://x.com/_groundcrypto/status/2108631389650485515)) | Harcamanın %80'i kalıcı yakım, %20'si yıllara yayılan rezerv |
-| USD'ye sabit fiyatlar volatil tokenla ödeniyor; düşüşte yük artıyor ([@coinfro2](https://x.com/coinfro2/status/2108683497376219525)) | Kuleler VRGDA ile token cinsinden, yakıt ETH ile (`02` §5–6) |
-| $2 giriş ücreti "scam" diye alay konusu oldu ([[a competitor]](https://x.com/[a competitor]/status/2108245609371013238)) | Giriş ücreti yok; Pilot Rig ücretsiz; ilk deneyim tamamen ücretsiz (Training Site) |
-| Form doğrulaması beyana dayalı; referans %5'i davet edilenin ödülünden ([arşiv config](https://web.archive.org/web/20261005205201/https://www.[a competitor]/api/early-access/config); [[a competitor]](https://x.com/[a competitor]/status/2108428607802445852)) | Form yok; Season 0'da sunucu tarafı bot kümeleme; referans %3, hazineden, davet edilenden kesinti yok |
-| Beğeni + yanıt + alıntı zorunlu form; erişimi optimize etti, kanıtı değil | Etkileşim kapısı yok; toplu yanıt yok (X erişimi düşürüyor) |
-| 3,333 NFT'nin 1,889'u collab'lara: dağıtım için arz takası ([[a competitor]](https://x.com/[a competitor]/status/2105714354687533248)) | Pazarlama için token/NFT tahsisi yok; işbirlikleri kozmetik |
-| "5,700+ oyuncu" beyanı, sıralamada ~2,590 ada ([@faliey287](https://x.com/faliey287/status/2108877525653090433)) | Yalnızca zincirde doğrulanabilir sayılar, yöntem/dönem/kaynakla; işaretlenen bot sayısı da yayımlanır |
-| Herkese açık beta olmadan lansman: ~25 dk yüklenmeyen ekran, mobil sorunlar ([[a competitor]](https://x.com/[a competitor]/status/2108232382243619221)) | ≥ 20 günlük Testnet Season 0, cihaz matrisi, yük testi |
-| MetaMask siteyi ilk iki gün güvensiz işaretledi; uyarıyı Blockaid'in site taraması verdi, 1–2 günde kalktı ([[a competitor]](https://x.com/[a competitor]/status/2108489670757925233); 09 §6) | Domain ≥ 30 gün önce gerçek içerikle; T−7'de Blockaid "verify a project" başvurusu; approve'suz `buyFuel`; T−24 saatten itibaren saatlik tarama; hazır yanlış pozitif başvuruları (§3.7, §7.2) |
-| Sıcak pastel pixel-art estetik nişte baskın ([ny14co](https://x.com/ny14co/status/2108545285953552617)) | Gece sondaj sahası, litoloji renkli kuyu logu; pixel font yok |
-| Zincir ekli ad ([a competitor]) ve sahnede Robinhood simgesi | Zincir eki yok; Robinhood markası hiçbir varlıkta yok; yalnızca "Built on Robinhood Chain" + uyarı (ToS §5.6–§5.7) |
-| Fiyat zirvesi halka açılıştan 6–7 saat önce; ~$700K float'a karşı günde ~$48K emisyon (havuzun %10'u/gün) | Oyuna giriş ile token piyasası 72 saat ayrık (Genesis'te market yok); emisyon rezervin günlük %0.05'i; günlük mint tavanı 500K |
-| İkinci gün yeni risk mekanikleri ve nerf aynı gün açıklandı (araştırma raporu, "Asla" 10) | Lansman günü yeni mekanik ve parametre değişikliği yok (§7.2) |
-
-### 9.3 [a competitor]: bilerek farklı yaptıklarımız (01 §2, 09 §1)
-
-| Onlarda (lansman öncesi gözlem) | Bizde |
-|---|---|
-| X görevleri + XP sıralaması + forma cüzdan adresi yapıştırma ile bekleme listesi | Training Site + Testnet Season 0; görev, XP ve adres yapıştırma yok; kanıt = oyun |
-| Yeraltı madenleri, asansör, kasaba; kahraman, boss, koşu başı ücret | Yüzey sondaj sahası, tek ortak kuyu; savaş yok, giriş ücreti yok; yeraltı/asansör görseli yasak |
-| Paslı kazma başlangıcı | Pilot Rig (küçük motorlu kule); alet sallayan karakter yok |
-| Stamina | Dizel yakıt (ℓ, ℓ/h), ETH ile |
-| "72 saat önceden duyuru" sözü | Zincir üstü 96 saat timelock + canlı kuyruk linki; yükseltme 7 gün |
-| 1B sabit arz, %80 piyasa, satış vergisi | Premine yok, vergi yok, her token kazılarak basılır |
-
----
+_İç karşılaştırma `research_notes/rakip-karsilastirma.md` dosyasına taşındı (iç notlarla birlikte özel repoda tutulur; CLAUDE.md rakip adı kuralı)._
 
 ## 10. Açık kararlar (sahibi)
 

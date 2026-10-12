@@ -2,7 +2,7 @@
 
 > **Durum:** v0.2 — 2026-10-10. Ekonomi sayıları `02_TOKENOMI_VE_OYUN_MATEMATIGI.md` dosyasında; oyuncu girişi ve ilk oturum `09_ONBOARDING.md` dosyasında. Oyun **Mohonaut** ("Moho kâşifi"; kurucu onayı 2026-10-11, bkz. `ISIM_SPRINTI.md`), token **$MOHN**, hashpower **DP** (Drill Power).
 >
-> **v0.2 değişikliği (kurucu kararı: "[a competitor]'ye ve [a competitor]'a benzemesin"):** Dikey yeraltı şaftı ve el aleti başlangıcı kaldırıldı. Yeni konsept, gece aydınlatmalı bir **yüzey sondaj sahası** ve bütün oyuncuların birlikte açtığı **tek bir ortak kuyu (World Bore)**. Enerji dili (kWh/kW) yerine **dizel yakıt** (litre, ℓ/h) kullanılıyor. Katman isimleri gerçek kabuk jeolojisinden alındı. Matematik değişmedi.
+> **v0.2 değişikliği (kurucu kararı: Robinhood Chain'deki diğer madencilik oyunlarına benzemesin):** Dikey yeraltı şaftı ve el aleti başlangıcı kaldırıldı. Yeni konsept, gece aydınlatmalı bir **yüzey sondaj sahası** ve bütün oyuncuların birlikte açtığı **tek bir ortak kuyu (World Bore)**. Enerji dili (kWh/kW) yerine **dizel yakıt** (litre, ℓ/h) kullanılıyor. Katman isimleri gerçek kabuk jeolojisinden alındı. Matematik değişmedi.
 
 ---
 
@@ -25,17 +25,7 @@ Ekonomi Bitcoin gibi işler: sabit ve yavaşça azalan emisyon, payına göre ö
 | Topluluk hedefi | Tek ortak kuyu, gerçek jeolojik kilometre taşları | Galaksi haritası | Şebeke kapasitesi |
 | Üretim zorluğu (tek kişi + AI) | Orta (2.5D izometrik) | Orta-yüksek | Orta |
 
-**Rakiplere karşı konumlanma — İÇ KULLANIM, hiçbir herkese açık içerikte rakip adı geçmez (05 §6.4b):**
-
-| Konu | [a competitor] | [a competitor] | Mohonaut |
-|---|---|---|---|
-| Tür | PC kurma, hashrate payı | Beceri tabanlı aksiyon maden RPG'si (kahraman, boss, koşu başı ücret) | **Idle sondaj, savaş yok** |
-| Mekân | Yüzen pastel ada | Yeraltı madenleri, asansör, kasaba | **Yüzey sondaj sahası + tek ortak kuyu** |
-| Başlangıç | $1'lık hazır PC | Paslı kazma | **Pilot Rig** (küçük motorlu kule) |
-| Enerji | Elektrik $/kWh, transformatör | Stamina | **Dizel ℓ, ETH ile** |
-| Token dağıtımı | %60 dev buy (Pons) | 1B sabit arz, %80 piyasa, satış vergisi | **Premine yok, dev buy yok, vergi yok**; her token kazılarak basılır |
-| Değişiklikler | 2. gün habersiz nerf, gacha | "72 saat önceden duyuru" sözü | **Zincir üstü 96 saat timelock** + canlı kuyruk linki; geriye dönük nerf kodda imkânsız |
-| Bekleme listesi | Beğen/yanıtla/alıntıla formu | X görevleri + XP sıralaması | **Oynanabilir testnet Sezon 0** (kanıtlanmış oyun) |
+_İç karşılaştırma `research_notes/rakip-karsilastirma.md` dosyasına taşındı (iç notlarla birlikte özel repoda tutulur; CLAUDE.md rakip adı kuralı)._
 
 ---
 
