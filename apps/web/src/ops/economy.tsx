@@ -69,7 +69,22 @@ interface Referrals {
   }[];
 }
 
+interface Season0 {
+  signups: { day: number; count: number }[];
+  funnel: {
+    registered: number;
+    firstRig: number;
+    siteLevel3: number;
+    refined: number;
+    inCrew: number;
+    allFive: number;
+    flagged: number;
+  };
+  retention: { eligibleD1: number; returnedD1: number; eligibleD7: number; returnedD7: number };
+}
+
 const insight = {
+  season0: () => call<Season0>('GET', '/admin/season0'),
   economy: () => call<Economy>('GET', '/admin/economy'),
   days: () => call<{ days: Day[] }>('GET', '/economy/daily?days=30'),
   referrals: () => call<Referrals>('GET', '/admin/referrals'),
@@ -338,5 +353,78 @@ export function SponsorshipScreen() {
         budget) and spend chart belong here, funded only from operations revenue.
       </p>
     </Card>
+  );
+}
+
+/** "12 / 40 (30%)" */
+export function share(part: number, whole: number): string {
+  return whole === 0 ? '—' : `${part} / ${whole} (${Math.round((part * 100) / whole)}%)`;
+}
+
+export function Season0Screen() {
+  const q = useQuery({ queryKey: ['ops', 'season0'], queryFn: insight.season0 });
+  if (q.data === undefined)
+    return <p role="status">{q.isError ? apiMessage(q.error) : 'Loading…'}</p>;
+  const { funnel: f, retention: r, signups } = q.data;
+  const steps: [string, number][] = [
+    ['Opened a site (first diesel)', f.registered],
+    ['Bought a rig', f.firstRig],
+    ['Site level 3', f.siteLevel3],
+    ['Asked for a refine', f.refined],
+    ['In a crew', f.inCrew],
+    ['All five, not flagged (Pioneer)', f.allFive],
+  ];
+  return (
+    <>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card label="Season 0" title="Pioneer funnel">
+          <Table
+            caption="Pioneer milestone funnel"
+            rows={steps}
+            rowKey={(s) => s[0]}
+            columns={[
+              { key: 's', header: 'Milestone', render: (s) => s[0] },
+              {
+                key: 'n',
+                header: 'Players',
+                numeric: true,
+                render: (s) => share(s[1], f.registered),
+              },
+            ]}
+          />
+          <p className="mt-4 text-fg-muted">Flagged: {f.flagged} (no badges or plaques).</p>
+        </Card>
+        <Card label="Season 0" title="Coming back">
+          <ul className="flex flex-col gap-2">
+            <li>
+              Day 1: <span className="num">{share(r.returnedD1, r.eligibleD1)}</span>
+            </li>
+            <li>
+              Day 7: <span className="num">{share(r.returnedD7, r.eligibleD7)}</span>
+            </li>
+          </ul>
+          <p className="mt-4 text-fg-muted">
+            Of the players who opened a site at least that many days ago, how many acted on chain on
+            that day. Devices and wallets are not tracked; errors are in Sentry.
+          </p>
+        </Card>
+      </div>
+      <Card label="Season 0" title="New drill sites per day">
+        <Table
+          caption="New drill sites per day"
+          rows={signups}
+          rowKey={(s) => String(s.day)}
+          empty="None yet."
+          columns={[
+            {
+              key: 'd',
+              header: 'Day (UTC)',
+              render: (s) => formatUtc(s.day * 86_400).slice(0, 11),
+            },
+            { key: 'n', header: 'New sites', numeric: true, render: (s) => s.count },
+          ]}
+        />
+      </Card>
+    </>
   );
 }

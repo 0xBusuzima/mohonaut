@@ -9,7 +9,12 @@ import type { Tab } from '../../components/Tabs';
 import { WalletProviders } from '../../game/WalletProviders';
 import { useE2EConnect } from '../../game/e2e';
 import { useNow } from '../../lib/clock';
-import { EconomyScreen, ReferralsScreen, SponsorshipScreen } from '../../ops/economy';
+import {
+  EconomyScreen,
+  ReferralsScreen,
+  Season0Screen,
+  SponsorshipScreen,
+} from '../../ops/economy';
 import { EmergencyScreen, ParamsScreen, TimelockScreen } from '../../ops/governance';
 import { can } from '../../ops/permissions';
 import {
@@ -78,6 +83,7 @@ function OpsBody() {
   const all: (Tab | false)[] = [
     can(r, 'health.read') && { id: 'health', label: 'Health', content: <HealthScreen /> },
     can(r, 'economy.read') && { id: 'economy', label: 'Economy', content: <EconomyScreen /> },
+    can(r, 'economy.read') && { id: 'season0', label: 'Season 0', content: <Season0Screen /> },
     can(r, 'referrals.read') && {
       id: 'referrals',
       label: 'Referrals',

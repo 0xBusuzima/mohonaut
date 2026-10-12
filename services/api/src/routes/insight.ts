@@ -206,4 +206,102 @@ export function registerInsight(app: OpenAPIHono<AppEnv>): void {
       );
     },
   );
+
+  app.openapi(
+    createRoute({
+      method: 'get',
+      path: '/admin/season0',
+      tags: ['admin'],
+      summary: 'Season 0: sign-ups per day, the Pioneer milestone funnel and D1/D7 return',
+      middleware: [requirePermission('economy.read'), limited] as const,
+      responses: {
+        200: json(
+          z.object({
+            signups: z.array(z.object({ day: z.number(), count: z.number() })),
+            funnel: z.object({
+              registered: z.number(),
+              firstRig: z.number(),
+              siteLevel3: z.number(),
+              refined: z.number(),
+              inCrew: z.number(),
+              allFive: z.number(),
+              flagged: z.number(),
+            }),
+            retention: z.object({
+              eligibleD1: z.number(),
+              returnedD1: z.number(),
+              eligibleD7: z.number(),
+              returnedD7: z.number(),
+            }),
+          }),
+          'Season 0',
+        ),
+        401: errors[401],
+        403: errors[403],
+      },
+    }),
+    async (c) => {
+      const database = c.var.deps.database;
+      const today = Math.floor(c.var.deps.now() / 1000 / 86_400);
+      const signups = await database.query(
+        `SELECT (registered_at / 86400)::int AS day, count(*)::int AS n
+           FROM accounts WHERE registered_at IS NOT NULL GROUP BY 1 ORDER BY 1`,
+      );
+      // One row per registered account with each milestone (crew and flag come from the API's
+      // users, joined by wallet; the indexer and the API share one database).
+      const [f] = await database.query(
+        `WITH a AS (
+           SELECT acc.address,
+                  acc.rigs_bought > 0 AS rig,
+                  acc.site_level >= 3 AS l3,
+                  (acc.refined > 0 OR EXISTS (SELECT 1 FROM refine_requests r WHERE r.account = acc.address)) AS refined,
+                  EXISTS (SELECT 1 FROM users u JOIN crew_members m ON m.user_id = u.id
+                           WHERE u.wallet = acc.address) AS crew,
+                  EXISTS (SELECT 1 FROM users u WHERE u.wallet = acc.address AND u.flagged) AS flagged
+             FROM accounts acc WHERE acc.registered_at IS NOT NULL)
+         SELECT count(*)::int AS registered,
+                count(*) FILTER (WHERE rig)::int AS first_rig,
+                count(*) FILTER (WHERE l3)::int AS l3,
+                count(*) FILTER (WHERE refined)::int AS refined,
+                count(*) FILTER (WHERE crew)::int AS crew,
+                count(*) FILTER (WHERE rig AND l3 AND refined AND crew AND NOT flagged)::int AS all_five,
+                count(*) FILTER (WHERE flagged)::int AS flagged
+           FROM a`,
+      );
+      // D1 / D7: of the accounts registered at least N days ago, how many acted on day N.
+      const [r] = await database.query(
+        `WITH reg AS (SELECT address, (registered_at / 86400)::int AS d0 FROM accounts
+                       WHERE registered_at IS NOT NULL)
+         SELECT count(*) FILTER (WHERE d0 + 1 < ${today})::int AS e1,
+                count(*) FILTER (WHERE d0 + 1 < ${today} AND EXISTS (
+                  SELECT 1 FROM account_days x WHERE x.account = reg.address AND x.day = reg.d0 + 1))::int AS r1,
+                count(*) FILTER (WHERE d0 + 7 < ${today})::int AS e7,
+                count(*) FILTER (WHERE d0 + 7 < ${today} AND EXISTS (
+                  SELECT 1 FROM account_days x WHERE x.account = reg.address AND x.day = reg.d0 + 7))::int AS r7
+           FROM reg`,
+      );
+      const n = (row: Record<string, unknown> | undefined, k: string) => Number(row?.[k] ?? 0);
+      return c.json(
+        {
+          signups: signups.map((s) => ({ day: Number(s['day']), count: Number(s['n']) })),
+          funnel: {
+            registered: n(f, 'registered'),
+            firstRig: n(f, 'first_rig'),
+            siteLevel3: n(f, 'l3'),
+            refined: n(f, 'refined'),
+            inCrew: n(f, 'crew'),
+            allFive: n(f, 'all_five'),
+            flagged: n(f, 'flagged'),
+          },
+          retention: {
+            eligibleD1: n(r, 'e1'),
+            returnedD1: n(r, 'r1'),
+            eligibleD7: n(r, 'e7'),
+            returnedD7: n(r, 'r7'),
+          },
+        },
+        200,
+      );
+    },
+  );
 }

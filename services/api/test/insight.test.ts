@@ -1,5 +1,6 @@
 import { schema as idx } from '@mohonaut/indexer';
 import { describe, expect, it } from 'vitest';
+import { crewMembers, crews, users } from '../src/db/schema.js';
 import { call, harness, newWallet, signIn } from './helpers.js';
 
 const E18 = 10n ** 18n;
@@ -110,6 +111,59 @@ describe('operator economy views', () => {
           burst: false,
         },
       ],
+    });
+  });
+});
+
+describe('Season 0 analytics', () => {
+  it('counts sign-ups, the Pioneer funnel and D1/D7 returns', async () => {
+    const admin = newWallet();
+    const h = await harness({ adminWallets: [admin.address] });
+    const cookie = await signIn(h, admin);
+    const db = h.database.db;
+    const DAY = 86_400n;
+    const today = BigInt(Math.floor(h.clock.now / 1000)) / DAY;
+    const d0 = today - 10n; // registered ten days ago: D1 and D7 are both eligible
+    // A: all five milestones; B: rig only; C: registered yesterday (not eligible yet).
+    const [a, b, cc] = [addr(1), addr(2), addr(3)];
+    await db.insert(idx.accounts).values([
+      { address: a, registeredAt: d0 * DAY + 100n, rigsBought: 2n, siteLevel: 3, refined: 1n },
+      { address: b, registeredAt: d0 * DAY + 200n, rigsBought: 1n, siteLevel: 1 },
+      { address: cc, registeredAt: (today - 1n) * DAY },
+    ]);
+    await db.insert(idx.accountDays).values([
+      { account: a, day: Number(d0 + 1n) },
+      { account: a, day: Number(d0 + 7n) },
+      { account: b, day: Number(d0 + 1n) },
+    ]);
+    // A is in a crew through its API user.
+    const [user] = await db
+      .insert(users)
+      .values({ wallet: a, authProvider: 'siwe', providerUserId: 'a' })
+      .returning({ id: users.id });
+    const [crew] = await db
+      .insert(crews)
+      .values({ name: 'Night Shift', tag: 'NIGHT', captainUserId: user?.id ?? 0 })
+      .returning({ id: crews.id });
+    await db.insert(crewMembers).values({ userId: user?.id ?? 0, crewId: crew?.id ?? 0 });
+
+    const res = await call(h, 'GET', '/admin/season0', { cookie });
+    expect(res.status).toBe(200);
+    expect(res.json).toEqual({
+      signups: [
+        { day: Number(d0), count: 2 },
+        { day: Number(today - 1n), count: 1 },
+      ],
+      funnel: {
+        registered: 3,
+        firstRig: 2,
+        siteLevel3: 1,
+        refined: 1,
+        inCrew: 1,
+        allFive: 1,
+        flagged: 0,
+      },
+      retention: { eligibleD1: 2, returnedD1: 2, eligibleD7: 2, returnedD7: 1 },
     });
   });
 });

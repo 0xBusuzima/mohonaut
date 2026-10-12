@@ -333,7 +333,9 @@ Testnet betası için: deployments/testnet.json'u güncel sürüme getir, web'de
 docs/05'teki marka kimliğine göre: logo yönleri için AI görsel promptlarını kullanarak 3 yön × 4 varyasyon taslak üret (önce ücretsiz: Kenney.nl CC0 izometrik paketleri temel, Recraft/Ideogram ücretsiz kademeleri; Higgsfield kredi harcar — her üretimden önce bana maliyeti söyle ve onay al), seçilen yönü vektöre çevirme planı, X avatar/banner, OG görselleri, paylaşım kartı şablonları, makine sprite stil rehberi. Telif: kullanılan her aracın ticari kullanım şartlarını docs/legal/ASSET_LISANSLARI.md'ye yaz.
 ```
 
-### 8.2 Testnet Sezon 0 (bekleme listesi yerine "kanıtlanmış oyun")
+### 8.2 Testnet Sezon 0 (bekleme listesi yerine "kanıtlanmış oyun") — ✅ 2026-10-12
+
+> Oyun, faucet, Pioneer rozeti ve `/season0` 4.3–7.2'de hazırlandı. Bu adımda `/ops` → **Season 0** analitiği eklendi (`GET /admin/season0`): günlük yeni sahalar, Pioneer kilometre taşı hunisi (işaretli hesaplar hariç) ve D1/D7 geri dönüş (zincir üstü etkinlikten). Cihaz ve cüzdan dağılımı gizlilik gereği toplanmıyor; hata oranları Sentry'de. Davet: kişisel sayfa linki (`?ref=`) `buyFuel(referrer)`'a bağlı; tek seviye.
 
 ```text
 docs/09_ONBOARDING.md §3'e göre Testnet Sezon 0'ı kur: apps/web'de testnet modunda tam oyun (testnet 46630, MockV3Aggregator, faucet yönlendirmesi ve faucet şartlarının açıklaması), giriş cüzdan (RainbowKit+SIWE) veya e-posta ile, Turnstile. Beğen/RT/yanıt görevi YOK, XP sıralaması YOK, cüzdan adresi yapıştırma YOK. Kanıt = oyun: belirli kilometre taşlarını (ilk yakıt, ilk kule, L3, ilk rafine, crew'a katılma) tamamlayan oyuncu transfer edilemez 'Pioneer' kozmetik rozetini kazanır; rozet mainnet'e yalnızca kozmetik olarak taşınır (token, öncelik veya ekonomik avantaj YOK). Kişisel davet linki (tek seviye; mainnet'te register referrer'ına bağlanır). Bot sinyalleri: IP/ASN kümeleri, eşzamanlı davranış; işaretli hesaplar rozet alamaz. Admin panelinde Sezon 0 analitiği (kayıt, kilometre taşı hunisi, D1/D7, cihaz/cüzdan dağılımı, hata oranları).

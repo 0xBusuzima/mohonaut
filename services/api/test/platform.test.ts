@@ -64,6 +64,7 @@ describe('OpenAPI', () => {
         '/admin/health',
         '/admin/referrals',
         '/admin/roles',
+        '/admin/season0',
         '/admin/seasons',
         '/admin/support',
         '/admin/support/{id}',

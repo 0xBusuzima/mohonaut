@@ -71,6 +71,8 @@ test('an operator answers a support request, publishes a banner and reads the au
   await expect(page.getByRole('heading', { name: 'Emission against burns (48 h)' })).toBeVisible();
   await expect(page.getByRole('table', { name: 'Daily economy' })).toBeVisible();
   expect(await axe(page)).toEqual([]);
+  await page.getByRole('tab', { name: 'Season 0' }).click();
+  await expect(page.getByRole('table', { name: 'Pioneer milestone funnel' })).toBeVisible();
   await page.getByRole('tab', { name: 'Referrals' }).click();
   await expect(page.getByRole('table', { name: 'Largest referral trees' })).toBeVisible();
   await page.getByRole('tab', { name: 'Sponsored gas' }).click();
