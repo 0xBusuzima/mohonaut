@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useReducedMotion } from '../lib/motion';
 import { useLowPower } from '../lib/power';
+import { rigShape } from './rigs';
 
 export interface ScenePad {
   /** Rig type on this pad, or null for an empty pad. */
@@ -20,12 +21,10 @@ export function padPositions(count: number, tileW = 96): { x: number; y: number 
   });
 }
 
-const RIG_HEIGHT = [26, 34, 42, 50, 58, 66, 70, 74];
-
 /**
- * The drill site at night (docs/01 §7): pads on wet graphite, rigs in safety orange, steam from
- * the running ones. Placeholder geometry until the sprite atlas (docs/06 8.1). Decorative: the
- * same facts are listed as text next to it.
+ * The drill site at night (docs/01 §7): pads on wet graphite, each rig type drawn by rigs.ts in
+ * safety orange while running (lamp lit, steam rising) and steel grey when switched off.
+ * Decorative: the same facts are listed as text next to it.
  */
 export function SiteScene({ pads, label }: { pads: ScenePad[]; label: string }) {
   const host = useRef<HTMLDivElement>(null);
@@ -69,23 +68,29 @@ export function SiteScene({ pads, label }: { pads: ScenePad[]; label: string }) 
           .stroke({ color: 0x39414a, width: 1 });
         world.addChild(g);
         if (pad === undefined || pad.typeId === null) return;
-        const h = RIG_HEIGHT[pad.typeId] ?? 50;
-        const colour = pad.running ? 0xff6b1a : 0x39414a;
+        const shape = rigShape(pad.typeId, pad.running);
         const rig = new PIXI.Graphics();
-        rig
-          .moveTo(p.x - 14, p.y)
-          .lineTo(p.x, p.y - h)
-          .lineTo(p.x + 14, p.y)
-          .moveTo(p.x - 9, p.y - h / 3)
-          .lineTo(p.x + 9, p.y - h / 3)
-          .moveTo(p.x - 5, p.y - (2 * h) / 3)
-          .lineTo(p.x + 5, p.y - (2 * h) / 3)
-          .stroke({ color: colour, width: 3 });
-        rig.rect(p.x - 10, p.y - 6, 20, 8).fill(pad.running ? 0xffb31a : 0x22272d);
+        rig.position.set(p.x, p.y);
+        for (const part of shape.parts) {
+          if (part.kind === 'line') {
+            rig.poly(part.points, false).stroke({
+              color: part.color,
+              width: part.width,
+              cap: 'round',
+              join: 'round',
+            });
+          } else if (part.kind === 'poly') {
+            rig.poly(part.points).fill(part.fill);
+          } else if (part.kind === 'rect') {
+            rig.rect(part.x, part.y, part.w, part.h).fill(part.fill);
+          } else {
+            rig.circle(part.x, part.y, part.r).fill(part.fill);
+          }
+        }
         world.addChild(rig);
         if (pad.running) {
           const s = new PIXI.Graphics();
-          s.circle(p.x, p.y - h - 6, 5).fill({ color: 0xece7dc, alpha: 0.35 });
+          s.circle(p.x, p.y + shape.steamY - 6, 5).fill({ color: 0xece7dc, alpha: 0.35 });
           world.addChild(s);
           steam.push({ g: s, phase: i * 0.7 });
         }

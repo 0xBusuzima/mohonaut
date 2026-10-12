@@ -19,6 +19,7 @@ OFL, fontların logo ve görsellerde ticari kullanımına izin verir. Harfleri y
 | Varlık | Nasıl üretildi | Araç ve lisans | Kaynak dosya |
 |---|---|---|---|
 | Logo yönü A: wordmark, kuyu ağzı işareti, monogram, kilit (lockup); tek renk varyantları (2026-10-12, taslak) | Kodla çizilmiş vektör: halkalar ve cetvel geometrik şekiller, harfler Big Shoulders Display Black'ten yola çevrildi. Yapay zekâ görsel aracı **kullanılmadı** | `tools/brand/gen_brand.py` (fontTools, MIT lisansı) | `brand/logo/*.svg` |
+| Gen-1 kule çizimleri (6 kule × 2 durum) | Kodla çizilmiş vektör (çizgi, dikdörtgen, çokgen); yapay zekâ görsel aracı kullanılmadı | `apps/web/src/game/rigs.ts`, `apps/web/scripts/gen-rig-sheet.ts` | `brand/sprites/rig-sheet.svg` |
 | Uygulama ikonları, favicon, OG görseli, X avatarı ve banner'ı | Aynı vektörlerden PNG'ye çevrildi | `apps/web/scripts/gen-assets.mjs` (resvg-js, MPL-2.0) | `brand/social/*.svg` → `brand/png/`, `apps/web/public/`, `apps/web/src/app/` |
 
 **Durum:** Bunlar **taslak**. docs/05 §2.8'e göre son logo, kurucunun bu taslağı Inkscape'te elle yeniden çizmesiyle (insan katkısı) ya da gelirle tutulacak bir tasarımcıyla kesinleşir; marka tescili de o sürümle yapılır.

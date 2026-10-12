@@ -12,6 +12,8 @@ import {
 import { explain } from '../src/game/errors';
 import { parseAmount, referrerFromUrl, rigName, scenePads } from '../src/game/play';
 import { padPositions } from '../src/game/SiteScene';
+import { rigShape, rigSvg } from '../src/game/rigs';
+import { GEN1_RIGS } from '../src/lib/catalog';
 
 const E18 = 10n ** 18n;
 
@@ -104,6 +106,28 @@ describe('play screen helpers', () => {
     expect(pos[0]).toEqual({ x: 0, y: 0 });
     expect(pos[1]).toEqual({ x: 48, y: 24 });
     expect(pos[4]).toEqual({ x: -48, y: 24 });
+  });
+
+  it('draws every Gen-1 rig differently, and running differently from switched off', () => {
+    const drawings = GEN1_RIGS.map((_, i) => rigSvg(rigShape(i, true)));
+    expect(new Set(drawings).size).toBe(GEN1_RIGS.length);
+    for (let i = 0; i < GEN1_RIGS.length; i++) {
+      const on = rigShape(i, true);
+      expect(rigSvg(rigShape(i, false))).not.toBe(rigSvg(on));
+      expect(rigSvg(on)).toContain('#ff6b1a'); // safety orange while drilling
+      // Steam rises from above the highest part of the drawing.
+      const top = Math.min(
+        ...on.parts.map((p) =>
+          p.kind === 'rect'
+            ? p.y
+            : p.kind === 'circle'
+              ? p.y - p.r
+              : Math.min(...p.points.filter((_, k) => k % 2 === 1)),
+        ),
+      );
+      expect(on.steamY).toBeLessThanOrEqual(top);
+    }
+    expect(rigSvg(rigShape(99, true))).toBe(rigSvg(rigShape(1, true))); // unknown: Rotary Rig
   });
 
   it('reads the referrer only from a valid ?ref= address', () => {
