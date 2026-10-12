@@ -31,6 +31,8 @@ jobs:
         run: forge lint
       - name: Build (with sizes)
         run: forge build --sizes
+      - name: SDK ABIs match the build (packages/sdk/src/abi)
+        run: node ../tools/gen_abis.mjs --check
       - name: Test (fuzz 10k, invariant 1k)
         run: forge test -vv
       - name: Coverage gate (src >= 95% lines and branches)

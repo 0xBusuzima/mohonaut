@@ -4,6 +4,7 @@ pragma solidity 0.8.30;
 import {Test} from "forge-std/Test.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {SqrtPriceMath} from "@uniswap/v4-core/src/libraries/SqrtPriceMath.sol";
+import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
 import {MohnPool} from "../../src/lib/MohnPool.sol";
 
 /// @notice liquidityFor returns the largest full-range liquidity the amounts can fund: the pool
@@ -46,5 +47,19 @@ contract MohnPoolTest is Test {
         mohn = bound(mohn, 1, 1 << 100);
         vm.assume(MohnPool.liquidityFor(sqrtP, eth, mohn) < type(uint128).max / 2);
         _assertMaximal(sqrtP, eth, mohn);
+    }
+
+    function test_poolIdVector() public pure {
+        // The same vector is checked in packages/sdk/test/pool.test.ts (the indexer filters the
+        // PoolManager's logs by this id).
+        PoolId id = PoolIdLibrary.toId(
+            MohnPool.key(
+                0x1111111111111111111111111111111111111111,
+                0x0000000000000000000000000000000000002000
+            )
+        );
+        assertEq(
+            PoolId.unwrap(id), 0xe618da777871bd937c464672d56433cb28488bc498fe65a461f94636532e43da
+        );
     }
 }

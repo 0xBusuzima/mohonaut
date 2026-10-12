@@ -16,8 +16,11 @@ from decimal import ROUND_FLOOR, Decimal, localcontext
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 from engine.config import load_params
 from engine.emission import WAD, delta_h_wad, hourly_schedule_int, split_int
+from engine.metrics import gini_weighted, nakamoto_weighted
 from engine.model import Simulation
 from engine.scenarios import SCENARIOS
 
@@ -228,12 +231,42 @@ def vrgda_reanchor_vectors() -> dict[str, Any]:
     }
 
 
+def distribution_vectors() -> dict[str, Any]:
+    """Gini and Nakamoto coefficient of holder distributions (spec §10, §13; engine/metrics.py).
+
+    The indexer computes these over individual wallets, i.e. every weight is 1.
+    """
+    cases = {
+        "equal": [5] * 10,
+        "single_holder": [0, 0, 0, 100],
+        "linear_1_to_100": list(range(1, 101)),
+        "inverse_square_200": [10**6 // (i * i) + 1 for i in range(1, 201)],
+        "one_whale": [1_000_000] + [1] * 999,
+        "two_equal_halves": [50, 50],
+    }
+    rows = []
+    for name, values in cases.items():
+        v = np.asarray(values, dtype=float)
+        w = np.ones_like(v)
+        rows.append({"name": name, "values": values, "gini": gini_weighted(v, w),
+                     "nakamoto": nakamoto_weighted(v, w)})
+    return {
+        "description": "Gini and Nakamoto coefficient over wallets (every weight 1), from engine/metrics.py.",
+        "algorithm": [
+            "gini: sort ascending; cum_i = sum(v_1..v_i)/sum(v); gini = 1 - sum((cum_i + cum_{i-1}) / N)",
+            "nakamoto: smallest number of wallets (largest first) holding more than 50 % of the total",
+        ],
+        "rows": rows,
+    }
+
+
 VECTORS = {
     "emission_hourly.json": emission_vectors,
     "vrgda_costs.json": vrgda_vectors,
     "outpost_costs.json": outpost_vectors,
     "market_open.json": market_open_vectors,
     "vrgda_reanchor.json": vrgda_reanchor_vectors,
+    "distribution_metrics.json": distribution_vectors,
 }
 
 

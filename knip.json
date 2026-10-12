@@ -2,10 +2,26 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "ignore": ["contracts/**"],
   "workspaces": {
-    ".": { "entry": [], "project": [] },
+    ".": {
+      "entry": [],
+      "project": []
+    },
     "packages/config": {},
-    "packages/sdk": { "entry": ["src/index.ts"], "project": ["src/**/*.ts", "test/**/*.ts"] },
-    "apps/*": { "entry": ["src/index.ts"], "project": ["src/**/*.ts", "test/**/*.ts"] },
-    "services/*": { "entry": ["src/index.ts"], "project": ["src/**/*.ts", "test/**/*.ts"] }
+    "packages/sdk": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts", "test/**/*.ts"]
+    },
+    "apps/*": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts", "test/**/*.ts"]
+    },
+    "services/*": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts", "test/**/*.ts"]
+    },
+    "services/indexer": {
+      "entry": ["src/index.ts", "src/main.ts"],
+      "project": ["src/**/*.ts", "test/**/*.ts"]
+    }
   }
 }

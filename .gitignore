@@ -40,3 +40,5 @@ Thumbs.db
 
 # python virtualenvs anywhere
 .venv/
+# Local embedded Postgres (PGlite) of the indexer
+services/indexer/data/

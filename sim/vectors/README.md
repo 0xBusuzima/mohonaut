@@ -21,6 +21,7 @@ and agree with the float engine.
 | `outpost_costs.json` | L1–L30: slots, capacity kW, next-level cost at idx = 1, cumulative cost; idx-scaled examples | exact (store the table; L^2.2 is irrational) |
 | `market_open.json` | 9 genesis cases → energy USD, P0_USD, DIG_LP. Rows 0–2 are tank-capped v0.2 genesis runs; one row hits the 1M cap | exact equality |
 | `vrgda_reanchor.json` | 4 sequential r changes (−25 %, −25 %, +25 %, +25 %): anchor offset, price before/after, price a day later | relative error ≤ 1e-12; price before = price after |
+| `distribution_metrics.json` | Gini and Nakamoto coefficient of 6 wallet distributions (engine/metrics.py, every weight 1) | TypeScript (`packages/sdk`): relative error ≤ 1e-12 |
 
 ## Integer algorithms
 

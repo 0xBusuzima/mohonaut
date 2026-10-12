@@ -57,6 +57,8 @@ npm komutlarını Git Bash yerine `cmd.exe /c "..."` veya PowerShell ile çalı�
 | Halmos (yerel, WSL) | `wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/yazic/Desktop/crypto-game-project/contracts && ~/halmos-venv/bin/halmos --function prove_"` |
 | Aderyn (yerel, WSL; Windows sürümü yok) | `wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/yazic/Desktop/crypto-game-project/contracts && ~/bin/aderyn . --output /tmp/ad.md; grep '^## H-' /tmp/ad.md"` (çıktı boş olmalı) |
 | Medusa / Echidna (property harness `test/recon/`) | WSL: `cd /mnt/c/.../contracts && PATH=$HOME/halmos-venv/bin:$HOME/bin:$PATH medusa fuzz --timeout 21600` ve `echidna . --contract CryticTester --config echidna.yaml`; gece CI'da 6'şar saat. Foundry'de: `forge test --match-contract CryticToFoundry` |
+| SDK ABI'lerini üret / kontrol et | `node tools/gen_abis.mjs` (`forge build` sonrası; CI `--check` ile denetler) |
+| İndeksleyici (testnet, yerel PGlite) | `cd services/indexer && cp .env.example .env` → `node dist/main.js sync` (başa kadar indeksle, çık) veya `node dist/main.js` (sürekli; `/metrics`) |
 | Mutasyon (Gambit) | Ayrı bir kopyada (kaynakları yerinde değiştirir): `contracts/audits/mutation/run_all.sh`; sonuçlar `audits/mutation/results/` |
 
 Sürümler: Node 24, npm 11, TypeScript 5.9, Foundry 1.8.5, solc 0.8.30 (`evm_version = prague`), OpenZeppelin 5.7.0, Solady 0.1.26, forge-std 1.17.0 (git submodule, sabit etiket).

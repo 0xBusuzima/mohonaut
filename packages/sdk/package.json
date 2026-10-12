@@ -18,5 +18,8 @@
   },
   "devDependencies": {
     "@mohonaut/config": "*"
+  },
+  "dependencies": {
+    "viem": "^2.57.4"
   }
 }

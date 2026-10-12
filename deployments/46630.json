@@ -12,5 +12,6 @@
   "RevenueRouter": "0x03F4f1D6725a9ecbB50deaCc3c374ca1A26759Fa",
   "UpgradeTimelock": "0xc913B3c621bb67b0dcFcd7BAb960fbf66054D067",
   "chainId": 46630,
-  "genesisTime": 1791756000
+  "genesisTime": 1791756000,
+  "startBlock": 133161524
 }

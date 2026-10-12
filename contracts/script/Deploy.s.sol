@@ -271,6 +271,9 @@ contract Deploy is Script {
         string memory k = "deployment";
         vm.serializeUint(k, "chainId", block.chainid);
         vm.serializeUint(k, "genesisTime", cfg.genesisTime);
+        // First block the indexer scans. The simulated block precedes every broadcast transaction
+        // (and on Arbitrum chains it is the L2 block number, unlike the NUMBER opcode).
+        vm.serializeUint(k, "startBlock", vm.getBlockNumber());
         vm.serializeAddress(k, "MohnToken", address(d.token));
         vm.serializeAddress(k, "MiningCore", address(d.core));
         vm.serializeAddress(k, "MiningCoreImplementation", d.coreImplementation);

@@ -169,7 +169,9 @@ Denetçi gözüyle tüm contracts/src'yi incele: Slither ve Aderyn'i koştur ve 
 
 ## FAZ 3 — İndeksleyici, API, keeper, izleme
 
-### 3.1 İndeksleyici
+### 3.1 İndeksleyici — ✅ 2026-10-12 (`services/indexer`, `packages/sdk` metrikleri ve ABI'ler)
+
+> Testnet'te gerçek veriyle doğrulandı (iki dağıtım). Testler: şema = Drizzle, RPC eşlemesi, sim emisyon vektörüyle saatlik emisyon (wei'si wei'sine), yakım kaynakları ve gün metrikleri, dağılım (Gini/Nakamoto sim vektörüyle), timelock çözümleme, belirlenimcilik (tek parti / blok başına parti / yeniden kurma / yeniden indeksleme / kısılmış akış / aralık sınırlı sağlayıcı aynı tabloları verir). Açık not: saatlik emisyon ancak biri saat sınırından sonra checkpoint yapınca yazılır; keeper (3.3) saatlik `poke` atacak.
 
 ```text
 services/indexer altında kendi log okuyucumuzu yaz (TypeScript + viem getLogs, Postgres; docs/03 §4.3 ve ADR-010): ~10 saniyede bir yalnızca bizim kontratlarımızın olaylarını blok aralıklarıyla çek, son işlenen bloğu sakla, idempotent upsert yap, RPC kotasını (Alchemy ücretsiz 30M CU/ay) ölçen bir metrik ekle. deployments/testnet.json'daki kontratları ve docs/03 §4.3'teki olayları indeksle. Türetilmiş tablolar: hesaplar, saatlik/günlük ekonomi (emisyon, yakım kaynağa göre, rezerv, H, SR, NE, RCR, P*), VRGDA durum geçmişi, kohortlar (katılım haftası), dağılım (Gini, top-10 payı, Nakamoto), sıralamalar, timelock kuyruğu. Metrik formülleri docs/02'den; packages/sdk'deki TS formülleriyle paylaşılsın. Testler: sabit olay fikstürlerinden beklenen metrik değerleri (sim ile çapraz kontrol), yeniden indeksleme determinizmi.
