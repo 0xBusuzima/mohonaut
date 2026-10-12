@@ -68,7 +68,7 @@ export async function poolState(
   clients: Clients,
   deployment: Deployment,
   poolManager: Address,
-): Promise<{ sqrtPriceX96: bigint; liquidity: bigint }> {
+): Promise<{ sqrtPriceX96: bigint; tick: number; liquidity: bigint }> {
   const id = poolId(mohnPoolKey(deployment.MohnToken, deployment.LiquidityManager));
   const stateSlot = hexToBigInt(keccak256(encodePacked(['bytes32', 'uint256'], [id, POOLS_SLOT])));
   const read = (slot: bigint) =>
@@ -84,6 +84,7 @@ export async function poolState(
   ]);
   return {
     sqrtPriceX96: hexToBigInt(slot0) & ((1n << 160n) - 1n),
+    tick: Number(BigInt.asIntN(24, hexToBigInt(slot0) >> 160n)),
     liquidity: hexToBigInt(liquidityWord) & ((1n << 128n) - 1n),
   };
 }

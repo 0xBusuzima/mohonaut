@@ -18,7 +18,7 @@
 | T6 | Rastgelelik istismarı | Meebits | Ekonomide rastgelelik yok | Tasarım (ADR-005) |
 | T7 | Döngü/DoS | Akutars (11,539 ETH kilit) | Sınırlı döngü (≤168 saat/poke), pull ödeme, sınırsız dizi yok | Gas fuzz, `MAX_HOURS_PER_POKE` testi |
 | T8 | Reentrancy | Klasik | CEI + `nonReentrant` (ETH çıkışları), ERC777 yok | Saldırgan kontrat testleri |
-| T9 | Keeper anahtarı ele geçirilmesi | — | Keeper yalnızca tavanlı işlemler; günlük tavan | `Keeper.t.sol` (tavan aşımı revert) |
+| T9 | Keeper anahtarı ele geçirilmesi | — | Keeper yalnızca tavanlı işlemler: günde buyback kovasının en çok 1/20'si, POL kovasının 1/7'si (JIT likidite şişiremez) ve swap'lar hook'un 1 saatlik fiyat çapasından en çok %3 uzağa (v1.1, ADR-017) | `integration/Market.t.sol` (bütçe aşımı, çapa, `test_jitLiquidityDoesNotRaiseTheCaps`, `test_stolenKeeperSandwichIsBounded`), `unit/PriceAnchor.t.sol` |
 | T10 | Safe/arayüz ele geçirilmesi | Bybit ($1.46B, kör imza) | Donanım cüzdan, net imzalama, `safe-tx-hashes-util` ile bağımsız hash kontrolü, 2 arayüz | Runbook + tatbikat |
 | T11 | Bot/sybil | Hamster (2.3M ban), Pixels (%40 bot) | Ekonomi bot-nötr (doğrusal ETH yakıt); zincir dışı ödüllerde Turnstile + kümeleme | Sim sybil senaryosu |
 | T12 | Lansman sniping | Pump.fun (%87 kârlı snipe), [a competitor] erken CA | Premine yok; havuz `openMarket()` ile formülle; opsiyonel azalan ücret hook'u | `OpenMarket.t.sol` |
@@ -51,7 +51,12 @@
 | R2 | Referans kredisi toplamı ≤ hazine payı toplamı (test: `referralPaid ≤ %3 × minersDistributed`, yani emisyonun ≤ %2.7'si; kaynağın hazine olduğu E2 ile kanıtlanır) |
 | P1 | Her parametre kendi sınırları içinde; hız limiti aşılamaz; yalnızca Timelock (test: her parametre için sınır/adım/bekleme birim testi; rastgele değişiklik invariant'ı; rol matrisi; durum değiştiren fonksiyonların ABI'deki gözden geçirilmiş listeye eşitliği) |
 | P2 | Pause en fazla 72s; Guardian unpause edemez (test: Guardian pause'u hiçbir zaman şimdi + 72s'yi aşmaz invariant'ı; iki pause arası 7 gün; unpause yalnızca Timelock) |
+| K1 | Bir UTC gününde buyback harcaması ≤ o günün bütçesi (`spentInDay ≤ dayBudget`; bütçe günün ilk buyback'inde kovanın `dailyBps`'i). POL için aynısı: `addedInDay ≤ addBudget` (kovanın 1/7'si). Bütçe havuz likiditesine bağlı değildir (v1.1) |
+| K2 | Keeper swap'ı (buyback, LP yarım-swap) fiyatı çapanın 296 tick altından öteye taşıyamaz; fiyat zaten oradaysa işlem yapılmaz. LP ekleme yalnızca çapanın ±296 tick'i içinde (v1.1) |
+| K3 | Çapa aynı blok içinde değişmez; her güncelleme eski ortalama ile o ana kadar geçerli tick arasında kalır (`PriceAnchor.fold`) |
 | L1 | POL pozisyonundan likidite çıkarılamaz (fonksiyon yok + Halmos). Faz 2.6 testleri: derlenmiş ABI'nin izinli fonksiyon listesine birebir eşitliği (yeni fonksiyon eklenirse test kırılır) ve işlem/ücret/ekleme döngülerinde pozisyon likiditesinin hiç azalmaması. Halmos ispatı sembolik PoolManager gerektirdiği için Faz 2.9'da |
+
+K1–K3 bugün birim, fuzz ve entegrasyon testleriyle kanıtlanıyor (`unit/PriceAnchor.t.sol`, `integration/Market.t.sol`); piyasa/ETH katmanı için durum bazlı handler ve Medusa/Echidna özellikleri ACC-5 işinde ekleniyor (AI denetimi).
 
 Her invariant için: **Foundry invariant handler** (çok aktörlü rastgele işlem dizileri + zaman atlama) + gece **Medusa/Echidna** kampanyası (Chimera iskeleti, aynı özellikler) + kritik olanlar (T1, T2, E2, L1, P2) için **Halmos/Certora** biçimsel ispat.
 

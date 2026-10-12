@@ -60,7 +60,9 @@ Spec rules implemented without a parameter:
 | `amm.rounds_per_day` | 8 | The day's buys and sells are executed in 8 alternating tranches (≈ random order) |
 | `amm.swap_haircut` | 0.85 | Players assume 15 % slippage when planning ETH → DIG purchases |
 | `amm.max_daily_buy_frac_of_pool_eth` | 0.10 | Slippage-aware buyers: discretionary buys (capex, cosmetics, speculators) ≤ 10 % of pool ETH per day (≈ +21 % price impact) |
-| `buyback_max_daily_frac_of_pool_eth` | 0.02 | Keeper's daily buyback ceiling (§10 "günlük tavan, slippage sınırı"); unspent buyback ETH is a backlog |
+| `keeper.buyback_daily_frac_of_bucket` | 1/20 | v1.1 (docs/02 §10.1): share of the buyback bucket the keeper may spend per day (`BuybackBurner.INITIAL_DAILY_BPS` 500); unspent ETH stays in the bucket. 1/7 spent the genesis bucket too fast and failed the deep-bear Gini criterion (0.82) |
+| `keeper.pol_daily_frac_of_bucket` | 1/7 | v1.1: share of the POL bucket added per day (was: the whole bucket every day) |
+| `keeper.chunks_per_day`, `keeper.max_chunk_price_move` | 8, 0.02 | v1.1: one chunk every 3 hours, each moving the price at most 2 % (the on-chain anchor allows 3 %) |
 | `ops_monthly_cost_usd` | 15,000 | Assumed operations cost, only used for the runway metric (scale results yourself) |
 | `dev_sell_frac` | 0.5 | Share of each matured dev withdrawal sold (the spec says the founder publishes a sale policy) |
 | `tank_days` | 7 | Wallets keep 7 days of energy prepaid; refills are ETH revenue when bought |

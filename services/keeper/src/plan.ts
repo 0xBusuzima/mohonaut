@@ -14,29 +14,77 @@ export function marketOpenDue(now: bigint, marketOpenTime: bigint, opened: boole
 }
 
 /**
- * Room left today under a contract's daily cap (`bps` of the pool's ETH), mirroring
- * BuybackBurner.executeBuyback and LiquidityManager._useDailyCap.
+ * The contracts' price anchor band (lib/PriceAnchor.sol MAX_DEVIATION): 296 ticks, about 3 %.
+ * Keeper swaps may not move the price further than this below the anchor (docs/02 §10.1).
  */
-export function dailyRoom(p: {
-  poolEth: bigint;
+const ANCHOR_BAND = 296;
+/** A chunk moves the price about 2 % (sim/params.json max_chunk_price_move): ~198 ticks. */
+const CHUNK_TICKS = 198;
+/** ETH in for a 2 % move of a full-range pool: poolEth × (√1.02 − 1) ≈ 0.99 % of its ETH. */
+const CHUNK_BPS = 99n;
+
+/**
+ * Today's budget and what was already spent of it, mirroring BuybackBurner.executeBuyback and
+ * LiquidityManager._useDailyCap: the budget is fixed at the day's first spend as `bps` of the
+ * bucket, so on a new day it is computed from the bucket as it is now.
+ */
+export function today(p: {
+  bucket: bigint;
   bps: bigint;
   day: bigint;
-  usedInDay: bigint;
+  budget: bigint;
+  used: bigint;
+  now: bigint;
+}): { budget: bigint; used: bigint } {
+  if (p.day < p.now / DAY) return { budget: (p.bucket * p.bps) / BPS, used: 0n };
+  return { budget: p.budget, used: p.used };
+}
+
+/** Keeper chunks per UTC day, one per 3-hour slot (sim/params.json keeper.chunks_per_day). */
+const SLOTS = 8n;
+export const SLOT = DAY / SLOTS;
+
+/**
+ * This slot's spend: the day's budget paced evenly over 8 three-hour slots (a missed slot is
+ * caught up later), at most `chunks` 2 % chunks, at most the bucket. Stateless, so ticks stay
+ * idempotent.
+ */
+export function slotSpend(p: {
+  budget: bigint;
+  used: bigint;
+  bucket: bigint;
+  poolEth: bigint;
+  chunks: bigint;
   now: bigint;
 }): bigint {
-  const cap = (p.poolEth * p.bps) / BPS;
-  const used = p.day < p.now / DAY ? 0n : p.usedInDay;
-  return cap > used ? cap - used : 0n;
+  const slot = (p.now % DAY) / SLOT;
+  const target = (p.budget * (slot + 1n)) / SLOTS;
+  if (target <= p.used) return 0n;
+  let spend = target - p.used;
+  const chunk = (p.poolEth * CHUNK_BPS * p.chunks) / BPS;
+  if (spend > chunk) spend = chunk;
+  if (spend > p.bucket) spend = p.bucket;
+  return spend;
 }
 
-/** The daily job already ran today (the contract recorded a spend for the current UTC day). */
-export function ranToday(day: bigint, usedInDay: bigint, now: bigint): boolean {
-  return day === now / DAY && usedInDay > 0n;
+/** Ticks kept free above the anchor's lower limit (rounding, other swaps in the same block). */
+const BAND_MARGIN = 10;
+
+/**
+ * Scales a buying chunk down to the room left above the anchor's lower limit: a swap that reached
+ * the limit would fill only partly and miss its minOut. A full chunk moves ~CHUNK_TICKS; smaller
+ * amounts move proportionally less. 0 when there is no room.
+ */
+export function fitToBand(spend: bigint, tick: number, anchor: number): bigint {
+  const room = tick - (anchor - ANCHOR_BAND) - BAND_MARGIN;
+  if (room <= 0) return 0n;
+  if (room >= CHUNK_TICKS) return spend;
+  return (spend * BigInt(room)) / BigInt(CHUNK_TICKS);
 }
 
-/** Daily jobs wait until this UTC hour so the day's revenue has accumulated in the bucket. */
-export function dailyWindowOpen(now: bigint, hourUtc: number): boolean {
-  return (now % DAY) / HOUR >= BigInt(hourUtc);
+/** LiquidityManager.addLiquidity requires the price within the band on both sides. */
+export function nearAnchor(tick: number, anchor: number): boolean {
+  return Math.abs(tick - anchor) <= ANCHOR_BAND;
 }
 
 export function withSlippage(amount: bigint, slippageBps: bigint): bigint {

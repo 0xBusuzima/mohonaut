@@ -128,6 +128,19 @@ export const buybackBurnerAbi = [
   },
   {
     "type": "function",
+    "name": "dayBudget",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "executeBuyback",
     "inputs": [
       {
@@ -536,6 +549,22 @@ export const buybackBurnerAbi = [
     "type": "error",
     "name": "NotPoolManager",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "PriceOffAnchor",
+    "inputs": [
+      {
+        "name": "tick",
+        "type": "int24",
+        "internalType": "int24"
+      },
+      {
+        "name": "anchor",
+        "type": "int24",
+        "internalType": "int24"
+      }
+    ]
   },
   {
     "type": "error",

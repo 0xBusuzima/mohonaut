@@ -20,7 +20,7 @@ import {ManualEthUsdFeed} from "./testnet/ManualEthUsdFeed.sol";
 ///         (docs/04 S4, docs/03 S3.8):
 ///         1. deploy: token (minter = the predicted MiningCore proxy, asserted), MiningCore behind a
 ///            UUPS proxy, RevenueRouter, LiquidityManager at a CREATE2 address with the Uniswap v4
-///            hook bits 0x2000, BuybackBurner, a 96 h and a 7-day TimelockController;
+///            hook bits 0x2080, BuybackBurner, a 96 h and a 7-day TimelockController;
 ///         2. configure: every bucket, keeper, guardian and catalog role, and the one-time wiring;
 ///         3. hand over: every admin role to the 96 h Timelock, upgrades to the 7-day Timelock,
 ///            then the deployer renounces everything and the script asserts it holds no role left.

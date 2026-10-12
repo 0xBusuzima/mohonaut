@@ -5,7 +5,7 @@ the deployer holds no role on any contract. Addresses are written to `deployment
 
 | Step | What happens |
 |---|---|
-| deploy | RevenueRouter · ETH/USD feed (testnet: `ManualEthUsdFeed`, refused on mainnet) · MiningCore implementation · MohnToken with `minter` = the predicted proxy (asserted) · MiningCore UUPS proxy · LiquidityManager via CREATE2 at an address whose low 14 bits are `0x2000` (Uniswap v4 `beforeInitialize` hook) · BuybackBurner · 96 h and 7-day `TimelockController` (proposer: ops Safe, executor: anyone, no admin) |
+| deploy | RevenueRouter · ETH/USD feed (testnet: `ManualEthUsdFeed`, refused on mainnet) · MiningCore implementation · MohnToken with `minter` = the predicted proxy (asserted) · MiningCore UUPS proxy · LiquidityManager via CREATE2 at an address whose low 14 bits are `0x2080` (Uniswap v4 `beforeInitialize` + `beforeSwap` hook) · BuybackBurner · 96 h and 7-day `TimelockController` (proposer: ops Safe, executor: anyone, no admin) |
 | configure | Router buckets (core deposits; LM/BB fee deposits; LM POL; BB buyback; ops Safe ops) · keeper on LM and BB · Guardian on MiningCore · one-time `wireLiquidityManager` |
 | hand over | MiningCore admin + catalog → 96 h Timelock, upgrader → 7-day Timelock, router/LM/BB admin → 96 h Timelock; the deployer renounces everything; `assertHandedOver` checks it |
 

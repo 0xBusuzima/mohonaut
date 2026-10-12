@@ -19,16 +19,17 @@ independent audit funded from operations revenue.
 | `MiningAccounting.sol` | 298 | Abstract base of MiningCore: hourly epochs, reserve-based emission, 90/5/5 split, PREC=1e36 accumulator, expiry schedule, spend/refine/referral bookkeeping |
 | `MohnToken.sol` | 43 | ERC-20 + Permit + Burnable + Capped (100M). Single immutable minter, 500K/UTC-day mint cap. No owner, no upgrade, no pause, no fee |
 | `RevenueRouter.sol` | 83 | ETH buckets (55/30/15 by default), pull-only payouts by role, bounded split setter |
-| `LiquidityManager.sol` | 159 | Full-range ETH/MOHN position held directly in the Uniswap v4 PoolManager; no removal path; also the pool's `beforeInitialize` hook |
-| `BuybackBurner.sol` | 88 | Keeper buyback (≤ 2 % pool ETH/day, keeper minOut), 100 % burn |
-| `PoolActor.sol` | 75 | Shared v4 settlement and pool-depth reads |
+| `LiquidityManager.sol` | 188 | Full-range ETH/MOHN position held directly in the Uniswap v4 PoolManager; no removal path; also the pool's `beforeInitialize` and `beforeSwap` hook (price anchor) |
+| `BuybackBurner.sol` | 97 | Keeper buyback (≤ 1/20 of the buyback bucket per day, at most 3 % past the price anchor, keeper minOut), 100 % burn |
+| `lib/PriceAnchor.sol` | 48 | Time-weighted average tick (1 h constant) kept by the hook; the band for keeper swaps |
+| `PoolActor.sol` | 80 | Shared v4 settlement and pool-depth reads |
 | `lib/EmissionMath.sol` | 24 | Hourly emission and split |
 | `lib/VrgdaMath.sol` | 31 | LinearVRGDA price, batch cost, re-anchoring exponent (Solady expWad/lnWad) |
 | `lib/SiteMath.sol` | 89 | Generated level tables (slots, fuel-line capacity, upgrade cost) |
 | `lib/MarketOpenMath.sol` | 21 | Opening price, LP amount, sqrt price |
 | `lib/MohnPool.sol` | 40 | Pool key, full-range ticks, liquidity for amounts |
-| `interfaces/*` | 32 | |
-| **Total** | **1,857** | |
+| `interfaces/*` | 33 | |
+| **Total** | **1,949** | |
 
 Deployment script `script/Deploy.s.sol` (deploy → configure → hand over, asserts the deployer keeps
 no role) is in scope for review; `script/testnet/ManualEthUsdFeed.sol` is testnet-only and refused
@@ -56,7 +57,7 @@ parameters; P2 Guardian pause ≤ 72 h; L1 locked liquidity.
 | 96 h Timelock (proposer: ops Safe; executor: anyone) | Bounded parameters, new machine generations (stratum depth, 45 days, ≤ +15 % efficiency), recipients, sequencer feed, unpause/extend pause (≤ 30 days), router split, buyback cap, role management | Change the token, CAP, emission schedule, 90/5/5 or 80/20 splits, referral rate, existing machines, the Market Open formula (these live in the upgradeable MiningCore: only the 7-day upgrade Timelock can change them, publicly); skip its own delay |
 | 7-day Timelock | Upgrade MiningCore | Anything else |
 | Guardian Safe | Pause player actions for 72 h, at most once per 7 days | Unpause, move funds, change parameters |
-| Keeper (hot key) | poke, finalize mature refines, buyback ≤ 2 %/day and add liquidity ≤ 4 %/day of pool ETH with its own slippage bound; testnet feed | Anything else. **Known issue (AI review AI-2):** the daily caps scale with the pool's active liquidity, which just-in-time liquidity can multiply 30-60x within a block, so a stolen key can sandwich far more than one day's nominal cap (measured: 38-59 % of the spend). Fix pending a founder decision on the cap basis |
+| Keeper (hot key) | poke, finalize mature refines, buyback (≤ 1/20 of its bucket per day) and add liquidity (≤ 1/7), only within 3 % of the price anchor, with its own slippage bound; testnet feed | Anything else. AI review AI-2 (caps inflatable by just-in-time liquidity, stolen-key sandwich) is fixed in v1.1: the caps come from the buckets and keeper swaps stop 3 % past a 1-hour time-weighted anchor. Residual exposure of a stolen key: buying up to one day's budget at most 3 % (plus the 0.3 % fee) above the anchor |
 | Deployer | Nothing after `Deploy.s.sol` (asserted on-chain in the script) | — |
 
 External dependencies: Chainlink ETH/USD (8 decimals, 24 h heartbeat; no sequencer uptime feed on

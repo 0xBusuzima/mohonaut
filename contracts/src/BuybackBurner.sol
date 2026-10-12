@@ -8,32 +8,36 @@ import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC2
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
-import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 
 import {PoolActor} from "./PoolActor.sol";
+import {ILiquidityManager} from "./interfaces/ILiquidityManager.sol";
 import {MohnPool} from "./lib/MohnPool.sol";
+import {PriceAnchor} from "./lib/PriceAnchor.sol";
 
 /// @title BuybackBurner
 /// @notice Spends the buyback bucket on MOHN and burns 100 % of it (docs/02 S10, docs/03 S3.6).
-///         Only the KEEPER may call, with its own slippage bound (`minMohnOut`, computed off-chain),
-///         and at most 2 % of the pool's ETH per UTC day (sim/params.json
-///         buyback_max_daily_frac_of_pool_eth). A stolen keeper key can at worst buy badly within
-///         that cap; it has no other power. Nothing here prices a mint or a reward.
+///         Only the KEEPER may call, with its own slippage bound (`minMohnOut`, computed off-chain).
+///         Per UTC day it may spend at most `dailyBps` of the buyback bucket (measured at the
+///         day's first buyback; 1/20 by default), and each swap stops at most 3 % past the hook's
+///         time-weighted price anchor (docs/02 S10.1, v1.1). A stolen keeper key can neither raise
+///         the cap with just-in-time liquidity nor push the price for a block and buy into it.
+///         Nothing here prices a mint or a reward.
 // Not locked: the ETH pulled for a buyback is paid into the pool in the same transaction and any
 // unspent remainder goes straight back to the router's buyback bucket.
 // aderyn-fp-next-line(contract-locks-ether)
 contract BuybackBurner is PoolActor, AccessControl, ReentrancyGuardTransient {
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
-    uint16 public constant INITIAL_DAILY_BPS = 200;
+    uint16 public constant INITIAL_DAILY_BPS = 500; // 1/20 of the bucket
     uint64 public constant DAILY_BPS_PERIOD = 7 days;
 
     /// @notice The pool's hook (the LiquidityManager) is part of the pool key.
     address public immutable hooks;
-    /// @notice Daily cap in bps of the pool's ETH: 0.5-5 %, Timelock only, once per 7 days.
+    /// @notice Daily cap in bps of the buyback bucket: 5-25 %, Timelock only, once per 7 days.
     uint16 public dailyBps;
     uint64 public dailyBpsChangedAt;
     uint64 public day;
     uint256 public spentInDay;
+    uint256 public dayBudget;
     uint256 public totalEthSpent;
     uint256 public totalBurned;
 
@@ -55,9 +59,9 @@ contract BuybackBurner is PoolActor, AccessControl, ReentrancyGuardTransient {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }
 
-    /// @notice Timelock: new daily cap, 50-500 bps of the pool's ETH, at most once per 7 days.
+    /// @notice Timelock: new daily cap, 500-2,500 bps of the bucket, at most once per 7 days.
     function setDailyBps(uint16 bps) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (bps < 50 || bps > 500) revert DailyBpsOutOfBounds();
+        if (bps < 500 || bps > 2500) revert DailyBpsOutOfBounds();
         uint64 last = dailyBpsChangedAt;
         // forge-lint: disable-next-line(block-timestamp)
         if (last != 0 && block.timestamp < last + DAILY_BPS_PERIOD) {
@@ -77,10 +81,21 @@ contract BuybackBurner is PoolActor, AccessControl, ReentrancyGuardTransient {
     {
         if (ethIn == 0) revert ZeroValue();
         uint64 today = SafeCast.toUint64(block.timestamp / 1 days);
-        uint256 used = day < today ? 0 : spentInDay;
-        uint256 cap = (_poolEth() * dailyBps) / 10_000;
-        if (used + ethIn > cap) revert DailyCapExceeded(cap > used ? cap - used : 0);
-        day = today;
+        if (day < today) {
+            day = today;
+            spentInDay = 0;
+            // A view read of our own router; no state changes through it.
+            // aderyn-fp-next-line(reentrancy-state-change)
+            dayBudget = (router.buybackBalance() * dailyBps) / 10_000;
+        }
+        uint256 used = spentInDay;
+        if (used + ethIn > dayBudget) {
+            revert DailyCapExceeded(dayBudget > used ? dayBudget - used : 0);
+        }
+        // Stop at most 3 % past the anchor; reverts if the price is already past it. View reads
+        // of the PoolManager and our own hook.
+        // aderyn-fp-next-line(reentrancy-state-change)
+        uint160 limit = PriceAnchor.buyLimit(_tick(), ILiquidityManager(hooks).anchorTick());
         spentInDay = used + ethIn;
 
         // Router and PoolManager are trusted and this function is nonReentrant; the counters
@@ -88,7 +103,7 @@ contract BuybackBurner is PoolActor, AccessControl, ReentrancyGuardTransient {
         // aderyn-fp-next-line(reentrancy-state-change)
         router.pullBuyback(ethIn);
         // aderyn-fp-next-line(reentrancy-state-change)
-        bytes memory result = poolManager.unlock(abi.encode(ethIn, minMohnOut));
+        bytes memory result = poolManager.unlock(abi.encode(ethIn, minMohnOut, limit));
         (uint256 ethPaid, uint256 mohnOut) = abi.decode(result, (uint256, uint256));
         totalEthSpent += ethPaid;
         totalBurned += mohnOut;
@@ -104,13 +119,14 @@ contract BuybackBurner is PoolActor, AccessControl, ReentrancyGuardTransient {
 
     /// @notice Uniswap v4 unlock callback: exact-input ETH -> MOHN swap, then settlement.
     function unlockCallback(bytes calldata data) external onlyPoolManager returns (bytes memory) {
-        (uint256 ethIn, uint256 minMohnOut) = abi.decode(data, (uint256, uint256));
+        (uint256 ethIn, uint256 minMohnOut, uint160 limit) =
+            abi.decode(data, (uint256, uint256, uint160));
         BalanceDelta delta = poolManager.swap(
             _key(),
             IPoolManager.SwapParams({
                 zeroForOne: true,
                 amountSpecified: -SafeCast.toInt256(ethIn),
-                sqrtPriceLimitX96: TickMath.MIN_SQRT_PRICE + 1
+                sqrtPriceLimitX96: limit
             }),
             ""
         );

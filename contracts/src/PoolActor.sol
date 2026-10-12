@@ -96,8 +96,16 @@ abstract contract PoolActor is IUnlockCallback {
         if (sqrtPriceX96 == 0) revert MarketNotOpen();
     }
 
-    /// @dev ETH held by the in-range liquidity, valued as a full-range position. Used only to size
-    ///      daily caps, never to price a mint or a reward.
+    /// @dev Current pool tick; reverts if the pool was never initialized.
+    function _tick() internal view returns (int24 tick) {
+        uint160 sqrtPriceX96;
+        // slither-disable-next-line unused-return
+        (sqrtPriceX96, tick,,) = poolManager.getSlot0(_poolId());
+        if (sqrtPriceX96 == 0) revert MarketNotOpen();
+    }
+
+    /// @dev ETH held by the in-range liquidity, valued as a full-range position. For display and
+    ///      keeper sizing only; never prices a mint or a reward and no longer sizes a cap (v1.1).
     function _poolEth() internal view returns (uint256) {
         uint160 sqrtP = _sqrtPrice();
         uint128 liquidity = poolManager.getLiquidity(_poolId());

@@ -420,7 +420,10 @@ class Simulation:
                 plan.eth_swap *= scale
                 cosm_eth *= scale
                 spec_buy *= scale
-            bb_eth = min(self.bb_backlog, md.buyback_max_pool_frac * self.pool.eth)
+            # v1.1: a share of the bucket, in hourly chunks that each move the price at most
+            # max_chunk_move (ETH in for a price move m in a constant-product pool: e(sqrt(1+m)-1)).
+            chunk_eth = self.pool.eth * (math.sqrt(1.0 + md.max_chunk_move) - 1.0)
+            bb_eth = min(self.bb_backlog * md.buyback_bucket_frac, md.keeper_chunks * chunk_eth)
             exit_sell = self._release_exits()
             co.wal[:k] -= sell
             self.dev_dig -= dev_sell
@@ -437,9 +440,10 @@ class Simulation:
             co.capex_left[:k] -= plan.eth_swap
             co.opex_left[:k] -= cosm_eth
             self.bb_backlog -= bb_eth
-            pol_added = self.pol_pending
-            self.pool.zap_eth(self.pol_pending)
-            self.pol_pending = 0.0
+            # v1.1: a share of the POL bucket per day; a zap swaps half, so twice the chunk.
+            pol_added = min(self.pol_pending * md.pol_bucket_frac, 2 * md.keeper_chunks * chunk_eth)
+            self.pool.zap_eth(pol_added)
+            self.pol_pending -= pol_added
             sold_emission = float(sell.sum()) + exit_sell + dev_sell
             rec["sold_wallets"][d] = float(sell.sum())
             rec["sold_exits"][d] = exit_sell

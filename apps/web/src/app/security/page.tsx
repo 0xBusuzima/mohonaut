@@ -55,8 +55,8 @@ export default function SecurityPage() {
           upgrades wait 7 days.
         </li>
         <li>
-          Protocol liquidity can never be withdrawn; the buyback spends at most 2% of the pool per
-          day.
+          Protocol liquidity can never be withdrawn; the buyback spends at most 1/20 of its share
+          per day and never pays more than 3% above the 1-hour average price.
         </li>
         <li>
           The Guardian can pause player actions for at most 72 hours; the pause ends on its own and

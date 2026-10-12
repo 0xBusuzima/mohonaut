@@ -18,7 +18,7 @@ library MohnPool {
     uint256 internal constant Q96 = 1 << 96;
 
     /// @notice Hook permission bits of the LiquidityManager address: beforeInitialize only.
-    uint160 internal constant HOOK_FLAGS = 1 << 13;
+    uint160 internal constant HOOK_FLAGS = (1 << 13) | (1 << 7);
 
     function key(address mohn, address hooks) internal pure returns (PoolKey memory) {
         return PoolKey({

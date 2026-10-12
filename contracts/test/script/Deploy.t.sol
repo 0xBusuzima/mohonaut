@@ -54,8 +54,8 @@ contract DeployScriptTest is Test {
         assertEq(d.core.genesisTime(), genesis);
         assertEq(
             uint160(address(d.liquidityManager)) & Hooks.ALL_HOOK_MASK,
-            uint160(1 << 13),
-            "hook bits"
+            uint160((1 << 13) | (1 << 7)),
+            "hook bits: beforeInitialize and beforeSwap"
         );
         assertTrue(d.core.hasRole(d.core.GUARDIAN_ROLE(), guardian));
         assertTrue(d.core.hasRole(d.core.DEFAULT_ADMIN_ROLE(), address(d.paramsTimelock)));

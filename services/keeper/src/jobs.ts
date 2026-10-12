@@ -16,13 +16,15 @@ import type { Config, JobName } from './config.js';
 import type { Metrics } from './metrics.js';
 import {
   DAY,
-  dailyRoom,
-  dailyWindowOpen,
+  SLOT,
+  fitToBand,
+  slotSpend,
   marketOpenDue,
   median,
+  nearAnchor,
   pokeDue,
   priceDeviationBps,
-  ranToday,
+  today,
   withSlippage,
 } from './plan.js';
 
@@ -187,11 +189,35 @@ async function referenceSqrtPrice(ctx: JobContext): Promise<bigint | null> {
   return median(prices);
 }
 
-/** Spot price and liquidity if the pool is within the allowed deviation of the reference. */
+/**
+ * The job already spent in this 3-hour slot (from the indexer's events; the contracts keep daily
+ * totals only). Keeps the keeper at one chunk per slot across ticks.
+ */
+async function spentThisSlot(ctx: JobContext, contract: string, event: string): Promise<boolean> {
+  const { events } = schema;
+  const rows = await ctx.database.db
+    .select({ t: events.blockTime })
+    .from(events)
+    .where(
+      and(
+        eq(events.contract, contract),
+        eq(events.event, event),
+        gte(events.blockTime, ctx.now - (ctx.now % SLOT)),
+      ),
+    )
+    .limit(1);
+  return rows.length > 0;
+}
+
+/**
+ * Spot price and liquidity if the pool is within the allowed deviation of the reference price
+ * (indexer median), with `ethIn` scaled to fit the contracts' price anchor band (docs/02 §10.1).
+ */
 async function guardedPool(
   ctx: JobContext,
   job: JobName,
-): Promise<{ sqrtPriceX96: bigint; liquidity: bigint } | string> {
+  ethIn: bigint,
+): Promise<{ sqrtPriceX96: bigint; liquidity: bigint; ethIn: bigint } | string> {
   const pool = await poolState(ctx.clients, ctx.deployment, ctx.poolManager);
   const reference = await referenceSqrtPrice(ctx);
   if (reference === null) return 'no reference price yet';
@@ -200,7 +226,19 @@ async function guardedPool(
     ctx.metrics.guardTrips.inc({ task: job });
     return `skipped: pool price ${deviation} bps from reference`;
   }
-  return pool;
+  const anchor = await ctx.clients.publicClient.readContract({
+    address: ctx.deployment.LiquidityManager,
+    abi: liquidityManagerAbi,
+    functionName: 'anchorTick',
+  });
+  const near = job === 'addLiquidity' ? nearAnchor(pool.tick, anchor) : true;
+  let fitted = near ? fitToBand(ethIn, pool.tick, anchor) : 0n;
+  if (job === 'addLiquidity') fitted -= fitted % 2n; // half is swapped, half is paired
+  if (fitted < ctx.cfg.minSpendWei || fitted === 0n) {
+    ctx.metrics.guardTrips.inc({ task: job });
+    return `skipped: pool tick ${pool.tick} too far from the anchor ${anchor}`;
+  }
+  return { ...pool, ethIn: fitted };
 }
 
 async function buyback(ctx: JobContext): Promise<Outcome> {
@@ -208,9 +246,10 @@ async function buyback(ctx: JobContext): Promise<Outcome> {
   if (!(await read.readContract({ ...core(ctx), functionName: 'marketOpened' })))
     return 'market closed';
   const bb = { address: ctx.deployment.BuybackBurner, abi: buybackBurnerAbi } as const;
-  const [day, spent, bps, poolEth, bucket] = await Promise.all([
+  const [day, spent, budget, bps, poolEth, bucket] = await Promise.all([
     read.readContract({ ...bb, functionName: 'day' }),
     read.readContract({ ...bb, functionName: 'spentInDay' }),
+    read.readContract({ ...bb, functionName: 'dayBudget' }),
     read.readContract({ ...bb, functionName: 'dailyBps' }),
     read.readContract({
       address: ctx.deployment.LiquidityManager,
@@ -223,19 +262,24 @@ async function buyback(ctx: JobContext): Promise<Outcome> {
       functionName: 'buybackBalance',
     }),
   ]);
-  if (ranToday(day, spent, ctx.now)) return 'done today';
-  if (!dailyWindowOpen(ctx.now, ctx.cfg.dailyJobsHourUtc)) return 'waiting for the daily window';
-  const room = dailyRoom({ poolEth, bps: BigInt(bps), day, usedInDay: spent, now: ctx.now });
-  const ethIn = bucket < room ? bucket : room;
-  if (ethIn < ctx.cfg.minDailySpendWei) return 'below minimum';
-  const pool = await guardedPool(ctx, 'buyback');
+  const t = today({ bucket, bps: BigInt(bps), day, budget, used: spent, now: ctx.now });
+  if (t.budget > 0n && t.used >= t.budget) return 'done today';
+  if (await spentThisSlot(ctx, 'BuybackBurner', 'BuybackExecuted')) return 'done this slot';
+  const ethIn = slotSpend({ ...t, bucket, poolEth, chunks: 1n, now: ctx.now });
+  if (ethIn === 0n) return 'done this slot';
+  if (ethIn < ctx.cfg.minSpendWei) return 'below minimum';
+  const pool = await guardedPool(ctx, 'buyback', ethIn);
   if (typeof pool === 'string') return pool;
   const minOut = withSlippage(
-    quoteEthForMohn(pool.sqrtPriceX96, pool.liquidity, ethIn).mohnOut,
+    quoteEthForMohn(pool.sqrtPriceX96, pool.liquidity, pool.ethIn).mohnOut,
     ctx.cfg.slippageBps,
   );
-  await send(ctx, 'buyback', { ...bb, functionName: 'executeBuyback', args: [ethIn, minOut] });
-  return `bought back with ${ethIn} wei`;
+  await send(ctx, 'buyback', {
+    ...bb,
+    functionName: 'executeBuyback',
+    args: [pool.ethIn, minOut],
+  });
+  return `bought back with ${pool.ethIn} wei`;
 }
 
 async function addLiquidity(ctx: JobContext): Promise<Outcome> {
@@ -243,9 +287,10 @@ async function addLiquidity(ctx: JobContext): Promise<Outcome> {
   if (!(await read.readContract({ ...core(ctx), functionName: 'marketOpened' })))
     return 'market closed';
   const lm = { address: ctx.deployment.LiquidityManager, abi: liquidityManagerAbi } as const;
-  const [day, added, bps, poolEth, bucket] = await Promise.all([
+  const [day, added, budget, bps, poolEth, bucket] = await Promise.all([
     read.readContract({ ...lm, functionName: 'addDay' }),
     read.readContract({ ...lm, functionName: 'addedInDay' }),
+    read.readContract({ ...lm, functionName: 'addBudget' }),
     read.readContract({ ...lm, functionName: 'ADD_DAILY_BPS' }),
     read.readContract({ ...lm, functionName: 'poolEth' }),
     read.readContract({
@@ -254,20 +299,26 @@ async function addLiquidity(ctx: JobContext): Promise<Outcome> {
       functionName: 'polBalance',
     }),
   ]);
-  if (ranToday(day, added, ctx.now)) return 'done today';
-  if (!dailyWindowOpen(ctx.now, ctx.cfg.dailyJobsHourUtc)) return 'waiting for the daily window';
-  const room = dailyRoom({ poolEth, bps, day, usedInDay: added, now: ctx.now });
-  let ethIn = bucket < room ? bucket : room;
-  ethIn -= ethIn % 2n; // half is swapped, half is paired
-  if (ethIn < ctx.cfg.minDailySpendWei) return 'below minimum';
-  const pool = await guardedPool(ctx, 'addLiquidity');
+  const t = today({ bucket, bps, day, budget, used: added, now: ctx.now });
+  if (t.budget > 0n && t.used >= t.budget) return 'done today';
+  if (await spentThisSlot(ctx, 'LiquidityManager', 'LiquidityAdded')) return 'done this slot';
+  // Half is swapped (one chunk), half is paired.
+  let ethIn = slotSpend({ ...t, bucket, poolEth, chunks: 2n, now: ctx.now });
+  ethIn -= ethIn % 2n;
+  if (ethIn === 0n) return 'done this slot';
+  if (ethIn < ctx.cfg.minSpendWei) return 'below minimum';
+  const pool = await guardedPool(ctx, 'addLiquidity', ethIn);
   if (typeof pool === 'string') return pool;
   const minOut = withSlippage(
-    quoteEthForMohn(pool.sqrtPriceX96, pool.liquidity, ethIn / 2n).mohnOut,
+    quoteEthForMohn(pool.sqrtPriceX96, pool.liquidity, pool.ethIn / 2n).mohnOut,
     ctx.cfg.slippageBps,
   );
-  await send(ctx, 'addLiquidity', { ...lm, functionName: 'addLiquidity', args: [ethIn, minOut] });
-  return `added ${ethIn} wei`;
+  await send(ctx, 'addLiquidity', {
+    ...lm,
+    functionName: 'addLiquidity',
+    args: [pool.ethIn, minOut],
+  });
+  return `added ${pool.ethIn} wei`;
 }
 
 export const JOBS: Record<JobName, (ctx: JobContext) => Promise<Outcome>> = {

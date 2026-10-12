@@ -201,10 +201,9 @@ describe.runIf(RUN)('keeper on anvil (time travel)', { timeout: 900_000 }, () =>
       key: { privateKey: keyOf(1) },
       tickIntervalMs: 1000,
       jobs: [...JOB_NAMES],
-      dailyJobsHourUtc: 0,
       slippageBps: 100n,
       maxPriceDeviationBps: 1000n,
-      minDailySpendWei: 1n,
+      minSpendWei: 1n,
       feedRefreshAfterS: 72_000n,
       runIndexer: false,
       metricsHost: '127.0.0.1',
@@ -258,13 +257,12 @@ describe.runIf(RUN)('keeper on anvil (time travel)', { timeout: 900_000 }, () =>
     expect(tick.outcomes['addLiquidity']).toMatch(/^added \d+ wei$/);
     expect(tick.outcomes['finalize']).toBe('nothing due');
 
-    // The same tick again does nothing (idempotent).
+    // The same tick again does nothing (idempotent): one chunk per 3-hour slot.
+    await syncIndexer();
     tick = await keeper.tick();
-    expect(tick.outcomes).toMatchObject({
-      poke: 'up to date',
-      openMarket: 'open',
-      buyback: 'done today',
-    });
+    expect(tick.outcomes).toMatchObject({ poke: 'up to date', openMarket: 'open' });
+    expect(tick.outcomes['buyback']).toMatch(/^done (today|this slot)$/);
+    expect(tick.outcomes['addLiquidity']).toMatch(/^done (today|this slot)$/);
 
     // The refine delay passes: the keeper finalizes the queued refine.
     const delay = await read<bigint>('paramValue', [4]); // Param.RefineDelay

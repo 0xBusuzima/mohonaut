@@ -1,3 +1,34 @@
+# v1.1 doğrulaması (AI denetimi AI-2 / AI-3, 2026-10-12)
+
+> **Ne değişti (docs/02 §10.1):** keeper tavanları havuzun anlık ETH'sinden değil kovadan hesaplanır ve simülasyon bunu birebir modeller (`params.json` `model.keeper`):
+> - buyback günde kovanın en çok **1/20**'si, POL günde kovanın en çok **1/7**'si (v1.0 modeli POL kovasının tamamını her gün ekliyordu);
+> - günde en çok **8 parça**, her biri fiyatı en çok ≈ %2 oynatır (zincirdeki çapa %3'e izin verir; LP eklemesi iki parça);
+> - AI-7: token günlük mint tavanı 500K (önce 2M), parametre timelock'u 96 saat (önce 72 saat).
+>
+> **Koşular:** v0.2 çalışmasıyla aynı tasarım (7 senaryo × 200 tohum, §12 kuralı kapalı 7 × 100, tank sınırı kapalı, duyarlılık, talep ×0,5 / ×2, tanılar); toplam 2.850 koşu. Sonuçlar `results/v11/`, grafikler `charts/v11/`. Tablolardaki "v0.2" başlıkları raporlayıcının sabit etiketidir; sütun v1.1 parametreleridir. Arz invaryantı her koşunun her gününde tuttu (en büyük sapma 1,0e-6). 47 birim testi geçiyor; altın vektörler değişmedi.
+>
+> **Buyback oranı nasıl seçildi:** ilk deneme buyback'i de günde 1/7 ile yaptı. Genesis buyback kovası Market Open'dan sonra birkaç günde harcandı, 1. ay ortalama fiyatı ≈ 4 kat yükseldi (0,07 → 0,30 $) ve derin ayıda Gini 0,82 çıktı (kriter < 0,8). Aynı 100 tohumla nedeni ayrıştırıldı: 500K tavan ve 96 saat etkisiz, v1.0 modeli 0,76–0,77; kural kapalıyken 0,76. Buyback hızını düşürmek kriteri geri getirdi (1/30: 0,78; 1/20 + 8 parça: 0,78; 1/20 + 24 parça: 0,81). Kurucu **1/20 + günde 8 parça**yı seçti (kontratın Timelock alt sınırı %5 = 1/20). Bedeli: buyback kovasında ≈ 20 günlük gelir bekler.
+
+## v1.1 §13 kabul kriterleri
+
+| Kriter | Hedef | v0.2 | **v1.1** | v1.1, §12 kuralı kapalı |
+|---|---|---|---|---|
+| P(24. ay ort. > %30 × 2. ay ort.), baz | ≥ 0,5 | GEÇTİ (1,00) | **GEÇTİ (1,00)** | GEÇTİ (1,00) |
+| Haftalık kohort giriş geri dönüşü < 365 gün, baz | ≥ %70 kohort | GEÇTİ (0,95) | **GEÇTİ (1,00; medyan 52 gün)** | GEÇTİ (1,00) |
+| SR 12. ay, baz | ≥ 0,6 | GEÇTİ (0,72) | **GEÇTİ (0,69)** | GEÇTİ (0,69) |
+| SR 12. ay, ayı / derin ayı | ≥ 0,3 | GEÇTİ (0,65 / 0,81) | **GEÇTİ (0,80 / 0,81)** | GEÇTİ (0,81 / 0,80) |
+| Gini < 0,8, 7 senaryo | < 0,8 | 7/7 (en yüksek 0,775) | **7/7 (en yüksek 0,793, derin ayı)** | 6/7 (churn 0,806) |
+| Sybil oranı | ≤ 1,03 | GEÇTİ (1,026) | **GEÇTİ (1,03)** | GEÇTİ (1,03) |
+| Ops runway (en kötü %5 hariç), 7 senaryo | > 12 ay | GEÇTİ (∞) | **GEÇTİ (∞)** | GEÇTİ (∞) |
+| Günlük mint tavanı (500K) hiç bağlamaz | 0 gün | GEÇTİ | **GEÇTİ (0 gün)** | GEÇTİ |
+| RCR 12. ay (sağlık metriği) | izlenir | 0,14 | 0,18 | 0,18 |
+
+**Öne çıkanlar (baz, medyan):** 1. ay ortalama fiyat 0,053 $ (v0.2: 0,072), 2. ay 0,19 $, 12. ay 1,9 $, 24. ay 1,0 $; POL'ün ETH tarafı 12. ayda 1,27 M$ (v0.2: 1,07 M$; POL artık her gün kovanın 1/7'siyle eklendiği için daha düzenli büyüyor). Mutlak seviyeler talep kalibrasyonuna bağlıdır; dışarıya fiyat beklentisi olarak sunulmaz.
+
+**İzlenecek zayıf nokta:** derin ayıda Gini 0,793 (P95 0,89), sınıra yakın. §12 kuralı derin ayıda yoğunlaşmayı artırıyor (kural kapalı 0,738). Canlıda Gini/Nakamoto izlenir; kuralın derin ayı davranışı ayrı bir iş olarak gözden geçirilebilir.
+
+---
+
 # v0.2 doğrulaması (yol haritası adım 0.5)
 
 > **Kapsam:** `docs/02` **v0.2** parametreleri ve yeni mekanikleri simülasyonda doğrulandı. docs/02 değiştirilmedi; bu bölüm yalnızca **öneri** yapar (§V.6).

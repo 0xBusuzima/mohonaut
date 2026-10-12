@@ -4,21 +4,24 @@ The low-privilege operator (docs/03 §4.5). Every tick (default 60 s) it runs th
 order. Each job reads the chain first and acts only when needed, so ticks are idempotent and safe
 to retry. Every transaction is simulated before it is sent.
 
-| Job | When | Call |
-|---|---|---|
-| `feed` | Testnet only: the keeper-owned `ManualEthUsdFeed` is older than `FEED_REFRESH_AFTER_S` (20 h; MiningCore rejects prices older than 25–30 h) | `set(lastAnswer)` (re-publishes the last price) |
-| `poke` | An hour boundary passed since MiningCore's `lastUpdate` | `poke()` (≤ 10 per tick, each closes ≤ 168 hours) |
-| `openMarket` | Market Open time reached and the market is not open | `MiningCore.openMarket()` (permissionless; the keeper is first) |
-| `finalize` | Standard refines whose delay passed (candidates from the indexer, checked on chain, within the hourly mint room) | `finalizeRefine(account, id)` |
-| `buyback` | Once per UTC day after `DAILY_JOBS_HOUR_UTC`, market open | `executeBuyback(ethIn, minOut)` with `ethIn = min(buyback bucket, today's cap)` |
-| `addLiquidity` | Same | `addLiquidity(ethIn, minMohnOut)` with `ethIn = min(POL bucket, today's 4 % cap)` |
+| Job            | When                                                                                                                                        | Call                                                                                                                                                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `feed`         | Testnet only: the keeper-owned `ManualEthUsdFeed` is older than `FEED_REFRESH_AFTER_S` (20 h; MiningCore rejects prices older than 25–30 h) | `set(lastAnswer)` (re-publishes the last price)                                                                                                                                                                                       |
+| `poke`         | An hour boundary passed since MiningCore's `lastUpdate`                                                                                     | `poke()` (≤ 10 per tick, each closes ≤ 168 hours)                                                                                                                                                                                     |
+| `openMarket`   | Market Open time reached and the market is not open                                                                                         | `MiningCore.openMarket()` (permissionless; the keeper is first)                                                                                                                                                                       |
+| `finalize`     | Standard refines whose delay passed (candidates from the indexer, checked on chain, within the hourly mint room)                            | `finalizeRefine(account, id)`                                                                                                                                                                                                         |
+| `buyback`      | Market open; one chunk per 3-hour UTC slot (indexer)                                                                                               | `executeBuyback(ethIn, minOut)`: today's budget (1/20 of the buyback bucket, fixed by the contract at the day's first buyback) paced evenly over 8 three-hour slots, at most one chunk that moves the price about 2 % (0.99 % of the pool's ETH), scaled to the room left in the anchor band |
+| `addLiquidity` | Same                                                                                                                                        | `addLiquidity(ethIn, minMohnOut)`: the same pacing on the POL bucket, at most two chunks (half is swapped)                                                                                                                            |
 
 **Price guard.** `minOut` is the exact Uniswap v4 quote at the current pool price
 (`packages/sdk` `quoteEthForMohn`, checked against Solidity `SwapMath`) minus `SLIPPAGE_BPS`.
 Before that, the pool price must be within `MAX_PRICE_DEVIATION_BPS` (10 %) of a reference: the
-median of the last 24 hours' swap prices and the Market Open price, from the indexer. A pumped
-pool is skipped (`keeper_guard_trips_total`), not traded against. The contracts' own daily caps
-(2 % / 4 % of pool ETH) bound the spend whatever the keeper does (docs/04 T9).
+median of the last 24 hours' swap prices and the Market Open price, from the indexer. The chunk
+must also fit inside the contracts' price anchor band (`LiquidityManager.anchorTick()`, a 1-hour
+time-weighted average; swaps may move the price at most 3 % below it, and liquidity goes in only
+within 3 % of it). A pumped pool is skipped (`keeper_guard_trips_total`), not traded against. The
+contracts' own budgets (per day 1/20 of the buyback bucket, 1/7 of the POL bucket) and the anchor bound the spend whatever the
+keeper does (docs/02 §10.1, docs/04 T9).
 
 **One keeper at a time.** With Postgres, the keeper holds a session advisory lock; a second
 instance stands by (`keeper_lock_held 0`) and takes over when the first one's connection ends.

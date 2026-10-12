@@ -120,7 +120,7 @@ abstract contract AttackBase is Test {
     using StateLibrary for IPoolManager;
 
     address internal constant PM = 0x8366a39CC670B4001A1121B8F6A443A643e40951;
-    address internal constant LM_ADDR = 0x00000000000000000000000000000000004c2000;
+    address internal constant LM_ADDR = 0x00000000000000000000000000000000004C2080;
     uint64 internal constant GENESIS = 1_800_003_600 - (1_800_003_600 % 3600);
     uint64 internal constant MARKET_OPEN = GENESIS + 72 hours;
     int256 internal constant ETH_USD = 2500e8;

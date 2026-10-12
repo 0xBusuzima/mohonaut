@@ -13,8 +13,8 @@ const ROWS: { key: keyof typeof DEPLOYMENT; name: string; role: string }[] = [
   { key: 'MohnToken', name: 'MohnToken ($MOHN)', role: 'The token. No owner, one minter, 100,000,000 cap, 500,000 per day.' },
   { key: 'MiningCore', name: 'MiningCore', role: 'The game: drill sites, rigs, diesel, emission, refinery (upgradeable through the 7-day timelock).' },
   { key: 'RevenueRouter', name: 'RevenueRouter', role: 'Routes diesel ETH: 55% buyback, 30% protocol liquidity, 15% operations.' },
-  { key: 'LiquidityManager', name: 'LiquidityManager', role: 'Owns the protocol liquidity; it has no function to remove it.' },
-  { key: 'BuybackBurner', name: 'BuybackBurner', role: 'Buys $MOHN with the buyback share (at most 2% of the pool per day) and burns all of it.' },
+  { key: 'LiquidityManager', name: 'LiquidityManager', role: 'Owns the protocol liquidity (it has no function to remove it) and keeps the 1-hour average price that bounds keeper trades.' },
+  { key: 'BuybackBurner', name: 'BuybackBurner', role: 'Buys $MOHN with the buyback share (at most 1/20 of it per day, near the 1-hour average price) and burns all of it.' },
   { key: 'ParamsTimelock', name: 'Timelock (96 h)', role: 'Every parameter change waits here for 96 hours.' },
   { key: 'UpgradeTimelock', name: 'Timelock (7 days)', role: 'Contract upgrades wait here for 7 days.' },
 ];

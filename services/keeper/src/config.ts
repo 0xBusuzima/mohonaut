@@ -46,12 +46,11 @@ const envSchema = z.object({
     .default(JOB_NAMES.join(','))
     .transform((s) => s.split(',').map((j) => j.trim()))
     .pipe(z.array(z.enum(JOB_NAMES))),
-  /** Daily buyback and liquidity jobs run once per UTC day, from this hour on. */
-  DAILY_JOBS_HOUR_UTC: z.coerce.number().int().min(0).max(23).default(12),
   SLIPPAGE_BPS: z.coerce.bigint().min(0n).max(1000n).default(100n),
   /** Skip buybacks and additions when the pool price is this far from the reference price. */
   MAX_PRICE_DEVIATION_BPS: z.coerce.bigint().min(0n).max(5000n).default(1000n),
-  MIN_DAILY_SPEND_WEI: z.coerce
+  /** Skip a buyback or liquidity chunk smaller than this (not worth the gas). */
+  MIN_SPEND_WEI: z.coerce
     .bigint()
     .min(0n)
     .default(10n ** 12n),
@@ -82,10 +81,9 @@ export interface Config {
   key: KeySource;
   tickIntervalMs: number;
   jobs: JobName[];
-  dailyJobsHourUtc: number;
   slippageBps: bigint;
   maxPriceDeviationBps: bigint;
-  minDailySpendWei: bigint;
+  minSpendWei: bigint;
   feedRefreshAfterS: bigint;
   runIndexer: boolean;
   metricsHost: string;
@@ -115,10 +113,9 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     key,
     tickIntervalMs: e.TICK_INTERVAL_MS,
     jobs: e.JOBS,
-    dailyJobsHourUtc: e.DAILY_JOBS_HOUR_UTC,
     slippageBps: e.SLIPPAGE_BPS,
     maxPriceDeviationBps: e.MAX_PRICE_DEVIATION_BPS,
-    minDailySpendWei: e.MIN_DAILY_SPEND_WEI,
+    minSpendWei: e.MIN_SPEND_WEI,
     feedRefreshAfterS: e.FEED_REFRESH_AFTER_S,
     runIndexer: e.RUN_INDEXER,
     metricsHost: e.METRICS_HOST,

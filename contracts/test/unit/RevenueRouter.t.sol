@@ -179,13 +179,13 @@ contract RevenueRouterTest is Test {
             )
         );
         router.grantRole(locked, admin);
-        bytes32 pol = router.POL_ROLE();
+        bytes32 polRole = router.POL_ROLE();
         vm.expectRevert(
             abi.encodeWithSelector(
                 IAccessControl.AccessControlUnauthorizedAccount.selector, admin, locked
             )
         );
-        router.grantRole(pol, makeAddr("thief"));
+        router.grantRole(polRole, makeAddr("thief"));
         vm.stopPrank();
     }
 

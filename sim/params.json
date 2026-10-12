@@ -63,11 +63,11 @@
       "tank_until_hours_after_open": 24
     },
     "token": {
-      "daily_mint_cap": 2000000
+      "daily_mint_cap": 500000
     },
     "governance": {
       "enabled": true,
-      "delay_days": 3,
+      "delay_days": 4,
       "weeks": 4,
       "sr_low": 0.5,
       "price_ratio_low": 0.25,
@@ -90,7 +90,12 @@
       "swap_haircut": 0.85,
       "max_daily_buy_frac_of_pool_eth": 0.10
     },
-    "buyback_max_daily_frac_of_pool_eth": 0.02,
+    "keeper": {
+      "buyback_daily_frac_of_bucket": 0.05,
+      "pol_daily_frac_of_bucket": 0.142857,
+      "chunks_per_day": 8,
+      "max_chunk_price_move": 0.02
+    },
     "ops_monthly_cost_usd": 15000.0,
     "dev_sell_frac": 0.5,
     "tank_days": 7.0,

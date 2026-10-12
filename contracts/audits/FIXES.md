@@ -8,18 +8,18 @@ contracts (CLAUDE.md).
 | ID | Outcome | Change | Proof |
 |---|---|---|---|
 | AI-1 (ATK-1, ACC-1) | **Fixed** | `lockBucketRoles` also makes `LOCKED_ROLE` its own admin; `Deploy.s.sol` asserts it (`assertHandedOver`) | `unit/RevenueRouter.t.sol` `test_lockCannotBeUndoneThroughLockedRole`; the attacker PoC `Attacks.t.sol` ATK-1 now fails |
-| AI-2 (ATK-3) | **Decision** | Base the buyback/LP daily caps on something JIT liquidity cannot inflate (the bucket balance or the protocol's own position) and add an on-chain price anchor. `SCOPE.md` now states the real exposure | — |
-| AI-3 (SPEC-1) | **Decision** | Either change the 4 %/day POL cap or keep it and re-run the docs/02 §13 study with it (the spec auditor's `pol_cap_experiment.py` shows the effect) | — |
+| AI-2 (ATK-3) | **Fixed (v1.1, founder decision: bucket caps + price anchor)** | Daily budgets come from the buckets (buyback 1/20, POL 1/7 of the balance at the day's first spend); the hook keeps a 1-hour time-weighted tick (`lib/PriceAnchor.sol`) and keeper swaps stop 296 ticks (~3 %) past it, liquidity goes in only within that band. docs/02 §10.1, docs/03 ADR-017, docs/04 K1-K3 | `integration/Market.t.sol` `test_jitLiquidityDoesNotRaiseTheCaps`, `test_stolenKeeperSandwichIsBounded`, `test_pumpBeforeBuyback_isBlockedByTheAnchor`, `test_buybackStopsAtTheAnchor`, `test_addLiquidityOnlyNearTheAnchor`; `unit/PriceAnchor.t.sol`; the attacker PoCs ATK-3, 3b, 3c now fail |
+| AI-3 (SPEC-1) | **Fixed (v1.1, founder decision: bucket-based cap)** | POL additions: at most 1/7 of the POL bucket per day, in chunks of ~2 % price impact every 3 hours; the simulator models exactly that (`sim/params.json` `keeper`) and docs/02 §13 was re-run with it | `sim/tests`, `sim/RAPOR.md` |
 | AI-4 (ATK-2, ATK-5) | **Fixed** | Refining and dev/treasury withdrawals require `marketOpened`, not just Market Open time | `unit/MiningCoreRefinery.t.sol` `test_refineWaitsForOpenMarketNotTheClock`; harnesses mark the market open at its time (`test/utils/MarketOpenCheat.sol`) |
-| AI-5 (ACC-4) | **Decision** (with AI-2/AI-3) | Price scrap credit independently of the player's own purchases (e.g. at the VRGDA target price) | — |
+| AI-5 (ACC-4) | **Accepted (founder decision)** | Scrap credit keeps its price: it cannot be transferred and is only spent on equipment, and a buy-scrap loop loses to the 80 % burn. Documented in docs/02 v1.1 | — |
 | AI-6 (SPEC-2) | **Fixed (docs)** | docs/02 §0 principle 4 and SCOPE.md: those items change only through the 7-day upgrade Timelock | docs/02 v1.0.2 |
-| AI-7 (SPEC-3, SPEC-4) | Planned | `sim/params.json`: 500K daily cap, 96 h timelock, hourly/request/dev limits in the model; re-run with the decisions above | — |
+| AI-7 (SPEC-3, SPEC-4) | **Partly fixed** | `sim/params.json`: 500K daily cap and 96 h timelock (v1.1); the hourly/request/dev limits in the model remain planned | `sim/tests` |
 | AI-8 (SPEC-5) | Planned | Simulator: burn pool MOHN fees, send ETH fees to buybacks | — |
 | AI-9 (SPEC-6, SPEC-12) | **Fixed (docs)** for §6.1; §7 figures with the re-run | docs/02 §6.1 column now states it excludes the in-batch rise | docs/02 v1.0.2 |
 | AI-10 (SPEC-7) | **Fixed (docs)** | docs/02: withdrawals are visible for the queue length (default 72 h, 24-168 h) | docs/02 v1.0.2 |
 | AI-11 (SPEC-8) | Planned | Simulator: evaluate referral conditions at settlement | — |
 | AI-12 (SPEC-9, 10, 17-21) | **Fixed (docs)** | docs/02 appendix "Kodlanmış sınırlar" | docs/02 v1.0.2 |
-| ATK-4 | Accepted | The UTC-day reset lets two days of cap be spent a second apart; covered by AI-2's redesign | — |
+| ATK-4 | Accepted | The UTC-day reset still lets two days' budgets be spent a second apart, but each is 1/20 of the bucket and both swaps share the same price anchor band, so the second one cannot buy past it either | `integration/Market.t.sol` `test_buybackStopsAtTheAnchor` |
 | ATK-6 / ACC-2 | **Fixed (docs)** | docs/04 R1 is now `balance ≥ buckets` (forced ETH stays locked) | docs/04 §2 |
 | ATK-7 | **Fixed** | `startedAt == 0` (uninitialised round) reads as sequencer down | `unit/MiningCoreFuel.t.sol` `test_sequencerUninitialisedRoundIsDown` |
 | ACC-3 | **Fixed (docs)** | docs/04 E2 includes an external-burn term | docs/04 §2 |

@@ -88,8 +88,8 @@ cost(L → L+1)  = 150 × L^2.2 × idx    $MOHN,   idx = clamp(p(t, n) ÷ p0, 0.
 
 | Destination | Share | Notes |
 | --- | --- | --- |
-| Buyback & burn | 55% | At most 2% of the pool's ETH per day |
-| Protocol liquidity | 30% | Full range, can never be withdrawn; at most 4% of the pool's ETH added per day |
+| Buyback & burn | 55% | At most 1/20 of the buyback share per day, in small chunks every 3 hours; never more than 3% above the 1-hour average price |
+| Protocol liquidity | 30% | Full range, can never be withdrawn; at most 1/7 of the liquidity share added per day, only near the 1-hour average price |
 | Operations | 15% | Servers, an independent audit first; reported monthly |
 
 The split can move within 30–60 / 20–50 / 10–35%, at most once per 30 days, through the public queue.
