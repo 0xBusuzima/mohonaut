@@ -18,7 +18,7 @@ Repo gizliyken GitHub'ın ücretsiz Actions dakikası CI'a yetmiyor: bir koşu y
    ```powershell
    powershell -ExecutionPolicy Bypass -File .\infra\ci-runner\keep-wsl-alive.ps1 -Distro Ubuntu
    ```
-   WSL, son terminal kapanınca dağıtımı durdurur. Bu betik oturum açılışında gizli bir `sleep infinity` başlatarak bunu önler.
+   WSL, son terminal kapanınca dağıtımı durdurur. Bu betik oturum açılışında ve sonra **her 5 dakikada bir** gizli bir `sleep infinity` başlatarak bunu önler; WSL bellek yetmezliği ya da güncelleme yüzünden kapanırsa birkaç dakikada kendiliğinden geri gelir. Betiği daha önce çalıştırdıysan bir kez daha çalıştır (görev güncellenir).
 4. GitHub'daki *Runners* sayfasında 3 runner'ı **Idle** olarak gördüğünde Claude'a "runner kuruldu" de. Claude ardından:
    - `CI_RUNS_ON` repo değişkenini `["self-hosted","linux","x64","mohonaut"]` yapar;
    - Medusa süresi için `FUZZ_SECONDS` değişkenini `3600` yapar.
@@ -32,3 +32,18 @@ Repo gizliyken GitHub'ın ücretsiz Actions dakikası CI'a yetmiyor: bir koşu y
 - Windows'taki Docker Desktop'ın **Ubuntu WSL entegrasyonunu açma**: runner'lar WSL içindeki kendi Docker'ını kullanır.
 - **Güvenlik:** fork'lardan gelen PR'lar bu makinede **asla** koşmaz; workflow onları GitHub'ın runner'larına gönderir. Repo açıldığında `CI_RUNS_ON` silinir ve CI GitHub'ın ücretsiz runner'larına döner.
 - **Kaldırma:** her `~/actions-runner/runner-N` klasöründe `sudo ./svc.sh stop && sudo ./svc.sh uninstall && ./config.sh remove` çalıştır; zamanlanmış görev için `Unregister-ScheduledTask -TaskName MohonautWslKeepAlive -Confirm:$false`.
+
+## Runner "Offline" görünürse
+
+GitHub *Runners* sayfasında runner **Offline** ise ya da bir iş "The self-hosted runner lost communication" hatasıyla düştüyse:
+
+1. Laptop açık mı, uykuda mı? Güç ayarında **uyku: hiçbir zaman** olmalı (kapak kapalıyken de).
+2. Windows güncellemesiyle yeniden başladıysa oturum açılmadan WSL başlamaz: laptopta bir kez oturum aç.
+3. Bellek: `forge coverage` en ağır iştir. WSL'ye yeterli bellek ve takas alanı ver. Windows'ta `%UserProfile%\.wslconfig` dosyasına şunu yaz, sonra PowerShell'de `wsl --shutdown` çalıştır (görev 5 dakika içinde WSL'yi yeniden açar):
+   ```ini
+   [wsl2]
+   memory=6GB
+   swap=8GB
+   ```
+   (Laptopta 8 GB'den az bellek varsa `memory` değerini toplamın yarısı yap.)
+4. Runner servisini kontrol: WSL terminalinde `systemctl status 'actions.runner.*'`.
