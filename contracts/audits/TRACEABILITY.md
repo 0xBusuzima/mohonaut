@@ -60,6 +60,6 @@ campaigns (the 6-hour campaigns run nightly in CI).
 - Halmos proofs exist for the token (T1–T3). E2, P2 and L1 have exhaustive tests and properties
   but no formal proof yet: E2 needs a symbolic model of the accumulator; L1 needs a symbolic
   Uniswap v4 PoolManager. They are listed for the independent audit.
-- Mutation testing (Gambit) is set up in `audits/mutation/`; see its README for the latest
-  survivor list.
+- Mutation testing (Gambit): 1,253 of 1,260 mutants killed (99.4%); the 7 survivors are
+  equivalent mutants, each explained in `audits/mutation/README.md`.
 - The long Medusa and Echidna campaigns run nightly in CI (`.github/workflows/nightly.yml`).
