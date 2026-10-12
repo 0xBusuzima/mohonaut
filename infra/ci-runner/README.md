@@ -1,6 +1,6 @@
 # CI runner'ları (kurucunun bilgisayarı, WSL)
 
-Repo gizliyken GitHub'ın ücretsiz Actions dakikası CI'a yetmiyor: bir koşu yaklaşık 60 faturalı dakika, ayda 2.000 dakika var. Repo açılana kadar CI kurucunun bilgisayarında, WSL Ubuntu içindeki **self-hosted runner**'larda koşar (ADR-018). Bu ücretsizdir; GitHub kendi makinende çalışan runner için ücret almıyor.
+Repo gizliyken GitHub'ın ücretsiz Actions dakikası CI'a yetmiyor: bir koşu yaklaşık 60 faturalı dakika, ayda 2.000 dakika var. Repo açılana kadar CI kurucunun evdeki yedek laptopunda (Ryzen 7 3700U, 8 GB; WSL Ubuntu 24.04, 1 runner; WSL belleği `.wslconfig` ile 6 GB) çalışır. Kurulum WSL Ubuntu içindeki **self-hosted runner**'larda koşar (ADR-018). Bu ücretsizdir; GitHub kendi makinende çalışan runner için ücret almıyor.
 
 ## Kurulum (bir kez, kurucu)
 
@@ -16,7 +16,7 @@ Repo gizliyken GitHub'ın ücretsiz Actions dakikası CI'a yetmiyor: bir koşu y
    - 3 runner'ı systemd servisi olarak kaydeder (`RUNNERS=2 bash ...` ile sayı değişir).
 3. **WSL'yi arka planda açık tut.** Windows PowerShell'de çalıştır:
    ```powershell
-   powershell -ExecutionPolicy Bypass -File .\infra\ci-runner\keep-wsl-alive.ps1
+   powershell -ExecutionPolicy Bypass -File .\infra\ci-runner\keep-wsl-alive.ps1 -Distro Ubuntu
    ```
    WSL, son terminal kapanınca dağıtımı durdurur. Bu betik oturum açılışında gizli bir `sleep infinity` başlatarak bunu önler.
 4. GitHub'daki *Runners* sayfasında 3 runner'ı **Idle** olarak gördüğünde Claude'a "runner kuruldu" de. Claude ardından:
