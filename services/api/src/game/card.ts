@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { Resvg } from '@resvg/resvg-js';
-import { STRATA, formatDepth, stratumAt } from '@mohonaut/sdk';
+import { MO_ART, MO_COLORS, STRATA, formatDepth, stratumAt } from '@mohonaut/sdk';
 
 /**
  * Contribution card (docs/01 §4.11): the player's share of the shared World Bore, their crew and
@@ -40,6 +40,40 @@ const escapeXml = (s: string) =>
     (ch) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[ch] ?? ch,
   );
 
+/** Foreman Mo in pixels: one rect per run of same-coloured pixels, `px` pixels per pixel. */
+function moRects(x: number, y: number, px: number): string {
+  const out: string[] = [];
+  MO_ART.forEach((row, ry) => {
+    let rx = 0;
+    while (rx < row.length) {
+      const ch = row[rx] ?? '.';
+      let run = 1;
+      while (row[rx + run] === ch) run++;
+      const fill = MO_COLORS[ch];
+      if (fill !== undefined) {
+        out.push(
+          `<rect x="${x + rx * px}" y="${y + ry * px}" width="${run * px}" height="${px}" fill="${fill}"/>`,
+        );
+      }
+      rx += run;
+    }
+  });
+  return out.join('');
+}
+
+/** A strip of hazard stripes along the bottom edge, stair-stepped like the game's. */
+function hazard(width: number, y: number, h: number): string {
+  const out: string[] = [
+    `<rect x="0" y="${y}" width="${width}" height="${h}" fill="${C.charcoal}"/>`,
+  ];
+  for (let x = -h; x < width; x += h * 2) {
+    out.push(
+      `<polygon points="${x},${y + h} ${x + h},${y} ${x + h * 2},${y} ${x + h},${y + h}" fill="#FFB31A"/>`,
+    );
+  }
+  return out.join('');
+}
+
 export function cardSvg(input: CardInput): string {
   const { current } = stratumAt(input.worldDepthMm);
   const crewLine = input.crew === null ? '' : ` · Crew ${escapeXml(input.crew)}`;
@@ -56,12 +90,14 @@ export function cardSvg(input: CardInput): string {
   <rect width="1200" height="630" fill="${C.charcoal}"/>
   ${bands}
   <rect x="1060" y="${marker - 2}" width="120" height="4" fill="${C.cyan}"/>
+  ${moRects(852, 330, 8)}
+  ${hazard(1040, 606, 24)}
   <text x="64" y="116" font-family="Big Shoulders Display" font-weight="900" font-size="56" fill="${C.orange}">MOHONAUT</text>
   <text x="64" y="250" font-family="Barlow" font-weight="700" font-size="64" fill="${C.bone}">I've cored ${mono(formatDepth(input.contributionMm))}</text>
   <text x="64" y="320" font-family="Barlow" font-weight="400" font-size="40" fill="${C.bone}">of the World Bore${crewLine}</text>
   <text x="64" y="430" font-family="Barlow" font-weight="400" font-size="32" fill="${C.concrete}">World depth ${mono(formatDepth(input.worldDepthMm))} · Stratum ${current.numeral} — ${escapeXml(current.name)}</text>
   <text x="64" y="560" font-family="Barlow" font-weight="700" font-size="32" fill="${C.bone}">Race to the Moho</text>
-  <text x="1000" y="560" text-anchor="end" font-family="Barlow" font-weight="400" font-size="24" fill="${C.concrete}">${escapeXml(input.name)}</text>
+  <text x="64" y="590" font-family="Barlow" font-weight="400" font-size="24" fill="${C.concrete}">${escapeXml(input.name)}</text>
 </svg>`;
 }
 
