@@ -275,6 +275,11 @@ jobs:
           docker run -d --name pg --network ci -e POSTGRES_PASSWORD=ci -e POSTGRES_DB=mohonaut \
             -p 5432:5432 postgres:17-bookworm
           for i in $(seq 1 30); do docker exec pg pg_isready -U postgres && break; sleep 2; done
+          # Same order as infra/stack/compose.yml: the indexer migrates, then the API starts.
+          # (No real RPC here: the indexer keeps retrying, which is what it does in an outage.)
+          docker run -d --name idx --network ci -p 9464:9464 --read-only --tmpfs /tmp             -v "$PWD/deployments:/deployments:ro" -e METRICS_HOST=0.0.0.0             -e RPC_URL=http://127.0.0.1:9 -e DATABASE_URL=postgres://postgres:ci@pg:5432/mohonaut             -e DEPLOYMENT_FILE=/deployments/46630.json mohonaut-indexer:ci
+          for i in $(seq 1 30); do curl -fsS -o /dev/null http://127.0.0.1:9464/metrics && break; sleep 2; done
+          curl -fsS http://127.0.0.1:9464/metrics | grep -q '^indexer_block'
           docker run -d --name api --network ci -p 8787:8787 --read-only --tmpfs /tmp \
             -v "$PWD/deployments:/deployments:ro" \
             -e NODE_ENV=development -e HOST=0.0.0.0 -e PORT=8787 \
@@ -284,9 +289,7 @@ jobs:
           for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8787/healthz && break; sleep 2; done
           curl -fsS http://127.0.0.1:8787/world | jq -e '.depth.mm == "0"'
           curl -fsS http://127.0.0.1:8787/openapi.json | jq -e '.info.title == "Mohonaut API"'
-          for s in indexer keeper; do
-            docker run --rm mohonaut-$s:ci node --check dist/main.js
-          done
+          docker run --rm mohonaut-keeper:ci node --check dist/main.js
           docker logs api | tail -5
       - name: Compose, image tags, cloud-init and shell scripts
         run: |

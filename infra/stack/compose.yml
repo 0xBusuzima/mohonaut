@@ -67,6 +67,17 @@ services:
       METRICS_HOST: 0.0.0.0
       METRICS_PORT: '9464'
     ports: ['127.0.0.1:9464:9464']
+    # Up once its migrations ran (the metrics server starts after them). Not tied to RPC health:
+    # the API must keep serving when the chain or the RPC is down.
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:9464/metrics').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 30
     depends_on:
       postgres: { condition: service_healthy }
 
@@ -97,7 +108,7 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       valkey: { condition: service_healthy }
-      indexer: { condition: service_started }
+      indexer: { condition: service_healthy }
 
   keeper:
     <<: *service
@@ -116,7 +127,7 @@ services:
       - ${SECRETS_DIR:-/etc/mohonaut/secrets}/keeper_password:/run/secrets/keeper_password:ro
     depends_on:
       postgres: { condition: service_healthy }
-      indexer: { condition: service_started }
+      indexer: { condition: service_healthy }
 
   # api.mohonaut.com reaches the API only through this outbound tunnel (Cloudflare Zero Trust,
   # free). The tunnel's routes are set in the Cloudflare dashboard (RUNBOOK.md).
