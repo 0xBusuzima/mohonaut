@@ -4,8 +4,8 @@ import dynamic from 'next/dynamic';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { isAddress } from 'viem';
 import type { Address } from 'viem';
-import { Badge } from '../../components/Badge';
 import { Card } from '../../components/Card';
+import { BadgeShelf } from '../../game/BadgeShelf';
 import { GEN1_RIGS } from '../../lib/catalog';
 import { api, apiEnabled, apiMessage } from '../../social/api';
 import type { Profile } from '../../social/api';
@@ -123,13 +123,7 @@ function Site({ profile: p }: { profile: Profile }) {
       )}
       {p.badges.length > 0 && (
         <Card label="Badges" title="Badges">
-          <ul className="flex flex-wrap gap-2">
-            {p.badges.map((b) => (
-              <li key={b.id} title={b.description}>
-                <Badge tone="data">{b.name}</Badge>
-              </li>
-            ))}
-          </ul>
+          <BadgeShelf earned={p.badges.map((b) => b.id)} />
         </Card>
       )}
       <Card label="Core Collection" title="Collection">

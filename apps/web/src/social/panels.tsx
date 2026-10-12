@@ -6,6 +6,7 @@ import type { FormEvent, ReactNode } from 'react';
 import type { Address } from 'viem';
 import { PxButton, PxSection, PxTable, PxTag } from '../app/play/px';
 import { useToast } from '../components/Toast';
+import { BadgeShelf } from '../game/BadgeShelf';
 import { FIND_PALETTE, FIND_SETS } from '../game/finds';
 import { PixelSvg } from '../game/pixel/PixelSvg';
 import { useSignIn } from '../game/signin';
@@ -443,6 +444,7 @@ export function ProfilePanel({ me, address }: { me: Me; address: Address }) {
   return (
     <div className="flex flex-col gap-4">
       <NameCard me={me} />
+      <BadgesCard address={address} />
       <ShareCard address={address} />
       <AlertsCard />
     </div>
@@ -478,6 +480,19 @@ function NameCard({ me }: { me: Me }) {
           Save
         </PxButton>
       </form>
+    </PxSection>
+  );
+}
+
+function BadgesCard({ address }: { address: Address }) {
+  const profile = useQuery({ queryKey: ['profile', address], queryFn: () => api.profile(address) });
+  return (
+    <PxSection label="Badges" title="Badges">
+      {profile.data === undefined ? (
+        <Status>{profile.isError ? apiMessage(profile.error) : 'Loading…'}</Status>
+      ) : (
+        <BadgeShelf earned={profile.data.badges.map((b) => b.id)} all />
+      )}
     </PxSection>
   );
 }

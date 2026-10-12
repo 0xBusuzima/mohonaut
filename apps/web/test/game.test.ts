@@ -230,3 +230,26 @@ describe('Survey finds', () => {
     }
   });
 });
+
+describe('Badges', () => {
+  it('match the API achievements: ids, names, descriptions, a 12x12 plate each', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const { BADGES, BADGE_PALETTE } = await import('../src/game/badges');
+    const api = readFileSync(
+      join(__dirname, '..', '..', '..', 'services', 'api', 'src', 'game', 'achievements.ts'),
+      'utf8',
+    );
+    const ids = [...api.matchAll(/id: '([a-z-]+)'/g)].map((m) => m[1]);
+    expect(BADGES.map((b) => b.id)).toEqual(ids);
+    for (const b of BADGES) {
+      expect(api).toContain(`name: '${b.name}'`);
+      expect(api.replace(/\s+/g, ' ')).toContain(b.description);
+      expect(b.icon).toHaveLength(12);
+      for (const row of b.icon) {
+        expect(row).toHaveLength(12);
+        for (const ch of row) if (ch !== '.') expect(BADGE_PALETTE[ch]).toBeDefined();
+      }
+    }
+  });
+});
