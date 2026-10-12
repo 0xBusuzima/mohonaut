@@ -98,7 +98,9 @@ jobs:
         run: |
           # Coverage builds are unoptimized and instrumented: test contracts that embed MiningCore's
           # creation code outgrow the 96 KB chain limit there. Size checks happen in the build step.
-          forge coverage --report lcov --report-file lcov.info --no-match-coverage "(test|script)/" --code-size-limit 300000
+          # Lighter fuzzing than the test step (profile.coverage in foundry.toml).
+          FOUNDRY_PROFILE=coverage forge coverage --report lcov --report-file lcov.info \
+            --no-match-coverage "(test|script)/" --code-size-limit 300000
           python3 ../tools/check_coverage.py lcov.info
 
   formal:

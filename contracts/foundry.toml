@@ -36,6 +36,18 @@ runs = 256
 runs = 32
 depth = 50
 
+[profile.coverage]
+# CI coverage gate: the same tests with lighter fuzzing. Coverage builds are unoptimized and
+# instrumented; with 10k fuzz runs they starved the laptop runner (the full fuzz run is the step
+# before, in the default profile).
+[profile.coverage.fuzz]
+runs = 1000
+
+[profile.coverage.invariant]
+runs = 100
+depth = 100
+fail_on_revert = false
+
 [profile.default.fuzz]
 runs = 10000
 
