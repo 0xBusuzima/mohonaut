@@ -77,6 +77,8 @@ const ENDPOINTS: {
     ok: 200,
   },
   { permission: 'health.read', method: 'GET', path: () => '/admin/health', ok: 200 },
+  { permission: 'economy.read', method: 'GET', path: () => '/admin/economy', ok: 200 },
+  { permission: 'referrals.read', method: 'GET', path: () => '/admin/referrals', ok: 200 },
   // Last: it makes the player a support operator, which would change the rows after it.
   {
     permission: 'roles.write',

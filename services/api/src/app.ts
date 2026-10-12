@@ -7,6 +7,7 @@ import type { AppDeps, AppEnv } from './context.js';
 import { registerAdmin } from './routes/admin.js';
 import { registerAuth } from './routes/auth.js';
 import { registerGovernance } from './routes/governance.js';
+import { registerInsight } from './routes/insight.js';
 import { registerOps } from './routes/ops.js';
 import { registerProfile } from './routes/profile.js';
 import { registerSocial } from './routes/social.js';
@@ -57,6 +58,7 @@ export function createApp(deps: AppDeps): OpenAPIHono<AppEnv> {
   registerSocial(app);
   registerAdmin(app);
   registerOps(app);
+  registerInsight(app);
 
   app.get('/healthz', (c) => c.text('ok'));
   app.doc31('/openapi.json', {

@@ -66,6 +66,16 @@ test('an operator answers a support request, publishes a banner and reads the au
   await expect(page.getByText('Published')).toBeVisible({ timeout: 15_000 });
   expect(await axe(page)).toEqual([]);
 
+  // Economy and referrals read the index (module 1, 8); sponsored gas is off in v1.
+  await page.getByRole('tab', { name: 'Economy' }).click();
+  await expect(page.getByRole('heading', { name: 'Emission against burns (48 h)' })).toBeVisible();
+  await expect(page.getByRole('table', { name: 'Daily economy' })).toBeVisible();
+  expect(await axe(page)).toEqual([]);
+  await page.getByRole('tab', { name: 'Referrals' }).click();
+  await expect(page.getByRole('table', { name: 'Largest referral trees' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Sponsored gas' }).click();
+  await expect(page.getByRole('heading', { name: 'Not used in v1' })).toBeVisible();
+
   // Audit: both writes are there with their reasons.
   await page.getByRole('tab', { name: 'Audit' }).click();
   await expect(page.getByRole('cell', { name: 'answered on X' })).toBeVisible();

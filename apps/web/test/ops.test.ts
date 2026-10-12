@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { setParamData } from '@mohonaut/sdk';
+import { burnedIn } from '../src/ops/economy';
 import { describeOp } from '../src/ops/governance';
 import { GAME } from '../src/game/network';
 import { PERMISSIONS, can } from '../src/ops/permissions';
@@ -49,5 +50,11 @@ describe('timelock queue', () => {
     expect(describeOp({ target: '0x0000000000000000000000000000000000000001', data: '0x' })).toBe(
       'call to 0x0000000000000000000000000000000000000001',
     );
+  });
+});
+
+describe('economy views', () => {
+  it('adds up every burn source of an hour', () => {
+    expect(burnedIn({ spendBurn: '1', feeBurn: '2', buybackBurn: '3', lpFeeBurn: '4' })).toBe(10n);
   });
 });
