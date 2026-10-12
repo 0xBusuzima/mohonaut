@@ -16,6 +16,9 @@ const envSchema = z.object({
   /** The game's origin: SIWE domain, CORS and the CSRF origin check. */
   WEB_ORIGIN: z.url(),
   PORT: z.coerce.number().int().min(0).max(65_535).default(8787),
+  /** Prometheus metrics on a private port (never exposed through Cloudflare). */
+  METRICS_HOST: z.string().default('127.0.0.1'),
+  METRICS_PORT: z.coerce.number().int().min(0).max(65_535).default(9466),
   HOST: z.string().default('127.0.0.1'),
   /** HMAC key for the daily Survey find; keep it secret so finds cannot be predicted. */
   SURVEY_SECRET: z.string().min(32),
@@ -66,6 +69,8 @@ export interface Config {
   webOrigin: string;
   port: number;
   host: string;
+  metricsHost: string;
+  metricsPort: number;
   surveySecret: string;
   turnstileSecret: string | null;
   trustCloudflare: boolean;
@@ -100,6 +105,8 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     webOrigin: new URL(e.WEB_ORIGIN).origin,
     port: e.PORT,
     host: e.HOST,
+    metricsHost: e.METRICS_HOST,
+    metricsPort: e.METRICS_PORT,
     surveySecret: e.SURVEY_SECRET,
     turnstileSecret: e.TURNSTILE_SECRET ?? null,
     trustCloudflare: e.TRUST_CLOUDFLARE,

@@ -62,6 +62,7 @@ npm komutlarını Git Bash yerine `cmd.exe /c "..."` veya PowerShell ile çalı�
 | Keeper (anahtarsız deneme) | `cd services/keeper && cp .env.example .env` → `DRY_RUN=true node dist/main.js once` |
 | Keeper uçtan uca (anvil) | `cd services/keeper && KEEPER_E2E=1 FOUNDRY_BIN=~/.foundry/bin npx vitest run test/e2e` (Windows: `cmd.exe /c "set KEEPER_E2E=1&& set FOUNDRY_BIN=C:\Users\yazic\.foundry\bin&& npx vitest run test/e2e"`) |
 | API (yerel) | `cd services/api && cp .env.example .env` → `node dist/main.js` (OpenAPI: `/openapi.json`); yük: `k6 run services/api/k6/load.js` |
+| İzleme yapılandırması ve uyarı kuralı testleri | CI `monitoring` işi (Docker ile `promtool check config` / `promtool test rules infra/monitoring/prometheus/tests/mohonaut_test.yml`, `amtool`, Loki, Alloy); panolar: `python tools/gen_dashboards.py` (`--check`) |
 | Mutasyon (Gambit) | Ayrı bir kopyada (kaynakları yerinde değiştirir): `contracts/audits/mutation/run_all.sh`; sonuçlar `audits/mutation/results/` |
 
 Sürümler: Node 24, npm 11, TypeScript 5.9, Foundry 1.8.5, solc 0.8.30 (`evm_version = prague`), OpenZeppelin 5.7.0, Solady 0.1.26, forge-std 1.17.0 (git submodule, sabit etiket).

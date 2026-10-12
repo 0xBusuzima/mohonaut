@@ -2,10 +2,12 @@ import { PARAM_NAMES } from '@mohonaut/sdk';
 import { and, eq, sql } from 'drizzle-orm';
 import { zeroAddress } from 'viem';
 import type { Address, Hex } from 'viem';
+import { eventAlerts } from '../alerts/rules.js';
 import { decodeCall, toJson } from '../contracts.js';
 import type { IndexedEvent } from '../contracts.js';
 import {
   accounts,
+  alerts,
   balances,
   hours,
   machineTypes,
@@ -237,6 +239,7 @@ const HANDLERS: Record<string, Handler> = {
 
   'MiningCore.MarketOpened': async (ctx, ev) => {
     ctx.state.lpMintedSince += big(ev, 'mohnLp');
+    ctx.state.lpMintedTotal += big(ev, 'mohnLp');
   },
 
   'MiningCore.HourClosed': async (ctx, ev) => {
@@ -262,6 +265,8 @@ const HANDLERS: Record<string, Handler> = {
     s.reserveAtClose = reserve;
     s.recycledSince = 0n;
     s.lpMintedSince = 0n;
+    s.emittedTotal += emitted;
+    s.emissionRate = big(ev, 'hourEmission');
   },
 
   'MiningCore.ParamChanged': async (ctx, ev) => {
@@ -294,8 +299,10 @@ const HANDLERS: Record<string, Handler> = {
     const from = addr(ev, 'from');
     const to = addr(ev, 'to');
     const value = big(ev, 'value');
-    if (from === zeroAddress) await ctx.addHour(ev.blockTime, { minted: value });
-    else await ctx.bump(balances, balances.address, { address: from }, { balance: -value });
+    if (from === zeroAddress) {
+      await ctx.addHour(ev.blockTime, { minted: value });
+      checkMint(ctx, value);
+    } else await ctx.bump(balances, balances.address, { address: from }, { balance: -value });
     if (to === zeroAddress) await ctx.addHour(ev.blockTime, { tokenBurned: value });
     else await ctx.bump(balances, balances.address, { address: to }, { balance: value });
   },
@@ -353,6 +360,25 @@ const HANDLERS: Record<string, Handler> = {
   },
 };
 
+/**
+ * Every MOHN is minted from accrued emission (refines, dev and treasury shares) or as the
+ * Market Open LP. A mint transaction closes all past hours first (checkpoint), so at most the
+ * open hour's emission is not yet in `emittedTotal`. Anything above that is a critical alert.
+ */
+function checkMint(ctx: Ctx, value: bigint): void {
+  const s = ctx.state;
+  s.mintedTotal += value;
+  const allowed = s.emittedTotal + s.lpMintedTotal + s.emissionRate;
+  if (s.mintedTotal > allowed) {
+    ctx.raised.push({
+      rule: 'mint-above-emission',
+      severity: 'critical',
+      title: 'MOHN minted beyond accrued emission',
+      body: `Total minted ${s.mintedTotal} wei exceeds emission + LP + one hour (${allowed} wei) by ${s.mintedTotal - allowed} wei. Check MiningCore now; the Guardian can pause.`,
+    });
+  }
+}
+
 async function scheduled(ctx: Ctx, ev: IndexedEvent): Promise<void> {
   const target = addr(ev, 'target');
   const data = hex(ev, 'data');
@@ -407,4 +433,25 @@ export async function project(ctx: Ctx, ev: IndexedEvent): Promise<void> {
   }
   const handler = HANDLERS[`${ev.contract}.${ev.event}`];
   if (handler !== undefined) await handler(ctx, ev);
+  const raised = [
+    ...ctx.raised.splice(0),
+    ...eventAlerts(ev, {
+      largeTransferWei: ctx.contracts.largeTransferWei,
+      byAddress: ctx.contracts.byAddress,
+    }),
+  ];
+  if (raised.length > 0) {
+    await ctx.tx
+      .insert(alerts)
+      .values(
+        raised.map((a) => ({
+          ...a,
+          blockNumber: ev.blockNumber,
+          logIndex: ev.logIndex,
+          txHash: ev.txHash,
+          blockTime: ev.blockTime,
+        })),
+      )
+      .onConflictDoNothing();
+  }
 }

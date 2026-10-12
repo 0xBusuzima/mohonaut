@@ -20,6 +20,23 @@ economy page and the admin panel use. No per-block subscription, so it fits a fr
 
 Hours and days are absolute indexes (`timestamp / 3600`, `timestamp / 86400`), like MiningCore.
 
+## Alerts (ADR-014)
+
+Each indexed event is also checked against the alert rules (`src/alerts/rules.ts`): role,
+upgrade, pause, timelock, parameter, recipient, feed and split changes are **critical**; Market
+Open, machine generations, executed timelock calls and MOHN mints/transfers of at least
+`LARGE_TRANSFER_MOHN` are **warnings**. A **critical** `mint-above-emission` alert fires when the
+total ever minted exceeds the emission of all closed hours + the Market Open LP + the open hour's
+emission (every mint transaction checkpoints first, so this can only happen through a bug or a
+compromised minter).
+
+Alerts go into the `alerts` table (one row per event and rule, so re-indexing never repeats one)
+and the notifier sends them to Telegram (`ALERT_TELEGRAM_TOKEN_FILE`, `ALERT_TELEGRAM_CHAT_ID`)
+and/or a webhook (`ALERT_WEBHOOK_URL`) after each poll, retrying failures. Alerts older than
+`ALERT_MAX_AGE_S` (e.g. history on a first sync) and below `ALERT_MIN_SEVERITY` are marked
+skipped. Metrics: `indexer_alerts_pending`, `indexer_alerts_sent_total`,
+`indexer_alert_failures_total`.
+
 ## Run
 
 ```bash

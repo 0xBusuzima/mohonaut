@@ -47,7 +47,7 @@ export class Keeper {
       try {
         await this.beforeJobs();
       } catch (err) {
-        this.metrics.errors.inc({ job: 'indexer' });
+        this.metrics.errors.inc({ task: 'indexer' });
         outcomes['indexer'] = errorText(err);
       }
     }
@@ -66,12 +66,12 @@ export class Keeper {
         // In a dry run the transactions were only simulated.
         outcomes[name] = this.clients.walletClient === null ? `dry run: ${outcome}` : outcome;
         this.metrics.jobs.inc({
-          job: name,
+          task: name,
           outcome: outcome.split(':')[0]?.replace(/\d+/g, 'n') ?? '',
         });
-        this.metrics.lastSuccess.set({ job: name }, Date.now() / 1000);
+        this.metrics.lastSuccess.set({ task: name }, Date.now() / 1000);
       } catch (err) {
-        this.metrics.errors.inc({ job: name });
+        this.metrics.errors.inc({ task: name });
         outcomes[name] = errorText(err);
       }
     }

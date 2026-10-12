@@ -193,7 +193,9 @@ services/api altında Hono + Zod + Drizzle + Postgres + Redis ile docs/03 §4.2 
 services/keeper altında docs/03 §4.5'teki işçileri yaz: saatlik poke (gerekliyse), olgun rafine kuyruklarını finalize, günlük executeBuyback ve addLiquidity (minOut zincir dışında hesaplanır, tavanlar kontrattan okunur), keeper bakiye ve son başarılı iş metrikleri (Prometheus). Anahtar yalnızca ortam/sır yöneticisinden; idempotent ve yeniden denemeli; aynı anda iki keeper çalışırsa çift işlem yapmasın (Redis kilit). Testler: anvil üzerinde zaman atlamalı entegrasyon.
 ```
 
-### 3.4 İzleme ve uyarı
+### 3.4 İzleme ve uyarı — ✅ 2026-10-12 (`infra/monitoring`, `services/indexer/src/alerts`, ADR-014)
+
+> OpenZeppelin Monitor yerine indeksleyici tabanlı zincir uyarıları (blok blok tarama ücretsiz RPC'ye sığmıyor). Prometheus kuralları `promtool` birim testleriyle, zincir kuralları ve Telegram teslimatı indeksleyici testleriyle kanıtlandı; Grafana panoları (indeksleyici, keeper, API), Loki + Alloy log toplama, Uptime Kuma durum sayfası tanımlı. **Kalan:** gerçek Telegram sohbetine canlı teslimat, kurucu botu açınca bir sonraki testnet dağıtımıyla (rol olayları) yapılacak; sunucu kurulumu Faz 6.
 
 ```text
 infra/monitoring altında: OpenZeppelin Monitor (self-host) kuralları — emisyon eğrisinden sapan mint, rol/yükseltme/pause/timelock olayları, büyük transferler, LP olayları, keeper bakiyesi düşük; bildirim Telegram + e-posta. Prometheus + Grafana panoları (API, indeksleyici gecikmesi, keeper), Loki log toplama, Uptime Kuma + herkese açık /status. Her uyarıyı testnet'te sahte olayla tetikleyip ulaştığını kanıtla.

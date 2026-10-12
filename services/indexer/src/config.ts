@@ -40,6 +40,17 @@ const envSchema = z.object({
   MAX_BLOCK_RANGE: z.coerce.number().int().min(1).default(50_000),
   /** The pool stream (swaps) is polled every n-th tick to save RPC compute units. */
   POOL_POLL_EVERY: z.coerce.number().int().min(1).default(6),
+  /** On-chain alerts (ADR-014): Telegram bot token, preferably from a secret file. */
+  ALERT_TELEGRAM_TOKEN_FILE: z.string().min(1).optional(),
+  ALERT_TELEGRAM_TOKEN: z.string().min(1).optional(),
+  ALERT_TELEGRAM_CHAT_ID: z
+    .string()
+    .regex(/^-?\d+$/)
+    .optional(),
+  ALERT_WEBHOOK_URL: z.url().optional(),
+  ALERT_MIN_SEVERITY: z.enum(['info', 'warning', 'critical']).default('warning'),
+  ALERT_MAX_AGE_S: z.coerce.number().int().min(60).default(86_400),
+  LARGE_TRANSFER_MOHN: z.coerce.bigint().min(1n).default(50_000n),
   METRICS_HOST: z.string().default('127.0.0.1'),
   METRICS_PORT: z.coerce.number().int().min(0).max(65_535).default(9464),
 });
@@ -54,10 +65,24 @@ export interface Config {
   poolPollEvery: number;
   metricsHost: string;
   metricsPort: number;
+  alerts: {
+    telegram: { token: string; chatId: string } | null;
+    webhookUrl: string | null;
+    minSeverity: 'info' | 'warning' | 'critical';
+    maxAgeSeconds: number;
+    largeTransferWei: bigint;
+  };
 }
 
 export function loadConfig(env: Record<string, string | undefined>): Config {
   const e = envSchema.parse(env);
+  const token =
+    e.ALERT_TELEGRAM_TOKEN_FILE === undefined
+      ? e.ALERT_TELEGRAM_TOKEN
+      : readFileSync(e.ALERT_TELEGRAM_TOKEN_FILE, 'utf8').trim();
+  if ((token === undefined) !== (e.ALERT_TELEGRAM_CHAT_ID === undefined)) {
+    throw new Error('set both the Telegram token (file) and ALERT_TELEGRAM_CHAT_ID, or neither');
+  }
   return {
     rpcUrl: e.RPC_URL,
     databaseUrl: e.DATABASE_URL,
@@ -68,5 +93,15 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     poolPollEvery: e.POOL_POLL_EVERY,
     metricsHost: e.METRICS_HOST,
     metricsPort: e.METRICS_PORT,
+    alerts: {
+      telegram:
+        token === undefined || e.ALERT_TELEGRAM_CHAT_ID === undefined
+          ? null
+          : { token, chatId: e.ALERT_TELEGRAM_CHAT_ID },
+      webhookUrl: e.ALERT_WEBHOOK_URL ?? null,
+      minSeverity: e.ALERT_MIN_SEVERITY,
+      maxAgeSeconds: e.ALERT_MAX_AGE_S,
+      largeTransferWei: e.LARGE_TRANSFER_MOHN * 10n ** 18n,
+    },
   };
 }

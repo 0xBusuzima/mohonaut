@@ -1,0 +1,104 @@
+# Service health alerts. On-chain alerts (roles, upgrades, pause, timelock, parameter changes,
+# mint above emission, large transfers) come from the indexer's alert rules (ADR-014) and are
+# sent directly; `IndexerAlertsUndelivered` watches that path.
+groups:
+  - name: indexer
+    rules:
+      - alert: IndexerDown
+        expr: up{job="indexer"} == 0
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: Indexer metrics unreachable for 5 minutes (no on-chain alerts are raised while it is down).
+      - alert: IndexerStalled
+        expr: time() - indexer_last_success_timestamp_seconds > 300
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: The indexer has not completed a poll for over 5 minutes.
+      - alert: IndexerLagging
+        # Robinhood Chain makes about 10 blocks per second: 6,000 blocks is about 10 minutes.
+        expr: indexer_head_block - ignoring(stream) indexer_block{stream="core"} > 6000
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: The core stream is more than ~10 minutes behind the chain head.
+      - alert: IndexerErrors
+        expr: increase(indexer_errors_total[15m]) > 5
+        labels: { severity: warning }
+        annotations:
+          summary: More than 5 failed polls in 15 minutes (RPC or database).
+      - alert: IndexerAlertsUndelivered
+        expr: indexer_alerts_pending > 0
+        for: 15m
+        labels: { severity: critical }
+        annotations:
+          summary: On-chain alerts have been waiting for delivery for 15 minutes (Telegram down or misconfigured?).
+      - alert: RpcBudget
+        # Projected monthly compute units against the 30M free tier.
+        expr: rate(indexer_rpc_compute_units_total[6h]) * 86400 * 30 > 27e6
+        for: 1h
+        labels: { severity: warning }
+        annotations:
+          summary: The indexer is on track to use over 27M RPC compute units this month; raise POLL_INTERVAL_MS.
+
+  - name: keeper
+    rules:
+      - alert: KeeperDown
+        expr: up{job="keeper"} == 0
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: Keeper metrics unreachable for 5 minutes (hours are not being closed, refines not finalized).
+      - alert: KeeperNoActiveInstance
+        expr: max(keeper_lock_held) < 1
+        for: 10m
+        labels: { severity: critical }
+        annotations:
+          summary: No keeper holds the job lock.
+      - alert: KeeperBalanceLow
+        expr: keeper_balance_wei < 2e15
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: Keeper balance below 0.002 ETH; top it up from the ops Safe.
+      - alert: KeeperJobFailing
+        expr: increase(keeper_errors_total[30m]) > 3
+        labels: { severity: warning }
+        annotations:
+          summary: 'Keeper task {{ $labels.task }} failed more than 3 times in 30 minutes.'
+      - alert: KeeperPokeStale
+        expr: time() - keeper_last_success_timestamp_seconds{task="poke"} > 3 * 3600
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: The poke job has not succeeded for 3 hours.
+      - alert: KeeperPriceGuard
+        expr: increase(keeper_guard_trips_total[1h]) > 0
+        labels: { severity: warning }
+        annotations:
+          summary: 'Keeper skipped {{ $labels.task }}: the pool price was far from its reference (possible manipulation).'
+
+  - name: api
+    rules:
+      - alert: ApiDown
+        expr: up{job="api"} == 0
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: API metrics unreachable for 5 minutes.
+      - alert: ApiErrorRate
+        expr: >
+          sum(rate(api_requests_total{status=~"5.."}[10m]))
+          / clamp_min(sum(rate(api_requests_total[10m])), 1e-9) > 0.02
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: More than 2 % of API requests fail with 5xx.
+      - alert: ApiSlow
+        expr: >
+          histogram_quantile(0.95, sum by (le) (rate(api_request_duration_seconds_bucket[10m]))) > 0.5
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: API p95 latency above 500 ms.

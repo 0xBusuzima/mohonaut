@@ -32,7 +32,15 @@ describe('schema', () => {
         r['is_nullable'] === 'YES',
       ]);
       const expected = getTableConfig(table)
-        .columns.map((c) => [c.name, c.getSQLType().replace(/\(.*\)$/, ''), !c.notNull])
+        .columns.map((c) => [
+          c.name,
+          // bigserial is a bigint column with a sequence default in information_schema
+          c
+            .getSQLType()
+            .replace(/\(.*\)$/, '')
+            .replace('bigserial', 'bigint'),
+          !c.notNull,
+        ])
         .sort((a, b) => String(a[0]).localeCompare(String(b[0])));
       expect(actual).toEqual(expected);
     },

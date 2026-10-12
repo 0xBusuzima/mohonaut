@@ -4,6 +4,8 @@
  */
 import {
   bigint,
+  bigserial,
+  boolean,
   doublePrecision,
   integer,
   jsonb,
@@ -12,6 +14,8 @@ import {
   primaryKey,
   smallint,
   text,
+  timestamp,
+  unique,
 } from 'drizzle-orm/pg-core';
 
 /** wei / WAD amounts: numeric(78,0) mapped to bigint. */
@@ -252,6 +256,27 @@ export const poolSwaps = pgTable(
   (t) => [primaryKey({ columns: [t.blockNumber, t.logIndex] })],
 );
 
+/** Alert outbox (migrations/0002_alerts.sql). Not rebuilt: (block, log, rule) is unique. */
+export const alerts = pgTable(
+  'alerts',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    blockNumber: int64('block_number').notNull(),
+    logIndex: integer('log_index').notNull(),
+    rule: text('rule').notNull(),
+    severity: text('severity').$type<'critical' | 'warning' | 'info'>().notNull(),
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    txHash: text('tx_hash').notNull(),
+    blockTime: int64('block_time').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    attempts: integer('attempts').notNull().default(0),
+    deliveredAt: timestamp('delivered_at', { withTimezone: true }),
+    skipped: boolean('skipped').notNull().default(false),
+  },
+  (t) => [unique().on(t.blockNumber, t.logIndex, t.rule)],
+);
+
 /** Tables rebuilt from the raw events (everything except cursors and events). */
 export const projectionTables = [
   state,
@@ -271,4 +296,4 @@ export const projectionTables = [
   poolSwaps,
 ] as const;
 
-export const allTables = [cursors, events, ...projectionTables] as const;
+export const allTables = [cursors, events, alerts, ...projectionTables] as const;

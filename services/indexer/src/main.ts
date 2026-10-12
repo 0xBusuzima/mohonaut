@@ -11,6 +11,8 @@ import { loadConfig } from './config.js';
 import { contractSet } from './contracts.js';
 import { migrate, openDatabase } from './db/client.js';
 import { Indexer, rebuildProjections } from './indexer.js';
+import { Notifier, telegramTransport, webhookTransport } from './alerts/notify.js';
+import type { AlertTransport } from './alerts/notify.js';
 import { Metrics } from './metrics.js';
 import { RpcSource } from './source.js';
 
@@ -34,7 +36,26 @@ async function main(): Promise<void> {
   const applied = await migrate(database);
   if (applied.length > 0) log('info', 'migrations applied', { applied });
   const poolManager = await source.poolManager(cfg.deployment.LiquidityManager);
-  const contracts = contractSet(cfg.deployment, poolManager, cfg.poolPollEvery);
+  const contracts = contractSet(
+    cfg.deployment,
+    poolManager,
+    cfg.poolPollEvery,
+    cfg.alerts.largeTransferWei,
+  );
+  const transports: AlertTransport[] = [];
+  if (cfg.alerts.telegram !== null) {
+    transports.push(telegramTransport(cfg.alerts.telegram.token, cfg.alerts.telegram.chatId));
+  }
+  if (cfg.alerts.webhookUrl !== null) transports.push(webhookTransport(cfg.alerts.webhookUrl));
+  const notifier =
+    transports.length === 0
+      ? null
+      : new Notifier(database, transports, {
+          chainId: cfg.deployment.chainId,
+          minSeverity: cfg.alerts.minSeverity,
+          maxAgeSeconds: cfg.alerts.maxAgeSeconds,
+          now: Date.now,
+        });
 
   if (process.argv[2] === 'rebuild') {
     const count = await rebuildProjections(database, contracts);
@@ -97,6 +118,12 @@ async function main(): Promise<void> {
     try {
       caughtUp = await indexer.step();
       lastSuccess = Date.now();
+      if (notifier !== null) {
+        const report = await notifier.deliver();
+        metrics.alertsSent.inc(report.sent);
+        metrics.alertFailures.inc(report.failed);
+        metrics.alertsPending.set(report.pending);
+      }
     } catch (err) {
       metrics.errors.inc();
       log('error', 'poll failed', { error: err instanceof Error ? err.message : String(err) });

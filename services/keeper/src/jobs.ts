@@ -55,7 +55,7 @@ async function send(
     account: ctx.clients.address,
   } as never);
   if (ctx.clients.walletClient === null) {
-    ctx.metrics.txs.inc({ job, status: 'simulated' });
+    ctx.metrics.txs.inc({ task: job, status: 'simulated' });
     return; // dry run
   }
   // Estimates of nested Uniswap calls sit at the edge (the 63/64 rule); a 25 % margin avoids
@@ -72,7 +72,7 @@ async function send(
     hash,
     timeout: 120_000,
   });
-  ctx.metrics.txs.inc({ job, status: receipt.status });
+  ctx.metrics.txs.inc({ task: job, status: receipt.status });
   if (receipt.status !== 'success') throw new Error(`${job}: transaction ${hash} reverted`);
 }
 
@@ -197,7 +197,7 @@ async function guardedPool(
   if (reference === null) return 'no reference price yet';
   const deviation = priceDeviationBps(pool.sqrtPriceX96, reference);
   if (deviation > ctx.cfg.maxPriceDeviationBps) {
-    ctx.metrics.guardTrips.inc({ job });
+    ctx.metrics.guardTrips.inc({ task: job });
     return `skipped: pool price ${deviation} bps from reference`;
   }
   return pool;

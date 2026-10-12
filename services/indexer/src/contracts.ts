@@ -52,12 +52,18 @@ export interface ContractSet {
   /** Addresses whose MOHN balance is protocol-owned (excluded from holder distributions). */
   protocolAddresses: ReadonlySet<Address>;
   streams: Stream[];
+  /** MOHN transfers and mints at or above this (wei) raise a warning alert. */
+  largeTransferWei: bigint;
 }
+
+/** Default large-transfer alert threshold: 50,000 MOHN. */
+const DEFAULT_LARGE_TRANSFER_WEI = 50_000n * 10n ** 18n;
 
 export function contractSet(
   deployment: Deployment,
   poolManager: Address,
   poolPollEvery: number,
+  largeTransferWei: bigint = DEFAULT_LARGE_TRANSFER_WEI,
 ): ContractSet {
   const byAddress = new Map<Address, ContractName>();
   for (const name of CORE_CONTRACTS) byAddress.set(deployment[name], name);
@@ -72,6 +78,7 @@ export function contractSet(
       poolManager,
       ...CORE_CONTRACTS.map((n) => deployment[n]),
     ]),
+    largeTransferWei,
     streams: [
       { name: 'core', filter: { address: CORE_CONTRACTS.map((n) => deployment[n]) }, every: 1 },
       {

@@ -31,6 +31,7 @@ export function createApp(deps: AppDeps): OpenAPIHono<AppEnv> {
     c.set('deps', deps);
     await next();
   });
+  if (deps.metrics !== undefined) app.use('*', deps.metrics.middleware());
   app.use('*', secureHeaders());
   app.use(
     '*',

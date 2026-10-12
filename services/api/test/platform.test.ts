@@ -154,3 +154,19 @@ describe('configuration', () => {
     expect(() => loadConfig({ ...base, EXTERNAL_AUTH_NAME: 'privy' })).toThrow('EXTERNAL_AUTH');
   });
 });
+
+describe('metrics', () => {
+  it('counts requests by route template, not raw path', async () => {
+    const h = await harness();
+    await h.app.request('/world');
+    await h.app.request('/profiles/0x0000000000000000000000000000000000000001');
+    await h.app.request('/does-not-exist');
+    const text = (await h.deps.metrics?.registry.metrics()) ?? '';
+    expect(text).toContain('api_requests_total{route="/world",method="GET",status="200"} 1');
+    expect(text).toContain(
+      'api_requests_total{route="/profiles/:address",method="GET",status="404"} 1',
+    );
+    expect(text).toContain('api_requests_total{route="unmatched",method="GET",status="404"} 1');
+    expect(text).not.toContain('0x0000000000000000000000000000000000000001');
+  });
+});

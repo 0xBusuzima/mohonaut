@@ -165,6 +165,26 @@ jobs:
           KEEPER_E2E: "1"
           KEEPER_E2E_PG_URL: postgres://postgres:postgres@localhost:5432/postgres
 
+  monitoring:
+    # Validates the monitoring stack and unit-tests the alert rules (infra/monitoring).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prometheus config
+        run: docker run --rm -v "$PWD/infra/monitoring/prometheus:/etc/prometheus:ro" --entrypoint promtool prom/prometheus:v3.5.0 check config /etc/prometheus/prometheus.yml
+      - name: Alert rule unit tests
+        run: docker run --rm -v "$PWD/infra/monitoring/prometheus:/etc/prometheus:ro" --entrypoint promtool prom/prometheus:v3.5.0 test rules /etc/prometheus/tests/mohonaut_test.yml
+      - name: Alertmanager config
+        run: docker run --rm -v "$PWD/infra/monitoring/alertmanager:/etc/alertmanager:ro" --entrypoint amtool prom/alertmanager:v0.28.1 check-config /etc/alertmanager/alertmanager.yml
+      - name: Loki config
+        run: docker run --rm -v "$PWD/infra/monitoring/loki:/etc/loki:ro" grafana/loki:3.5.0 -config.file=/etc/loki/loki.yml -verify-config
+      - name: Alloy config
+        run: docker run --rm -v "$PWD/infra/monitoring/alloy:/etc/alloy:ro" grafana/alloy:v1.9.0 fmt /etc/alloy/config.alloy
+      - name: Compose file
+        run: docker compose -f infra/monitoring/docker-compose.yml config -q
+      - name: Dashboards are generated
+        run: python3 tools/gen_dashboards.py --check
+
   security:
     runs-on: ubuntu-latest
     steps:

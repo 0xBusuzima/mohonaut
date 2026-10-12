@@ -22,6 +22,12 @@ export interface ProjectionState {
   lpMintedSince: bigint;
   /** Day of the last core event; days before it have a distribution snapshot. */
   lastDay: number | null;
+  /** Mint check (alerts): every MOHN ever minted, the emission of all closed hours, the Market
+   *  Open LP mint, and the emission rate of the open hour. */
+  mintedTotal: bigint;
+  emittedTotal: bigint;
+  lpMintedTotal: bigint;
+  emissionRate: bigint;
 }
 
 const INITIAL: ProjectionState = {
@@ -29,6 +35,10 @@ const INITIAL: ProjectionState = {
   recycledSince: 0n,
   lpMintedSince: 0n,
   lastDay: null,
+  mintedTotal: 0n,
+  emittedTotal: 0n,
+  lpMintedTotal: 0n,
+  emissionRate: 0n,
 };
 
 export async function loadState(tx: Db): Promise<ProjectionState> {
@@ -44,6 +54,10 @@ export async function loadState(tx: Db): Promise<ProjectionState> {
     recycledSince: big('recycledSince', INITIAL.recycledSince),
     lpMintedSince: big('lpMintedSince', INITIAL.lpMintedSince),
     lastDay: lastDay === undefined || lastDay === '' ? null : Number(lastDay),
+    mintedTotal: big('mintedTotal', 0n),
+    emittedTotal: big('emittedTotal', 0n),
+    lpMintedTotal: big('lpMintedTotal', 0n),
+    emissionRate: big('emissionRate', 0n),
   };
 }
 
@@ -59,9 +73,18 @@ export async function saveState(tx: Db, s: ProjectionState): Promise<void> {
 }
 
 /** Everything a projection needs while applying one batch inside a transaction. */
+export interface NewAlert {
+  rule: string;
+  severity: 'critical' | 'warning' | 'info';
+  title: string;
+  body: string;
+}
+
 export class Ctx {
   /** Days whose economy_daily row must be recomputed at the end of the batch. */
   readonly dirtyDays = new Set<number>();
+  /** Alerts raised by handlers for the event being projected (see alerts/rules.ts). */
+  readonly raised: NewAlert[] = [];
 
   constructor(
     readonly tx: Db,

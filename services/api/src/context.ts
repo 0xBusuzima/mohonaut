@@ -4,6 +4,7 @@ import type { ExternalAuthVerifier } from './auth/external.js';
 import type { SignatureVerifier } from './auth/siwe.js';
 import type { Config } from './config.js';
 import type { Role } from './db/schema.js';
+import type { ApiMetrics } from './metrics.js';
 import type { KeyValueStore } from './store.js';
 
 export interface TurnstileVerifier {
@@ -22,6 +23,7 @@ export interface AppDeps {
   turnstile: TurnstileVerifier | null;
   /** Unix milliseconds (injectable for tests). */
   now(): number;
+  metrics?: ApiMetrics;
 }
 
 export interface SessionUser {

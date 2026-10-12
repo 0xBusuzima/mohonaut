@@ -41,7 +41,7 @@ export const ALICE: Address = getAddress('0xa11ce0000000000000000000000000000000
 export const BOB: Address = getAddress('0xb0b0000000000000000000000000000000000002');
 export const CAROL: Address = getAddress('0xca201000000000000000000000000000000000c3');
 
-const G = BigInt(deployment.genesisTime);
+export const G = BigInt(deployment.genesisTime);
 export const GENESIS_HOUR = G / 3600n;
 export const DAY1 = Number(G / 86_400n);
 export const DAY2 = DAY1 + 1;

@@ -55,6 +55,24 @@ export class Metrics {
     registers: [this.registry],
   });
 
+  readonly alertsPending = new Gauge({
+    name: 'indexer_alerts_pending',
+    help: 'On-chain alerts not yet delivered',
+    registers: [this.registry],
+  });
+
+  readonly alertsSent = new Counter({
+    name: 'indexer_alerts_sent_total',
+    help: 'On-chain alerts delivered',
+    registers: [this.registry],
+  });
+
+  readonly alertFailures = new Counter({
+    name: 'indexer_alert_failures_total',
+    help: 'Failed alert deliveries (retried)',
+    registers: [this.registry],
+  });
+
   readonly lastSuccess = new Gauge({
     name: 'indexer_last_success_timestamp_seconds',
     help: 'Unix time of the last successful poll',

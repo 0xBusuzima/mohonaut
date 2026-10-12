@@ -54,9 +54,9 @@ process at a time can open), set `RUN_INDEXER=true`: the keeper then indexes bef
 
 ## Metrics
 
-`keeper_balance_wei`, `keeper_jobs_total{job,outcome}`, `keeper_tx_total{job,status}`,
-`keeper_errors_total{job}`, `keeper_guard_trips_total{job}`,
-`keeper_last_success_timestamp_seconds{job}`, `keeper_lock_held`.
+`keeper_balance_wei`, `keeper_jobs_total{task,outcome}`, `keeper_tx_total{task,status}`,
+`keeper_errors_total{task}`, `keeper_guard_trips_total{task}`,
+`keeper_last_success_timestamp_seconds{task}`, `keeper_lock_held`.
 
 ## Tests
 

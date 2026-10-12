@@ -11,3 +11,4 @@ tools/
 .github/
 packages/sdk/src/abi/
 deployments/
+infra/monitoring/grafana/dashboards/

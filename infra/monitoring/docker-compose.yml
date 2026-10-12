@@ -1,0 +1,80 @@
+# Monitoring stack (docs/03 §4.6, ADR-014), all self-hosted and free. Runs next to the services
+# (indexer :9464, keeper :9465, API :9466 metrics) on the same host or private network.
+#   cd infra/monitoring && docker compose up -d
+# Secrets are files outside the repository (see README.md); nothing here holds a credential.
+name: mohonaut-monitoring
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=30d
+      - --web.listen-address=127.0.0.1:9090
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+    network_mode: host
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --web.listen-address=127.0.0.1:9093
+    volumes:
+      - ./alertmanager:/etc/alertmanager:ro
+      - ${SECRETS_DIR:-/etc/mohonaut/secrets}/telegram_bot_token:/run/secrets/telegram_bot_token:ro
+      - alertmanager-data:/alertmanager
+    network_mode: host
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:12.0.0
+    environment:
+      GF_SERVER_HTTP_ADDR: 127.0.0.1
+      GF_AUTH_ANONYMOUS_ENABLED: 'false'
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ${SECRETS_DIR:-/etc/mohonaut/secrets}/grafana_admin_password:/run/secrets/grafana_admin_password:ro
+      - grafana-data:/var/lib/grafana
+    network_mode: host
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.5.0
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./loki:/etc/loki:ro
+      - loki-data:/loki
+    network_mode: host
+    restart: unless-stopped
+
+  alloy:
+    # Ships the containers' JSON logs to Loki.
+    image: grafana/alloy:v1.9.0
+    command: run --server.http.listen-addr=127.0.0.1:12345 /etc/alloy/config.alloy
+    volumes:
+      - ./alloy:/etc/alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    network_mode: host
+    restart: unless-stopped
+
+  uptime-kuma:
+    # Public status page (status.mohonaut.com via Cloudflare); monitors are set up in its UI.
+    image: louislam/uptime-kuma:1.23.16
+    ports:
+      - 127.0.0.1:3001:3001
+    volumes:
+      - uptime-kuma-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:
+  alertmanager-data:
+  grafana-data:
+  loki-data:
+  uptime-kuma-data:

@@ -10,6 +10,7 @@ import { createApp } from '../src/app.js';
 import { signatureVerifier } from '../src/auth/siwe.js';
 import type { Config } from '../src/config.js';
 import type { AppDeps, TurnstileVerifier } from '../src/context.js';
+import { ApiMetrics } from '../src/metrics.js';
 import { MemoryStore } from '../src/store.js';
 
 export const ORIGIN = 'https://play.mohonaut.test';
@@ -56,6 +57,8 @@ export async function harness(overrides: Partial<Config> = {}): Promise<Harness>
     webOrigin: ORIGIN,
     port: 0,
     host: '127.0.0.1',
+    metricsHost: '127.0.0.1',
+    metricsPort: 0,
     surveySecret: 'test-survey-secret-0123456789abcdef',
     turnstileSecret: 'x',
     trustCloudflare: false,
@@ -71,6 +74,7 @@ export async function harness(overrides: Partial<Config> = {}): Promise<Harness>
     externalAuth: null,
     turnstile,
     now: () => clock.now,
+    metrics: new ApiMetrics(),
   };
   return { app: createApp(deps), deps, database, clock, turnstileOk };
 }

@@ -12,35 +12,35 @@ export class Metrics {
   readonly jobs = new Counter({
     name: 'keeper_jobs_total',
     help: 'Job runs by outcome',
-    labelNames: ['job', 'outcome'],
+    labelNames: ['task', 'outcome'],
     registers: [this.registry],
   });
 
   readonly txs = new Counter({
     name: 'keeper_tx_total',
     help: 'Transactions sent by job and receipt status',
-    labelNames: ['job', 'status'],
+    labelNames: ['task', 'status'],
     registers: [this.registry],
   });
 
   readonly errors = new Counter({
     name: 'keeper_errors_total',
     help: 'Job failures',
-    labelNames: ['job'],
+    labelNames: ['task'],
     registers: [this.registry],
   });
 
   readonly guardTrips = new Counter({
     name: 'keeper_guard_trips_total',
     help: 'Buybacks or additions skipped because the pool price was far from the reference',
-    labelNames: ['job'],
+    labelNames: ['task'],
     registers: [this.registry],
   });
 
   readonly lastSuccess = new Gauge({
     name: 'keeper_last_success_timestamp_seconds',
     help: 'Unix time of the last successful run by job',
-    labelNames: ['job'],
+    labelNames: ['task'],
     registers: [this.registry],
   });
 
