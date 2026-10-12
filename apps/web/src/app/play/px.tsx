@@ -5,6 +5,14 @@ import { useEffect, useRef } from 'react';
 
 /** Pixel-art UI parts for the full-screen game (styles in globals.css, `.px-*`). */
 
+/** Marks the page as the game while mounted (toasts and other page-wide styles follow). */
+export function usePixelGame(): void {
+  useEffect(() => {
+    document.body.classList.add('pixel-game');
+    return () => document.body.classList.remove('pixel-game');
+  }, []);
+}
+
 export function PxButton({
   variant = 'primary',
   className = '',

@@ -20,18 +20,22 @@ export function PixelWorld({
   model,
   onSelect,
   label,
+  describe,
   contained = false,
 }: {
   model: Omit<WorldModel, 'hover' | 'motion' | 'pan'>;
   onSelect?: ((hit: Hit) => void) | undefined;
   label: string;
+  /** A short name for what the pointer is over, shown above it ("Diesel tank"). */
+  describe?: ((hit: Hit) => string | null) | undefined;
   contained?: boolean;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const hits = useRef<HitBox[]>([]);
   const press = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
   const [dragging, setDragging] = useState(false);
-  const [hover, setHover] = useState<Hit | null>(null);
+  const [hoverBox, setHoverBox] = useState<HitBox | null>(null);
+  const hover = hoverBox?.id ?? null;
   const [size, setSize] = useState({ w: 640, h: 360, scale: 3, maxX: 0, maxY: 0 });
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const reduced = useReducedMotion();
@@ -102,7 +106,7 @@ export function PixelWorld({
     return () => cancelAnimationFrame(frame);
   }, [size, model, hover, motion, vx, vy]);
 
-  const hitAt = (clientX: number, clientY: number): Hit | null => {
+  const hitAt = (clientX: number, clientY: number): HitBox | null => {
     const at = canvas.current?.getBoundingClientRect();
     const x = (clientX - (at?.left ?? 0)) / size.scale;
     const y = (clientY - (at?.top ?? 0)) / size.scale;
@@ -112,7 +116,7 @@ export function PixelWorld({
         if (best === null || h.w * h.h < best.w * best.h) best = h;
       }
     }
-    return best?.id ?? null;
+    return best;
   };
 
   let cursor = 'default';
@@ -120,47 +124,63 @@ export function PixelWorld({
   else if (hover !== null && onSelect !== undefined) cursor = 'pointer';
   else if (canPan) cursor = 'grab';
 
+  const tip = hoverBox !== null && describe !== undefined ? describe(hoverBox.id) : null;
+
   return (
-    <canvas
-      ref={canvas}
-      width={size.w}
-      height={size.h}
-      role="img"
-      aria-label={label}
-      className={`pixel-canvas ${contained ? 'absolute inset-0' : 'fixed inset-0 h-dvh w-screen touch-none'}`}
-      style={{ width: size.w * size.scale, height: size.h * size.scale, cursor }}
-      onPointerDown={(e) => {
-        if (!canPan) return;
-        press.current = { x: e.clientX, y: e.clientY, px: vx, py: vy };
-        e.currentTarget.setPointerCapture(e.pointerId);
-      }}
-      onPointerMove={(e) => {
-        const p = press.current;
-        if (p !== null && canPan) {
-          const dx = e.clientX - p.x;
-          const dy = e.clientY - p.y;
-          if (dragging || Math.hypot(dx, dy) > DRAG_PX) {
-            setDragging(true);
-            setPan({ x: clampX(p.px + dx / size.scale), y: clampY(p.py + dy / size.scale) });
+    <>
+      <canvas
+        ref={canvas}
+        width={size.w}
+        height={size.h}
+        role="img"
+        aria-label={label}
+        className={`pixel-canvas ${contained ? 'absolute inset-0' : 'fixed inset-0 h-dvh w-screen touch-none'}`}
+        style={{ width: size.w * size.scale, height: size.h * size.scale, cursor }}
+        onPointerDown={(e) => {
+          if (!canPan) return;
+          press.current = { x: e.clientX, y: e.clientY, px: vx, py: vy };
+          e.currentTarget.setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          const p = press.current;
+          if (p !== null && canPan) {
+            const dx = e.clientX - p.x;
+            const dy = e.clientY - p.y;
+            if (dragging || Math.hypot(dx, dy) > DRAG_PX) {
+              setDragging(true);
+              setPan({ x: clampX(p.px + dx / size.scale), y: clampY(p.py + dy / size.scale) });
+              return;
+            }
+          }
+          setHoverBox(onSelect === undefined ? null : hitAt(e.clientX, e.clientY));
+        }}
+        onPointerUp={(e) => {
+          press.current = null;
+          if (dragging) {
+            setDragging(false);
             return;
           }
-        }
-        setHover(onSelect === undefined ? null : hitAt(e.clientX, e.clientY));
-      }}
-      onPointerUp={(e) => {
-        press.current = null;
-        if (dragging) {
+          const h = hitAt(e.clientX, e.clientY);
+          if (h !== null) onSelect?.(h.id);
+        }}
+        onPointerCancel={() => {
+          press.current = null;
           setDragging(false);
-          return;
-        }
-        const h = hitAt(e.clientX, e.clientY);
-        if (h !== null) onSelect?.(h);
-      }}
-      onPointerCancel={() => {
-        press.current = null;
-        setDragging(false);
-      }}
-      onPointerLeave={() => setHover(null)}
-    />
+        }}
+        onPointerLeave={() => setHoverBox(null)}
+      />
+      {tip !== null && hoverBox !== null && (
+        <div
+          aria-hidden="true"
+          className={`px-dark pointer-events-none z-10 -translate-x-1/2 -translate-y-full px-2 py-0.5 font-pixel text-sm whitespace-nowrap text-amber ${contained ? 'absolute' : 'fixed'}`}
+          style={{
+            left: (hoverBox.x + hoverBox.w / 2) * size.scale,
+            top: hoverBox.y * size.scale - 4,
+          }}
+        >
+          {tip}
+        </div>
+      )}
+    </>
   );
 }

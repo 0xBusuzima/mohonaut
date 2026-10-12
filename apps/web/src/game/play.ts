@@ -2,6 +2,7 @@ import { sitePads } from '@mohonaut/sdk';
 import { isAddress, parseEther, zeroAddress } from 'viem';
 import type { Address } from 'viem';
 import { GEN1_RIGS } from '../lib/catalog';
+import type { Hit } from './pixel/world';
 import type { RigType } from './state';
 
 export interface ScenePad {
@@ -42,4 +43,16 @@ export function referrerFromUrl(): Address {
   if (typeof window === 'undefined') return zeroAddress;
   const ref = new URLSearchParams(window.location.search).get('ref');
   return ref !== null && isAddress(ref) ? ref : zeroAddress;
+}
+
+/** What the pointer is over on the site, for the label above it. */
+export function describeHit(hit: Hit, pads: ScenePad[]): string {
+  if (hit === 'tank') return 'Diesel tank';
+  if (hit === 'market') return 'Equipment market';
+  if (hit === 'shack') return 'Refinery';
+  if (hit === 'bore') return 'World Bore';
+  const pad = pads[Number(hit.slice(4))];
+  if (pad === undefined) return 'Locked pad: upgrade the site';
+  if (pad.typeId === null) return 'Empty pad: buy a rig';
+  return `${rigName(pad.typeId)}: ${pad.running ? 'drilling' : 'stopped'}`;
 }

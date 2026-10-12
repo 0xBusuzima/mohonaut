@@ -6,6 +6,7 @@ import { perHourEstimate, shareOfNetwork } from '../../game/derive';
 import type { GameState } from '../../game/state';
 import { formatLitres, formatMohn, formatUnits18 } from '../../lib/format';
 import { setLowPower, useLowPower } from '../../lib/power';
+import { setSound, useAmbience, useSound } from '../../game/audio';
 import { apiEnabled } from '../../social/api';
 import { HudChip, PxButton, PxIcon } from './px';
 
@@ -28,6 +29,8 @@ export type Panel =
  */
 export function Hud({ state, open }: { state: GameState; open: (p: Panel) => void }) {
   const lowPower = useLowPower();
+  const sound = useSound();
+  useAmbience(sound);
   const p = state.player;
   const n = state.network;
   if (p === null) return null;
@@ -100,6 +103,15 @@ export function Hud({ state, open }: { state: GameState; open: (p: Panel) => voi
           onClick={() => setLowPower(!lowPower)}
         >
           Low power {lowPower ? 'on' : 'off'}
+        </PxButton>
+        <PxButton
+          variant="dark"
+          aria-pressed={sound}
+          title="Rain, the generator and the odd pipe clank"
+          className="!px-2 !py-1 !text-sm"
+          onClick={() => setSound(!sound)}
+        >
+          Sound {sound ? 'on' : 'off'}
         </PxButton>
       </div>
       {/* Bottom: the main buttons. */}

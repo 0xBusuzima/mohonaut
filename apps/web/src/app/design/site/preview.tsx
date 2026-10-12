@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { PixelWorld } from '../../../game/pixel/PixelWorld';
+import { describeHit } from '../../../game/play';
 import type { ScenePad } from '../../../game/play';
 import type { GameState } from '../../../game/state';
 import { GEN1_RIGS } from '../../../lib/catalog';
@@ -74,6 +75,7 @@ export function SitePreview() {
           if (hit === 'market') setPanel('market');
           else if (hit.startsWith('pad:')) setPanel('rigs');
         }}
+        describe={(hit) => describeHit(hit, PADS)}
         label={`Sample drill site: ${GEN1_RIGS.map((r) => r.name).join(', ')}.`}
       />
       <Brand />

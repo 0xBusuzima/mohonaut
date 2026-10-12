@@ -11,7 +11,7 @@ import { useE2EConnect } from '../../game/e2e';
 import { gameChain } from '../../game/network';
 import { PixelWorld } from '../../game/pixel/PixelWorld';
 import type { Hit } from '../../game/pixel/world';
-import { scenePads } from '../../game/play';
+import { describeHit, scenePads } from '../../game/play';
 import { useGameAction } from '../../game/actions';
 import type { Action } from '../../game/actions';
 import { useGameState } from '../../game/state';
@@ -23,7 +23,7 @@ import { ME_KEY, useMe } from '../../social/session';
 import { CrewPanel, ProfilePanel, SeasonsPanel, SignedIn, SurveyPanel } from '../../social/panels';
 import { Hud } from './Hud';
 import type { Panel } from './Hud';
-import { PxButton, PxIcon, PxModal, Steps } from './px';
+import { PxButton, PxIcon, PxModal, Steps, usePixelGame } from './px';
 import { MarketWindow, RigsWindow } from './RigCards';
 import { FuelWindow, RefineryWindow, SiteWindow } from './windows';
 import { Brand, LoadingScreen, ONBOARDING_STEPS } from './Shell';
@@ -46,6 +46,7 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
   const { state, refetch } = useGameState(address, lowPower);
   const action = useGameAction(refetch);
   useE2EConnect();
+  usePixelGame();
 
   const p = state?.player ?? null;
   const level = p?.level ?? 0;
@@ -104,6 +105,7 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
       <PixelWorld
         model={model}
         onSelect={onboarding === null ? onSelect : undefined}
+        describe={(hit) => describeHit(hit, model.pads)}
         label={`Your drill site, level ${level}.`}
       />
       <Brand />

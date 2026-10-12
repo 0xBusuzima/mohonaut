@@ -231,6 +231,23 @@ html {
   background: #262c33;
 }
 
+/* In the game the toasts sit under the HUD read-outs, as small steel plates. */
+body.pixel-game .toast-region {
+  top: 8.5rem;
+  bottom: auto;
+}
+body.pixel-game .toast-item {
+  font-family: var(--font-pixel);
+  border-radius: 0;
+  background: #1b1f24;
+  color: #ece7dc;
+  border-top: 3px solid #0b0d10;
+  border-right: 3px solid #0b0d10;
+  border-bottom: 3px solid #0b0d10;
+  border-left-width: 6px;
+  box-shadow: 0 4px 0 #0b0d10;
+}
+
 @keyframes loadbar {
   from {
     width: 8%;

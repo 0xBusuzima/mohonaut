@@ -40,6 +40,7 @@ export function Counter({
   const lowPower = useLowPower();
   const nowMs = useNow(reduced || lowPower ? 1000 : 250);
   const value = counterValue(base, perHour, since, nowMs ?? since * 1000);
+  const u = unit === '' ? '' : ` ${unit}`;
   return (
     <span className="inline-flex items-baseline gap-2">
       <span className={`num ${numberClass}`} aria-hidden="true">
@@ -51,7 +52,7 @@ export function Counter({
         </span>
       )}
       <span className="sr-only">
-        {`${formatUnits18(value, 2)} ${unit}, rising about ${formatUnits18(perHour, 2)} ${unit} per hour`}
+        {`${formatUnits18(value, 2)}${u}, rising about ${formatUnits18(perHour, 2)}${u} per hour`}
       </span>
     </span>
   );

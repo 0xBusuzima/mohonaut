@@ -61,7 +61,7 @@ export function ToastProvider({
   return (
     <ToastContext.Provider value={push}>
       {children}
-      <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-2 px-4">
+      <div className="toast-region pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-2 px-4">
         {regions.map((r) => (
           <div key={r.live} aria-live={r.live} className="flex w-full max-w-md flex-col gap-2">
             {r.list.map((t) => (
@@ -78,7 +78,7 @@ function Toast({ item, onClose }: { item: ToastItem; onClose: () => void }) {
   return (
     <div
       role={item.tone === 'alarm' ? 'alert' : 'status'}
-      className={`pointer-events-auto rounded-lg border-l-4 bg-surface-raised p-4 shadow-lg ${TONE[item.tone]}`}
+      className={`toast-item pointer-events-auto rounded-lg border-l-4 bg-surface-raised p-4 shadow-lg ${TONE[item.tone]}`}
     >
       <div className="flex items-start justify-between gap-4">
         <div>
