@@ -1,0 +1,64 @@
+C01 | OK | CAP | 100_000_000e18 (MohnToken.sol:19) | 100,000,000 MOHN, 18 dec (docs/02:49) | 100000000 (params.json:3) | 
+C02 | DIFF | Daily mint cap | 500_000e18 (MohnToken.sol:22) | 500,000 / UTC day (docs/02:55) | 2000000 (params.json:66) | sim params.json still 2,000,000 (v0.2)
+C03 | OK | Hourly mint limit | 150_000e18; 13 x 5 min = 65 min ring (MiningCore.sol:105) | 150,000 / sliding 60 min (docs/02:56) | not enforced (hourly stats only) (engine/minting.py) | window covers 60-65 min (stricter than 60)
+C04 | OK | Max refine per request | 100_000e18 (MiningCore.sol:103) | 100K per refine request (docs/02:56) | not modelled (-) | 
+C05 | OK | delta_h (WAD) | 20838326282491 (lib/EmissionMath.sol:15) | 1-(1-0.0005)^(1/24) ~ 2.08383e-5 (docs/02:73) | 20838326282491 / delta_d 0.0005 (vectors/emission_hourly.json; params.json:5) | 80-digit recomputation 20838326282491
+C06 | OK | Emission split 90/5/5 | 9_000/500/remainder (lib/EmissionMath.sol:18) | 90/5/5 (docs/02:106) | 0.9/0.05/0.05 (params.json:6-8) | 
+C07 | OK | MAX_HOURS_PER_POKE | 168 (MiningAccounting.sol:24) | 168 (docs/02:149) | n/a (daily) (-) | 
+C08 | DIFF | Accumulator precision | 1e36 (MiningAccounting.sol:21) | 1e18 (acc += x*1e18/H) (docs/02:142) | float (-) | docs/02 S4 says 1e18; code 1e36 (more precise)
+C09 | OK | Yearly emission table / half-life | half-life 1385.9 d, keep 0.833147 (EmissionMath (derived)) | 1,386 d; 0.83314; table (docs/02:85) | engine/emission.py year_emission (emission.py:71) | docs value 0.83314 is truncated (exact 0.833147)
+C10 | OK | Stratum thresholds (gen 2..8+) | [2000, 6000, 12262, 20000, 35000, 60000, 85000] (MiningCore.sol:719) | [2000, 6000, 12262, 20000, 35000, 60000, 85000] (docs/02:124) | depth_m = accrued/1000 (model.py:783) | Gen-8+ reuses 85,000 m (docs names no Gen-8)
+C11 | OK | MOHN per metre | 1000e18 (MiningCore.sol:92) | depth = emission / 1,000 (docs/02:117) | accrued_total / 1000 (model.py:783) | 
+C12 | OK | Fuel price (initial) | FUEL_PRICE_USD = 0.1e18 (script/Deploy.s.sol:36) | $0.10 / L (docs/02:37) | 0.1 (params.json:15) | sim key still named usd_per_kwh (energy theme)
+C13 | OK | Fuel price bounds/step/period | 0.03e18-0.5e18, 2500 bps, 7 days (MiningCore.sol:1014) | $0.03-0.50, +-25 %/7 d (docs/02:37) | not modelled (constant) (-) | 
+C14 | OK | Tank cap hours (initial) | 720 (MiningCore.sol:65) | capacity x 720 h (docs/02:174) | 720 (params.json:16) | 
+C15 | OK | Tank cap bounds | 168-2160 h, any step, 7 days (MiningCore.sol:1019) | 168-2,160 h, rate '-' (docs/02:174) | - (-) | 7-day rate limit not in docs/02 (DOC-GAP)
+C16 | OK | Oracle staleness | 26 hours (MiningCore.sol:67) | 26 h (25-30 h) (docs/02:175) | - (-) | 7-day rate limit not in docs/02 (DOC-GAP)
+C17 | DIFF | Sequencer grace | 1 hours (MiningCore.sol:68) | feed absent; optional; no grace defined (docs/02:176) | - (-) | DOC-GAP
+C18 | OK | Genesis tank grace | 24 hours (MiningCore.sol:63) | Market Open + 24 h (docs/02:353) | 24 (params.json:63) | 
+C19 | OK | Pre-fill / genesis length | 24 hours / 72 hours (MiningCore.sol:60) | T0-24h / T0+72h (docs/02:341) | genesis.days 3 (params.json:58) | 
+C20 | OK | Machine type 0 Pilot Rig (DP, L/h, prem bps, min L) | ('10', '0.25', '0', '1') (MiningCore.sol:333) | ('10', '0.25', '0', '1') (docs/02:202) | ('10', '0.25', '0', '1') (params.json:20-23) | eta 40; sim name 'Hand Auger'
+C21 | OK | Machine type 1 Rotary Rig (DP, L/h, prem bps, min L) | ('50', '1', '0', '1') (MiningCore.sol:334) | ('50', '1.0', '0', '1') (docs/02:203) | ('50', '1.0', '0', '1') (params.json:20-23) | eta 50; sim name 'Rotary Drill'
+C22 | OK | Machine type 2 Top Drive (DP, L/h, prem bps, min L) | ('150', '2.5', '800', '3') (MiningCore.sol:335) | ('150', '2.5', '800', '3') (docs/02:204) | ('150', '2.5', '800', '3') (params.json:20-23) | eta 60; sim name 'Percussion Rig'
+C23 | OK | Machine type 3 Diamond Core Drill (DP, L/h, prem bps, min L) | ('420', '6', '1700', '6') (MiningCore.sol:336) | ('420', '6.0', '1700', '6') (docs/02:205) | ('420', '6.0', '1700', '6') (params.json:20-23) | eta 70; sim name 'Diamond Core Drill'
+C24 | OK | Machine type 4 Turbodrill (DP, L/h, prem bps, min L) | ('1000', '12.5', '2700', '10') (MiningCore.sol:337) | ('1000', '12.5', '2700', '10') (docs/02:206) | ('1000', '12.5', '2700', '10') (params.json:20-23) | eta 80; sim name 'Thermal Lance'
+C25 | OK | Machine type 5 Plasma Bore (DP, L/h, prem bps, min L) | ('2700', '30', '4000', '15') (MiningCore.sol:338) | ('2700', '30.0', '4000', '15') (docs/02:207) | ('2700', '30.0', '4000', '15') (params.json:20-23) | eta 90; sim name 'Plasma Bore'
+C26 | OK | Best efficiency (gen 1) | 90e18 (MiningCore.sol:341) | Plasma Bore eta 90 (docs/02:207) | dp/kw = 90 (config.py:33) | 
+C27 | OK | Next generation rule | +1500 bps, 45 days, <= 8 types, premium <= 10_000 bps (MiningCore.sol:89) | eff <= best +15 %, <= 1 gen / 45 d, stratum (docs/02:370) | not modelled (-) | 8 types / 100 % premium / dp<=10,000 are DOC-GAP
+C28 | OK | Pilot rig | free on registration, 1 per site, no scrap credit (MiningCore.sol:576) | free, 1 per account (docs/02:202) | tier 0 free (params.json:19) | no-scrap-credit rule is DOC-GAP
+C30 | OK | VRGDA p0 | 10e18 (MiningCore.sol:76) | 10 MOHN/DP (deploy) (docs/02:234) | 10.0 (params.json:26) | 
+C31 | OK | VRGDA k | 0.15e18 (MiningCore.sol:77) | 0.15 (docs/02:235) | 0.15 (params.json:27) | 
+C32 | OK | VRGDA r | 2000e18 (MiningCore.sol:78) | 2,000 DP/d (docs/02:236) | 2000.0 (params.json:28) | 
+C33 | OK | Max units per tx | 10_000 (MiningCore.sol:79) | 10,000 DP units (docs/02:237) | 10000 (params.json:29) | 
+C34 | OK | r/k bounds & step | r 1000e18-100000e18, k 0.05e18-0.35e18, 2500 bps, 30 days (MiningCore.sol:1015) | r 1,000-100,000; k 0.05-0.35; +-25 %/30 d (docs/02:235) | r 1000.0-100000.0, step 0.25, cooldown 30 d (params.json:75-78) | 
+C35 | OK | Re-anchoring | on r AND k change (ln-anchor) (MiningCore.sol:944) | on r change: p0(1-k)^(s_a+(t-t_a)-(n-n_a)/r) (docs/02:393) | r only (engine/governance.py:255) | k re-anchoring is DOC-GAP (docs formula would jump on a k change)
+C36 | DIFF | Docs S6.1 'price @ p0=10' column | batchCost(dp) x (1+prem) at t=0,n=0 (lib/VrgdaMath.sol:46) | {1: 500, 2: 1620, 3: 4914, 4: 12700, 5: 37800} (docs/02:200) | tier_cost (vrgda_costs.json: 42,265.6 for T5) (vectors/vrgda_costs.json) | T1: doc 500 actual 501.0 (+0.20 %); T2: doc 1620 actual 1629.8 (+0.61 %); T3: doc 4914 actual 4998.6 (+1.72 %); T4: doc 12700 actual 13229.7 (+4.17 %); T5: doc 37800 actual 42265.6 (+11.81 %)
+C37 | OK | Unit convention | unit j costs p(t, n+j); batch = p(t,n)(a^q-1)/(a-1) (lib/VrgdaMath.sol:9) | Maliyet(q) = p(t,n)(a^q-1)/(a-1) (docs/02:228) | same (engine/vrgda.py:140) | 
+C38 | OK | VRGDA time origin | elapsed since vrgdaAnchorTime = genesisTime (0 during pre-fill) (MiningCore.sol:327) | t = days since launch (docs/02:221) | day 0 = T0 (engine/scenarios.py:4) | 
+C40 | OK | Spend burn/reserve | reserve 2000 bps (floor), burn = rest (MiningAccounting.sol:27) | 80 % burn / 20 % reserve (docs/02:244) | 0.8 (params.json:33) | 
+C41 | DIFF | Cosmetic spend 100 % burn | no cosmetic sink in contracts (-) | 100 % burn (docs/02:246) | 1.0 (params.json:34) | DOC-GAP: not implemented on-chain in v1
+C42 | OK | Scrap credit | 2000 bps x DP x unitPrice (floor) (MiningCore.sol:81) | DP x p(t,n) x 20 % (docs/02:249) | 0.2 (params.json:35) | 
+C43 | OK | Fast refine fee | 800 bps (ceil); reserve = fee/2 floor, burn = rest (MiningCore.sol:98) | 8 % = 4 % burn + 4 % reserve; bounds 0-12 % (docs/02:284) | 0.08 / burn share 0.5 (params.json:48-49) | 7-day rate limit DOC-GAP
+C44 | OK | Refine delay | 72 hours (MiningCore.sol:99) | 72 h; bounds 24-168 h (docs/02:283) | queue_days 3 (params.json:50) | 7-day rate limit DOC-GAP
+C45 | OK | Dev/treasury withdrawal limit | 100_000e18 (MiningCore.sol:101) | <= 100K per request and per day; 72 h queue (docs/02:112) | dev withdrawn daily via queue, no 100K cap (model.py:121) | queue uses the adjustable refineDelay (24-168 h); docs says 72 h
+C46 | OK | Referral | 300 bps; min fuel 0.003 ether (MiningAccounting.sol:31) | 3 % of invitee accrual; >= 0.003 ETH; referrer has fuel (docs/02:296) | 0.03 / 0.003 ETH (params.json:11-12) | conditions evaluated once at settle time (lump), sim per day
+C50 | OK | Fuel line capacity table L1-L30 | 30 entries (lib/SiteMath.sol:38) | 6 x 1.22^(L-1) (docs/02:259) | cap_base_kw 6, cap_growth 1.22 (params.json:39-40) | exact to the wei vs 80-digit recomputation and vectors
+C51 | OK | Upgrade cost table L1-L29 | 29 entries (lib/SiteMath.sol:74) | 150 x L^2.2 (docs/02:260) | cost_base 150, cost_exp 2.2 (params.json:41-42) | max |code - 80-digit exact| = 0 wei
+C52 | OK | Slots | 3 + level (lib/SiteMath.sol:16) | 3 + L (docs/02:258) | 3 (params.json:38) | 
+C53 | OK | Max level | 30 (lib/SiteMath.sol:9) | L1-L30 (docs/02:258) | 30 (params.json:45) | 
+C54 | OK | idx clamp | 0.25e18 - 4e18 (idx floored) (MiningCore.sol:82) | clamp(p/p0, 0.25, 4) (docs/02:261) | 0.25 - 4.0 (params.json:43-44) | 
+C55 | DIFF | Site cost scale | 1x; 0.5x-2x; +-25 %/30 d (MiningCore.sol:1021) | 'Saha maliyet tabanı' +-25 %/30 d, no bounds (docs/02:371) | absent (-) | absolute bounds DOC-GAP (SCOPE known issue 6)
+C56 | DIFF | Docs S7 table numbers | total L1->L30 2,367,148 MOHN (lib/SiteMath.sol tables) | table + 'L30 total ~ 2.3M' (docs/02:264) | - (-) | L29 capacity doc 1565 code 1571.18; L30 capacity doc ~1,909 code 1916.84
+C60 | OK | Revenue split | 5500/3000/remainder (RevenueRouter.sol:29) | 55/30/15 (docs/02:310) | 0.55/0.3/0.15 (params.json:53-55) | rounding dust to ops
+C61 | OK | Revenue split bounds | bb 3000-6000, pol 2000-5000, ops 1000-3500, once / 30 d (RevenueRouter.sol:77) | 30-60 / 20-50 / 10-35 %, no rate (docs/02:310) | - (-) | 30-day rate limit DOC-GAP
+C62 | OK | Buyback daily cap | 200 bps of pool ETH; 50-500 bps / 7 d (BuybackBurner.sol:27) | 'günlük tavan' (no number) (docs/02:310) | 0.02 (params.json:93) | value and bounds DOC-GAP
+C63 | DIFF | POL add daily cap | 400 bps of pool ETH (immutable) (LiquidityManager.sol:36) | not defined (docs/02:311) | whole POL bucket zapped every day (no cap) (engine/model.py:440-442) | MISMATCH sim vs code + DOC-GAP
+C64 | DIFF | Pool fee / fee routing | 0.3 %, tick 60; MOHN fees burned, ETH fees -> buyback (lib/MohnPool.sol:16) | fee not defined; POL fees = revenue (docs/02:330) | amm.fee 0.003; fees compound in the pool (params.json:88; engine/amm.py:3) | fee value matches; fee routing differs (MISMATCH sim)
+C65 | OK | Market Open LP cap | min(polEth*ethUsd/P0, 1000000, hourly room) (lib/MarketOpenMath.sol:12) | min(..., 1,000,000, room) (docs/02:346) | min(..., 1000000) (no room clamp) (params.json:59; model.py:701) | 1M is unreachable on-chain: room <= 150K
+C66 | OK | P0 formula | floor(genesisFuelUsd*1e18/minersAtSnapshot) (lib/MarketOpenMath.sol:25) | fuel USD / genesis miner accrual (docs/02:345) | purchased basis (params.json:97) | floor P0 => slightly more LP minted (dust)
+C70 | DIFF | Timelock delays | PARAMS_DELAY 96 hours; UPGRADE_DELAY 7 days (script/Deploy.s.sol:34-35) | 96 h; upgrades 7 d (docs/02:17) | governance.delay_days 3 (72 h) (params.json:70) | sim main study 72 h (v02_delay96 side run only)
+C71 | DIFF | Guardian pause / cooldown / max extension | 72 hours / 7 days / 30 days (MiningCore.sol:111) | not in docs/02 (docs/04 S5.2 <= 72 h; docs/03 7 d, 30 d) (docs/02: -) | - (-) | DOC-GAP vs docs/02
+C72 | DIFF | Recipients / sequencer feed rate | 30 days each (MiningCore.sol:990) | not in docs/02 (docs/02: -) | - (-) | DOC-GAP
+C73 | OK | Intervention rule thresholds | off-chain (Safe) (-) | SR<0.5 or p/p0<0.25 4 wk -> r x0.75; p>4 p0 4 wk -> r x1.25 (docs/02:376) | sr_low 0.5, ratio 0.25/4.0, weeks 4 (params.json:71-75) | 
+
+62 checks: 50 OK, 12 DIFF
