@@ -207,6 +207,14 @@ jobs:
           VISUAL: "1"
           HOME: /root
         run: npx playwright test --update-snapshots=missing
+      - name: Bundle budget
+        working-directory: apps/web
+        run: npm run budget
+      - name: Lighthouse (mobile; performance >= 85, accessibility >= 95)
+        working-directory: apps/web
+        env:
+          HOME: /root
+        run: npm run lighthouse -- --json lighthouse.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -214,6 +222,7 @@ jobs:
           path: |
             apps/web/playwright-report
             apps/web/e2e/__screenshots__
+            apps/web/lighthouse.json
 
   web-play-e2e:
     # The game client against a local anvil deployment (apps/web/e2e/play): the real deploy

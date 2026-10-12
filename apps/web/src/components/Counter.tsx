@@ -3,6 +3,7 @@
 import { useNow } from '../lib/clock';
 import { formatUnits18 } from '../lib/format';
 import { useReducedMotion } from '../lib/motion';
+import { useLowPower } from '../lib/power';
 
 export interface CounterProps {
   /** Amount (18 decimals) at `since`. */
@@ -23,11 +24,12 @@ export function counterValue(base: bigint, perHour: bigint, since: number, nowMs
 
 /**
  * A live counter (e.g. unrefined MOHN). Ticks every 250 ms, or every second when the player
- * prefers reduced motion. Screen readers get the rate, not a constantly changing number.
+ * prefers reduced motion or low-power mode is on. Screen readers get the rate, not a constantly changing number.
  */
 export function Counter({ base, perHour, since, unit, digits = 4 }: CounterProps) {
   const reduced = useReducedMotion();
-  const nowMs = useNow(reduced ? 1000 : 250);
+  const lowPower = useLowPower();
+  const nowMs = useNow(reduced || lowPower ? 1000 : 250);
   const value = counterValue(base, perHour, since, nowMs ?? since * 1000);
   return (
     <span className="inline-flex items-baseline gap-2">

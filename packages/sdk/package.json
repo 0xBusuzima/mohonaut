@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "sideEffects": false,
   "description": "Shared formulas, types and ABIs. Economy math must match sim/vectors bit-for-bit.",
   "exports": {
     ".": {

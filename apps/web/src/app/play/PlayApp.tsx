@@ -54,13 +54,13 @@ function Auth({ children }: { children: ReactNode }) {
   );
 }
 
-export function PlayApp() {
+export function PlayApp({ openConnect = false }: { openConnect?: boolean }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <Auth>
           <RainbowKitProvider theme={theme} modalSize="compact">
-            <PlayScreen />
+            <PlayScreen openConnect={openConnect} />
           </RainbowKitProvider>
         </Auth>
       </QueryClientProvider>

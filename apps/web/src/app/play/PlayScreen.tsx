@@ -1,8 +1,8 @@
 'use client';
 
 import { formatDepth, fuelLineWad, millimetres, sitePads, stratumAt } from '@mohonaut/sdk';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useEffect, useMemo, useState } from 'react';
+import { ConnectButton, useConnectModal } from '@rainbow-me/rainbowkit';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Address } from 'viem';
 import { useAccount, useBalance, useConnect, useSwitchChain } from 'wagmi';
 import { Badge } from '../../components/Badge';
@@ -13,24 +13,37 @@ import { Tabs } from '../../components/Tabs';
 import { TankGauge } from '../../components/TankGauge';
 import { useGameAction } from '../../game/actions';
 import { efficiency, perHourEstimate, shareOfNetwork, withHeadroom } from '../../game/derive';
-import { gameChain, isTestnet } from '../../game/network';
+import { gameChain } from '../../game/network';
 import { SiteScene } from '../../game/SiteScene';
 import { useGameState } from '../../game/state';
 import type { GameState, RigType } from '../../game/state';
 import { parseAmount, referrerFromUrl, rigName, scenePads } from '../../game/play';
 import { E2E_ACCOUNT } from '../../game/wallet';
+import { PlayFrame, Welcome } from './PlayFrame';
 import { formatEth, formatLitres, formatMohn, formatUtc } from '../../lib/format';
+import { setLowPower, useLowPower } from '../../lib/power';
 import { apiEnabled } from '../../social/api';
 import { CrewPanel, ProfilePanel, SeasonsPanel, SignedIn, SurveyPanel } from '../../social/panels';
 
 type Action = ReturnType<typeof useGameAction>;
 
-export function PlayScreen() {
+/** `openConnect`: the player already pressed Connect on the light welcome screen. */
+export function PlayScreen({ openConnect = false }: { openConnect?: boolean }) {
   const { address, chainId, isConnected } = useAccount();
   const { switchChain } = useSwitchChain();
   const { connect, connectors } = useConnect();
-  const { state, refetch } = useGameState(address);
+  const lowPower = useLowPower();
+  const { state, refetch } = useGameState(address, lowPower);
   const action = useGameAction(refetch);
+
+  // Open the wallet list once, for the press that loaded this code (a ref: no re-render).
+  const { openConnectModal } = useConnectModal();
+  const opened = useRef(false);
+  useEffect(() => {
+    if (!openConnect || opened.current || isConnected || openConnectModal === undefined) return;
+    opened.current = true;
+    openConnectModal();
+  }, [openConnect, isConnected, openConnectModal]);
 
   // End-to-end tests: connect the local anvil account automatically.
   useEffect(() => {
@@ -43,48 +56,31 @@ export function PlayScreen() {
   const paused = state !== null && state.network.pausedUntil > state.at;
 
   return (
-    <div className="min-h-dvh">
-      {isTestnet && (
-        <p className="bg-amber px-4 py-1.5 text-center font-stencil text-sm tracking-widest text-night uppercase">
-          Testnet · Season 0 — nothing here has value
+    <PlayFrame connect={<ConnectButton chainStatus="icon" showBalance={false} />}>
+      {paused && (
+        <p role="alert" className="rounded-lg border border-bad p-4">
+          The game is paused by the Guardian until {formatUtc(state.network.pausedUntil)}. Your
+          rigs, tank and balances are safe; actions resume automatically.
         </p>
       )}
-      <header className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4">
-        <a
-          href="/"
-          className="font-display text-2xl font-black tracking-wide text-orange uppercase"
-        >
-          Mohonaut
-        </a>
-        <ConnectButton chainStatus="icon" showBalance={false} />
-      </header>
-      <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-16">
-        <h1 className="sr-only">Your drill site</h1>
-        {paused && (
-          <p role="alert" className="rounded-lg border border-bad p-4">
-            The game is paused by the Guardian until {formatUtc(state.network.pausedUntil)}. Your
-            rigs, tank and balances are safe; actions resume automatically.
-          </p>
-        )}
-        {wrongChain && (
-          <Card title="Wrong network">
-            <p>Your wallet is on another network. Mohonaut runs on {gameChain.name}.</p>
-            <Button className="mt-4" onClick={() => switchChain({ chainId: gameChain.id })}>
-              Switch to {gameChain.name}
-            </Button>
-          </Card>
-        )}
-        {!isConnected && <Welcome />}
-        {isConnected && !wrongChain && state === null && (
-          <p role="status" className="text-fg-muted">
-            Reading the chain…
-          </p>
-        )}
-        {isConnected && !wrongChain && state !== null && address !== undefined && (
-          <Screens state={state} action={action} address={address} />
-        )}
-      </main>
-    </div>
+      {wrongChain && (
+        <Card title="Wrong network">
+          <p>Your wallet is on another network. Mohonaut runs on {gameChain.name}.</p>
+          <Button className="mt-4" onClick={() => switchChain({ chainId: gameChain.id })}>
+            Switch to {gameChain.name}
+          </Button>
+        </Card>
+      )}
+      {!isConnected && <Welcome connect={<ConnectButton label="Connect wallet" />} />}
+      {isConnected && !wrongChain && state === null && (
+        <p role="status" className="text-fg-muted">
+          Reading the chain…
+        </p>
+      )}
+      {isConnected && !wrongChain && state !== null && address !== undefined && (
+        <Screens state={state} action={action} address={address} />
+      )}
+    </PlayFrame>
   );
 }
 
@@ -123,20 +119,6 @@ function Screens({
         },
       ]}
     />
-  );
-}
-
-function Welcome() {
-  return (
-    <Card title="Open your drill site">
-      <p className="max-w-2xl">
-        Connect a wallet to see your site. Your first diesel purchase opens it with a free Pilot
-        Rig. You pay your own network fees, and the game never asks you to approve token spending.
-      </p>
-      <div className="mt-4">
-        <ConnectButton label="Connect wallet" />
-      </div>
-    </Card>
   );
 }
 
@@ -218,6 +200,7 @@ function Game({ state, action }: { state: GameState; action: Action }) {
         <RigsPanel state={state} action={action} />
         <RefineryPanel state={state} action={action} />
       </div>
+      <LowPowerSwitch />
     </>
   );
 }
@@ -532,5 +515,15 @@ function RefineryPanel({ state, action }: { state: GameState; action: Action }) 
         </ul>
       )}
     </Card>
+  );
+}
+
+function LowPowerSwitch() {
+  const on = useLowPower();
+  return (
+    <label className="flex items-center gap-2 text-fg-muted">
+      <input type="checkbox" checked={on} onChange={(e) => setLowPower(e.target.checked)} />
+      Low-power mode: a still scene and slower updates, for older phones and saving battery
+    </label>
   );
 }

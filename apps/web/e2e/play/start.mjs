@@ -177,6 +177,7 @@ execFileSync(process.execPath, [require.resolve('next/dist/bin/next'), 'build'],
   env,
 });
 execFileSync(process.execPath, ['scripts/flatten-segments.mjs'], { cwd: WEB, stdio: 'inherit' });
+execFileSync(process.execPath, ['scripts/csp.mjs'], { cwd: WEB, stdio: 'inherit', env });
 
 spawn(process.execPath, ['e2e/serve.mjs'], {
   cwd: WEB,

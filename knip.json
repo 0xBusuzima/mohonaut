@@ -47,7 +47,12 @@
       "ignoreDependencies": [
         "tailwindcss",
         "@expo-google-fonts/barlow",
-        "@expo-google-fonts/big-shoulders-display"
+        "@expo-google-fonts/big-shoulders-display",
+        "@fontsource/barlow",
+        "@fontsource/barlow-condensed",
+        "@fontsource/big-shoulders-display",
+        "@fontsource/jetbrains-mono",
+        "@fontsource/saira-stencil-one"
       ]
     }
   }

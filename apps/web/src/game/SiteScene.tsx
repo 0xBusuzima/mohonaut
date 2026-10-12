@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useReducedMotion } from '../lib/motion';
+import { useLowPower } from '../lib/power';
 
 export interface ScenePad {
   /** Rig type on this pad, or null for an empty pad. */
@@ -29,6 +30,8 @@ const RIG_HEIGHT = [26, 34, 42, 50, 58, 66, 70, 74];
 export function SiteScene({ pads, label }: { pads: ScenePad[]; label: string }) {
   const host = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
+  const lowPower = useLowPower();
+  const still = reduced || lowPower;
 
   useEffect(() => {
     const el = host.current;
@@ -37,13 +40,17 @@ export function SiteScene({ pads, label }: { pads: ScenePad[]; label: string }) 
     let destroy: (() => void) | undefined;
     void (async () => {
       const PIXI = await import('pixi.js');
+      // Shader code without eval, so the Content-Security-Policy needs no 'unsafe-eval'.
+      await import('pixi.js/unsafe-eval');
       const app = new PIXI.Application();
       await app.init({
         background: '#0e1013',
         resizeTo: el,
-        antialias: true,
+        antialias: !lowPower,
         autoDensity: true,
-        resolution: window.devicePixelRatio || 1,
+        // Low-power mode draws at 1x and only when something changes.
+        resolution: lowPower ? 1 : window.devicePixelRatio || 1,
+        autoStart: !still,
       });
       if (cancelled) {
         app.destroy(true);
@@ -88,8 +95,13 @@ export function SiteScene({ pads, label }: { pads: ScenePad[]; label: string }) 
         world.y = app.screen.height / 2 - Math.ceil(pads.length / 4) * 12;
       };
       centre();
-      app.renderer.on('resize', centre);
-      if (!reduced) {
+      app.renderer.on('resize', () => {
+        centre();
+        if (still) app.render();
+      });
+      if (still) {
+        app.render();
+      } else {
         let t = 0;
         app.ticker.add((tick) => {
           t += tick.deltaTime / 60;
@@ -106,7 +118,7 @@ export function SiteScene({ pads, label }: { pads: ScenePad[]; label: string }) 
       cancelled = true;
       destroy?.();
     };
-  }, [pads, reduced]);
+  }, [pads, reduced, lowPower, still]);
 
   return (
     <div className="relative h-72 w-full overflow-hidden rounded-lg border border-line sm:h-96">

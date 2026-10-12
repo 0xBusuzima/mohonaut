@@ -7,7 +7,7 @@ import {
   walletConnectWallet,
 } from '@rainbow-me/rainbowkit/wallets';
 import { createConfig, http } from 'wagmi';
-import { mock } from 'wagmi/connectors';
+import { mock } from '@wagmi/core';
 import type { Address } from 'viem';
 import { gameChain } from './network';
 

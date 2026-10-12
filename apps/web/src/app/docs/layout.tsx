@@ -13,7 +13,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <SiteHeader />
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-[14rem_1fr]">
+      <main className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-[14rem_1fr]">
         <nav aria-label="Docs">
           <ul className="flex flex-col gap-2 font-condensed text-lg font-semibold uppercase">
             {DOCS.map((d) => (
@@ -26,7 +26,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
           </ul>
         </nav>
         <article className="max-w-3xl">{children}</article>
-      </div>
+      </main>
       <SiteFooter />
     </>
   );

@@ -1,9 +1,11 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import { watchCsp } from './csp';
 
 test('a new player opens a drill site, then stops and restarts the Pilot Rig', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
+  const cspViolations = await watchCsp(page);
   await page.goto('/play/');
 
   // The mock connector signs in the anvil account; the site does not exist yet.
@@ -34,5 +36,6 @@ test('a new player opens a drill site, then stops and restarts the Pilot Rig', a
   expect(
     axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`),
   ).toEqual([]);
+  expect(await cspViolations()).toEqual([]);
   expect(errors).toEqual([]);
 });

@@ -1,14 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
-import '@fontsource/barlow/400.css';
-import '@fontsource/barlow/600.css';
-import '@fontsource/barlow/700.css';
-import '@fontsource/barlow-condensed/600.css';
-import '@fontsource/big-shoulders-display/800';
-import '@fontsource/big-shoulders-display/900';
-import '@fontsource/jetbrains-mono/500.css';
-import '@fontsource/saira-stencil-one/400.css';
 import './globals.css';
+import { fontVariables } from './fonts';
+import { ErrorReporting } from '../components/ErrorReporting';
 import { ToastProvider } from '../components/Toast';
 
 export const metadata: Metadata = {
@@ -37,7 +31,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" data-theme="dark">
+    <html lang="en" data-theme="dark" className={fontVariables}>
       <body className="min-h-dvh bg-surface text-fg antialiased">
         <a
           href="#main"
@@ -45,6 +39,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         >
           Skip to content
         </a>
+        <ErrorReporting />
         <ToastProvider>
           <div id="main">{children}</div>
         </ToastProvider>

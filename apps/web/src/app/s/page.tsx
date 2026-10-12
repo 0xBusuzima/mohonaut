@@ -12,7 +12,10 @@ export const metadata: Metadata = {
 export default function ProfilePage() {
   return (
     <SitePage>
-      <ProfileView />
+      {/* Room for the profile, which renders in the browser: the footer does not jump. */}
+      <div className="min-h-[75vh]">
+        <ProfileView />
+      </div>
     </SitePage>
   );
 }

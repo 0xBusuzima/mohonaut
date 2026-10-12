@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import { watchCsp } from './csp';
 import type { Page } from '@playwright/test';
 
 const PLAYER = '0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc'; // anvil account 2 (start.mjs)
@@ -14,6 +15,7 @@ test('sign in, start a crew, survey, name the site, set alerts and see the publi
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
+  const cspViolations = await watchCsp(page);
   await page.goto('/play/');
   await expect(page.getByRole('tab', { name: 'Site' })).toBeVisible({ timeout: 30_000 });
 
@@ -58,6 +60,8 @@ test('sign in, start a crew, survey, name the site, set alerts and see the publi
   await page.getByRole('tab', { name: 'Seasons' }).click();
   await expect(page.getByRole('heading', { name: 'World Bore contribution' })).toBeVisible();
 
+  expect(await cspViolations()).toEqual([]);
+
   // The public page needs no wallet and carries the invite.
   await page.goto(`/s/${PLAYER}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('driller_one', {
@@ -68,5 +72,6 @@ test('sign in, start a crew, survey, name the site, set alerts and see the publi
     `/play/?ref=${PLAYER}`,
   );
   expect(await axe(page)).toEqual([]);
+  expect(await cspViolations()).toEqual([]);
   expect(errors).toEqual([]);
 });

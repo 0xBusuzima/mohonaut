@@ -8,6 +8,7 @@ import { GAME } from './network';
 const core = { address: GAME.MiningCore, abi: miningCoreAbi } as const;
 const token = { address: GAME.MohnToken, abi: mohnTokenAbi } as const;
 const REFRESH_MS = 12_000;
+const LOW_POWER_REFRESH_MS = 30_000;
 const MAX_TYPES = 16; // the contract caps a generation at 8 types; two generations fit
 const LITRE_QUOTE_WEI = 10n ** 18n;
 const TYPES_AT = 10; // index of the first machineType read
@@ -72,8 +73,11 @@ function ok<T>(r: { status: string; result?: unknown } | undefined): T | undefin
   return r?.status === 'success' ? (r.result as T) : undefined;
 }
 
-/** Everything the play screen shows, read in one multicall and refreshed every 12 s. */
-export function useGameState(player: Address | undefined): {
+/** Everything the play screen shows, read in one multicall, every 12 s (30 s in low-power mode). */
+export function useGameState(
+  player: Address | undefined,
+  lowPower = false,
+): {
   state: GameState | null;
   refetch: () => void;
 } {
@@ -105,7 +109,7 @@ export function useGameState(player: Address | undefined): {
         ];
   const read = useReadContracts({
     contracts: [...calls, ...playerCalls] as never,
-    query: { refetchInterval: REFRESH_MS },
+    query: { refetchInterval: lowPower ? LOW_POWER_REFRESH_MS : REFRESH_MS },
   });
   const r = read.data as ({ status: string; result?: unknown } | undefined)[] | undefined;
 
@@ -122,7 +126,10 @@ export function useGameState(player: Address | undefined): {
         : []),
       ...ids.map((id) => ({ ...core, functionName: 'refineRequest', args: [player, BigInt(id)] })),
     ] as never,
-    query: { enabled: player !== undefined && r !== undefined, refetchInterval: REFRESH_MS },
+    query: {
+      enabled: player !== undefined && r !== undefined,
+      refetchInterval: lowPower ? LOW_POWER_REFRESH_MS : REFRESH_MS,
+    },
   });
 
   const refetch = () => {

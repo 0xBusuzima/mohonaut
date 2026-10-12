@@ -30,11 +30,12 @@
   --color-stratum-7: #d2512b;
   --color-stratum-8: #ffe27a;
 
-  --font-display: 'Big Shoulders Display', 'Barlow Condensed', sans-serif;
-  --font-stencil: 'Saira Stencil One', 'Big Shoulders Display', sans-serif;
-  --font-ui: 'Barlow', system-ui, sans-serif;
-  --font-condensed: 'Barlow Condensed', 'Barlow', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  /* The --face-* families come from next/font (src/app/fonts.ts) with size-adjusted fallbacks. */
+  --font-display: var(--face-display), sans-serif;
+  --font-stencil: var(--face-stencil), var(--face-display), sans-serif;
+  --font-ui: var(--face-ui), system-ui, sans-serif;
+  --font-condensed: var(--face-condensed), var(--face-ui), sans-serif;
+  --font-mono: var(--face-mono), ui-monospace, monospace;
 }
 
 /* Semantic tokens, used through the utilities below (bg-surface, text-fg, ...). */

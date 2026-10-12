@@ -48,4 +48,5 @@ apps/*/.next/
 apps/*/out/
 apps/*/test-results/
 apps/*/playwright-report/
+apps/*/lighthouse.json
 .claude/launch.json

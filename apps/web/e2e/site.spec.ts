@@ -111,3 +111,57 @@ test('/s/<address> shows a public drill site page with a way in', async ({ page 
   ).toEqual([]);
   expect(errors).toEqual([]);
 });
+
+test('every page carries a hash-based CSP and breaks none of it', async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __csp: string[] };
+    w.__csp = [];
+    document.addEventListener('securitypolicyviolation', (e) =>
+      w.__csp.push(`${e.violatedDirective} ${e.blockedURI}`),
+    );
+  });
+  await page.route(/rpc\./, (route) => route.abort());
+  for (const path of [...PAGES, '/play/', '/s/0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc']) {
+    await page.goto(path);
+    await page.waitForLoadState('networkidle');
+    const policy = await page
+      .locator('meta[http-equiv="Content-Security-Policy"]')
+      .getAttribute('content');
+    expect(policy, path).toContain("script-src 'self' 'sha256-");
+    expect(policy, path).not.toContain('unsafe-eval');
+    expect(
+      await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp),
+      path,
+    ).toEqual([]);
+  }
+});
+
+test('/play/ loads the wallet code on Connect, within budget and the CSP', async ({ page }) => {
+  const BUDGET = 450 * 1024; // brotli bytes of JavaScript: the light welcome plus the wallet app
+  const sizes: Promise<number>[] = [];
+  page.on('requestfinished', (req) => {
+    if (req.url().endsWith('.js')) sizes.push(req.sizes().then((s) => s.responseBodySize));
+  });
+  await page.addInitScript(() => {
+    const w = window as unknown as { __csp: string[] };
+    w.__csp = [];
+    document.addEventListener('securitypolicyviolation', (e) =>
+      w.__csp.push(`${e.violatedDirective} ${e.blockedURI}`),
+    );
+  });
+  await page.route(/rpc\./, (route) => route.abort());
+  await page.goto('/play/');
+  await page.waitForLoadState('networkidle');
+  const light = (await Promise.all(sizes)).reduce((a, b) => a + b, 0);
+  await page.getByRole('button', { name: 'Connect wallet', exact: true }).click();
+  // The wallet list opens by itself once its code has loaded.
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+  await page.waitForLoadState('networkidle');
+  const total = (await Promise.all(sizes)).reduce((a, b) => a + b, 0);
+  console.log(
+    `/play/ JavaScript: ${(light / 1024).toFixed(1)} KB before Connect, ${(total / 1024).toFixed(1)} KB after (compressed)`,
+  );
+  expect(light).toBeLessThan(180 * 1024);
+  expect(total).toBeLessThan(BUDGET);
+  expect(await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp)).toEqual([]);
+});

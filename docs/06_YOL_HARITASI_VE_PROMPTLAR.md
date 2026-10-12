@@ -239,7 +239,19 @@ docs/01 §4 ve §6'ya göre /play: RainbowKit + SIWE ile cüzdan girişi (Robinh
 /play içine: Crew ekranı, sezon ve sıralamalar, Survey (günlük ücretsiz), koleksiyon ve başarımlar, herkese açık profil/saha görüntüleyici (cüzdansız), paylaşım kartı (X intent ile tek tık; metin şablonu docs/05'ten), davet linki (referrer parametresi register'a geçer), bildirim tercihleri (e-posta/Telegram). Testler: E2E.
 ```
 
-### 4.5 Kalite turu
+### 4.5 Kalite turu — ✅ 2026-10-12 (Lighthouse kapısı, CSP, hata raporlama, düşük güç modu)
+
+> **Lighthouse** (mobil, Playwright Chromium, `npm run lighthouse`; CI `web-e2e` işinde kapı: performans ≥ 85, erişilebilirlik ≥ 95, en iyi uygulamalar ve SEO ≥ 90 — SEO noindex sayfalarda uygulanmaz):
+>
+> | Sayfa | Önce (perf / LCP / CLS) | Sonra (perf / LCP / CLS) |
+> |---|---|---|
+> | `/` | 62 / 5.7 s / 0.249 | 97–100 / 1.7–2.4 s / 0 |
+> | `/docs/` | 79 / 5.1 s / 0 (a11y 98) | 94–99 / 2.0–3.0 s / 0 (a11y 100) |
+> | `/economy/` | 68 / 4.5 s / 0.295 | 95–100 / 1.9–2.8 s / 0 |
+> | `/play/` | 68 / 8.7 s, TBT 320 ms | 96–98 / 2.3–2.7 s, TBT 80–110 ms |
+> | `/s/<adres>` | 76 / 2.9 s / 0.433 | 92–96 / 1.9–3.1 s / 0 |
+>
+> Ne yapıldı: test sunucusu Cloudflare gibi brotli ve `_headers` uyguluyor (önceki ölçüm sıkıştırmasızdı); fontlar `next/font/local`'a taşındı (yalnızca Latin, boyutu ayarlanmış yedek font, ön yükleme; başlık fontu `display: optional`) → düzen kayması 0; `/play` önce önceden çizilmiş hafif karşılama (127 KB JS), cüzdan kodu (~200 KB daha) yalnızca "Connect wallet"a basınca veya daha önce bağlanmış bir cüzdan varsa yükleniyor; `/s/` için içerik alanı ayrıldı; `/docs` `<main>` landmark'ı. SDK `sideEffects: false` (kullanılmayan ABI'ler pakete girmiyor). **Paket bütçesi** (`npm run budget`): sayfa başına ilk JS ≤ 180 KB brotli (şu an 153–161 KB); `/play` Connect sonrası toplam ≤ 450 KB (şu an ~325 KB), tarayıcı testinde. **CSP**: derleme sonrası `scripts/csp.mjs` her sayfanın satır içi betiklerini SHA-256 ile özetleyip sayfaya `<meta>` CSP yazıyor (`script-src 'self'` + özetler + Turnstile; `unsafe-eval` yok — PixiJS `pixi.js/unsafe-eval` ile; `connect-src` yalnızca API, RPC, WalletConnect, Sentry); `public/_headers`: HSTS, nosniff, `X-Frame-Options: DENY`, `frame-ancestors 'none'`, Referrer-Policy, Permissions-Policy, hash'li dosyalara uzun önbellek. E2E her sayfada CSP ihlali olmadığını, oyun ve sosyal akışlarda da ihlal olmadığını doğruluyor. SRI: tüm betikler aynı kökenden ve hash'li adlarla geliyor; tek dış betik Turnstile (Cloudflare sürümlemediği için SRI yok, CSP ile tek alana kısıtlı). **Hata sınırları**: `error.tsx`, `global-error.tsx` ("Your drill site is safe…" + yeniden dene). **Sentry**: `@sentry/browser` yalnızca ilk hatada ve yalnızca `NEXT_PUBLIC_SENTRY_DSN` varsa yükleniyor (sağlıklı sayfa 0 KB); varsayılan entegrasyonlar kapalı, IP/kullanıcı yok, cüzdan adresleri `0x…` ile maskeleniyor; GlitchTip (self-host) ile de uyumlu. **Düşük güç modu**: veri tasarrufu, ≤ 2 GB bellek veya ≤ 2 çekirdekte varsayılan açık; sahne sabit (PixiJS yalnızca değişince çiziyor, 1x çözünürlük, antialias yok; azaltılmış harekette de artık 60 fps boşa çizim yok), sayaç saniyede bir, zincir okuması 30 sn; oyuncu seçimi cihazda hatırlanıyor. knip temiz.
 
 ```text
 apps/web için: Lighthouse (mobil performans ≥ 85, erişilebilirlik ≥ 95), knip ile ölü kod temizliği, bundle analizi, CSP + SRI başlıkları, hata sınırları, Sentry entegrasyonu, düşük güçlü cihaz modu. Bulduğun her sorunu düzelt ve önce/sonra raporla.
