@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from '../../lib/motion';
 import { useLowPower } from '../../lib/power';
 import { drawWorld, siteRows, worldSize } from './world';
-import type { Hit, HitBox, WorldModel } from './world';
+import type { Hit, HitBox, WorldFx, WorldModel } from './world';
 
 /** Pointer travel (CSS px) after which a press is a drag, not a click. */
 const DRAG_PX = 6;
@@ -23,7 +23,7 @@ export function PixelWorld({
   describe,
   contained = false,
 }: {
-  model: Omit<WorldModel, 'hover' | 'motion' | 'pan'>;
+  model: Omit<WorldModel, 'hover' | 'motion' | 'pan' | 'fx'>;
   onSelect?: ((hit: Hit) => void) | undefined;
   label: string;
   /** A short name for what the pointer is over, shown above it ("Diesel tank"). */
@@ -42,6 +42,28 @@ export function PixelWorld({
   const lowPower = useLowPower();
   const motion = !reduced && !lowPower;
   const rows = siteRows(model.pads.length);
+  const fx = useRef<WorldFx[]>([]);
+  const before = useRef<Omit<WorldModel, 'hover' | 'motion' | 'pan' | 'fx'> | null>(null);
+
+  // One-off effects when the site changes: a rig of a type the player had fewer of drops in
+  // (pads are listed by rig type, so it is the last pad of that type); diesel arriving.
+  useEffect(() => {
+    const was = before.current;
+    before.current = model;
+    if (was === null) return;
+    const now = performance.now() / 1000;
+    const count = (pads: typeof model.pads, id: number) =>
+      pads.filter((p) => p.typeId === id).length;
+    const types = new Set(model.pads.map((p) => p.typeId).filter((id) => id !== null));
+    for (const id of types) {
+      if (count(model.pads, id) > count(was.pads, id)) {
+        const pad = model.pads.map((p) => p.typeId).lastIndexOf(id);
+        fx.current.push({ kind: 'rig', pad, at: now });
+      }
+    }
+    if (model.tankFill > was.tankFill + 0.005) fx.current.push({ kind: 'fuel', pad: -1, at: now });
+    fx.current = fx.current.filter((f) => now - f.at < 3);
+  }, [model]);
 
   useEffect(() => {
     const box = contained ? canvas.current?.parentElement : null;
@@ -88,6 +110,7 @@ export function PixelWorld({
         hover,
         motion,
         pan: { x: vx, y: vy },
+        fx: fx.current,
       });
     };
     if (!motion) {

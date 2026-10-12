@@ -65,7 +65,20 @@ export interface WorldModel {
    * join). Running rigs show what they cored every few seconds; 0 or absent shows nothing.
    */
   yieldPerDp?: number;
+  /** One-off effects: a new rig dropping onto its pad, diesel arriving in the tank. */
+  fx?: WorldFx[];
 }
+
+export interface WorldFx {
+  kind: 'rig' | 'fuel';
+  /** Pad index for 'rig'. */
+  pad: number;
+  /** Start, in the same seconds as the draw clock (performance.now() / 1000). */
+  at: number;
+}
+
+const DROP = 0.6; // seconds a new rig takes to fall onto its pad
+const DUST = 1.2; // seconds the dust takes to settle
 
 /** Seconds between a rig's "+amount" floats. */
 const FLOAT_EVERY = 6;
@@ -292,7 +305,11 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
         return;
       }
       if (pad === undefined || pad.typeId === null) return;
-      drawRig(c, cx, cy, pad.typeId, pad.running, t, m.motion, gx * 3 + gy);
+      const drop = m.fx?.find((f) => f.kind === 'rig' && f.pad === i);
+      const age = drop === undefined ? Infinity : t - drop.at;
+      const fall = age < DROP ? -((1 - age / DROP) ** 2) * 56 : 0;
+      drawRig(c, cx, cy + fall, pad.typeId, pad.running, t, m.motion, gx * 3 + gy);
+      if (age >= DROP * 0.8 && age < DROP + DUST) dust(c, cx, cy, (age - DROP * 0.8) / DUST);
     });
     if (pad?.typeId !== null && pad?.typeId !== undefined && pad.running) {
       lights.push({ x: cx, y: cy, r: 26, tint: P.glow, power: 0.6 });
@@ -327,7 +344,27 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
       }
     });
   }
+  // Diesel arriving: amber sparks spiralling up around the tank.
+  const tankAt = iso(5, 1);
+  for (const f of m.fx ?? []) {
+    const age = t - f.at;
+    if (f.kind === 'fuel' && age >= 0 && age < 2.4) {
+      lights.push({ x: tankAt.x, y: tankAt.y + 12, r: 30, tint: P.amber, power: 1 - age / 2.4 });
+    }
+  }
   night(c, W, H, horizon, lights);
+  for (const f of m.fx ?? []) {
+    const age = t - f.at;
+    if (f.kind !== 'fuel' || age < 0 || age >= 2.4) continue;
+    c.globalAlpha = 1 - age / 2.4;
+    for (let j = 0; j < 12; j++) {
+      const a = j * 0.52 + age * 3;
+      const x = tankAt.x + Math.cos(a) * (12 + (j % 3) * 2);
+      const y = tankAt.y + 6 - age * 16 - (j % 4) * 3 + Math.sin(a) * 4;
+      px(c, x, y, j % 3 === 0 ? P.flareHot : P.amber);
+    }
+    c.globalAlpha = 1;
+  }
   // What each drilling rig cored since its last float, rising from its crown and fading out.
   const perDp = m.yieldPerDp ?? 0;
   if (m.motion && perDp > 0) {
@@ -389,4 +426,22 @@ function fenceFront(
   fencePosts(c, iso, [GW, 0], [GW, gh]);
   fencePosts(c, iso, [0, gh], [GW, gh]);
   fencePosts(c, iso, [0, 4], [0, gh]);
+}
+
+/** Dust kicked up by a rig landing on its pad: puffs spreading out and thinning, k in 0..1. */
+function dust(c: Ctx, x: number, y: number, k: number): void {
+  c.globalAlpha = 0.55 * (1 - k);
+  for (let j = 0; j < 12; j++) {
+    const a = (j / 12) * Math.PI * 2;
+    const r = 8 + k * 26;
+    const s = 2 + Math.floor(k * 3);
+    c.fillStyle = P.boneDark;
+    c.fillRect(
+      Math.round(x + Math.cos(a) * r - s / 2),
+      Math.round(y + Math.sin(a) * r * 0.5 - s / 2 - k * 4),
+      s,
+      s,
+    );
+  }
+  c.globalAlpha = 1;
 }

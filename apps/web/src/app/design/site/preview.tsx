@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PixelWorld } from '../../../game/pixel/PixelWorld';
 import { describeHit } from '../../../game/play';
 import type { ScenePad } from '../../../game/play';
@@ -19,6 +19,12 @@ const PADS: ScenePad[] = [
   ...GEN1_RIGS.map((_, i) => ({ typeId: i, running: true })),
   { typeId: 1, running: false },
   { typeId: 4, running: false },
+];
+
+/** Rigs the preview installs one after another. */
+const DEMO_ADDS: ScenePad[] = [
+  { typeId: 2, running: true },
+  { typeId: 3, running: true },
 ];
 
 /** A made-up site for the preview (no wallet or chain). */
@@ -65,8 +71,18 @@ const SAMPLE: GameState = {
 const NO_ACTION = { busy: null, run: () => Promise.resolve(false) };
 
 export function SitePreview() {
+  // A living sample: every few seconds a rig is installed and diesel arrives, then it resets.
+  const [step, setStep] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => setStep((k) => (k + 1) % 4), 5000);
+    return () => window.clearInterval(id);
+  }, []);
+  const pads = useMemo(() => [...PADS, ...DEMO_ADDS.slice(0, step % 3)], [step]);
   // 367 MOHN/h over 980 DP, as the sample HUD says.
-  const model = useMemo(() => ({ pads: PADS, tankFill: 0.7, yieldPerDp: 0.375 }), []);
+  const model = useMemo(
+    () => ({ pads, tankFill: 0.4 + (step % 3) * 0.2, yieldPerDp: 0.375 }),
+    [pads, step],
+  );
   const [panel, setPanel] = useState<Panel | null>(null);
   return (
     <>
@@ -76,7 +92,7 @@ export function SitePreview() {
           if (hit === 'market') setPanel('market');
           else if (hit.startsWith('pad:')) setPanel('rigs');
         }}
-        describe={(hit) => describeHit(hit, PADS)}
+        describe={(hit) => describeHit(hit, pads)}
         label={`Sample drill site: ${GEN1_RIGS.map((r) => r.name).join(', ')}.`}
       />
       <Brand />
