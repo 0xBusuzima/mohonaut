@@ -10,3 +10,4 @@ contracts/
 tools/
 .github/
 packages/sdk/src/abi/
+deployments/
