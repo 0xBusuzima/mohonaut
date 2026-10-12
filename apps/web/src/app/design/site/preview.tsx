@@ -6,6 +6,7 @@ import { describeHit } from '../../../game/play';
 import type { ScenePad } from '../../../game/play';
 import type { GameState } from '../../../game/state';
 import { GEN1_RIGS } from '../../../lib/catalog';
+import { BoreWindow } from '../../play/BoreWindow';
 import { Guide } from '../../play/Guide';
 import { Hud } from '../../play/Hud';
 import type { Panel } from '../../play/Hud';
@@ -21,6 +22,9 @@ const PADS: ScenePad[] = [
   { typeId: 1, running: false },
   { typeId: 4, running: false },
 ];
+
+/** The sample bore, a little into the Granite Basement. */
+const SAMPLE_DEPTH_MM = 7_350_000n;
 
 /** Rigs the preview installs one after another. */
 const DEMO_ADDS: ScenePad[] = [
@@ -104,6 +108,11 @@ export function SitePreview() {
           address="0x000000000000000000000000000000000000dEaD"
           open={(t) => setPanel(t === 'market' ? 'market' : 'rigs')}
         />
+      )}
+      {panel === 'bore' && (
+        <PxModal title="World Bore" onClose={() => setPanel(null)}>
+          <BoreWindow depthMm={SAMPLE_DEPTH_MM} />
+        </PxModal>
       )}
       {(panel === 'market' || panel === 'rigs') && (
         <PxModal

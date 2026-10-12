@@ -1,6 +1,6 @@
 'use client';
 
-import { formatDepth, fuelLineWad, millimetres, stratumAt } from '@mohonaut/sdk';
+import { fuelLineWad, millimetres } from '@mohonaut/sdk';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -23,6 +23,7 @@ import { useLowPower } from '../../lib/power';
 import { api, apiEnabled, apiMessage } from '../../social/api';
 import { ME_KEY, useMe } from '../../social/session';
 import { CrewPanel, ProfilePanel, SeasonsPanel, SignedIn, SurveyPanel } from '../../social/panels';
+import { BoreWindow } from './BoreWindow';
 import { Guide } from './Guide';
 import { Hud } from './Hud';
 import type { Panel } from './Hud';
@@ -322,7 +323,6 @@ function PanelWindow({
   };
   const n = state.network;
   const depth = millimetres(n.emitted);
-  const { current } = stratumAt(depth);
   let body: ReactNode;
   if (panel === 'fuel') body = <FuelWindow state={state} action={action} first={false} />;
   else if (panel === 'market') body = <MarketWindow state={state} action={action} />;
@@ -335,19 +335,7 @@ function PanelWindow({
   else if (panel === 'survey') body = <SignedIn>{() => <SurveyPanel now={state.at} />}</SignedIn>;
   else if (panel === 'profile')
     body = <SignedIn>{(me) => <ProfilePanel me={me} address={address} />}</SignedIn>;
-  else
-    body = (
-      <div className="text-center">
-        <p className="text-4xl font-bold">{formatDepth(depth)}</p>
-        <p className="mt-2">
-          Stratum {current.numeral} — {current.name}
-        </p>
-        <p className="mt-4 text-concrete">
-          Every driller cores this one shared bore. It deepens as $MOHN is mined, and the rock gets
-          harder the deeper it goes.
-        </p>
-      </div>
-    );
+  else body = <BoreWindow depthMm={depth} />;
   return (
     <PxModal
       title={titles[panel]}

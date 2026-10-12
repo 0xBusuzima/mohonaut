@@ -23,7 +23,7 @@ for (const [i, target] of targets.entries()) {
   await page.goto(base + path);
   await page.waitForTimeout(2500);
   if (click !== undefined) {
-    await page.getByRole('button', { name: click, exact: true }).first().click();
+    await page.getByRole('button', { name: click }).first().click();
     await page.waitForTimeout(800);
   }
   const file = join(out, `${i + 1}.png`);
