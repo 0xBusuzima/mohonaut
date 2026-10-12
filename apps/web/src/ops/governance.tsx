@@ -335,7 +335,7 @@ export function TimelockScreen({ now }: { now: number }) {
   const q = useQuery({
     queryKey: ['governance', 'queue'],
     queryFn: governance.queue,
-    refetchInterval: 60_000,
+    refetchInterval: 10_000, // an operator watching a change land should not wait a minute
   });
   if (q.data === undefined) return <p role="status">Loading the queue…</p>;
   return (
