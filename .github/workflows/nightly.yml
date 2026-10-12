@@ -8,9 +8,12 @@ on:
 permissions:
   contents: read
 
+# Runners and campaign length: repository variables CI_RUNS_ON (see ci.yml) and
+# FUZZ_SECONDS (Medusa; shorter on the founder's machine).
+
 jobs:
   deep-fuzz:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     defaults:
       run:
         working-directory: contracts
@@ -26,7 +29,7 @@ jobs:
 
   property-fuzzers:
     # Activates once Phase 2 adds test/recon/CryticTester.sol (Chimera layout).
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     defaults:
       run:
         working-directory: contracts
@@ -42,12 +45,20 @@ jobs:
         if: steps.harness.outputs.present == 'true'
         with:
           version: v1.8.5
-      - name: Medusa (6h)
+      - uses: actions/setup-go@v5
+        if: steps.harness.outputs.present == 'true'
+        with:
+          go-version: "1.24"
+      - uses: actions/setup-python@v5
+        if: steps.harness.outputs.present == 'true'
+        with:
+          python-version: "3.12"
+      - name: Medusa (FUZZ_SECONDS, default 6h)
         if: steps.harness.outputs.present == 'true'
         run: |
           go install github.com/crytic/medusa@latest
           pip install crytic-compile
-          ~/go/bin/medusa fuzz --timeout 21600
+          "$(go env GOPATH)/bin/medusa" fuzz --timeout ${{ vars.FUZZ_SECONDS || 21600 }}
       - name: Echidna
         if: steps.harness.outputs.present == 'true'
         uses: crytic/echidna-action@v2

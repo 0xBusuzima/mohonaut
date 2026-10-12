@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+# Runners: GitHub's (ubuntu-latest) unless the repository variable CI_RUNS_ON names others,
+# e.g. ["self-hosted","linux","x64","mohonaut"] for the founder's WSL runners (infra/ci-runner).
+# Pull requests from forks always use GitHub's runners: outside code never runs on that machine.
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -16,7 +20,7 @@ jobs:
   changes:
     # Runs the heavy jobs only when their inputs changed: Actions minutes are limited while the
     # repository is private. A change to this workflow runs everything.
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     permissions:
       contents: read
       pull-requests: read
@@ -64,7 +68,7 @@ jobs:
   contracts:
     needs: changes
     if: needs.changes.outputs.contracts == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     defaults:
       run:
         working-directory: contracts
@@ -98,7 +102,7 @@ jobs:
     # Halmos symbolic proofs (functions named prove_*); needs Linux (does not install on Windows).
     needs: changes
     if: needs.changes.outputs.contracts == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     defaults:
       run:
         working-directory: contracts
@@ -119,7 +123,7 @@ jobs:
   slither:
     needs: changes
     if: needs.changes.outputs.contracts == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -133,7 +137,7 @@ jobs:
   aderyn:
     needs: changes
     if: needs.changes.outputs.contracts == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -154,7 +158,7 @@ jobs:
           path: contracts/aderyn-report.md
 
   sim:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     defaults:
       run:
         working-directory: sim
@@ -176,7 +180,7 @@ jobs:
           git diff --exit-code -- vectors/
 
   ts:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -198,7 +202,7 @@ jobs:
     # indexer and keeper on Postgres, plus the two-keeper lock (services/keeper/test/e2e).
     needs: changes
     if: needs.changes.outputs.e2e == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     services:
       postgres:
         image: postgres:17
@@ -231,7 +235,7 @@ jobs:
     # Validates the monitoring stack and unit-tests the alert rules (infra/monitoring).
     needs: changes
     if: needs.changes.outputs.monitoring == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     steps:
       - uses: actions/checkout@v4
       - name: Prometheus config
@@ -255,7 +259,7 @@ jobs:
     # and uploaded; commit them from the artifact to make them baselines.
     needs: changes
     if: needs.changes.outputs.e2e == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     container: mcr.microsoft.com/playwright:v1.64.0-noble
     steps:
       - uses: actions/checkout@v4
@@ -294,7 +298,7 @@ jobs:
     # (diesel, rigs, SIWE, crew, Survey, profile, alerts).
     needs: changes
     if: needs.changes.outputs.e2e == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     container: mcr.microsoft.com/playwright:v1.64.0-noble
     steps:
       - uses: actions/checkout@v4
@@ -326,7 +330,7 @@ jobs:
     # restores with matching row counts (Kapı 6, restore half).
     needs: changes
     if: needs.changes.outputs.infra == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -367,9 +371,11 @@ jobs:
             docker compose -f infra/stack/compose.yml config -q
           docker pull -q cloudflare/cloudflared:2025.4.0
           docker pull -q valkey/valkey:8-bookworm
-          sudo apt-get install -y -qq cloud-init age >/dev/null
+          # Preinstalled on the self-hosted runners (infra/ci-runner/setup-wsl.sh).
+          command -v cloud-init >/dev/null && command -v age >/dev/null \
+            || sudo apt-get install -y -qq cloud-init age >/dev/null
           cloud-init schema --config-file infra/server/cloud-init.yaml
-          shellcheck infra/stack/deploy.sh infra/backup/*.sh
+          shellcheck infra/stack/deploy.sh infra/backup/*.sh infra/ci-runner/*.sh
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -395,7 +401,7 @@ jobs:
           fi
 
   security:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     steps:
       - uses: actions/checkout@v4
         with:
