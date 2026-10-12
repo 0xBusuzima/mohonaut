@@ -1,6 +1,6 @@
 # CI runner'ları (kurucunun bilgisayarı, WSL)
 
-Repo gizliyken GitHub'ın ücretsiz Actions dakikası CI'a yetmiyor: bir koşu yaklaşık 60 faturalı dakika, ayda 2.000 dakika var. Repo açılana kadar CI kurucunun evdeki yedek laptopunda (Ryzen 7 3700U, 8 GB; WSL Ubuntu 24.04, 1 runner; WSL belleği `.wslconfig` ile 6 GB) çalışır. Kurulum WSL Ubuntu içindeki **self-hosted runner**'larda koşar (ADR-018). Bu ücretsizdir; GitHub kendi makinende çalışan runner için ücret almıyor.
+Repo gizliyken GitHub'ın ücretsiz Actions dakikası CI'a yetmiyor: bir koşu yaklaşık 60 faturalı dakika, ayda 2.000 dakika var. Repo açılana kadar CI, kurucunun evdeki yedek laptopunda WSL Ubuntu 24.04 içindeki bir **self-hosted runner**'da koşar (ADR-018). Laptop Ryzen 7 3700U ve 8 GB RAM'li olduğu için tek runner çalışır ve WSL belleği `.wslconfig` ile 6 GB'a ayarlanır; laptopta dosyalar `C:\Users\yzcin\mohonaut-ci-runner` altındadır. Bu ücretsizdir; GitHub kendi makinende çalışan runner için ücret almıyor.
 
 ## Kurulum (bir kez, kurucu)
 
