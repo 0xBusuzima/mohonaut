@@ -249,16 +249,15 @@ html {
     'clig' 0;
 }
 
-/* In the game the toasts sit just above the main buttons on phones, and under the HUD
-   read-outs on the right on wider screens, as small steel plates. */
+/* In the game the toasts sit just above the main buttons, on the right on wider screens (clear
+   of the windows' close buttons), as small steel plates. */
 body.pixel-game .toast-region {
   bottom: 6.5rem;
 }
 @media (min-width: 768px) {
   body.pixel-game .toast-region {
-    top: 8.5rem;
     right: 0.75rem;
-    bottom: auto;
+    bottom: 6.5rem;
     left: auto;
     width: 24rem;
     align-items: stretch;
@@ -284,16 +283,4 @@ body.pixel-game .toast-item {
   to {
     width: 100%;
   }
-}
-
-/* Panels reused inside the game windows: dark cards on the cream window, pixel face. */
-.game-panel {
-  font-family: var(--font-pixel);
-}
-.game-panel > section,
-.game-panel > div > section {
-  border: 3px solid #16191d;
-  border-radius: 0;
-  background: #22272d;
-  color: #ece7dc;
 }

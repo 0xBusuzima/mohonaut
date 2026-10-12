@@ -5,6 +5,12 @@ import type { Page } from '@playwright/test';
 
 const PLAYER = '0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc'; // anvil account 2 (start.mjs)
 
+/** SHOTS=1 saves a screenshot of each step under test-results/shots (for reviewing the art). */
+async function shot(page: Page, name: string): Promise<void> {
+  if (process.env['SHOTS'] === '1')
+    await page.screenshot({ path: `test-results/shots/${name}.png` });
+}
+
 async function axe(page: Page): Promise<string[]> {
   const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   return r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
@@ -36,6 +42,7 @@ test('sign in, start a crew, survey, name the site, set alerts and see the publi
   });
   await expect(win.getByText('1 of 5 to rank')).toBeVisible();
   await expect(win.getByText('Captain')).toBeVisible();
+  await shot(page, 's1-crew');
   expect(await axe(page)).toEqual([]);
   await win.getByRole('button', { name: 'Close' }).click();
 
@@ -44,6 +51,7 @@ test('sign in, start a crew, survey, name the site, set alerts and see the publi
   await win.getByRole('button', { name: 'Survey', exact: true }).click();
   await expect(win.getByText(/You found: /)).toBeVisible({ timeout: 15_000 });
   await expect(win.getByRole('button', { name: 'Surveyed today' })).toBeDisabled();
+  await shot(page, 's2-survey');
   await win.getByRole('button', { name: 'Close' }).click();
 
   // Profile: display name and alerts.
@@ -56,12 +64,14 @@ test('sign in, start a crew, survey, name the site, set alerts and see the publi
   await win.getByRole('button', { name: 'Save alerts' }).click();
   await expect(page.getByText('Alerts saved')).toBeVisible({ timeout: 15_000 });
   await expect(win.getByRole('button', { name: 'Copy invite link' })).toBeVisible();
+  await shot(page, 's3-profile');
   expect(await axe(page)).toEqual([]);
   await win.getByRole('button', { name: 'Close' }).click();
 
   // Seasons and the all-time board are public.
   await page.getByRole('button', { name: 'Leaderboard' }).click();
   await expect(win.getByRole('heading', { name: 'World Bore contribution' })).toBeVisible();
+  await shot(page, 's4-board');
 
   expect(await cspViolations()).toEqual([]);
 

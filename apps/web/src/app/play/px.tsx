@@ -313,3 +313,118 @@ export function PxIcon({ name, size = 24 }: { name: keyof typeof ICONS; size?: n
     </svg>
   );
 }
+
+/** A block inside a window: a small amber label, a title, optional actions on the right. */
+export function PxSection({
+  label,
+  title,
+  actions,
+  children,
+}: {
+  label?: string;
+  title: string;
+  actions?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="px-dark flex flex-col gap-3 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          {label !== undefined && (
+            <p className="text-xs tracking-widest text-amber uppercase">{label}</p>
+          )}
+          <h3 className="text-xl text-bone">{title}</h3>
+        </div>
+        {actions}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** A small stamped tag: "Captain", "Ranked", "1 of 5 to rank". */
+export function PxTag({
+  tone = 'plain',
+  children,
+}: {
+  tone?: 'plain' | 'ok' | 'data';
+  children: ReactNode;
+}) {
+  const cls =
+    tone === 'ok'
+      ? 'bg-ok text-night'
+      : tone === 'data'
+        ? 'bg-cyan text-night'
+        : 'bg-steel text-bone';
+  return (
+    <span className={`inline-block px-1.5 py-0.5 text-xs font-bold uppercase ${cls}`}>
+      {children}
+    </span>
+  );
+}
+
+interface PxColumn<Row> {
+  key: string;
+  header: string;
+  numeric?: boolean;
+  render: (row: Row) => ReactNode;
+}
+
+/** A plain data table in the instrument style (caption for screen readers, scoped headers). */
+export function PxTable<Row>({
+  caption,
+  columns,
+  rows,
+  rowKey,
+  empty = 'Nothing yet.',
+}: {
+  caption: string;
+  columns: PxColumn<Row>[];
+  rows: Row[];
+  rowKey: (row: Row) => string;
+  empty?: string;
+}) {
+  return (
+    // Focusable so keyboard users can scroll wide tables (axe: scrollable-region-focusable).
+    <div tabIndex={0} className="px-inset overflow-x-auto">
+      <table className="w-full border-collapse text-left text-base">
+        <caption className="sr-only">{caption}</caption>
+        <thead>
+          <tr className="border-b-[3px] border-[#0b0d10]">
+            {columns.map((c) => (
+              <th
+                key={c.key}
+                scope="col"
+                className={`px-3 py-2 text-xs tracking-widest text-concrete uppercase ${c.numeric === true ? 'text-right' : ''}`}
+              >
+                {c.header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length} className="px-3 py-4 text-center text-concrete">
+                {empty}
+              </td>
+            </tr>
+          ) : (
+            rows.map((row) => (
+              <tr key={rowKey(row)} className="border-t border-[#262c33]">
+                {columns.map((c) => (
+                  <td
+                    key={c.key}
+                    className={`px-3 py-1.5 ${c.numeric === true ? 'text-right text-cyan' : ''}`}
+                  >
+                    {c.render(row)}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}

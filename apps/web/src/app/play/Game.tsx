@@ -5,14 +5,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Address } from 'viem';
-import { useAccount, useConnect, useDisconnect, useSignMessage, useSwitchChain } from 'wagmi';
-import { siweAdapter } from '../../game/auth';
+import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
 import { useE2EConnect } from '../../game/e2e';
 import { gameChain } from '../../game/network';
 import { PixelWorld } from '../../game/pixel/PixelWorld';
 import type { Hit } from '../../game/pixel/world';
 import { describeHit, scenePads } from '../../game/play';
 import { useGameAction } from '../../game/actions';
+import { useSignIn } from '../../game/signin';
 import { perHourEstimate } from '../../game/derive';
 import type { Action } from '../../game/actions';
 import { useGameState } from '../../game/state';
@@ -76,6 +76,10 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
   );
   const [panel, setPanel] = useState<Panel | null>(null);
   const [named, setNamed] = useState(false);
+  const { me } = useMe();
+  // Named before (on the API, or on this device without it): straight to the site.
+  const known =
+    address === undefined ? null : apiEnabled ? (me?.displayName ?? null) : localName(address);
 
   const wrongChain = isConnected && chainId !== gameChain.id;
   const onSelect = (hit: Hit) => {
@@ -94,7 +98,7 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
   if (!isConnected) onboarding = <WalletStep autoOpen={openConnect} />;
   else if (wrongChain) onboarding = <ChainStep />;
   else if (state === null) return <LoadingScreen text="Reading the chain…" />;
-  else if (address !== undefined && !named) {
+  else if (address !== undefined && !named && (known === null || known === '')) {
     onboarding = <NameStep address={address} onDone={() => setNamed(true)} />;
   } else if (p === null || !p.registered) {
     onboarding = (
@@ -206,53 +210,26 @@ function ChainStep() {
 function NameStep({ address, onDone }: { address: Address; onDone: () => void }) {
   const { me, loading } = useMe();
   const client = useQueryClient();
-  const { signMessageAsync } = useSignMessage();
-  const { chainId } = useAccount();
+  const login = useSignIn();
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const known = apiEnabled ? (me?.displayName ?? null) : localName(address);
-  if (known !== null && known !== '') {
-    // Named before: straight to the site.
-    queueMicrotask(onDone);
-    return null;
-  }
   if (apiEnabled && loading) return <LoadingScreen text="Checking your sign-in…" />;
 
   if (apiEnabled && me === null) {
-    const signIn = async () => {
-      setBusy(true);
-      setErr(null);
-      try {
-        const nonce = await siweAdapter.getNonce();
-        const message = await siweAdapter.createMessage({
-          nonce,
-          address,
-          chainId: chainId ?? gameChain.id,
-        });
-        const signature = await signMessageAsync({ message });
-        const ok = await siweAdapter.verify({ message, signature });
-        if (!ok) throw new Error('The sign-in was not accepted. Try again.');
-        await client.invalidateQueries({ queryKey: ME_KEY });
-      } catch (e) {
-        setErr(
-          e instanceof Error ? (e.message.split('\n')[0] ?? 'Sign-in failed') : 'Sign-in failed',
-        );
-      } finally {
-        setBusy(false);
-      }
-    };
     return (
       <PxModal title="Sign in">
         <Steps steps={ONBOARDING_STEPS} at={1} />
         <p className="mb-4 text-center">
           Sign a message to log in. It is free, costs no gas and cannot move funds.
         </p>
-        <PxButton className="w-full" busy={busy} onClick={() => void signIn()}>
+        <PxButton className="w-full" busy={login.busy} onClick={() => void login.signIn()}>
           Sign in
         </PxButton>
-        {err !== null && <p className="mt-3 text-center text-sm text-[#ff7a6e]">{err}</p>}
+        {login.error !== null && (
+          <p className="mt-3 text-center text-sm text-[#ff7a6e]">{login.error}</p>
+        )}
       </PxModal>
     );
   }
@@ -364,8 +341,12 @@ function PanelWindow({
       </div>
     );
   return (
-    <PxModal title={titles[panel]} onClose={onClose} wide={panel === 'market' || panel === 'rigs'}>
-      <div className="game-panel">{body}</div>
+    <PxModal
+      title={titles[panel]}
+      onClose={onClose}
+      wide={['market', 'rigs', 'board', 'crew', 'profile'].includes(panel)}
+    >
+      {body}
     </PxModal>
   );
 }

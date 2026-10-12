@@ -1,20 +1,22 @@
 'use client';
 
-import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import type { Address } from 'viem';
-import { Badge } from '../components/Badge';
-import { Button } from '../components/Button';
-import { Card } from '../components/Card';
-import { Table } from '../components/Table';
+import { PxButton, PxSection, PxTable, PxTag } from '../app/play/px';
 import { useToast } from '../components/Toast';
+import { useSignIn } from '../game/signin';
 import { formatUtc } from '../lib/format';
 import { NOTIFY_EVENTS, api, apiMessage } from './api';
 import type { ContributionRow, Me, NotifyEvent, Prefs } from './api';
 import { ME_KEY, useMe } from './session';
 import { contributionPost, profileUrl, shortAddress, xIntentUrl } from './share';
+
+/**
+ * The game's off-chain windows: crews, the daily Survey, seasons and the all-time board, the
+ * profile with invite link and alerts. Drawn with the game's pixel parts (`app/play/px`).
+ */
 
 const CREW_MIN = 5;
 const CREW_MAX = 25;
@@ -27,6 +29,9 @@ const EVENT_LABELS: Record<NotifyEvent, string> = {
   season: 'Season start and end',
   announcements: 'Game announcements',
 };
+
+const INPUT = 'px-input mt-1 block w-full px-3 py-2 text-base';
+const HINT = 'text-sm text-concrete';
 
 /** Runs an API write with a busy flag and a toast for the outcome. */
 function useWrite() {
@@ -48,26 +53,31 @@ function useWrite() {
   return { write, busy };
 }
 
+function Status({ children }: { children: ReactNode }) {
+  return (
+    <p role="status" className="text-concrete">
+      {children}
+    </p>
+  );
+}
+
 /** Wraps the off-chain features: they need a SIWE session. */
 export function SignedIn({ children }: { children: (me: Me) => ReactNode }) {
   const { me, loading } = useMe();
-  const { openConnectModal } = useConnectModal();
-  if (loading) return <p role="status">Checking your session…</p>;
+  const login = useSignIn();
+  if (loading) return <Status>Checking your session…</Status>;
   if (me === null) {
     return (
-      <Card title="Sign in">
-        <p className="max-w-2xl">
+      <PxSection title="Sign in">
+        <p>
           Crews, the Survey, your profile name and alerts live off-chain. Sign a message with your
           wallet to use them. The signature only logs you in; it cannot move funds.
         </p>
-        <Button
-          className="mt-4"
-          onClick={() => openConnectModal?.()}
-          disabled={openConnectModal === undefined}
-        >
+        <PxButton className="self-start" busy={login.busy} onClick={() => void login.signIn()}>
           Sign in
-        </Button>
-      </Card>
+        </PxButton>
+        {login.error !== null && <p className="text-sm text-[#ff7a6e]">{login.error}</p>}
+      </PxSection>
     );
   }
   return <>{children(me)}</>;
@@ -84,47 +94,45 @@ function MyCrew({ id }: { id: number }) {
   const crew = useQuery({ queryKey: ['crew', id], queryFn: () => api.crew(id) });
   const { write, busy } = useWrite();
   if (crew.data === undefined)
-    return <p role="status">{crew.isError ? apiMessage(crew.error) : 'Loading your crew…'}</p>;
+    return <Status>{crew.isError ? apiMessage(crew.error) : 'Loading your crew…'}</Status>;
   const c = crew.data;
   return (
-    <Card
+    <PxSection
       label="Crew"
       title={`${c.name} [${c.tag}]`}
       actions={
         c.ranked ? (
-          <Badge tone="ok">Ranked</Badge>
+          <PxTag tone="ok">Ranked</PxTag>
         ) : (
-          <Badge>{`${c.members.length} of ${CREW_MIN} to rank`}</Badge>
+          <PxTag>{`${c.members.length} of ${CREW_MIN} to rank`}</PxTag>
         )
       }
     >
       <p>
-        Together you have cored <span className="num">{c.contribution.text}</span> of the World
-        Bore. Crews are social only: no shared Drill Power, no shared rewards.
+        Together you have cored <span className="text-cyan">{c.contribution.text}</span> of the
+        World Bore. Crews are social only: no shared Drill Power, no shared rewards.
       </p>
-      <div className="mt-4">
-        <Table
-          caption={`Members of ${c.name}`}
-          rows={c.members}
-          rowKey={(m) => m.wallet ?? m.displayName ?? 'member'}
-          columns={[
-            {
-              key: 'name',
-              header: 'Member',
-              render: (m) => (
-                <>
-                  {m.displayName ?? shortAddress(m.wallet)}{' '}
-                  {m.captain && <Badge tone="data">Captain</Badge>}
-                </>
-              ),
-            },
-            { key: 'c', header: 'Cored', numeric: true, render: (m) => m.contribution.text },
-          ]}
-        />
-      </div>
-      <Button
-        className="mt-4"
-        variant="secondary"
+      <PxTable
+        caption={`Members of ${c.name}`}
+        rows={c.members}
+        rowKey={(m) => m.wallet ?? m.displayName ?? 'member'}
+        columns={[
+          {
+            key: 'name',
+            header: 'Member',
+            render: (m) => (
+              <>
+                {m.displayName ?? shortAddress(m.wallet)}{' '}
+                {m.captain && <PxTag tone="data">Captain</PxTag>}
+              </>
+            ),
+          },
+          { key: 'c', header: 'Cored', numeric: true, render: (m) => m.contribution.text },
+        ]}
+      />
+      <PxButton
+        variant="light"
+        className="self-start"
         busy={busy === 'leave'}
         onClick={async () => {
           if (await write('leave', api.leaveCrew, `You left ${c.name}`))
@@ -132,8 +140,8 @@ function MyCrew({ id }: { id: number }) {
         }}
       >
         Leave crew
-      </Button>
-    </Card>
+      </PxButton>
+    </PxSection>
   );
 }
 
@@ -152,46 +160,46 @@ function FindCrew() {
   }
 
   return (
-    <>
-      <Card label="Crew" title="Start a crew">
-        <p className="max-w-2xl text-fg-muted">
+    <div className="flex flex-col gap-4">
+      <PxSection label="Crew" title="Start a crew">
+        <p className={HINT}>
           {CREW_MIN} to {CREW_MAX} players. A crew ranks once it has {CREW_MIN} members. Crews never
           pool Drill Power or rewards.
         </p>
         <form
           onSubmit={(e) => void create(e)}
-          className="mt-4 grid gap-4 sm:grid-cols-[1fr_8rem_auto] sm:items-end"
+          className="grid gap-3 sm:grid-cols-[1fr_8rem_auto] sm:items-end"
         >
           <label className="block">
-            <span className="text-fg-muted">Name (3 to 24 letters, digits, spaces, - or _)</span>
+            <span className={HINT}>Name (3 to 24 letters, digits, spaces, - or _)</span>
             <input
               required
               pattern="[A-Za-z0-9][A-Za-z0-9 _\-]{2,23}"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 block w-full rounded border border-line bg-surface-sunken px-3 py-2"
+              className={INPUT}
             />
           </label>
           <label className="block">
-            <span className="text-fg-muted">Tag (3 to 5)</span>
+            <span className={HINT}>Tag (3 to 5)</span>
             <input
               required
               pattern="[A-Za-z0-9]{3,5}"
               value={tag}
               onChange={(e) => setTag(e.target.value.toUpperCase())}
-              className="mt-1 block w-full rounded border border-line bg-surface-sunken px-3 py-2 uppercase"
+              className={`${INPUT} uppercase`}
             />
           </label>
-          <Button type="submit" busy={busy === 'create'}>
+          <PxButton type="submit" busy={busy === 'create'}>
             Create
-          </Button>
+          </PxButton>
         </form>
-      </Card>
-      <Card label="Crews" title="Join a crew">
+      </PxSection>
+      <PxSection label="Crews" title="Join a crew">
         {crews.data === undefined ? (
-          <p role="status">{crews.isError ? apiMessage(crews.error) : 'Loading crews…'}</p>
+          <Status>{crews.isError ? apiMessage(crews.error) : 'Loading crews…'}</Status>
         ) : (
-          <Table
+          <PxTable
             caption="Crews by World Bore contribution"
             rows={crews.data.rows}
             rowKey={(r) => String(r.id)}
@@ -210,9 +218,9 @@ function FindCrew() {
                 key: 'join',
                 header: 'Join',
                 render: (r) => (
-                  <Button
-                    size="sm"
-                    variant="secondary"
+                  <PxButton
+                    variant="light"
+                    className="!px-2 !py-1 !text-sm"
                     disabled={r.members >= CREW_MAX}
                     busy={busy === `join-${r.id}`}
                     aria-label={`Join ${r.name}`}
@@ -229,14 +237,14 @@ function FindCrew() {
                     }}
                   >
                     Join
-                  </Button>
+                  </PxButton>
                 ),
               },
             ]}
           />
         )}
-      </Card>
-    </>
+      </PxSection>
+    </div>
   );
 }
 
@@ -265,47 +273,50 @@ export function SurveyPanel({ now }: { now: number }) {
   }
 
   return (
-    <>
-      <Card label="Survey" title="Today's survey">
-        <p className="max-w-2xl text-fg-muted">
+    <div className="flex flex-col gap-4">
+      <PxSection label="Survey" title="Today's survey">
+        <p className={HINT}>
           One free survey per day turns up a core sample, fossil or old drilling part for your
           collection. Finds are cosmetic: they cannot be bought or sold and change nothing in the
           economy.
         </p>
         {last !== null && (
-          <p role="status" className="mt-4 font-semibold">
+          <p role="status" className="text-lg text-amber">
             {last}
           </p>
         )}
-        <Button className="mt-4" busy={busy} disabled={doneToday} onClick={() => void survey()}>
+        <PxButton
+          className="self-start"
+          busy={busy}
+          disabled={doneToday}
+          onClick={() => void survey()}
+        >
           {doneToday ? 'Surveyed today' : 'Survey'}
-        </Button>
-        {doneToday && (
-          <p className="mt-2 text-fg-muted">Next survey from {formatUtc((today + 1) * DAY_S)}.</p>
-        )}
-      </Card>
-      <Card label="Core Collection" title="Your sets">
+        </PxButton>
+        {doneToday && <p className={HINT}>Next survey from {formatUtc((today + 1) * DAY_S)}.</p>}
+      </PxSection>
+      <PxSection label="Core Collection" title="Your sets">
         {collection.data === undefined ? (
-          <p role="status">{collection.isError ? apiMessage(collection.error) : 'Loading…'}</p>
+          <Status>{collection.isError ? apiMessage(collection.error) : 'Loading…'}</Status>
         ) : (
-          <ul className="flex flex-col gap-3">
+          <ul className="px-inset flex flex-col">
             {collection.data.sets.map((s) => (
               <li
                 key={s.id}
-                className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3"
+                className="flex flex-wrap items-center justify-between gap-3 border-t border-[#262c33] px-3 py-2 first:border-t-0"
               >
                 <span>
-                  {s.name} {s.complete && <Badge tone="ok">{s.title}</Badge>}
+                  {s.name} {s.complete && <PxTag tone="ok">{s.title}</PxTag>}
                 </span>
-                <span className="num">
+                <span className="text-cyan">
                   {s.found} / {s.total}
                 </span>
               </li>
             ))}
           </ul>
         )}
-      </Card>
-    </>
+      </PxSection>
+    </div>
   );
 }
 
@@ -321,27 +332,25 @@ export function SeasonsPanel({ address }: { address: Address | undefined }) {
   });
   const overall = useQuery({ queryKey: ['contribution'], queryFn: api.contributionBoard });
   return (
-    <>
-      <Card label="Season" title={season?.name ?? 'No season yet'}>
+    <div className="flex flex-col gap-4">
+      <PxSection label="Season" title={season?.name ?? 'No season yet'}>
         {season !== undefined && (
-          <p className="text-fg-muted">
+          <p className={HINT}>
             {formatUtc(season.startsAt)} to {formatUtc(season.endsAt)}. Ranked by World Bore
             contribution during the season.
           </p>
         )}
         {board.data !== undefined && (
-          <div className="mt-4">
-            <Board
-              rows={board.data.rows}
-              caption={`${season?.name ?? 'Season'} leaderboard`}
-              address={address}
-            />
-          </div>
+          <Board
+            rows={board.data.rows}
+            caption={`${season?.name ?? 'Season'} leaderboard`}
+            address={address}
+          />
         )}
-      </Card>
-      <Card label="All time" title="World Bore contribution">
+      </PxSection>
+      <PxSection label="All time" title="World Bore contribution">
         {overall.data === undefined ? (
-          <p role="status">{overall.isError ? apiMessage(overall.error) : 'Loading…'}</p>
+          <Status>{overall.isError ? apiMessage(overall.error) : 'Loading…'}</Status>
         ) : (
           <Board
             rows={overall.data.rows}
@@ -349,8 +358,8 @@ export function SeasonsPanel({ address }: { address: Address | undefined }) {
             address={address}
           />
         )}
-      </Card>
-    </>
+      </PxSection>
+    </div>
   );
 }
 
@@ -365,7 +374,7 @@ function Board({
 }) {
   const mine = address?.toLowerCase();
   return (
-    <Table
+    <PxTable
       caption={caption}
       rows={rows}
       rowKey={(r) => r.address}
@@ -375,7 +384,10 @@ function Board({
           key: 'who',
           header: 'Driller',
           render: (r) => (
-            <a href={`/s/${r.address.toLowerCase()}`} className="text-data underline">
+            <a
+              href={`/s/${r.address.toLowerCase()}`}
+              className={`underline ${r.address.toLowerCase() === mine ? 'text-amber' : 'text-bone'}`}
+            >
               {r.displayName ?? shortAddress(r.address)}
               {r.address.toLowerCase() === mine ? ' (you)' : ''}
             </a>
@@ -391,11 +403,11 @@ function Board({
 
 export function ProfilePanel({ me, address }: { me: Me; address: Address }) {
   return (
-    <>
+    <div className="flex flex-col gap-4">
       <NameCard me={me} />
       <ShareCard address={address} />
       <AlertsCard />
-    </>
+    </div>
   );
 }
 
@@ -404,7 +416,7 @@ function NameCard({ me }: { me: Me }) {
   const { write, busy } = useWrite();
   const [name, setName] = useState(me.displayName ?? '');
   return (
-    <Card label="Profile" title={me.displayName ?? 'Pick a name'}>
+    <PxSection label="Profile" title={me.displayName ?? 'Pick a name'}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -412,23 +424,23 @@ function NameCard({ me }: { me: Me }) {
             if (ok) await client.invalidateQueries({ queryKey: ME_KEY });
           });
         }}
-        className="flex flex-wrap items-end gap-4"
+        className="flex flex-wrap items-end gap-3"
       >
-        <label className="block">
-          <span className="text-fg-muted">Display name (3 to 20 letters, digits or _)</span>
+        <label className="block grow">
+          <span className={HINT}>Display name (3 to 20 letters, digits or _)</span>
           <input
             required
             pattern="[A-Za-z0-9_]{3,20}"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-1 block w-full rounded border border-line bg-surface-sunken px-3 py-2"
+            className={INPUT}
           />
         </label>
-        <Button type="submit" variant="secondary" busy={busy === 'name'}>
+        <PxButton type="submit" variant="light" busy={busy === 'name'}>
           Save
-        </Button>
+        </PxButton>
       </form>
-    </Card>
+    </PxSection>
   );
 }
 
@@ -447,33 +459,33 @@ function ShareCard({ address }: { address: Address }) {
         })
       : null;
   return (
-    <Card label="Share" title="Your drill site card">
+    <PxSection label="Share" title="Your drill site card">
       {profile.data?.registered === true && (
         <img
           src={api.cardUrl(address)}
           alt="Your share card: World Bore contribution, crew and the bore's depth"
           width={1200}
           height={630}
-          className="h-auto w-full max-w-xl rounded border border-line"
+          className="h-auto w-full max-w-xl border-[3px] border-[#0b0d10]"
         />
       )}
-      <p className="mt-4 text-fg-muted">
+      <p className={HINT}>
         Your public page doubles as your invite link. Sharing gives no in-game bonus; it just shows
         your site.
       </p>
-      <div className="mt-4 flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         {text !== null && (
           <a
             href={xIntentUrl(text)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-11 items-center rounded-md bg-orange px-5 font-condensed font-semibold tracking-wide text-night uppercase"
+            className="px-btn px-btn-primary px-4 py-2 text-lg"
           >
             Post on X
           </a>
         )}
-        <Button
-          variant="secondary"
+        <PxButton
+          variant="light"
           onClick={() =>
             void navigator.clipboard
               .writeText(link)
@@ -482,28 +494,25 @@ function ShareCard({ address }: { address: Address }) {
           }
         >
           Copy invite link
-        </Button>
-        <a
-          href={`/s/${address.toLowerCase()}`}
-          className="inline-flex h-11 items-center text-data underline"
-        >
+        </PxButton>
+        <a href={`/s/${address.toLowerCase()}`} className="text-amber underline">
           Public page
         </a>
       </div>
-    </Card>
+    </PxSection>
   );
 }
 
 function AlertsCard() {
   const prefs = useQuery({ queryKey: ['prefs'], queryFn: api.prefs });
   return (
-    <Card label="Alerts" title="Notifications">
+    <PxSection label="Alerts" title="Notifications">
       {prefs.data === undefined ? (
-        <p role="status">{prefs.isError ? apiMessage(prefs.error) : 'Loading…'}</p>
+        <Status>{prefs.isError ? apiMessage(prefs.error) : 'Loading…'}</Status>
       ) : (
         <AlertsForm initial={prefs.data} />
       )}
-    </Card>
+    </PxSection>
   );
 }
 
@@ -526,14 +535,15 @@ function AlertsForm({ initial }: { initial: Prefs }) {
           if (ok) await client.invalidateQueries({ queryKey: ['prefs'] });
         });
       }}
-      className="flex flex-col gap-4"
+      className="flex flex-col gap-3"
     >
       <fieldset>
-        <legend className="text-fg-muted">Tell me when</legend>
+        <legend className={HINT}>Tell me when</legend>
         {NOTIFY_EVENTS.map((ev) => (
           <label key={ev} className="mt-2 flex items-center gap-2">
             <input
               type="checkbox"
+              className="h-4 w-4 accent-orange"
               checked={events.includes(ev)}
               onChange={(e) =>
                 setEvents((all) => (e.target.checked ? [...all, ev] : all.filter((x) => x !== ev)))
@@ -544,27 +554,27 @@ function AlertsForm({ initial }: { initial: Prefs }) {
         ))}
       </fieldset>
       <label className="block">
-        <span className="text-fg-muted">Email (optional)</span>
+        <span className={HINT}>Email (optional)</span>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 block w-full rounded border border-line bg-surface-sunken px-3 py-2"
+          className={INPUT}
         />
       </label>
       <label className="block">
-        <span className="text-fg-muted">Telegram chat id (optional)</span>
+        <span className={HINT}>Telegram chat id (optional)</span>
         <input
           inputMode="numeric"
           pattern="-?[0-9]{1,20}"
           value={telegram}
           onChange={(e) => setTelegram(e.target.value)}
-          className="mt-1 block w-full rounded border border-line bg-surface-sunken px-3 py-2"
+          className={INPUT}
         />
       </label>
-      <Button type="submit" variant="secondary" busy={busy === 'prefs'} className="self-start">
+      <PxButton type="submit" variant="light" busy={busy === 'prefs'} className="self-start">
         Save alerts
-      </Button>
+      </PxButton>
     </form>
   );
 }
