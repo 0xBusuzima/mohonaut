@@ -23,6 +23,8 @@ Repo gizliyken GitHub'ın ücretsiz Actions dakikası CI'a yetmiyor: bir koşu y
    - `CI_RUNS_ON` repo değişkenini `["self-hosted","linux","x64","mohonaut"]` yapar;
    - Medusa süresi için `FUZZ_SECONDS` değişkenini `3600` yapar.
 
+5. **İsteğe bağlı: canlı izleme.** `ci-monitor-shortcut.ps1` masaüstüne **Mohonaut CI** kısayolu koyar. Çift tıklayınca runner'ın kaydı canlı akar: hangi iş çalışıyor (`Running job: ...`) ve nasıl bitti (`... completed with result: Succeeded/Failed`). Pencereyi kapatmak runner'ı etkilemez.
+
 ## Bilinmesi gerekenler
 
 - Bilgisayar kapalıyken ya da uykudayken CI koşmaz; işler kuyrukta bekler ve makine açılınca koşar.
