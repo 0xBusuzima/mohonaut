@@ -1,20 +1,15 @@
 'use client';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createConfig, http, WagmiProvider } from 'wagmi';
-import { gameChain } from '../../../game/network';
+import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
 import { PixelWorld } from '../../../game/pixel/PixelWorld';
 import { describeHit } from '../../../game/play';
 import type { ScenePad } from '../../../game/play';
 import type { GameState } from '../../../game/state';
 import { GEN1_RIGS } from '../../../lib/catalog';
-import { BoreWindow } from '../../play/BoreWindow';
-import { Guide } from '../../play/Guide';
 import { Hud } from '../../play/Hud';
 import type { Panel } from '../../play/Hud';
 import { PxModal } from '../../play/px';
-import { MarketWindow, RigsWindow } from '../../play/RigCards';
 import { Brand } from '../../play/Shell';
 
 const E18 = 10n ** 18n;
@@ -75,16 +70,15 @@ const SAMPLE: GameState = {
   },
 };
 
-/** Chain reads only (the market's batch quotes); no wallet in the preview. */
-const previewConfig = createConfig({
-  chains: [gameChain],
-  transports: { [gameChain.id]: http() },
-  ssr: true,
+const Guide = dynamic(() => import('../../play/Guide').then((m) => m.Guide), { ssr: false });
+const BoreWindow = dynamic(() => import('../../play/BoreWindow').then((m) => m.BoreWindow), {
+  ssr: false,
 });
-const previewQueries = new QueryClient();
 
-/** The windows open without a wallet: buttons do nothing here. */
-const NO_ACTION = { busy: null, run: () => Promise.resolve(false) };
+/** The rig windows read the chain (batch quotes): loaded with their providers when opened. */
+const RigWindows = dynamic(() => import('./rig-windows').then((m) => m.RigWindows), {
+  ssr: false,
+});
 
 export function SitePreview() {
   // A living sample: every few seconds a rig is installed and diesel arrives, then it resets.
@@ -101,45 +95,39 @@ export function SitePreview() {
   );
   const [panel, setPanel] = useState<Panel | null>(null);
   return (
-    <WagmiProvider config={previewConfig}>
-      <QueryClientProvider client={previewQueries}>
-        <PixelWorld
-          model={model}
-          onSelect={(hit) => {
-            if (hit === 'market') setPanel('market');
-            else if (hit.startsWith('pad:')) setPanel('rigs');
-          }}
-          describe={(hit) => describeHit(hit, pads)}
-          label={`Sample drill site: ${GEN1_RIGS.map((r) => r.name).join(', ')}.`}
+    <>
+      <PixelWorld
+        model={model}
+        onSelect={(hit) => {
+          if (hit === 'market') setPanel('market');
+          else if (hit.startsWith('pad:')) setPanel('rigs');
+        }}
+        describe={(hit) => describeHit(hit, pads)}
+        label={`Sample drill site: ${GEN1_RIGS.map((r) => r.name).join(', ')}.`}
+      />
+      <Brand />
+      <Hud state={SAMPLE} open={setPanel} />
+      {panel === null && (
+        <Guide
+          state={SAMPLE}
+          address="0x000000000000000000000000000000000000dEaD"
+          open={(t) => setPanel(t === 'market' ? 'market' : 'rigs')}
         />
-        <Brand />
-        <Hud state={SAMPLE} open={setPanel} />
-        {panel === null && (
-          <Guide
-            state={SAMPLE}
-            address="0x000000000000000000000000000000000000dEaD"
-            open={(t) => setPanel(t === 'market' ? 'market' : 'rigs')}
-          />
-        )}
-        {panel === 'bore' && (
-          <PxModal title="World Bore" onClose={() => setPanel(null)}>
-            <BoreWindow depthMm={SAMPLE_DEPTH_MM} />
-          </PxModal>
-        )}
-        {(panel === 'market' || panel === 'rigs') && (
-          <PxModal
-            title={panel === 'market' ? 'Equipment market' : 'My rigs'}
-            onClose={() => setPanel(null)}
-            wide
-          >
-            {panel === 'market' ? (
-              <MarketWindow state={SAMPLE} action={NO_ACTION} />
-            ) : (
-              <RigsWindow state={SAMPLE} action={NO_ACTION} openMarket={() => setPanel('market')} />
-            )}
-          </PxModal>
-        )}
-      </QueryClientProvider>
-    </WagmiProvider>
+      )}
+      {panel === 'bore' && (
+        <PxModal title="World Bore" onClose={() => setPanel(null)}>
+          <BoreWindow depthMm={SAMPLE_DEPTH_MM} />
+        </PxModal>
+      )}
+      {(panel === 'market' || panel === 'rigs') && (
+        <PxModal
+          title={panel === 'market' ? 'Equipment market' : 'My rigs'}
+          onClose={() => setPanel(null)}
+          wide
+        >
+          <RigWindows panel={panel} state={SAMPLE} openMarket={() => setPanel('market')} />
+        </PxModal>
+      )}
+    </>
   );
 }
