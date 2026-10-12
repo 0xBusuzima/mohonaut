@@ -34,7 +34,7 @@
 | İzleme | OpenZeppelin Monitor, Prometheus, Grafana, Loki, Uptime Kuma (hepsi self-host); Sentry ücretsiz katman | |
 | E-posta bildirimi | Resend ücretsiz katman veya yalnızca Telegram bot (ücretsiz) | |
 | Analitik | PostHog ücretsiz katman veya self-host Plausible/Umami | |
-| Görsel üretim | **Kenney.nl** izometrik paketleri (CC0, ticari kullanım serbest) + Recraft / Ideogram ücretsiz katmanları + bu oturumdaki Higgsfield bağlantısı (kredi harcar — her kullanımda önce sor) | Her varlığın lisansı `docs/legal/ASSET_LISANSLARI.md`'ye yazılır |
+| Görsel üretim | **Kendi tasarımımız**: kodla çizilen vektörler (`tools/brand`, `apps/web/src/game/rigs.ts`) ve kurucunun Inkscape çizimleri; dış görsel/paket yok (docs/05 §2.6). AI görsel araçları en fazla fikir keşfi için | Her varlığın kaynağı `docs/legal/ASSET_LISANSLARI.md`'ye yazılır |
 | Sprite düzenleme | Pixelorama veya LibreSprite (ücretsiz), Krita, Inkscape (vektör logo) | |
 | Tasarım | Figma ücretsiz katman veya Penpot (açık kaynak) | |
 | Müzik/ses | Lisansı açık kaynaklar (CC0 / ticari kullanıma izin veren kütüphaneler); AI müzik araçlarının **ücretsiz katmanları genelde ticari kullanıma izin vermez**, kontrol et | |

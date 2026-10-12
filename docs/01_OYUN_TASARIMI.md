@@ -166,7 +166,7 @@ _İç karşılaştırma `research_notes/rakip-karsilastirma.md` dosyasına taş�
 - **Maskot:** tek maskot, **Foreman Mo**. Baretli, kafa lambalı köstebek ustabaşı (sezon kostümleri, meme yüzeyi). Yan karakter kadrosu yok.
 - **Ses:** industrial ambient + kule ritmi (dizel motor, çamur pompası, boru sesi); her katman geçişinde yeni tema.
 - **Teknoloji:** PixiJS (WebGL 2D) + izometrik sprite atlasları; mobil öncelikli; düşük güçlü cihazda animasyon azaltma.
-- **Ücretsiz varlık başlangıcı:** Kenney.nl CC0 izometrik paketleri + AI taslak + tutarlı stil rehberi (08).
+- **Varlıklar:** hepsi bizim tasarımımız ve özgün; dış görsel/sprite paketi kullanılmaz (docs/05 §2.6 özgünlük kuralı). Kuleler kodla çizilir (`apps/web/src/game/rigs.ts`).
 
 ---
 

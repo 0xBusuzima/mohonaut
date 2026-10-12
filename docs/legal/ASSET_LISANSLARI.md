@@ -1,6 +1,6 @@
 # Varlık lisansları
 
-Projede kullanılan her görsel, font, ses ve aracın kaynağı ve lisansı (docs/05 §2.8, docs/08). Yeni bir varlık eklenince bu tabloya bir satır eklenir.
+Projede kullanılan her görsel, font, ses ve aracın kaynağı ve lisansı (docs/05 §2.6–2.8, docs/08). Yeni bir varlık eklenince bu tabloya bir satır eklenir. Görsellerin hepsi bizim tasarımımızdır; dışarıdan gelen tek şey açık lisanslı fontlardır.
 
 ## Fontlar
 
@@ -24,10 +24,6 @@ OFL, fontların logo ve görsellerde ticari kullanımına izin verir. Harfleri y
 
 **Durum:** Bunlar **taslak**. docs/05 §2.8'e göre son logo, kurucunun bu taslağı Inkscape'te elle yeniden çizmesiyle (insan katkısı) ya da gelirle tutulacak bir tasarımcıyla kesinleşir; marka tescili de o sürümle yapılır.
 
-## Henüz kullanılmayan ama planlanan kaynaklar
+## Kural
 
-| Kaynak | Lisans | Not |
-|---|---|---|
-| Kenney.nl izometrik paketleri | CC0 (kamu malı) | Kule sprite'larının temeli olarak (docs/05 §2.8) |
-| Recraft / Ideogram ücretsiz kademeleri | Kullanmadan önce güncel ticari kullanım şartları buraya yazılacak | Keşif amaçlı |
-| Higgsfield | Ücretli kredi | Her kullanımdan önce kurucu onayı |
+**Özgünlük kuralı (kurucu kararı, 2026-10-12):** Bütün görseller (logo, maskot, kuleler, saha, ikonlar, paylaşım kartları) **bizim tarafımızdan tasarlanır ve özgündür**. Başkasının logosu, görseli, sprite'ı ya da ikon paketi (CC0 ve "ücretsiz" olanlar dahil, ör. Kenney.nl) kullanılmaz. Yapay zekâ görsel araçları en fazla kendi aramızda fikir keşfi için kullanılabilir; hiçbir AI çıktısı ürüne, siteye ya da marka dosyalarına girmez. Fontlar dışarıdan gelir (yalnızca SIL OFL lisanslı yazı tipleri) ve hangi yerde kullanıldıkları `docs/legal/ASSET_LISANSLARI.md`'ye yazılır.

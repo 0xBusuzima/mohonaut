@@ -6,7 +6,7 @@
 >
 > **Hukuki uyarı:** Bu doküman hukuki tavsiye değildir. §6'daki dil rehberi, tüm tweet ve site metinleri, referans ve sezon ödülleri ile Türkçe iletişim kuralları yayımlanmadan önce hukuki gözden geçirmeden geçmelidir. Hedef: Türk sermaye piyasası + şans oyunları alanında **en az tek seferlik danışmanlık** (06 → 0.2; 08 §6). Danışmanlık yapılamazsa kurucu riski yazılı olarak üstlenir (04 §8) ve **[avukat]** işaretli taslaklar ya yayımlanmaz ya da en temkinli alternatifleriyle değiştirilir. Kurucu kimliği açık bir Türk vatandaşı olduğu için en yüksek risk kurucunun kişisel sorumluluğudur (araştırma raporu, "Hukuki çerçeve").
 >
-> **Bütçe (kurucu kararı, 2026-10-10):** Dış bütçe yok. Bu dokümandaki ücretli kalemler (X Ads, X Verified Organizations, X Premium, DexScreener ücretli profil, marka tescil ücretleri ve marka vekili, ücretli AI görsel planları ve Higgsfield kredisi, insan illüstratör, savunma domainleri) **opsiyoneldir** ve yalnızca oyunun ops geliriyle, `08` §3'teki ilan edilmiş sırayla açılır. Kredi harcayan bir araç kullanılmadan önce maliyet söylenir ve kurucu onayı alınır. Ücretsiz karşılıklar: TMview/USPTO'da kendi ön aramamız, Kenney.nl CC0 varlıklar, Recraft/Ideogram ücretsiz kademeleri (ticari kullanım koşulları kontrol edilerek), Inkscape/Krita, X'in kendi zamanlayıcısı.
+> **Bütçe (kurucu kararı, 2026-10-10):** Dış bütçe yok. Bu dokümandaki ücretli kalemler (X Ads, X Verified Organizations, X Premium, DexScreener ücretli profil, marka tescil ücretleri ve marka vekili, ücretli AI görsel planları ve Higgsfield kredisi, insan illüstratör, savunma domainleri) **opsiyoneldir** ve yalnızca oyunun ops geliriyle, `08` §3'teki ilan edilmiş sırayla açılır. Kredi harcayan bir araç kullanılmadan önce maliyet söylenir ve kurucu onayı alınır. Ücretsiz karşılıklar: TMview/USPTO'da kendi ön aramamız, kendi çizdiğimiz özgün görseller (dış görsel ya da paket yok, §2.6), Inkscape/Krita, X'in kendi zamanlayıcısı.
 >
 > **Gizlilik ve iç kullanım:** Bu doküman **iç kullanım** içindir; herkese açık dokümantasyon sitesine kopyalanmaz. Rakip adları yalnızca §1'de (tarihsel kanıt), §6.4b'de (yasak listesinin tanımı) ve §9'da (**İÇ KULLANIM** etiketli rakip analizi) geçer. §2–§8'deki her İngilizce taslak herkese açık metin olarak yazıldı ve rakip adı ya da imâsı içermez (§6.4b).
 >
@@ -378,6 +378,8 @@ Kurallar: Rakamlarda `font-variant-numeric: tabular-nums`. Gövde metni 16 px al
 
 ### 2.6 Logo yönleri (3) ve hazır yapay zekâ prompt'ları
 
+**Özgünlük kuralı (kurucu kararı, 2026-10-12):** Bütün görseller (logo, maskot, kuleler, saha, ikonlar, paylaşım kartları) **bizim tarafımızdan tasarlanır ve özgündür**. Başkasının logosu, görseli, sprite'ı ya da ikon paketi (CC0 ve "ücretsiz" olanlar dahil, ör. Kenney.nl) kullanılmaz. Yapay zekâ görsel araçları en fazla kendi aramızda fikir keşfi için kullanılabilir; hiçbir AI çıktısı ürüne, siteye ya da marka dosyalarına girmez. Fontlar dışarıdan gelir (yalnızca SIL OFL lisanslı yazı tipleri) ve hangi yerde kullanıldıkları `docs/legal/ASSET_LISANSLARI.md`'ye yazılır. Aşağıdaki prompt'lar yalnızca fikir keşfi içindir.
+
 **Genel kurallar:**
 - Sıra: **keşif** (Ideogram ücretsiz kademe, metin doğruluğu için) → **vektör taslak** (Recraft ücretsiz kademe, SVG) → **final vektör** (kurucu, Inkscape'te elle; gelirle profesyonel tasarımcı, §2.8). Midjourney ücretlidir, opsiyoneldir; Higgsfield kredi harcar, her kullanımdan önce maliyet söylenir ve onay alınır.
 - Prompt'larda başka markaların, sanatçıların, rakip projelerin ya da "Robinhood"un adı geçmez. Robinhood işaretleri AI üretimi medyada kullanılamaz (ToS §5.7(i)).
@@ -425,7 +427,7 @@ wide isometric 2.5D view of a surface drilling site at night, one tall drilling 
 Landing hero / key art (16:9 ve 9:16):
 isometric 2.5D night drill site on open ground, four drilling pads, one small engine-driven rig working on the first pad, a diesel tank with an analog gauge, pipe rack, core shack with a lit window, sodium lights, drifting steam, rain, clean stylized game art, charcoal palette with safety orange equipment, everything above ground, no cutaway view (+ standart negatif liste)
 
-Kule sprite'ı (tutarlı set; Kenney.nl CC0 izometrik paketleri temel alınabilir):
+Kule sprite'ı (yalnızca fikir keşfi; ürün çizimleri bizim, `apps/web/src/game/rigs.ts`):
 isometric 2.5D game sprite of a [Top Drive drilling rig], compact surface drilling rig on a steel skid with a diesel engine, safety orange paint with charcoal steel parts, small cyan status light on the control panel, clean outlines, consistent 30-degree isometric angle, transparent background, three states: idle, drilling with the drill string turning and exhaust puffs, shut down with lights off
 
 Stratum tema paketi — karot numunesi (Core Collection ve log için):
@@ -445,11 +447,11 @@ flat vector badge, small drilling rig silhouette above a short core sample, text
 
 | İş | Şimdi (ücretsiz) | Gelirle (08 §3) | Neden |
 |---|---|---|---|
-| Logo keşfi, moodboard | Ideogram/Recraft ücretsiz kademe | — | Hızlı yön bulma |
+| Logo keşfi, moodboard | Kendi eskizlerimiz; AI araçları yalnızca fikir için, çıktısı kullanılmaz | — | Hızlı yön bulma |
 | **Final logo vektörü** | Kurucu, AI taslağını referans alıp Inkscape'te **elle yeniden çizer** | Profesyonel tasarımcı (sıra 6) | Yalnızca yapay zekâyla üretilmiş görsel ABD'de genellikle telif korumasına girmez; marka tescili ve taklitle mücadele için insan katkılı, özgünlüğü kontrol edilmiş vektör gerekir |
 | **Maskot karakter sayfası** | AI keşfi + kurucunun vektör temizliği + tutarlılık rehberi | İnsan illüstratör (sıra 6) | Pozlar arası tutarlılık, özgünlük |
-| Kule sprite setleri (6 kule × 3 durum) | Kenney.nl CC0 izometrik temel + AI taslak + elle temizlik | İllüstratör | Tutarlı açı, ölçek ve palet; AI setleri kayar |
-| Stratum tema paketleri, log dokuları | AI + rötuş | — | Tekrarlanabilir |
+| Kule sprite setleri (6 kule × 3 durum) | Kodla çizilen özgün vektörler (`rigs.ts`, stil sayfası `brand/sprites`) | İllüstratör | Tutarlı açı, ölçek ve palet; dış paket yok |
+| Stratum tema paketleri, log dokuları | Kendi çizimimiz (kod ya da elle) | — | Özgünlük |
 | X banner, OG, paylaşım kartı şablonları | AI + Satori şablonları | — | Şablon işi |
 | Teaser / trailer | Oyun motorundan (PixiJS) ekran kaydı + ücretsiz kurgu aracı | Key art için illüstratör | "AI slop" eleştirisini önler: gerçek oyun görüntüsü |
 | Müzik ve SFX | CC0 / ticari kullanıma izin veren kütüphaneler; "industrial ambient" + dizel motor, çamur pompası, boru sesi | — | AI müzik araçlarının ücretsiz kademeleri genellikle ticari kullanıma izin vermez (08 §2) |

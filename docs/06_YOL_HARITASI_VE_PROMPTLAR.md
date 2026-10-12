@@ -333,7 +333,7 @@ Testnet betası için: deployments/testnet.json'u güncel sürüme getir, web'de
 
 
 ```text
-docs/05'teki marka kimliğine göre: logo yönleri için AI görsel promptlarını kullanarak 3 yön × 4 varyasyon taslak üret (önce ücretsiz: Kenney.nl CC0 izometrik paketleri temel, Recraft/Ideogram ücretsiz kademeleri; Higgsfield kredi harcar — her üretimden önce bana maliyeti söyle ve onay al), seçilen yönü vektöre çevirme planı, X avatar/banner, OG görselleri, paylaşım kartı şablonları, makine sprite stil rehberi. Telif: kullanılan her aracın ticari kullanım şartlarını docs/legal/ASSET_LISANSLARI.md'ye yaz.
+docs/05'teki marka kimliğine göre: logo yönleri için AI görsel promptlarını kullanarak 3 yön × 4 varyasyon taslak üret (özgünlük kuralı, docs/05 §2.6: her şey bizim tasarımımız, dış görsel ya da paket yok; AI araçları yalnızca fikir keşfi için), seçilen yönü vektöre çevirme planı, X avatar/banner, OG görselleri, paylaşım kartı şablonları, makine sprite stil rehberi. Telif: kullanılan her aracın ticari kullanım şartlarını docs/legal/ASSET_LISANSLARI.md'ye yaz.
 ```
 
 ### 8.2 Testnet Sezon 0 (bekleme listesi yerine "kanıtlanmış oyun") — ✅ 2026-10-12
