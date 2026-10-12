@@ -368,32 +368,43 @@ jobs:
           done
       - name: Images start
         run: |
-          docker network create ci
-          docker run -d --name pg --network ci -e POSTGRES_PASSWORD=ci -e POSTGRES_DB=mohonaut \
-            -p 5432:5432 postgres:17-bookworm
-          for i in $(seq 1 30); do docker exec pg pg_isready -U postgres && break; sleep 2; done
+          # Names and host ports per run: on a self-hosted runner the Docker daemon outlives the
+          # job and other jobs share it, so fixed names and ports collide.
+          N="ci-${{ github.run_id }}-${{ github.run_attempt }}"
+          echo "CI_NET=$N" >> "$GITHUB_ENV"
+          docker network create "$N"
+          docker run -d --name "$N-pg" --network "$N" -p 127.0.0.1::5432 -e POSTGRES_PASSWORD=ci \
+            -e POSTGRES_DB=mohonaut postgres:17-bookworm
+          echo "CI_PG=$(docker port "$N-pg" 5432/tcp | head -1)" >> "$GITHUB_ENV"
+          for i in $(seq 1 30); do docker exec "$N-pg" pg_isready -U postgres && break; sleep 2; done
+          DB="postgres://postgres:ci@$N-pg:5432/mohonaut"
           # Same order as infra/stack/compose.yml: the indexer migrates, then the API starts.
           # (No real RPC here: the indexer keeps retrying, which is what it does in an outage.)
-          docker run -d --name idx --network ci -p 9464:9464 --read-only --tmpfs /tmp             -v "$PWD/deployments:/deployments:ro" -e METRICS_HOST=0.0.0.0             -e RPC_URL=http://127.0.0.1:9 -e DATABASE_URL=postgres://postgres:ci@pg:5432/mohonaut             -e DEPLOYMENT_FILE=/deployments/46630.json mohonaut-indexer:ci
-          for i in $(seq 1 30); do curl -fsS -o /dev/null http://127.0.0.1:9464/metrics && break; sleep 2; done
-          docker logs idx 2>&1 | tail -5
-          curl -fsS http://127.0.0.1:9464/metrics | grep -q '^indexer_'
-          docker run -d --name api --network ci -p 8787:8787 --read-only --tmpfs /tmp \
+          docker run -d --name "$N-idx" --network "$N" -p 127.0.0.1::9464 --read-only --tmpfs /tmp \
+            -v "$PWD/deployments:/deployments:ro" -e METRICS_HOST=0.0.0.0 \
+            -e RPC_URL=http://127.0.0.1:9 -e DATABASE_URL="$DB" \
+            -e DEPLOYMENT_FILE=/deployments/46630.json mohonaut-indexer:ci
+          IDX=$(docker port "$N-idx" 9464/tcp | head -1)
+          for i in $(seq 1 30); do curl -fsS -o /dev/null "http://$IDX/metrics" && break; sleep 2; done
+          docker logs "$N-idx" 2>&1 | tail -5
+          curl -fsS "http://$IDX/metrics" | grep -q '^indexer_'
+          docker run -d --name "$N-api" --network "$N" -p 127.0.0.1::8787 --read-only --tmpfs /tmp \
             -v "$PWD/deployments:/deployments:ro" \
             -e NODE_ENV=development -e HOST=0.0.0.0 -e PORT=8787 \
-            -e DATABASE_URL=postgres://postgres:ci@pg:5432/mohonaut \
+            -e DATABASE_URL="$DB" \
             -e DEPLOYMENT_FILE=/deployments/46630.json -e WEB_ORIGIN=https://mohonaut.com \
             -e SURVEY_SECRET=$(openssl rand -hex 32) mohonaut-api:ci
-          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8787/healthz && break; sleep 2; done
-          curl -fsS http://127.0.0.1:8787/world | jq -e '.depth.mm == "0"'
-          curl -fsS http://127.0.0.1:8787/openapi.json | jq -e '.info.title == "Mohonaut API"'
+          API=$(docker port "$N-api" 8787/tcp | head -1)
+          for i in $(seq 1 30); do curl -fsS "http://$API/healthz" && break; sleep 2; done
+          curl -fsS "http://$API/world" | jq -e '.depth.mm == "0"'
+          curl -fsS "http://$API/openapi.json" | jq -e '.info.title == "Mohonaut API"'
           docker run --rm mohonaut-keeper:ci node --check dist/main.js
-          docker logs api | tail -5
+          docker logs "$N-api" | tail -5
       - name: Compose, image tags, cloud-init and shell scripts
         run: |
-          mkdir -p /tmp/secrets
+          mkdir -p "$RUNNER_TEMP/secrets"
           # Absolute: newer Compose resolves a relative env_file against the compose file's folder.
-          ENV_FILE="$PWD/infra/stack/secrets.example.env" SECRETS_DIR=/tmp/secrets \
+          ENV_FILE="$PWD/infra/stack/secrets.example.env" SECRETS_DIR="$RUNNER_TEMP/secrets" \
             docker compose -f infra/stack/compose.yml config -q
           docker pull -q cloudflare/cloudflared:2025.4.0
           docker pull -q valkey/valkey:8-bookworm
@@ -410,20 +421,31 @@ jobs:
       - run: npx turbo run build --filter=@mohonaut/api...
       - name: Backup and restore test
         run: |
-          node infra/backup/ci-seed.mjs postgres://postgres:ci@127.0.0.1:5432/mohonaut
-          age-keygen -o /tmp/age.key 2>/dev/null
-          age-keygen -y /tmp/age.key > /tmp/recipients.txt
-          AGE_RECIPIENTS_FILE=/tmp/recipients.txt BACKUP_DIR=/tmp/backups \
-            PG_DUMP="docker exec -i pg pg_dump" PGURL="postgresql:///mohonaut?user=postgres" \
+          # The runner's temp folder, not /tmp: a self-hosted runner keeps /tmp between jobs.
+          T="$RUNNER_TEMP/backup"
+          rm -rf "$T" && mkdir -p "$T/backups"
+          PG="$CI_NET-pg"
+          node infra/backup/ci-seed.mjs "postgres://postgres:ci@$CI_PG/mohonaut"
+          age-keygen -o "$T/age.key" 2>/dev/null
+          age-keygen -y "$T/age.key" > "$T/recipients.txt"
+          AGE_RECIPIENTS_FILE="$T/recipients.txt" BACKUP_DIR="$T/backups" \
+            PG_DUMP="docker exec -i $PG pg_dump" PGURL="postgresql:///mohonaut?user=postgres" \
             infra/backup/backup.sh
-          backup=$(ls /tmp/backups/*.dump.age | head -1)
+          backup=$(ls "$T"/backups/*.dump.age | head -1)
           if grep -q "audit_log" "$backup"; then echo "backup is not encrypted"; exit 1; fi
-          PG_RESTORE="docker exec -i pg pg_restore" PSQL="docker exec -i pg psql" \
-            infra/backup/restore-test.sh "$backup" /tmp/age.key \
+          PG_RESTORE="docker exec -i $PG pg_restore" PSQL="docker exec -i $PG psql" \
+            infra/backup/restore-test.sh "$backup" "$T/age.key" \
             "postgresql:///scratch?user=postgres" "postgresql:///mohonaut?user=postgres"
           # The append-only trigger came back with the data.
-          if docker exec pg psql -U postgres -d scratch -c "DELETE FROM audit_log" 2>/dev/null; then
+          if docker exec "$PG" psql -U postgres -d scratch -c "DELETE FROM audit_log" 2>/dev/null; then
             echo "audit_log accepted a DELETE after restore"; exit 1
+          fi
+      - name: Stop the images
+        if: always()
+        run: |
+          if [ -n "${CI_NET:-}" ]; then
+            docker rm -f "$CI_NET-pg" "$CI_NET-idx" "$CI_NET-api" || true
+            docker network rm "$CI_NET" || true
           fi
 
   security:
