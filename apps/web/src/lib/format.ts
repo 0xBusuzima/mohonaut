@@ -21,6 +21,13 @@ export function formatUnits18(amount: bigint, digits = 2): string {
 
 export const formatMohn = (wei: bigint, digits = 2) => `${formatUnits18(wei, digits)} MOHN`;
 export const formatEth = (wei: bigint, digits = 5) => `${formatUnits18(wei, digits)} ETH`;
+
+/** An ETH amount for an input field: at most 6 decimals, rounded down, no unit. */
+export function formatEthInput(wei: bigint): string {
+  const micro = wei / 10n ** 12n;
+  const frac = (micro % 1_000_000n).toString().padStart(6, '0').replace(/0+$/, '');
+  return frac === '' ? `${micro / 1_000_000n}` : `${micro / 1_000_000n}.${frac}`;
+}
 export const formatLitres = (wad: bigint, digits = 1) => `${formatUnits18(wad, digits)} ℓ`;
 
 /** "3 d 4 h", "5 h 12 min", "8 min" */

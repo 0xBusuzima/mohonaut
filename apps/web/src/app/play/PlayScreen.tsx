@@ -12,7 +12,14 @@ import { Counter } from '../../components/Counter';
 import { Tabs } from '../../components/Tabs';
 import { TankGauge } from '../../components/TankGauge';
 import { useGameAction } from '../../game/actions';
-import { efficiency, perHourEstimate, shareOfNetwork, withHeadroom } from '../../game/derive';
+import {
+  efficiency,
+  perHourEstimate,
+  shareOfNetwork,
+  tankRoom,
+  weiForAtMostLitres,
+  withHeadroom,
+} from '../../game/derive';
 import { gameChain } from '../../game/network';
 import { SiteScene } from '../../game/SiteScene';
 import { useGameState } from '../../game/state';
@@ -20,7 +27,8 @@ import type { GameState, RigType } from '../../game/state';
 import { parseAmount, referrerFromUrl, rigName, scenePads } from '../../game/play';
 import { useE2EConnect } from '../../game/e2e';
 import { PlayFrame, Welcome } from './PlayFrame';
-import { formatEth, formatLitres, formatMohn, formatUtc } from '../../lib/format';
+import { useNow } from '../../lib/clock';
+import { formatEth, formatEthInput, formatLitres, formatMohn, formatUtc } from '../../lib/format';
 import { setLowPower, useLowPower } from '../../lib/power';
 import { apiEnabled } from '../../social/api';
 import { CrewPanel, ProfilePanel, SeasonsPanel, SignedIn, SurveyPanel } from '../../social/panels';
@@ -199,13 +207,34 @@ function Game({ state, action }: { state: GameState; action: Action }) {
   );
 }
 
+const DEFAULT_ETH = '0.001';
+
 function FuelPanel({ state, action, first }: { state: GameState; action: Action; first: boolean }) {
   const { address } = useAccount();
   const balance = useBalance({ address, query: { refetchInterval: 12_000 } });
-  const [eth, setEth] = useState('0.001');
+  const [typed, setTyped] = useState<string | null>(null);
   const [referrer] = useState(referrerFromUrl);
-  const wei = parseAmount(eth);
   const rate = state.network.litresPerEth;
+  // What the tank takes now; a new site starts at level 1 with the Pilot Rig's burn.
+  const p = state.player;
+  const registered = p !== null && p.registered;
+  const now = Math.floor((useNow(30_000) ?? 0) / 1000);
+  const room = tankRoom({
+    now,
+    genesisTime: state.network.genesisTime,
+    marketOpenTime: state.network.marketOpenTime,
+    maxTankHours: state.network.maxTankHours,
+    capacityPerHour: fuelLineWad(registered ? p.level : 1),
+    burn: registered ? p.burn : (state.rigs[0]?.burn ?? 0n),
+    tank: p?.tank ?? 0n,
+  });
+  const maxWei = rate === null || now === 0 ? null : weiForAtMostLitres(room, rate);
+  const beforeOpen = now < state.network.marketOpenTime;
+  // Until the player types, offer the default or the most the tank takes, whichever is less.
+  const eth =
+    typed ??
+    (maxWei !== null && parseAmount(DEFAULT_ETH) > maxWei ? formatEthInput(maxWei) : DEFAULT_ETH);
+  const wei = parseAmount(eth);
   const litres = rate === null ? null : (wei * rate) / 10n ** 18n;
   return (
     <Card label="Diesel" title={first ? 'Fill your tank' : 'Diesel tank'}>
@@ -224,10 +253,24 @@ function FuelPanel({ state, action, first }: { state: GameState; action: Action;
         <input
           inputMode="decimal"
           value={eth}
-          onChange={(e) => setEth(e.target.value)}
+          onChange={(e) => setTyped(e.target.value)}
           className="num mt-1 block w-full rounded border border-line bg-surface-sunken px-3 py-2"
         />
       </label>
+      {maxWei !== null && (
+        <p className="mt-2 text-fg-muted">
+          Your tank takes up to <span className="num">{formatLitres(room)}</span> now (≈{' '}
+          <span className="num">{formatEth(maxWei)}</span>).{' '}
+          {beforeOpen && 'Until Market Open + 24 h a tank holds only what its rigs burn by then. '}
+          <button
+            type="button"
+            className="text-data underline"
+            onClick={() => setTyped(formatEthInput(maxWei))}
+          >
+            Use max
+          </button>
+        </p>
+      )}
       <p className="mt-2 text-fg-muted">
         ≈ <span className="num">{litres === null ? '—' : formatLitres(litres)}</span> · in wallet{' '}
         <span className="num">

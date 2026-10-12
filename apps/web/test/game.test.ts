@@ -6,12 +6,15 @@ import {
   minersShare,
   perHourEstimate,
   shareOfNetwork,
+  tankRoom,
+  weiForAtMostLitres,
   weiForLitres,
   withHeadroom,
 } from '../src/game/derive';
 import { explain } from '../src/game/errors';
 import { parseAmount, referrerFromUrl, rigName, scenePads } from '../src/game/play';
 import { padPositions } from '../src/game/SiteScene';
+import { formatEthInput } from '../src/lib/format';
 import { rigShape, rigSvg } from '../src/game/rigs';
 import { GEN1_RIGS } from '../src/lib/catalog';
 
@@ -99,6 +102,30 @@ describe('play screen helpers', () => {
   it('names catalog rigs and falls back for later generations', () => {
     expect(rigName(0)).toBe('Pilot Rig');
     expect(rigName(9)).toBe('Rig type 9');
+  });
+
+  it('offers only the diesel the tank takes, like MiningCore._maxTank', () => {
+    const L = E18;
+    const base = {
+      genesisTime: 1_000_000,
+      marketOpenTime: 1_000_000 + 72 * 3600,
+      maxTankHours: 720,
+      capacityPerHour: 6n * L, // level 1 fuel line
+      burn: L / 4n, // Pilot Rig
+      tank: 0n,
+    };
+    // After Market Open: fuel line capacity x 720 h.
+    expect(tankRoom({ ...base, now: base.marketOpenTime })).toBe(4320n * L);
+    // Before it: what the rigs burn until Market Open + 24 h (here 49 h + 24 h = 73 h x 0.25).
+    const now = base.marketOpenTime - 49 * 3600;
+    expect(tankRoom({ ...base, now })).toBe((73n * L) / 4n);
+    expect(tankRoom({ ...base, now, tank: 10n * L })).toBe((73n * L) / 4n - 10n * L);
+    expect(tankRoom({ ...base, now, tank: 99n * L })).toBe(0n);
+    // At most that many litres, 1 % under the quote; input text with 6 decimals.
+    const wei = weiForAtMostLitres(18n * L, 25_000n * L);
+    expect((wei * 25_000n * L) / E18 <= 18n * L).toBe(true);
+    expect(formatEthInput(wei)).toBe('0.000712');
+    expect(formatEthInput(2n * E18)).toBe('2');
   });
 
   it('places pads on an isometric grid, four to a row', () => {

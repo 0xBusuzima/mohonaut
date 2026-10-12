@@ -36,6 +36,39 @@ export function withHeadroom(cost: bigint, bps = 200n): bigint {
   return cost + (cost * bps) / BPS;
 }
 
+const HOUR = 3600;
+const GENESIS_TANK_GRACE = 24 * HOUR; // MiningCore.GENESIS_TANK_GRACE
+
+/**
+ * Litres (WAD) the tank still takes now, as MiningCore._maxTank computes it: fuel line capacity
+ * x maxTankHours, and until Market Open only what the rigs burn by Market Open + 24 h (the
+ * genesis tank limit, docs/02 §11).
+ */
+export function tankRoom(p: {
+  now: number;
+  genesisTime: number;
+  marketOpenTime: number;
+  maxTankHours: number;
+  capacityPerHour: bigint;
+  burn: bigint;
+  tank: bigint;
+}): bigint {
+  let cap = p.capacityPerHour * BigInt(p.maxTankHours);
+  if (p.now < p.marketOpenTime) {
+    const runFrom = Math.max(p.now, p.genesisTime);
+    const genesis =
+      (p.burn * BigInt(p.marketOpenTime + GENESIS_TANK_GRACE - runFrom)) / BigInt(HOUR);
+    if (genesis < cap) cap = genesis;
+  }
+  return cap > p.tank ? cap - p.tank : 0n;
+}
+
+/** ETH (wei) that buys at most `litres`, 1 % under the quote so a price tick cannot overshoot. */
+export function weiForAtMostLitres(litres: bigint, litresPerEth: bigint): bigint {
+  if (litresPerEth === 0n) return 0n;
+  return (((litres * 10n ** 18n) / litresPerEth) * 99n) / 100n;
+}
+
 /** ETH (wei) needed for `litres` (WAD) given the quote of 1e18 wei → `litresPerEth`. */
 export function weiForLitres(litres: bigint, litresPerEth: bigint): bigint {
   if (litresPerEth === 0n) return 0n;
