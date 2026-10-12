@@ -73,6 +73,9 @@ const SAMPLE: GameState = {
 };
 
 const Guide = dynamic(() => import('../../play/Guide').then((m) => m.Guide), { ssr: false });
+const HelpWindow = dynamic(() => import('../../play/HelpWindow').then((m) => m.HelpWindow), {
+  ssr: false,
+});
 const BoreWindow = dynamic(() => import('../../play/BoreWindow').then((m) => m.BoreWindow), {
   ssr: false,
 });
@@ -127,6 +130,11 @@ export function SitePreview() {
           address="0x000000000000000000000000000000000000dEaD"
           open={(t) => setPanel(t === 'market' ? 'market' : 'rigs')}
         />
+      )}
+      {panel === 'help' && (
+        <PxModal title="How to play" onClose={() => setPanel(null)} wide>
+          <HelpWindow />
+        </PxModal>
       )}
       {panel === 'bore' && (
         <PxModal title="World Bore" onClose={() => setPanel(null)}>

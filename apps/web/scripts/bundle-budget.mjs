@@ -9,7 +9,10 @@ import { brotliCompressSync, constants } from 'node:zlib';
 
 const out = fileURLToPath(new URL('../out/', import.meta.url));
 const KB = 1024;
-const BUDGET = { page: 180 * KB };
+// Players' pages: 180 KB. The design sandbox (/design/, out of search and not for players) shows
+// the whole game HUD over the site for reviewing art, so it gets more room.
+const BUDGET = { page: 180 * KB, sandbox: 220 * KB };
+const budgetOf = (route) => (route.startsWith('/design') ? BUDGET.sandbox : BUDGET.page);
 
 const sizeCache = new Map();
 function brotli(file) {
@@ -39,7 +42,7 @@ const report = [];
 for (const page of pages(out)) {
   const route = `/${relative(out, page).split(sep).slice(0, -1).join('/')}`;
   const total = scriptsOf(readFileSync(page, 'utf8')).reduce((s, f) => s + brotli(f), 0);
-  const over = total > BUDGET.page;
+  const over = total > budgetOf(route);
   failed ||= over;
   report.push([route, total, over]);
 }
@@ -49,5 +52,7 @@ for (const [route, total, over] of report.sort((a, b) => b[1] - a[1])) {
     `${route.padEnd(16)} ${(total / KB).toFixed(1).padStart(6)} KB${over ? '  OVER BUDGET' : ''}`,
   );
 }
-console.log(`budget per page: ${BUDGET.page / KB} KB brotli`);
+console.log(
+  `budget per page: ${BUDGET.page / KB} KB brotli (design sandbox ${BUDGET.sandbox / KB} KB)`,
+);
 process.exit(failed ? 1 : 0);

@@ -491,7 +491,7 @@ function BadgesCard({ address }: { address: Address }) {
       {profile.data === undefined ? (
         <Status>{profile.isError ? apiMessage(profile.error) : 'Loading…'}</Status>
       ) : (
-        <BadgeShelf earned={profile.data.badges.map((b) => b.id)} all />
+        <BadgeShelf awarded={profile.data.badges.map((b) => b.id)} all />
       )}
     </PxSection>
   );

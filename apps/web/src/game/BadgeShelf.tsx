@@ -2,12 +2,18 @@ import { BADGES, BADGE_PALETTE } from './badges';
 import { PixelSvg } from './pixel/PixelSvg';
 
 /**
- * Badges as pixel plates with their names: the ones earned in colour; with `all`, the rest as
- * dark plates so a player sees what there is to earn. The description is the tooltip and is read
+ * Badges as pixel plates with their names: the ones awarded in colour; with `all`, the rest as
+ * dark plates so a player sees what else there is. The description is the tooltip and is read
  * out to screen readers.
  */
-export function BadgeShelf({ earned, all = false }: { earned: readonly string[]; all?: boolean }) {
-  const have = new Set(earned);
+export function BadgeShelf({
+  awarded,
+  all = false,
+}: {
+  awarded: readonly string[];
+  all?: boolean;
+}) {
+  const have = new Set(awarded);
   const shown = all ? BADGES : BADGES.filter((b) => have.has(b.id));
   if (shown.length === 0) return null;
   return (
@@ -20,7 +26,7 @@ export function BadgeShelf({ earned, all = false }: { earned: readonly string[];
             <span className="text-sm leading-tight">
               <span className={got ? 'text-bone' : 'text-concrete'}>{b.name}</span>
               <span className="sr-only">
-                {got ? ': earned. ' : ': not earned yet. '}
+                {got ? ': awarded. ' : ': not awarded yet. '}
                 {b.description}
               </span>
             </span>

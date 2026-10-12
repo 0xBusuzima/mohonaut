@@ -21,7 +21,8 @@ export type Panel =
   | 'crew'
   | 'board'
   | 'survey'
-  | 'profile';
+  | 'profile'
+  | 'help';
 
 /**
  * The game HUD over the world. Kept apart from the wallet code so previews can render it on the
@@ -80,6 +81,15 @@ export function Hud({ state, open }: { state: GameState; open: (p: Panel) => voi
       )}
       {/* Left: boards, crew, the World Bore and the power switch. */}
       <div className="pointer-events-auto absolute top-[7.6rem] left-3 flex flex-col items-start gap-2 md:top-16">
+        <PxButton
+          variant="light"
+          className={side}
+          aria-label="How to play"
+          onClick={() => open('help')}
+        >
+          <span className="w-5 text-center text-lg leading-none">?</span>
+          <span className="hidden md:inline">How to play</span>
+        </PxButton>
         <PxButton variant="light" className={side} onClick={() => open('board')}>
           <PxIcon name="trophy" size={20} />
           <span className="hidden md:inline">Leaderboard</span>

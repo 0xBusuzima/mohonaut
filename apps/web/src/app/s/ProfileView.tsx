@@ -123,7 +123,7 @@ function Site({ profile: p }: { profile: Profile }) {
       )}
       {p.badges.length > 0 && (
         <Card label="Badges" title="Badges">
-          <BadgeShelf earned={p.badges.map((b) => b.id)} />
+          <BadgeShelf awarded={p.badges.map((b) => b.id)} />
         </Card>
       )}
       <Card label="Core Collection" title="Collection">

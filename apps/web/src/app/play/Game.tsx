@@ -25,6 +25,7 @@ import { ME_KEY, useMe } from '../../social/session';
 import { CrewPanel, ProfilePanel, SeasonsPanel, SignedIn, SurveyPanel } from '../../social/panels';
 import { BoreWindow } from './BoreWindow';
 import { Guide } from './Guide';
+import { HelpWindow } from './HelpWindow';
 import { Hud } from './Hud';
 import { StratumNotice } from './StratumNotice';
 import type { Panel } from './Hud';
@@ -324,6 +325,7 @@ function PanelWindow({
     board: 'Leaderboard',
     survey: 'Daily survey',
     profile: 'Profile & invites',
+    help: 'How to play',
   };
   const n = state.network;
   const depth = millimetres(n.emitted);
@@ -339,12 +341,13 @@ function PanelWindow({
   else if (panel === 'survey') body = <SignedIn>{() => <SurveyPanel now={state.at} />}</SignedIn>;
   else if (panel === 'profile')
     body = <SignedIn>{(me) => <ProfilePanel me={me} address={address} />}</SignedIn>;
+  else if (panel === 'help') body = <HelpWindow />;
   else body = <BoreWindow depthMm={depth} />;
   return (
     <PxModal
       title={titles[panel]}
       onClose={onClose}
-      wide={['market', 'rigs', 'board', 'crew', 'profile'].includes(panel)}
+      wide={['market', 'rigs', 'board', 'crew', 'profile', 'help'].includes(panel)}
     >
       {body}
     </PxModal>
