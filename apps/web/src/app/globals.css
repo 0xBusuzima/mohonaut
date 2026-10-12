@@ -231,10 +231,31 @@ html {
   background: #262c33;
 }
 
-/* In the game the toasts sit under the HUD read-outs, as small steel plates. */
+/* Pixelify Sans draws "fi" as one ligature glyph that reads like an "A": spell it out. */
+.font-pixel,
+.px-btn,
+.px-input {
+  font-variant-ligatures: none;
+  font-feature-settings:
+    'liga' 0,
+    'clig' 0;
+}
+
+/* In the game the toasts sit just above the main buttons on phones, and under the HUD
+   read-outs on the right on wider screens, as small steel plates. */
 body.pixel-game .toast-region {
-  top: 8.5rem;
-  bottom: auto;
+  bottom: 6.5rem;
+}
+@media (min-width: 768px) {
+  body.pixel-game .toast-region {
+    top: 8.5rem;
+    right: 0.75rem;
+    bottom: auto;
+    left: auto;
+    width: 24rem;
+    align-items: stretch;
+    padding: 0;
+  }
 }
 body.pixel-game .toast-item {
   font-family: var(--font-pixel);

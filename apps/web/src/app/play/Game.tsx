@@ -100,9 +100,6 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
     onboarding = (
       <PxModal title="Open your site">
         <Steps steps={[...ONBOARDING_STEPS, 'Diesel']} at={3} />
-        <p className="mb-3 text-center">
-          Your first diesel opens your drill site with a free Pilot Rig.
-        </p>
         <FuelWindow state={state} action={action} first />
       </PxModal>
     );

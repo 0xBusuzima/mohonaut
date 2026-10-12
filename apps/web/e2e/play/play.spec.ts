@@ -1,6 +1,13 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { watchCsp } from './csp';
+import type { Page } from '@playwright/test';
+
+/** SHOTS=1 saves a screenshot of each step under test-results/shots (for reviewing the art). */
+async function shot(page: Page, name: string): Promise<void> {
+  if (process.env['SHOTS'] === '1')
+    await page.screenshot({ path: `test-results/shots/${name}.png` });
+}
 
 test('a new player opens a drill site, then stops and restarts the Pilot Rig', async ({ page }) => {
   const errors: string[] = [];
@@ -16,6 +23,7 @@ test('a new player opens a drill site, then stops and restarts the Pilot Rig', a
     timeout: 30_000,
   });
   await expect(page.getByText('Testnet', { exact: true })).toBeVisible();
+  await shot(page, '1-open-your-site');
   await page.getByLabel('ETH to spend').fill('0.0009');
   await page.getByRole('button', { name: 'Open my site' }).click();
   await expect(page.getByText('Diesel delivered')).toBeVisible({ timeout: 30_000 });
@@ -24,6 +32,7 @@ test('a new player opens a drill site, then stops and restarts the Pilot Rig', a
   await page.getByRole('button', { name: 'My rigs' }).click({ timeout: 30_000 });
   const rigs = page.getByRole('dialog', { name: 'My rigs' });
   await expect(rigs.getByText('1 / 1 on')).toBeVisible({ timeout: 30_000 });
+  await shot(page, '2-my-rigs');
 
   await rigs.getByRole('button', { name: 'Stop one Pilot Rig' }).click();
   await expect(page.getByText('Rig stopped')).toBeVisible({ timeout: 30_000 });
@@ -37,6 +46,19 @@ test('a new player opens a drill site, then stops and restarts the Pilot Rig', a
   // Before Market Open the refinery explains when it opens.
   await page.getByRole('button', { name: 'Refinery', exact: true }).click();
   await expect(page.getByText(/Refining opens at Market Open/)).toBeVisible();
+  await shot(page, '3-refinery');
+  await page
+    .getByRole('dialog', { name: 'Refinery' })
+    .getByRole('button', { name: 'Close' })
+    .click();
+  await page.getByRole('button', { name: /^Diesel/ }).click();
+  await expect(page.getByRole('dialog', { name: 'Diesel tank' })).toBeVisible();
+  await shot(page, '4-diesel');
+  await page
+    .getByRole('dialog', { name: 'Diesel tank' })
+    .getByRole('button', { name: 'Close' })
+    .click();
+  await shot(page, '5-site');
 
   const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(
