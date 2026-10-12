@@ -28,7 +28,10 @@ export function PxButton({
   );
 }
 
-/** A centred window over the world: a title banner, content, an optional close button. */
+/**
+ * A centred window over the world: a steel control panel with a hazard-striped head, the title
+ * on the left in amber, an optional close button on the right.
+ */
 export function PxModal({
   title,
   onClose,
@@ -60,22 +63,21 @@ export function PxModal({
         tabIndex={-1}
         className={`px-panel relative flex max-h-[92dvh] w-full flex-col font-pixel outline-none ${wide ? 'max-w-5xl' : 'max-w-md'}`}
       >
-        <div className="absolute -top-6 left-1/2 -translate-x-1/2">
-          <h2 className="px-btn px-btn-primary whitespace-nowrap px-6 py-2 text-2xl uppercase sm:text-3xl">
-            {title}
-          </h2>
+        <div aria-hidden="true" className="px-hazard mx-[5px] mt-[5px] h-3 shrink-0" />
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b-[3px] border-[#0b0d10] px-5 py-3">
+          <h2 className="text-2xl tracking-wider text-amber uppercase sm:text-3xl">{title}</h2>
+          {onClose !== undefined && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="px-btn px-btn-light h-10 w-10 shrink-0 text-xl leading-none"
+            >
+              ×
+            </button>
+          )}
         </div>
-        {onClose !== undefined && (
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="px-btn px-btn-light absolute -top-4 -right-4 h-10 w-10 text-xl"
-          >
-            ×
-          </button>
-        )}
-        <div className="overflow-y-auto px-5 pt-10 pb-6 sm:px-8">{children}</div>
+        <div className="overflow-y-auto px-5 pt-5 pb-6 sm:px-7">{children}</div>
       </div>
     </div>
   );
@@ -84,18 +86,18 @@ export function PxModal({
 /** "1 Wallet — 2 Sign in — 3 Your site". */
 export function Steps({ steps, at }: { steps: string[]; at: number }) {
   return (
-    <ol className="mb-4 flex items-center justify-center gap-2 text-sm">
+    <ol className="mb-4 flex items-center justify-center gap-1.5 text-sm sm:gap-2">
       {steps.map((s, i) => (
-        <li key={s} className="flex items-center gap-2">
-          {i > 0 && <span aria-hidden="true" className="h-0.5 w-5 bg-steel" />}
+        <li key={s} className="flex items-center gap-1.5 whitespace-nowrap sm:gap-2">
+          {i > 0 && <span aria-hidden="true" className="h-0.5 w-3 bg-concrete sm:w-5" />}
           <span
-            className={`grid h-6 w-6 place-items-center border-2 border-charcoal text-xs ${
-              i < at ? 'bg-ok text-night' : i === at ? 'bg-orange text-night' : 'bg-bone text-steel'
+            className={`grid h-6 w-6 place-items-center border-2 border-[#0b0d10] text-xs ${
+              i < at ? 'bg-ok text-night' : i === at ? 'bg-orange text-night' : 'bg-steel text-bone'
             }`}
           >
             {i < at ? '✓' : i + 1}
           </span>
-          <span className={i === at ? 'font-bold' : 'text-steel'}>{s}</span>
+          <span className={i === at ? 'font-bold text-bone' : 'text-concrete'}>{s}</span>
         </li>
       ))}
     </ol>
@@ -120,12 +122,21 @@ export function HudChip({
     <>
       <span className="hidden shrink-0 sm:block">{icon}</span>
       <span className="flex min-w-0 flex-col items-start leading-none">
-        <span className="text-[9px] tracking-widest uppercase md:text-[11px]">{label}</span>
-        <span className="num max-w-full truncate text-sm font-bold md:text-xl">{children}</span>
+        <span
+          className={`text-[9px] tracking-widest uppercase md:text-[11px] ${accent ? '' : 'text-concrete'}`}
+        >
+          {label}
+        </span>
+        <span
+          className={`num max-w-full truncate text-sm font-bold md:text-xl ${accent ? '' : 'text-cyan'}`}
+        >
+          {children}
+        </span>
       </span>
     </>
   );
-  const cls = `px-btn ${accent ? 'px-btn-primary' : 'px-btn-light'} flex min-w-0 items-center gap-2 px-2 py-1.5 text-left md:px-3`;
+  // Instrument read-outs: cyan figures on a dark plate; the accent one is safety orange.
+  const cls = `px-btn ${accent ? 'px-btn-primary' : 'px-btn-dark'} flex min-w-0 items-center gap-2 px-2 py-1.5 text-left md:px-3`;
   return onClick === undefined ? (
     <div className={cls}>{body}</div>
   ) : (

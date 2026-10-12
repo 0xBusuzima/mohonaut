@@ -125,31 +125,57 @@ html {
 }
 
 .px-panel {
-  background: #ece7dc;
-  color: #16191d;
-  border: 3px solid #16191d;
+  /* A steel control panel: riveted corners, a bevel line inside the frame. */
+  background:
+    linear-gradient(#59626c, #59626c) 9px 9px / 3px 3px no-repeat,
+    linear-gradient(#59626c, #59626c) calc(100% - 9px) 9px / 3px 3px no-repeat,
+    linear-gradient(#59626c, #59626c) 9px calc(100% - 9px) / 3px 3px no-repeat,
+    linear-gradient(#59626c, #59626c) calc(100% - 9px) calc(100% - 9px) / 3px 3px no-repeat,
+    #1b1f24;
+  color: #ece7dc;
+  border: 3px solid #0b0d10;
   box-shadow:
-    inset -3px -3px 0 #c9c1b1,
-    inset 3px 3px 0 #fffaf0,
-    0 5px 0 #0e1013;
+    inset 0 0 0 2px #3a424c,
+    inset 0 0 0 4px #1b1f24,
+    inset 0 0 0 5px #262c33,
+    0 6px 0 #0b0d10;
+}
+
+.px-hazard {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' shape-rendering='crispEdges'%3E%3Crect width='8' height='8' fill='%2316191d'/%3E%3Cg fill='%23ffb31a'%3E%3Crect x='0' y='0' width='1' height='1'/%3E%3Crect x='1' y='0' width='1' height='1'/%3E%3Crect x='2' y='0' width='1' height='1'/%3E%3Crect x='3' y='0' width='1' height='1'/%3E%3Crect x='1' y='1' width='1' height='1'/%3E%3Crect x='2' y='1' width='1' height='1'/%3E%3Crect x='3' y='1' width='1' height='1'/%3E%3Crect x='4' y='1' width='1' height='1'/%3E%3Crect x='2' y='2' width='1' height='1'/%3E%3Crect x='3' y='2' width='1' height='1'/%3E%3Crect x='4' y='2' width='1' height='1'/%3E%3Crect x='5' y='2' width='1' height='1'/%3E%3Crect x='3' y='3' width='1' height='1'/%3E%3Crect x='4' y='3' width='1' height='1'/%3E%3Crect x='5' y='3' width='1' height='1'/%3E%3Crect x='6' y='3' width='1' height='1'/%3E%3Crect x='4' y='4' width='1' height='1'/%3E%3Crect x='5' y='4' width='1' height='1'/%3E%3Crect x='6' y='4' width='1' height='1'/%3E%3Crect x='7' y='4' width='1' height='1'/%3E%3Crect x='0' y='5' width='1' height='1'/%3E%3Crect x='5' y='5' width='1' height='1'/%3E%3Crect x='6' y='5' width='1' height='1'/%3E%3Crect x='7' y='5' width='1' height='1'/%3E%3Crect x='0' y='6' width='1' height='1'/%3E%3Crect x='1' y='6' width='1' height='1'/%3E%3Crect x='6' y='6' width='1' height='1'/%3E%3Crect x='7' y='6' width='1' height='1'/%3E%3Crect x='0' y='7' width='1' height='1'/%3E%3Crect x='1' y='7' width='1' height='1'/%3E%3Crect x='2' y='7' width='1' height='1'/%3E%3Crect x='7' y='7' width='1' height='1'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 16px 16px;
+  image-rendering: pixelated;
 }
 
 .px-dark {
-  background: #22272d;
+  background: #262c33;
   color: #ece7dc;
-  border: 3px solid #0e1013;
+  border: 3px solid #0b0d10;
   box-shadow:
-    inset -3px -3px 0 #16191d,
-    inset 3px 3px 0 #39414a,
-    0 4px 0 #0e1013;
+    inset -3px -3px 0 #1b1f24,
+    inset 3px 3px 0 #3a424c,
+    0 4px 0 #0b0d10;
+}
+
+/* A sunken instrument window: cyan read-outs live here. */
+.px-inset {
+  background: #0f1215;
+  color: #ece7dc;
+  border: 3px solid #0b0d10;
+  box-shadow:
+    inset 3px 3px 0 #050607,
+    inset -2px -2px 0 #262c33;
 }
 
 .px-input {
   font-family: var(--font-pixel);
-  background: #16191d;
-  color: #ffb31a;
-  border: 3px solid #16191d;
-  box-shadow: inset 3px 3px 0 #0e1013;
+  background: #0f1215;
+  color: #2ee6d6;
+  border: 3px solid #0b0d10;
+  box-shadow: inset 3px 3px 0 #050607;
+}
+.px-input::placeholder {
+  color: #8b939c;
 }
 .px-input:focus {
   outline: 3px solid #ff6b1a;
@@ -160,23 +186,27 @@ html {
   font-family: var(--font-pixel);
   font-weight: 700;
   letter-spacing: 0.02em;
-  border: 3px solid #16191d;
+  border: 3px solid #0b0d10;
   box-shadow:
-    inset -3px -3px 0 rgb(0 0 0 / 0.22),
-    inset 3px 3px 0 rgb(255 255 255 / 0.35),
-    0 4px 0 #0e1013;
+    inset -3px -3px 0 rgb(0 0 0 / 0.28),
+    inset 3px 3px 0 rgb(255 255 255 / 0.22),
+    0 4px 0 #0b0d10;
   transition: transform 60ms steps(1);
 }
 .px-btn:active:not(:disabled) {
   transform: translateY(3px);
   box-shadow:
-    inset -3px -3px 0 rgb(0 0 0 / 0.22),
-    inset 3px 3px 0 rgb(255 255 255 / 0.35),
-    0 1px 0 #0e1013;
+    inset -3px -3px 0 rgb(0 0 0 / 0.28),
+    inset 3px 3px 0 rgb(255 255 255 / 0.22),
+    0 1px 0 #0b0d10;
 }
 .px-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+.px-btn:focus-visible {
+  outline: 3px solid #2ee6d6;
+  outline-offset: 2px;
 }
 .px-btn-primary {
   background: #ff6b1a;
@@ -185,19 +215,20 @@ html {
 .px-btn-primary:hover:not(:disabled) {
   background: #ff8a45;
 }
+/* Steel: the ordinary button on the panels and the HUD. */
 .px-btn-light {
-  background: #ece7dc;
-  color: #16191d;
+  background: #3a424c;
+  color: #ece7dc;
 }
 .px-btn-light:hover:not(:disabled) {
-  background: #fff6e6;
+  background: #46505b;
 }
 .px-btn-dark {
-  background: #22272d;
+  background: #1b1f24;
   color: #ece7dc;
 }
 .px-btn-dark:hover:not(:disabled) {
-  background: #2c323a;
+  background: #262c33;
 }
 
 @keyframes loadbar {

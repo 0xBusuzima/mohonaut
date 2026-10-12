@@ -27,7 +27,7 @@ function RigCard({
   const eff = efficiency(rig.dp, rig.burn);
   return (
     <li className="px-dark flex flex-col">
-      <div className="relative flex justify-center border-b-[3px] border-[#0e1013] bg-[#18213a] pt-2">
+      <div className="relative flex justify-center overflow-hidden border-b-[3px] border-[#0b0d10] bg-[#0d1220]">
         <div className={dim ? 'opacity-50' : undefined}>
           <RigPortrait typeId={rig.id} running={running && !dim} />
         </div>
@@ -41,11 +41,11 @@ function RigCard({
         <p className="text-xl font-bold text-orange">{rigName(rig.id)}</p>
         <dl className="grid grid-cols-[auto_1fr] gap-x-3 text-base">
           <dt className="text-concrete">Drill power</dt>
-          <dd className="text-right">{rig.dp.toString()} DP</dd>
+          <dd className="text-right text-cyan">{rig.dp.toString()} DP</dd>
           <dt className="text-concrete">Diesel</dt>
-          <dd className="text-right">{formatLitres(rig.burn, 2)}/h</dd>
+          <dd className="text-right text-cyan">{formatLitres(rig.burn, 2)}/h</dd>
           <dt className="text-concrete">DP per ℓ/h</dt>
-          <dd className="text-right">{eff === null ? '—' : eff.toFixed(0)}</dd>
+          <dd className="text-right text-cyan">{eff === null ? '—' : eff.toFixed(0)}</dd>
         </dl>
         <div className="mt-auto pt-2">{children}</div>
       </div>
@@ -60,7 +60,7 @@ export function MarketWindow({ state, action }: { state: GameState; action: Acti
   const freePads = sitePads(p.level) - p.padsUsed;
   return (
     <>
-      <p className="mb-4 text-center text-base text-steel">
+      <p className="mb-4 text-center text-base text-concrete">
         Choose a rig for a free pad. Prices follow the public auction formula and move with time and
         sales; you pay from scrap credit first, then unrefined $MOHN.
       </p>
@@ -129,7 +129,7 @@ export function RigsWindow({
   const owned = state.rigs.filter((r) => r.owned > 0);
   return (
     <>
-      <p className="mb-4 text-center text-base text-steel">
+      <p className="mb-4 text-center text-base text-concrete">
         Stop a rig when its diesel is not worth it. Scrapping credits 20% of its value as scrap
         credit for rigs and site levels; the Pilot Rig credits nothing.
       </p>

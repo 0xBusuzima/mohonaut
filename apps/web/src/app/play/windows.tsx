@@ -15,11 +15,11 @@ import { PxButton, PxIcon } from './px';
 /** A dark read-out box: label on the left, value on the right. */
 function Readout({ rows }: { rows: [string, ReactNode][] }) {
   return (
-    <dl className="px-dark grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 px-4 py-3 text-lg">
+    <dl className="px-inset grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 px-4 py-3 text-lg">
       {rows.map(([k, v]) => (
         <div key={k} className="contents">
           <dt className="text-concrete">{k}</dt>
-          <dd className="text-right">{v}</dd>
+          <dd className="text-right text-cyan">{v}</dd>
         </div>
       ))}
     </dl>
@@ -146,12 +146,12 @@ export function FuelWindow({
         <b>{balance.data === undefined ? '—' : formatEth(balance.data.value)}</b>
       </p>
       {maxWei !== null && (
-        <p className="text-base text-steel">
+        <p className="text-base text-concrete">
           Your tank takes up to {formatLitres(room)} now (≈ {formatEth(maxWei)}).{' '}
           {beforeOpen && 'Until Market Open + 24 h a tank holds only what its rigs burn by then. '}
           <button
             type="button"
-            className="font-bold text-[#a8400a] underline"
+            className="font-bold text-amber underline"
             onClick={() => setTyped(formatEthInput(maxWei))}
           >
             Use max
@@ -236,14 +236,14 @@ export function RefineryWindow({ state, action }: { state: GameState; action: Ac
         </p>
       ) : (
         <>
-          <p className="text-base text-steel">
+          <p className="text-base text-concrete">
             Standard refining waits in a 72-hour queue with no fee. Fast refining is immediate,
             minus the fast-refine fee (8% at launch): half is burned, half returns to the reserve.
           </p>
           <AmountInput label="$MOHN to refine" value={amount} onChange={setAmount} />
           <button
             type="button"
-            className="-mt-2 self-start text-base font-bold text-[#a8400a] underline"
+            className="-mt-2 self-start text-base font-bold text-amber underline"
             onClick={() => setAmount(formatEthInput(p.pending))}
           >
             Use all

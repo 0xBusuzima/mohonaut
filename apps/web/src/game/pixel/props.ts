@@ -1,0 +1,421 @@
+/**
+ * Everything that stands on the land: site furniture, rigs, crew, the diesel truck, power poles
+ * and the neighbouring sites in the distance. Each function draws at a screen point (iso
+ * already applied); none keeps state, animation comes from `t` (seconds).
+ */
+import { rigShape } from '../rigs';
+import { box, diamond, diamondEdge, ellipse, line, polygon, polyline, px, rect } from './draw';
+import type { Ctx } from './draw';
+import { P } from './palette';
+
+const TW = 32;
+const hex = (n: number) => `#${n.toString(16).padStart(6, '0')}`;
+
+/** A concrete pad slab whose top corner is at (x, y). */
+export function padTile(c: Ctx, x: number, y: number, unlocked: boolean, hover: boolean): void {
+  const w = TW * 2;
+  // A low concrete slab: sides, top, hazard-striped rim.
+  box(c, x, y + 2, w, 2, unlocked ? P.padTop : P.padSide, P.padSide, P.padEdge);
+  if (unlocked) {
+    diamond(c, x, y + 4, w - 12, P.padLight);
+    diamond(c, x, y + 7, w - 24, P.padTop);
+  }
+  // Hazard dashes along the rim.
+  const h = w / 2;
+  for (let i = 0; i < w / 2; i += 4) {
+    const col = (i / 4) % 2 === 0 ? P.hazard : P.hazardDark;
+    if (!unlocked && col === P.hazard) continue;
+    px(c, x - i, y + i / 2, col);
+    px(c, x + i - 1, y + i / 2, col);
+    px(c, x - w / 2 + i, y + h / 2 + i / 2, col);
+    px(c, x + w / 2 - 1 - i, y + h / 2 + i / 2, col);
+  }
+  if (hover) diamondEdge(c, x, y, w, P.amber);
+}
+
+export function lockSign(c: Ctx, x: number, y: number): void {
+  // Chain between two bollards and a sign with a padlock.
+  rect(c, x - 14, y - 8, 2, 8, P.hazard);
+  rect(c, x + 12, y - 8, 2, 8, P.hazard);
+  for (let i = -12; i < 12; i += 2) px(c, x + i, y - 6 + Math.round(Math.abs(i) / 6), P.concrete);
+  rect(c, x - 1, y - 20, 2, 14, P.steel);
+  rect(c, x - 8, y - 30, 16, 12, P.lockSign);
+  rect(c, x - 8, y - 30, 16, 1, P.steelLight);
+  // Padlock.
+  rect(c, x - 3, y - 25, 6, 5, P.lockMetal);
+  rect(c, x - 2, y - 28, 1, 3, P.lockMetal);
+  rect(c, x + 1, y - 28, 1, 3, P.lockMetal);
+  rect(c, x - 1, y - 29, 2, 1, P.lockMetal);
+  px(c, x, y - 23, P.lockSign);
+}
+
+/** Lamp mast with a sodium head; `on` false during a flicker. */
+export function lampPost(c: Ctx, x: number, y: number, on: boolean): void {
+  rect(c, x, y - 30, 1, 30, P.steelLight);
+  rect(c, x - 3, y - 31, 7, 2, P.steel);
+  rect(c, x - 2, y - 29, 5, 1, on ? P.flareHot : P.steel);
+  if (on) {
+    c.globalAlpha = 0.18;
+    polygon(c, [x - 2, y - 28, x + 3, y - 28, x + 10, y - 4, x - 9, y - 4], P.glow);
+    c.globalAlpha = 1;
+  }
+}
+
+export function tank(c: Ctx, x: number, y: number, fill: number, hover: boolean): void {
+  const w = 26;
+  const h = 34;
+  const top = y - h;
+  // Body with vertical shading.
+  for (let i = 0; i < w; i++) {
+    const col = i < 5 ? P.steelLight : i > w - 7 ? P.graphite : P.steel;
+    rect(c, x - w / 2 + i, top + 3, 1, h - 3, col);
+  }
+  // Rims and top ellipse.
+  rect(c, x - w / 2, top + 10, w, 1, P.graphite);
+  rect(c, x - w / 2, top + 22, w, 1, P.graphite);
+  polygon(
+    c,
+    [
+      x - w / 2,
+      top + 3,
+      x - 6,
+      top,
+      x + 6,
+      top,
+      x + w / 2 - 1,
+      top + 3,
+      x + 6,
+      top + 6,
+      x - 6,
+      top + 6,
+    ],
+    P.steelLight,
+  );
+  // Gauge: a window showing the fill level.
+  const gh = 16;
+  rect(c, x + 2, top + 9, 5, gh + 2, P.night);
+  const f = Math.max(0, Math.min(1, fill));
+  const filled = Math.round(gh * f);
+  rect(c, x + 3, top + 10 + gh - filled, 3, filled, f < 0.15 ? P.orange : P.amber);
+  // Ladder and stencil band.
+  for (let i = 0; i < h - 6; i += 3) rect(c, x - 9, top + 5 + i, 3, 1, P.concrete);
+  rect(c, x - w / 2, top + 28, w, 3, P.orange);
+  // Hose to the ground.
+  polyline(c, [x + w / 2 - 1, top + 26, x + w / 2 + 4, top + 30, x + w / 2 + 6, y], P.graphite);
+  if (hover) rect(c, x - w / 2 - 1, top - 1, w + 2, 1, P.amber);
+}
+
+export function shack(
+  c: Ctx,
+  x: number,
+  y: number,
+  t: number,
+  motion: boolean,
+  hover: boolean,
+): void {
+  box(c, x, y + 4, 56, 22, P.graphite, P.boneDark, P.concrete);
+  // Pitched roof.
+  polygon(c, [x - 30, y - 12, x, y - 28, x + 30, y - 12, x, y + 4], P.orangeDark);
+  polygon(c, [x - 30, y - 12, x, y + 4, x, y + 6, x - 30, y - 10], P.orange);
+  // Door, step and lit window on the right face.
+  rect(c, x + 6, y + 12, 6, 14, P.graphite);
+  rect(c, x + 5, y + 26, 8, 2, P.concrete);
+  rect(c, x + 16, y + 6, 8, 6, P.window);
+  rect(c, x + 20, y + 6, 1, 6, P.graphite);
+  // Core trays on the left face.
+  for (let i = 0; i < 3; i++)
+    rect(c, x - 22, y + 6 + i * 4, 14, 2, i === 1 ? P.cyan : P.steelLight);
+  // Chimney with steam.
+  rect(c, x - 10, y - 28, 4, 8, P.steel);
+  if (motion) puff(c, x - 8, y - 32, t, 0);
+  // Flag on the roof ridge: the casing mark colours, waving.
+  rect(c, x + 14, y - 40, 1, 22, P.steelLight);
+  for (let k = 0; k < 8; k++) {
+    const wave = motion ? Math.round(Math.sin(t * 4 - k * 0.8)) : 0;
+    rect(c, x + 15 + k, y - 40 + wave, 1, 5, k < 3 ? P.bone : P.orange);
+  }
+  if (hover) diamondEdge(c, x, y - 18, 56, P.amber);
+}
+
+export function container(c: Ctx, x: number, y: number, hover: boolean): void {
+  box(c, x, y + 8, 64, 20, P.orangeDark, P.orange, P.orangeDark);
+  // Corrugation.
+  for (let i = 2; i < 30; i += 3)
+    line(c, x - 32 + i, y + 4 + i / 2, x - 32 + i, y + 22 + i / 2, P.orangeDark);
+  // Open doors with crates inside on the right face.
+  polygon(c, [x + 8, y + 14, x + 22, y + 7, x + 22, y + 27, x + 8, y + 34], P.night);
+  rect(c, x + 11, y + 22, 5, 5, P.boneDark);
+  rect(c, x + 16, y + 20, 4, 4, P.concrete);
+  // A sign: a little rig glyph.
+  rect(c, x - 8, y - 22, 16, 10, P.charcoal);
+  line(c, x - 4, y - 13, x, y - 21, P.orange);
+  line(c, x + 4, y - 13, x, y - 21, P.orange);
+  if (hover) diamondEdge(c, x, y - 12, 64, P.amber);
+}
+
+export function wellhead(
+  c: Ctx,
+  x: number,
+  y: number,
+  t: number,
+  motion: boolean,
+  hover: boolean,
+): void {
+  // The World Bore: casing rings seen from above (the brand mark) on a concrete cellar.
+  diamond(c, x, y - 4, 40, P.padEdge);
+  diamond(c, x, y - 1, 30, P.orange);
+  diamond(c, x, y + 2, 22, P.graphite);
+  diamond(c, x, y + 4, 16, P.bone);
+  diamond(c, x, y + 6, 10, P.graphite);
+  const pulse = motion ? Math.sin(t * 2) * 0.5 + 0.5 : 1;
+  diamond(c, x, y + 8, 4, pulse > 0.4 ? P.cyan : P.teal);
+  // A short flanged spool and valve wheel.
+  rect(c, x - 2, y - 6, 4, 10, P.steelLight);
+  rect(c, x - 4, y - 7, 8, 2, P.concrete);
+  rect(c, x + 3, y - 3, 3, 1, P.amber);
+  if (hover) diamondEdge(c, x, y - 4, 40, P.amber);
+}
+
+/** Generator set with an exhaust stack. */
+export function generator(c: Ctx, x: number, y: number, t: number, motion: boolean): void {
+  box(c, x, y + 8, 26, 11, P.steelLight, P.steel, P.graphite);
+  for (let i = 0; i < 4; i++) rect(c, x - 10 + i * 3, y + 14 + i * 1.5, 1, 4, P.graphite);
+  rect(c, x + 5, y + 1, 2, 7, P.night);
+  rect(c, x - 3, y + 10, 2, 1, motion && Math.sin(t * 6) > 0 ? P.led : P.teal);
+  if (motion) puff(c, x + 6, y - 2, t, 0.3);
+}
+
+/** A rack of drill pipe lying on two sleepers. */
+export function pipeRack(c: Ctx, x: number, y: number): void {
+  rect(c, x - 16, y + 6, 3, 3, P.graphite);
+  rect(c, x + 10, y + 6, 3, 3, P.graphite);
+  for (let i = 0; i < 3; i++) {
+    for (let k = 0; k < 3 - i; k++) {
+      const yy = y + 4 - i * 2;
+      const xx = x - 14 + k * 2 + i;
+      line(c, xx, yy, xx + 24, yy + 0, i % 2 === 0 ? P.concrete : P.steelLight);
+    }
+  }
+  for (let k = 0; k < 3; k++) px(c, x - 14 + k * 2, y + 4, P.night);
+}
+
+/** One rig standing on its pad centre (x, y); also drawn alone on the market cards. */
+export function drawRig(
+  c: Ctx,
+  x: number,
+  y: number,
+  typeId: number,
+  running: boolean,
+  t: number,
+  motion: boolean,
+  seed: number,
+): void {
+  const shape = rigShape(typeId, running);
+  for (const part of shape.parts) {
+    if (part.kind === 'line') {
+      const pts = part.points.map((v, i) => (i % 2 === 0 ? x + v : y + v));
+      polyline(c, pts, hex(part.color), part.width >= 3 ? 2 : 1);
+    } else if (part.kind === 'poly') {
+      polygon(
+        c,
+        part.points.map((v, i) => (i % 2 === 0 ? x + v : y + v)),
+        hex(part.fill),
+      );
+    } else if (part.kind === 'rect') {
+      rect(c, x + part.x, y + part.y, part.w, part.h, hex(part.fill));
+    } else {
+      const lit = !motion || !running || Math.sin(t * 3 + seed) > -0.6;
+      rect(c, x + part.x - 1, y + part.y - 1, 2, 2, lit ? hex(part.fill) : P.steel);
+    }
+  }
+  const top = y + shape.steamY + 1;
+  // Travelling block on its line inside the mast: it rides up and down while the rig drills.
+  if (typeId === 1 || typeId === 2 || typeId === 4) {
+    const hi = top + 10;
+    const lo = y - 12;
+    const k = running && motion ? Math.sin(t * 0.9 + seed) * 0.5 + 0.5 : running ? 0.5 : 1;
+    const by = Math.round(hi + (lo - hi) * k);
+    rect(c, x, hi - 6, 1, by - hi + 6, P.concrete);
+    rect(c, x - 2, by, 4, 3, running ? P.amber : P.steelLight);
+  }
+  // Aviation beacon at the crown: a short red blink.
+  if (running) {
+    const on = !motion || (t * 0.9 + seed * 0.17) % 1 < 0.22;
+    rect(c, x - 1, top - 2, 2, 2, on ? P.beacon : '#6b1d18');
+  }
+  if (running && motion) puff(c, x, y + shape.steamY - 2, t, seed);
+}
+
+/** Where a rig's crown beacon sits, for its light. */
+export function rigTop(typeId: number, x: number, y: number): { x: number; y: number } {
+  return { x, y: y + rigShape(typeId, true).steamY - 1 };
+}
+
+/** Steam: three pixel puffs rising and fading. */
+function puff(c: Ctx, x: number, y: number, t: number, seed: number): void {
+  for (let k = 0; k < 3; k++) {
+    const phase = (t * 0.6 + seed * 0.37 + k / 3) % 1;
+    const yy = y - phase * 18;
+    const xx = x + Math.sin(phase * 6 + seed) * 3;
+    const r = 1 + Math.floor(phase * 3);
+    c.globalAlpha = 0.45 * (1 - phase);
+    rect(c, xx - r, yy - r, r * 2, r * 2, P.bone);
+  }
+  c.globalAlpha = 1;
+}
+
+/**
+ * A crew member, feet at (x, y): hard hat with a headlamp, hi-vis vest with a reflective band.
+ * `facing` -1 or 1; `step` alternates the legs while walking.
+ */
+export function worker(c: Ctx, x: number, y: number, facing: number, step: number): void {
+  c.globalAlpha = 0.35;
+  rect(c, x - 2, y, 5, 1, P.night);
+  c.globalAlpha = 1;
+  if (step === 0) {
+    px(c, x - 1, y - 1, P.trousers);
+    px(c, x + 1, y - 1, P.trousers);
+  } else {
+    px(c, x, y - 1, P.trousers);
+    px(c, x + facing, y - 1, P.trousers);
+  }
+  rect(c, x - 1, y - 2, 3, 1, P.trousers);
+  rect(c, x - 1, y - 5, 3, 3, P.vest);
+  rect(c, x - 1, y - 4, 3, 1, P.hardHat);
+  px(c, x, y - 6, P.skin);
+  rect(c, x - 1, y - 7, 3, 1, P.hardHat);
+  px(c, x + facing, y - 7, P.flareHot);
+}
+
+/** The diesel tanker parked on the road, its cab towards +gx (down and to the right). */
+export function truck(c: Ctx, x: number, y: number): void {
+  // Three boxes back to front along the road: tank, tank, cab.
+  const step = (k: number) => ({ x: x + k * 9, y: y + k * 4.5 });
+  for (let k = 0; k < 2; k++) {
+    const p = step(k);
+    box(c, p.x, p.y, 18, 12, P.boneDark, P.bone, P.concrete);
+  }
+  // Stencil band and hose reel.
+  rect(c, x - 8, y + 9, 16, 2, P.orange);
+  rect(c, x + 2, y + 13, 16, 2, P.orange);
+  const cab = step(2.4);
+  box(c, cab.x, cab.y, 16, 13, P.orangeDark, P.orange, P.orangeDark);
+  // Windscreen and headlights on the front (right) face.
+  polygon(
+    c,
+    [cab.x + 1, cab.y - 3, cab.x + 7, cab.y - 6, cab.x + 7, cab.y - 2, cab.x + 1, cab.y + 1],
+    P.night,
+  );
+  px(c, cab.x + 2, cab.y + 7, P.flareHot);
+  px(c, cab.x + 6, cab.y + 5, P.flareHot);
+  // Wheels.
+  for (const k of [0.2, 1.4, 2.6]) {
+    const p = step(k);
+    rect(c, p.x - 9, p.y + 13, 3, 3, P.night);
+    rect(c, p.x + 3, p.y + 15, 3, 3, P.night);
+  }
+}
+
+/** Front of the truck, for its headlight pool. */
+export function truckLights(x: number, y: number): { x: number; y: number } {
+  return { x: x + 2.4 * 9 + 22, y: y + 2.4 * 4.5 + 16 };
+}
+
+/** A wooden power pole, foot at (x, y); gives back where the wire hangs. */
+export function pole(c: Ctx, x: number, y: number): { x: number; y: number } {
+  rect(c, x, y - 26, 2, 26, P.pole);
+  rect(c, x - 4, y - 24, 10, 1, P.pole);
+  px(c, x - 4, y - 25, P.concrete);
+  px(c, x + 5, y - 25, P.concrete);
+  return { x: x + 1, y: y - 25 };
+}
+
+/** A sagging wire between two pole tops. */
+export function wire(c: Ctx, a: { x: number; y: number }, b: { x: number; y: number }): void {
+  const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 + 4 };
+  polyline(
+    c,
+    [
+      a.x,
+      a.y,
+      (a.x + mid.x) / 2,
+      (a.y + mid.y) / 2 + 1,
+      mid.x,
+      mid.y,
+      (mid.x + b.x) / 2,
+      (mid.y + b.y) / 2 + 1,
+      b.x,
+      b.y,
+    ],
+    P.wire,
+  );
+}
+
+/**
+ * Another driller's site far off in the dark: a slab, a short fence and one or two rigs. The
+ * lights (lamp pool, crown beacons) are added by the world's light list.
+ */
+export function neighbourSite(c: Ctx, x: number, y: number, seed: number): void {
+  diamond(c, x, y, 72, '#332d28');
+  diamond(c, x, y + 6, 48, '#3d3730');
+  for (let i = 0; i < 36; i += 4) {
+    px(c, x - i, y + i / 2 - 2, P.fenceDark);
+    px(c, x + i, y + i / 2 - 2, P.fenceDark);
+  }
+  const rigs = 1 + (seed % 2);
+  for (let k = 0; k < rigs; k++) {
+    const rx = x - 10 + k * 18;
+    const ry = y + 22 - k * 4;
+    const h = 22 + ((seed + k) % 3) * 4;
+    line(c, rx - 5, ry, rx - 1, ry - h, '#9b4a1d');
+    line(c, rx + 5, ry, rx + 1, ry - h, '#9b4a1d');
+    for (let b = 1; b < 3; b++)
+      line(c, rx - 5 + b, ry - (h * b) / 3, rx + 5 - b, ry - (h * b) / 3, '#7a3a17');
+  }
+  rect(c, x + 16, y + 4, 10, 6, P.steel);
+}
+
+/** Crown points of a neighbour's rigs, for their beacons. */
+export function neighbourBeacons(x: number, y: number, seed: number): { x: number; y: number }[] {
+  const rigs = 1 + (seed % 2);
+  return Array.from({ length: rigs }, (_, k) => ({
+    x: x - 10 + k * 18,
+    y: y + 22 - k * 4 - (22 + ((seed + k) % 3) * 4) - 2,
+  }));
+}
+
+/** A small rock or a clump of scrub on open land. */
+export function scrub(c: Ctx, x: number, y: number, kind: number): void {
+  if (kind === 0) {
+    rect(c, x - 2, y - 1, 4, 2, P.rock);
+    px(c, x - 1, y - 2, P.rockLit);
+    px(c, x, y - 2, P.rock);
+    return;
+  }
+  rect(c, x - 3, y - 1, 6, 1, P.scrub);
+  rect(c, x - 2, y - 2, 4, 1, P.scrub);
+  px(c, x - 1, y - 3, P.scrubLit);
+  px(c, x + 1, y - 2, P.scrubLit);
+  px(c, x - 3, y - 2, P.scrubLit);
+}
+
+export function rain(c: Ctx, W: number, H: number, t: number): void {
+  c.globalAlpha = 0.3;
+  const n = Math.floor((W * H) / 1500);
+  for (let i = 0; i < n; i++) {
+    const seed = i * 7.31;
+    const x0 = ((Math.sin(seed) + 1) / 2) * (W + 40);
+    const speed = 160 + ((Math.sin(seed * 3.1) + 1) / 2) * 80;
+    const y = ((((Math.sin(seed * 1.7) + 1) / 2) * H + t * speed) % (H + 20)) - 10;
+    const x = x0 - ((y * 0.25) % (W + 40));
+    line(c, x, y, x - 1, y + 3, P.rain);
+  }
+  c.globalAlpha = 1;
+}
+
+/** A puddle catching a lamp: a dark pool with a couple of lit ripples. */
+export function puddle(c: Ctx, x: number, y: number, t: number, motion: boolean): void {
+  ellipse(c, x, y, 9, 3, P.puddle);
+  const k = motion ? Math.floor(t * 2) % 3 : 0;
+  rect(c, x - 4 + k * 2, y - 1, 3, 1, P.puddleLit);
+}

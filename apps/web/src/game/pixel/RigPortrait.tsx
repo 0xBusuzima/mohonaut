@@ -3,11 +3,11 @@
 import { useEffect, useRef } from 'react';
 import { useReducedMotion } from '../../lib/motion';
 import { useLowPower } from '../../lib/power';
-import { rect } from './draw';
+import { ellipse, hash, px, rect } from './draw';
 import { P } from './palette';
 import { drawRig, padTile } from './world';
 
-const W = 80;
+const W = 100;
 const H = 92;
 const PAD_Y = 58; // the pad's top corner; the rig stands on its centre, 16 px lower
 
@@ -32,11 +32,24 @@ export function RigPortrait({
     const t0 = performance.now();
     const draw = () => {
       const t = (performance.now() - t0) / 1000;
-      c.clearRect(0, 0, W, H);
-      // A lamp pool under the pad.
-      c.globalAlpha = running ? 0.18 : 0.08;
-      for (let r = 0; r < 4; r++)
-        rect(c, 8 + r * 4, 66 + r * 2, W - 16 - r * 8, 24 - r * 4, P.glow);
+      // Night backdrop: sky, a few stars, a ridge, dark land.
+      rect(c, 0, 0, W, 24, P.skyTop);
+      rect(c, 0, 24, W, 20, P.skyMid);
+      for (let i = 0; i < 14; i++) {
+        px(c, Math.floor(hash(i, 1) * W), Math.floor(hash(i, 2) * 40), i % 4 ? P.starDim : P.star);
+      }
+      for (let x = 0; x < W; x++) {
+        const h = Math.round(Math.sin(x / 11 + typeId) * 3 + Math.sin(x / 5) + 6);
+        rect(c, x, 50 - h, 1, h, P.hillFar);
+      }
+      rect(c, 0, 50, W, H - 50, P.earth);
+      for (let i = 0; i < 40; i++) {
+        px(c, Math.floor(hash(i, 3) * W), 50 + Math.floor(hash(i, 4) * (H - 50)), P.earthSpeck);
+      }
+      // The rig's own lamp pool.
+      c.globalAlpha = running ? 0.22 : 0.08;
+      ellipse(c, W / 2, PAD_Y + 18, 46, 23, P.glow);
+      ellipse(c, W / 2, PAD_Y + 18, 32, 16, P.glow);
       c.globalAlpha = 1;
       padTile(c, W / 2, PAD_Y, true, false);
       drawRig(c, W / 2, PAD_Y + 16, typeId, running, t, motion, typeId * 7);

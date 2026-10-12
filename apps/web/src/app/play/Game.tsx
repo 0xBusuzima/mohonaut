@@ -165,9 +165,9 @@ function WalletStep({ autoOpen }: { autoOpen: boolean }) {
         ))}
       </ul>
       {error !== null && (
-        <p className="mt-3 text-center text-sm text-[#b3261e]">{error.message.split('\n')[0]}</p>
+        <p className="mt-3 text-center text-sm text-[#ff7a6e]">{error.message.split('\n')[0]}</p>
       )}
-      <p className="mt-4 text-center text-sm text-steel">
+      <p className="mt-4 text-center text-sm text-concrete">
         Connecting is free. The game never asks to approve token spending.
       </p>
     </PxModal>
@@ -244,7 +244,7 @@ function NameStep({ address, onDone }: { address: Address; onDone: () => void })
         <PxButton className="w-full" busy={busy} onClick={() => void signIn()}>
           Sign in
         </PxButton>
-        {err !== null && <p className="mt-3 text-center text-sm text-[#b3261e]">{err}</p>}
+        {err !== null && <p className="mt-3 text-center text-sm text-[#ff7a6e]">{err}</p>}
       </PxModal>
     );
   }
@@ -286,14 +286,14 @@ function NameStep({ address, onDone }: { address: Address; onDone: () => void })
           }}
           maxLength={20}
           placeholder="Your driller name"
-          className="mt-1 block w-full border-3 border-charcoal bg-[#fffaf0] px-3 py-2 text-lg outline-none focus:border-orange"
+          className="px-input mt-1 block w-full px-3 py-2 text-lg"
         />
       </label>
       <PxButton className="mt-4 w-full" busy={busy} onClick={() => void save()}>
         Enter my site
       </PxButton>
-      {err !== null && <p className="mt-3 text-center text-sm text-[#b3261e]">{err}</p>}
-      <p className="mt-3 text-center text-sm text-steel">You can change it later.</p>
+      {err !== null && <p className="mt-3 text-center text-sm text-[#ff7a6e]">{err}</p>}
+      <p className="mt-3 text-center text-sm text-concrete">You can change it later.</p>
     </PxModal>
   );
 }
@@ -349,7 +349,7 @@ function PanelWindow({
         <p className="mt-2">
           Stratum {current.numeral} — {current.name}
         </p>
-        <p className="mt-4 text-steel">
+        <p className="mt-4 text-concrete">
           Every driller cores this one shared bore. It deepens as $MOHN is mined, and the rock gets
           harder the deeper it goes.
         </p>

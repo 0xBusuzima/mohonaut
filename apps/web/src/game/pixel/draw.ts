@@ -137,3 +137,24 @@ export function hash(x: number, y: number, s = 0): number {
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
+
+/** A filled ellipse, scanline by scanline (whole pixels; iso light pools use ry = rx / 2). */
+export function ellipse(
+  c: Ctx,
+  cx: number,
+  cy: number,
+  rx: number,
+  ry: number,
+  color: string | CanvasPattern,
+): void {
+  if (rx <= 0 || ry <= 0) return;
+  c.fillStyle = color;
+  const top = Math.round(cy - ry);
+  const bottom = Math.round(cy + ry);
+  for (let y = top; y <= bottom; y++) {
+    const dy = (y + 0.5 - cy) / ry;
+    if (Math.abs(dy) > 1) continue;
+    const half = Math.round(rx * Math.sqrt(1 - dy * dy));
+    if (half > 0) c.fillRect(Math.round(cx) - half, y, half * 2, 1);
+  }
+}

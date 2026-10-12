@@ -26,7 +26,8 @@ export function HomeHero() {
         label="A drill site at night: rigs on their pads, a diesel tank, the core shack and the World Bore."
       />
       <div className="pointer-events-none absolute inset-0 flex items-end justify-center p-4 pb-8 md:items-center md:justify-start md:p-10">
-        <div className="px-dark pointer-events-auto flex max-w-md flex-col gap-4 p-5 font-pixel">
+        <div className="px-panel pointer-events-auto flex max-w-md flex-col gap-4 p-5 pt-0 font-pixel">
+          <div aria-hidden="true" className="px-hazard -mx-[14px] mb-1 h-3" />
           <h1 className="font-display text-5xl font-black tracking-wide uppercase sm:text-6xl">
             Not the moon. <span className="text-orange">The Moho.</span>
           </h1>

@@ -42,4 +42,27 @@ export const P = {
   window: '#ffd27a',
   rain: '#8fa3c4',
   glow: '#ffb31a',
+  // Open land around the site: warm dark earth, scrub and rock, fading into haze at the horizon.
+  earth: '#2a2420',
+  earthAlt: '#2f2823',
+  earthDark: '#211c19',
+  earthSpeck: '#3b322b',
+  haze: '#1c2132',
+  scrub: '#2b3524',
+  scrubLit: '#3d4a2f',
+  rock: '#46403b',
+  rockLit: '#5d564f',
+  road: '#4a443e',
+  roadRut: '#332e2a',
+  pole: '#2c2a28',
+  wire: '#1a1918',
+  beacon: '#ff3d2e',
+  led: '#8cff6a',
+  // Crew.
+  vest: '#ffb31a',
+  hardHat: '#ece7dc',
+  skin: '#c69872',
+  trousers: '#2b3138',
+  // The night over everything outside the lamps.
+  dark: 'rgba(5, 7, 16, 0.44)',
 } as const;

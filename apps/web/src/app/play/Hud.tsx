@@ -64,8 +64,8 @@ export function Hud({ state, open }: { state: GameState; open: (p: Panel) => voi
         </HudChip>
       </div>
       <p className="pointer-events-auto absolute top-[4.9rem] right-3 hidden px-dark px-2 py-0.5 text-sm md:block">
-        {shareOfNetwork(p.dp, n.activeDp)} of network DP Â· â‰ˆ {formatMohn(perHour)}/h, falls as
-        others join Â· Stratum {current.numeral}
+        {shareOfNetwork(p.dp, n.activeDp)} of network DP · ≈ {formatMohn(perHour)}/h, falls as
+        others join · Stratum {current.numeral}
       </p>
       {/* Left: boards, crew, the World Bore and the power switch. */}
       <div className="pointer-events-auto absolute top-[7.6rem] left-3 flex flex-col items-start gap-2 md:top-16">
