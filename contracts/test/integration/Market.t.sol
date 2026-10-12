@@ -2,6 +2,7 @@
 pragma solidity 0.8.30;
 
 import {Test, stdJson} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
@@ -192,6 +193,34 @@ contract MarketTest is Test {
         assertLt(LM_ADDR.balance, 1e12, "only rounding dust stays");
         assertLt(mohn.balanceOf(LM_ADDR), 1e15, "only rounding dust stays");
         _conservation();
+    }
+
+    /// The LiquidityManager's MarketOpened event reports exactly what went into the pool: the
+    /// POL ETH and the minted MOHN minus the rounding dust that stays in the contract.
+    function test_openMarketEventReportsExactAmounts() public {
+        uint256 polEth = router.polBalance();
+        vm.recordLogs();
+        uint256 lp = _open();
+        (uint256 ethIn, uint256 mohnIn, uint128 liquidity) = _lmMarketOpened(vm.getRecordedLogs());
+        assertEq(ethIn + LM_ADDR.balance, polEth, "ETH in + dust = POL ETH");
+        assertEq(mohnIn + mohn.balanceOf(LM_ADDR), lp, "MOHN in + dust = LP mint");
+        assertEq(liquidity, _liquidity());
+    }
+
+    function _lmMarketOpened(Vm.Log[] memory logs)
+        internal
+        pure
+        returns (uint256 ethIn, uint256 mohnIn, uint128 liquidity)
+    {
+        bytes32 topic = keccak256("MarketOpened(uint160,uint256,uint256,uint128)");
+        for (uint256 i = 0; i < logs.length; ++i) {
+            if (logs[i].emitter == LM_ADDR && logs[i].topics[0] == topic) {
+                (, ethIn, mohnIn, liquidity) =
+                    abi.decode(logs[i].data, (uint160, uint256, uint256, uint128));
+                return (ethIn, mohnIn, liquidity);
+            }
+        }
+        revert("no MarketOpened from the LiquidityManager");
     }
 
     function test_openMarketGuards() public {
@@ -438,6 +467,80 @@ contract MarketTest is Test {
         lm.addLiquidity(cap / 2, type(uint256).max);
         lm.addLiquidity(cap / 2, 1);
         vm.stopPrank();
+    }
+
+    /// The 4 % daily cap accumulates over the UTC day (also hours later) and resets at the next
+    /// day; LiquidityAdded reports the ETH used, the MOHN bought and the liquidity added.
+    function test_addLiquidityDayAccountingAndEvent() public {
+        _open();
+        vm.deal(address(core), 1 ether);
+        vm.prank(address(core));
+        router.deposit{value: 1 ether}();
+        uint256 first = ((lm.poolEth() * 400) / 10_000 / 2) & ~uint256(1);
+        uint128 before = _liquidity();
+
+        vm.recordLogs();
+        vm.prank(keeper);
+        lm.addLiquidity(first, 1);
+        (uint256 ethIn, uint256 mohnBought, uint128 added) = _liquidityAdded(vm.getRecordedLogs());
+        assertEq(ethIn, first, "event reports the ETH used");
+        assertGt(mohnBought, 0);
+        assertEq(added, _liquidity() - before, "event reports the liquidity added");
+        assertEq(lm.addDay(), block.timestamp / 1 days);
+        assertEq(lm.addedInDay(), first);
+
+        skip(1 hours); // same UTC day: the first addition still counts
+        uint256 remaining = (lm.poolEth() * 400) / 10_000 - first;
+        vm.prank(keeper);
+        vm.expectRevert(
+            abi.encodeWithSelector(LiquidityManager.DailyCapExceeded.selector, remaining)
+        );
+        lm.addLiquidity(remaining + 2, 1);
+
+        vm.warp((block.timestamp / 1 days + 1) * 1 days + 1); // next UTC day: the full cap again
+        uint256 full = ((lm.poolEth() * 400) / 10_000) & ~uint256(1);
+        vm.prank(keeper);
+        lm.addLiquidity(full, 1);
+        assertEq(lm.addedInDay(), full);
+        assertEq(lm.addDay(), block.timestamp / 1 days);
+    }
+
+    function _liquidityAdded(Vm.Log[] memory logs)
+        internal
+        pure
+        returns (uint256 ethIn, uint256 mohnBought, uint128 liquidity)
+    {
+        bytes32 topic = keccak256("LiquidityAdded(uint256,uint256,uint128)");
+        for (uint256 i = 0; i < logs.length; ++i) {
+            if (logs[i].emitter == LM_ADDR && logs[i].topics[0] == topic) {
+                return abi.decode(logs[i].data, (uint256, uint256, uint128));
+            }
+        }
+        revert("no LiquidityAdded");
+    }
+
+    /// The 2 % buyback cap accumulates over the UTC day (also hours later) and resets fully at
+    /// the next day.
+    function test_buybackDayAccounting() public {
+        _open();
+        uint256 half = (lm.poolEth() * 200) / 10_000 / 2;
+        vm.prank(keeper);
+        bb.executeBuyback(half, 1);
+        assertEq(bb.day(), block.timestamp / 1 days);
+        assertEq(bb.spentInDay(), half);
+
+        skip(1 hours);
+        uint256 remaining = (lm.poolEth() * 200) / 10_000 - half;
+        vm.prank(keeper);
+        vm.expectRevert(abi.encodeWithSelector(BuybackBurner.DailyCapExceeded.selector, remaining));
+        bb.executeBuyback(remaining + 1, 1);
+
+        vm.warp((block.timestamp / 1 days + 1) * 1 days + 1);
+        uint256 full = (lm.poolEth() * 200) / 10_000;
+        vm.prank(keeper);
+        bb.executeBuyback(full, 1);
+        assertEq(bb.spentInDay(), full);
+        assertEq(bb.day(), block.timestamp / 1 days);
     }
 
     function test_collectFees_burnsMohnAndFundsBuyback() public {
