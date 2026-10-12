@@ -130,6 +130,8 @@ jobs:
         run: npx turbo run build typecheck lint test
       - name: Dead code (knip)
         run: npx knip
+      - name: Copy lint (docs/05 §6)
+        run: node tools/lint_copy.mjs --self-test && node tools/lint_copy.mjs
       - name: Format
         run: npx prettier --check .
 

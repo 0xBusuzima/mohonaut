@@ -6,7 +6,7 @@
   "description": "Game client, landing, docs and economy pages (Next.js static export).",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && node scripts/flatten-segments.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
@@ -14,10 +14,14 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
+    "@expo-google-fonts/barlow": "^0.4.1",
+    "@expo-google-fonts/big-shoulders-display": "^0.2.3",
     "@mohonaut/config": "*",
     "@playwright/test": "^1.64.0",
+    "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/react": "^16.3.3",
+    "@types/mdx": "^2.0.14",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
@@ -30,9 +34,13 @@
     "@fontsource/big-shoulders-display": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@fontsource/saira-stencil-one": "^5.3.0",
+    "@mdx-js/loader": "^3.1.1",
+    "@mdx-js/react": "^3.1.1",
     "@mohonaut/sdk": "^0.0.0",
+    "@next/mdx": "^16.4.0",
     "next": "^16.4.0",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "remark-gfm": "^4.0.1"
   }
 }

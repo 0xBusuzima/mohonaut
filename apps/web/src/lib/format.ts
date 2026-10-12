@@ -1,6 +1,6 @@
 /**
- * Number formatting for the game: token amounts are bigint wei; the UI never shows USD values
- * of holdings or yields (docs/01 §6, docs/05 §6).
+ * Number formatting for the game: token amounts are bigint wei; the UI never converts balances
+ * or emission shares to USD (docs/01 §6, docs/05 §6).
  */
 
 const WAD = 10n ** 18n;

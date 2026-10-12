@@ -1,0 +1,17 @@
+{
+  "description": "SHA-256 of lowercase competitor names and handles (docs/05 \u00a76.4b). Kept as hashes so the public repository does not name them. Add with: python -c \"import hashlib;print(hashlib.sha256('<name>'.encode()).hexdigest())\"",
+  "sha256": [
+    "08c7d7311b7fb06c07db354495b9801de8506d72e1e3618bbe759e299205fd76",
+    "19aefb7f5985f4294d2d94098961be7b152708d5ef7e330dcb7384c1c179fd5c",
+    "4b47d8193514b5067a03a8079218feeb95c1224c88c24a73befc7d4bf749eaea",
+    "6e783ba41020dc5c8f8e7a36ec5070e6be231ec770a429d107caba75eb148054",
+    "85f70847482ce897b39b0bd8227e33e5a0ff166d80de690d0608d9f02b9bfb20",
+    "9d6da593c51e140d52907afd3a36dc4d5d8509ec146f2d43f1cc00ef0798ca08",
+    "b16cb74e4f49e6bce05ecef28afbd7ae94809a7265fcaa540f6d0f18517d1ed7",
+    "c7e64791fbafc5b4aa07eb43b0c73d0993c0e6bf0a2226034885a9334b714543",
+    "cd632ad9d4952a542af14463b657e198bcc385aec2ab907acce1b6b964d0f307",
+    "cf5e654e7ca2a52db9e16b72052a2eacb71b45a45112e29b5d2de3e21000b18d",
+    "eb11e85fd2d3b3df0d15679f2bda328ee818122a20e50aa8acc0fcfc04adadf5",
+    "fb4e753895a6d67047da8251739683e12b53389a11945211c17b739d513d37a2"
+  ]
+}

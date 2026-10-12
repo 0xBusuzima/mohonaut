@@ -1,0 +1,5 @@
+Contact: mailto:security@mohonaut.com
+Expires: 2027-10-11T00:00:00.000Z
+Preferred-Languages: en, tr
+Canonical: https://mohonaut.com/.well-known/security.txt
+Policy: https://mohonaut.com/security/

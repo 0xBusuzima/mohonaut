@@ -6,6 +6,7 @@ import { sessionMiddleware } from './auth/session.js';
 import type { AppDeps, AppEnv } from './context.js';
 import { registerAdmin } from './routes/admin.js';
 import { registerAuth } from './routes/auth.js';
+import { registerGovernance } from './routes/governance.js';
 import { registerProfile } from './routes/profile.js';
 import { registerSocial } from './routes/social.js';
 import { registerWorld } from './routes/world.js';
@@ -50,6 +51,7 @@ export function createApp(deps: AppDeps): OpenAPIHono<AppEnv> {
 
   registerAuth(app);
   registerWorld(app);
+  registerGovernance(app);
   registerProfile(app);
   registerSocial(app);
   registerAdmin(app);

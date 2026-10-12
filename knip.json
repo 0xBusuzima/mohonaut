@@ -37,9 +37,18 @@
       ]
     },
     "apps/web": {
-      "entry": ["src/app/**/{page,layout}.tsx", "e2e/**/*.{ts,mjs}"],
-      "project": ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx}", "e2e/**/*.{ts,mjs}"],
-      "ignoreDependencies": ["tailwindcss"]
+      "entry": ["src/app/**/{page,layout}.tsx", "e2e/**/*.{ts,mjs}", "scripts/**/*.mjs"],
+      "project": [
+        "src/**/*.{ts,tsx}",
+        "test/**/*.{ts,tsx}",
+        "e2e/**/*.{ts,mjs}",
+        "scripts/**/*.mjs"
+      ],
+      "ignoreDependencies": [
+        "tailwindcss",
+        "@expo-google-fonts/barlow",
+        "@expo-google-fonts/big-shoulders-display"
+      ]
     }
   }
 }

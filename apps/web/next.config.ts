@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+import createMDX from '@next/mdx';
 import type { NextConfig } from 'next';
 
 // The npm workspace root: dependencies are hoisted there.
@@ -14,9 +15,11 @@ const config: NextConfig = {
   reactStrictMode: true,
   images: { unoptimized: true },
   poweredByHeader: false,
+  pageExtensions: ['ts', 'tsx', 'mdx'],
   transpilePackages: ['@mohonaut/sdk'],
   turbopack: { root },
   outputFileTracingRoot: root,
 };
 
-export default config;
+// GitHub-flavoured Markdown (tables). Plugins are named as strings for Turbopack.
+export default createMDX({ options: { remarkPlugins: ['remark-gfm'] } })(config);

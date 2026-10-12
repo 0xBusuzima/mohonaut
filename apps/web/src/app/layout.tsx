@@ -16,6 +16,17 @@ export const metadata: Metadata = {
   description:
     'An on-chain idle drilling game on Robinhood Chain. One shared bore, a published formula, every $MOHN mined.',
   metadataBase: new URL('https://mohonaut.com'),
+  openGraph: {
+    type: 'website',
+    siteName: 'Mohonaut',
+    title: 'Mohonaut — Not the moon. The Moho.',
+    description:
+      'An on-chain idle drilling game. Run a drill site, fuel your rigs and core one shared hole with everyone else. Every token comes out of the ground.',
+    images: [
+      { url: '/og.png', width: 1200, height: 630, alt: 'Mohonaut: Not the moon. The Moho.' },
+    ],
+  },
+  twitter: { card: 'summary_large_image', site: '@playmohonaut', creator: '@onderyazici' },
 };
 
 export const viewport: Viewport = {

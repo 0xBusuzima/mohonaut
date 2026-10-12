@@ -20,7 +20,7 @@ export function depthFraction(metres: number): number {
 }
 
 export interface BoreLogProps {
-  /** World depth in millimetres. */
+  /** World Bore depth in millimetres. */
   depthMm: bigint;
   height?: number;
   width?: number;

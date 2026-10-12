@@ -16,7 +16,7 @@ export interface ModalProps {
 
 /**
  * Accessible dialog: focus moves in and is trapped, Escape and the backdrop close it, and focus
- * returns to the element that opened it.
+ * goes back to the element that opened it.
  */
 export function Modal({ open, onClose, title, children }: ModalProps) {
   const titleId = useId();

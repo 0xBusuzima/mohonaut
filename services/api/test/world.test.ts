@@ -218,3 +218,34 @@ describe('contribution card', () => {
     expect((await h.app.request(`/cards/${getAddress(newWallet().address)}`)).status).toBe(404);
   });
 });
+
+describe('timelock queue', () => {
+  it('lists pending operations soonest first and recent executed or cancelled ones', async () => {
+    const h = await harness();
+    const base = {
+      timelock: 'ParamsTimelock',
+      opIndex: 0,
+      target: '0x1000000000000000000000000000000000000002',
+      value: 0n,
+      data: '0x',
+      predecessor: '0x00',
+      delay: 345_600n,
+      fn: 'setParam',
+      args: [0, '120000000000000000'],
+    };
+    await h.database.db.insert(idx.timelockOps).values([
+      { ...base, opId: '0xa', scheduledAt: 100n, readyAt: 500n },
+      { ...base, opId: '0xb', scheduledAt: 50n, readyAt: 400n },
+      { ...base, opId: '0xc', scheduledAt: 10n, readyAt: 20n, executedAt: 30n },
+      { ...base, opId: '0xd', scheduledAt: 10n, readyAt: 20n, cancelledAt: 40n },
+    ]);
+    const res = await call(h, 'GET', '/governance/timelock');
+    const json = res.json as unknown as { pending: { opId: string }[]; recent: { opId: string }[] };
+    expect(json.pending.map((o) => o.opId)).toEqual(['0xb', '0xa']);
+    expect(json.recent.map((o) => o.opId)).toEqual(['0xd', '0xc']);
+    expect(res.json['pending']).toMatchObject([
+      { fn: 'setParam', args: [0, '120000000000000000'] },
+      {},
+    ]);
+  });
+});

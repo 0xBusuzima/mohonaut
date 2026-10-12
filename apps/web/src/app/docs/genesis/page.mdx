@@ -1,0 +1,33 @@
+export const metadata = {
+  title: 'Genesis and Market Open',
+  description: 'Pre-fill, the Genesis Dig and Market Open: how the game starts and how the pool is created.',
+};
+
+# Genesis and Market Open
+
+The launch has three steps. Times are UTC and are announced when the contracts are deployed,
+seven days before Genesis.
+
+## Pre-fill (24 hours before Genesis)
+
+Drill sites can be opened and tanks filled. Nothing is mined yet. During Genesis a tank holds at
+most the diesel your rigs can burn until 24 hours after Market Open.
+
+## Genesis Dig (72 hours)
+
+Mining starts. Refining is closed, and there is no $MOHN pool: anything sold as $MOHN in these
+hours is fake.
+
+## Market Open (Genesis + 72 hours)
+
+Anyone can call `openMarket` (the game's keeper calls it first). The contract then creates the
+ETH/$MOHN pool itself, at a price computed from Genesis data, and adds the protocol's liquidity:
+
+```
+opening price = diesel bought during Genesis (USD) ÷ $MOHN mined by players during Genesis
+pool $MOHN    = protocol-liquidity ETH × ETH/USD ÷ opening price      (at most 1,000,000)
+```
+
+The pool's $MOHN is minted from the reserve, within the hourly mint limit. Nobody can create the
+pool earlier or at another price: the pool's hook refuses any other initialisation. The protocol's
+liquidity can never be withdrawn.
