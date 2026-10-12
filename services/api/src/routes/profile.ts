@@ -10,11 +10,13 @@ import {
   crewOfUser,
   findsOf,
   fleet,
+  hasRefined,
   kolaCrossingHour,
   userByWallet,
   worldEmitted,
 } from '../data.js';
 import { ACHIEVEMENTS, earnedAchievements, fleetEfficiency } from '../game/achievements.js';
+import { MAINNET_CHAIN_ID } from '../faucet.js';
 import { renderCardPng } from '../game/card.js';
 import { formatDepth, millimetres } from '@mohonaut/sdk';
 import { completedSets } from '../game/survey.js';
@@ -38,6 +40,10 @@ async function profileOf(deps: AppEnv['Variables']['deps'], address: Address) {
     witnessedKola: kola !== null && (await activeDuringHour(db, address, kola)),
     completedSets: sets.length,
     inCrew: crew !== null,
+    siteLevel: acct?.siteLevel ?? 0,
+    refined: (acct?.refined ?? 0n) > 0n || (await hasRefined(db, address)),
+    testnet: deps.cfg.deployment.chainId !== MAINNET_CHAIN_ID,
+    flagged: user?.flagged ?? false,
   });
   return { acct, user, crew, finds, sets, rigs, earned };
 }

@@ -1,3 +1,4 @@
+import { schema as idx } from '@mohonaut/indexer';
 import { describe, expect, it } from 'vitest';
 import type { Harness } from './helpers.js';
 import { T0, call, harness, newWallet, signIn } from './helpers.js';
@@ -197,5 +198,39 @@ describe('player file and health', () => {
     };
     const down = (await call(h, 'GET', '/admin/health', { cookie: admin })).json;
     expect(down).toMatchObject({ head: null, keeper: { balanceWei: null } });
+  });
+});
+
+describe('player file with an on-chain site', () => {
+  it('shows the site, rigs and refine queue the indexer recorded (checksummed addresses)', async () => {
+    const wallet = newWallet();
+    const h = await harness({ adminWallets: [wallet.address] });
+    const admin = await signIn(h, wallet);
+    const player = newWallet();
+    const cookie = await signIn(h, player);
+    const id = Number((await call(h, 'GET', '/me', { cookie })).json['id']);
+    // The indexer stores addresses as the chain's events carry them: checksummed.
+    await h.database.db.insert(idx.accounts).values({
+      address: player.address,
+      siteLevel: 3,
+      dp: 260n,
+      fuelEth: 10n ** 15n,
+      referrals: 2,
+      registeredAt: 1n,
+    });
+    await h.database.db.insert(idx.refineRequests).values({
+      account: player.address,
+      requestId: 0n,
+      amount: 5n * 10n ** 18n,
+      readyAt: 2_000n,
+      queuedAt: 1_000n,
+    });
+    const file = (await call(h, 'GET', `/admin/users/${id}`, { cookie: admin })).json as {
+      chain: { siteLevel: number; referrals: number; refines: { amount: string }[] } | null;
+    };
+    expect(file.chain).toMatchObject({ siteLevel: 3, referrals: 2 });
+    expect(file.chain?.refines).toEqual([
+      expect.objectContaining({ amount: (5n * 10n ** 18n).toString() }),
+    ]);
   });
 });

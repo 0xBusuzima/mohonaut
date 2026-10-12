@@ -39,6 +39,15 @@ export async function fleet(database: Database, address: Address) {
 }
 
 /** First hour in which the cumulative emission passed the Kola Line, if it has. */
+/** Whether an account ever asked for a refine (queued or fast). */
+export async function hasRefined(database: Database, address: Address): Promise<boolean> {
+  const [row] = await database.db
+    .select({ n: count() })
+    .from(schema.refineRequests)
+    .where(eq(schema.refineRequests.account, address));
+  return (row?.n ?? 0) > 0;
+}
+
 export async function kolaCrossingHour(database: Database): Promise<bigint | null> {
   const threshold = (BigInt(KOLA_LINE_M) * WEI_PER_METRE).toString();
   const rows = await database.query(

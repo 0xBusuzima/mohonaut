@@ -3,6 +3,8 @@ import type { Deployment } from '@mohonaut/indexer';
 import { getAddress } from 'viem';
 import type { Address } from 'viem';
 import { z } from 'zod';
+import { MAINNET_CHAIN_ID } from './faucet.js';
+import type { FaucetConfig } from './faucet.js';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -51,6 +53,11 @@ const envSchema = z.object({
   EXTERNAL_AUTH_ISSUER: z.string().optional(),
   EXTERNAL_AUTH_AUDIENCE: z.string().optional(),
   EXTERNAL_AUTH_JWKS_URL: z.url().optional(),
+  /** Testnet faucet (docs/06 7.2): a file with the faucet wallet's hex key; unset = off. */
+  FAUCET_KEY_FILE: z.string().min(1).optional(),
+  FAUCET_AMOUNT_WEI: z.coerce.bigint().positive().default(1_000_000_000_000_000n),
+  FAUCET_DAILY_BUDGET_WEI: z.coerce.bigint().positive().default(50_000_000_000_000_000n),
+  FAUCET_MAX_RECIPIENT_WEI: z.coerce.bigint().positive().default(3_000_000_000_000_000n),
 });
 
 export interface ExternalAuthConfig {
@@ -76,6 +83,7 @@ export interface Config {
   trustCloudflare: boolean;
   adminWallets: Address[];
   externalAuth: ExternalAuthConfig | null;
+  faucet: FaucetConfig | null;
 }
 
 export function loadConfig(env: Record<string, string | undefined>): Config {
@@ -93,6 +101,15 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     e.EXTERNAL_AUTH_AUDIENCE,
     e.EXTERNAL_AUTH_JWKS_URL,
   ];
+  const deployment = loadDeployment(e.DEPLOYMENT_FILE);
+  if (e.FAUCET_KEY_FILE !== undefined && deployment.chainId === MAINNET_CHAIN_ID) {
+    throw new Error(
+      'FAUCET_KEY_FILE is set but the deployment is mainnet: the faucet is testnet only',
+    );
+  }
+  if (e.FAUCET_KEY_FILE !== undefined && e.RPC_URL === undefined) {
+    throw new Error('the faucet needs RPC_URL');
+  }
   if (ext.some((v) => v !== undefined) && ext.some((v) => v === undefined)) {
     throw new Error('set all EXTERNAL_AUTH_* variables or none');
   }
@@ -100,7 +117,7 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     production,
     databaseUrl: e.DATABASE_URL,
     redisUrl: e.REDIS_URL ?? null,
-    deployment: loadDeployment(e.DEPLOYMENT_FILE),
+    deployment,
     rpcUrl: e.RPC_URL ?? null,
     webOrigin: new URL(e.WEB_ORIGIN).origin,
     port: e.PORT,
@@ -119,6 +136,15 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
             issuer: e.EXTERNAL_AUTH_ISSUER ?? '',
             audience: e.EXTERNAL_AUTH_AUDIENCE ?? '',
             jwksUrl: e.EXTERNAL_AUTH_JWKS_URL ?? '',
+          },
+    faucet:
+      e.FAUCET_KEY_FILE === undefined
+        ? null
+        : {
+            keyFile: e.FAUCET_KEY_FILE,
+            amountWei: e.FAUCET_AMOUNT_WEI,
+            dailyBudgetWei: e.FAUCET_DAILY_BUDGET_WEI,
+            maxRecipientBalanceWei: e.FAUCET_MAX_RECIPIENT_WEI,
           },
   };
 }

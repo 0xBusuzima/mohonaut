@@ -94,6 +94,10 @@ services:
       TRUST_CLOUDFLARE: 'true'
       REDIS_URL: redis://valkey:6379
     ports: ['127.0.0.1:8787:8787', '127.0.0.1:9466:9466']
+    volumes:
+      - ${DEPLOYMENT_DIR:-../../deployments}:/deployments:ro
+      # Testnet faucet key (Season 0) only; this folder is empty on mainnet.
+      - ${SECRETS_DIR:-/etc/mohonaut/secrets}/faucet:/run/secrets/faucet:ro
     healthcheck:
       test:
         [

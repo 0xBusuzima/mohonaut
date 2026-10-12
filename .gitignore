@@ -50,3 +50,7 @@ apps/*/test-results/
 apps/*/playwright-report/
 apps/*/lighthouse.json
 .claude/launch.json
+
+# AI audit scratch builds (docs/06 7.1): each auditor builds into its own folders
+contracts/out-*/
+contracts/cache-*/

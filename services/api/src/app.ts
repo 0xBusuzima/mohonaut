@@ -6,6 +6,7 @@ import { sessionMiddleware } from './auth/session.js';
 import type { AppDeps, AppEnv } from './context.js';
 import { registerAdmin } from './routes/admin.js';
 import { registerAuth } from './routes/auth.js';
+import { registerFaucet } from './routes/faucet.js';
 import { registerGovernance } from './routes/governance.js';
 import { registerInsight } from './routes/insight.js';
 import { registerOps } from './routes/ops.js';
@@ -59,6 +60,7 @@ export function createApp(deps: AppDeps): OpenAPIHono<AppEnv> {
   registerAdmin(app);
   registerOps(app);
   registerInsight(app);
+  registerFaucet(app);
 
   app.get('/healthz', (c) => c.text('ok'));
   app.doc31('/openapi.json', {

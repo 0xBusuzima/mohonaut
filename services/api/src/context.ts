@@ -3,6 +3,7 @@ import type { Address, PublicClient } from 'viem';
 import type { ExternalAuthVerifier } from './auth/external.js';
 import type { SignatureVerifier } from './auth/siwe.js';
 import type { Config } from './config.js';
+import type { FaucetSender } from './faucet.js';
 import type { Role } from './db/schema.js';
 import type { ApiMetrics } from './metrics.js';
 import type { KeyValueStore } from './store.js';
@@ -26,6 +27,8 @@ export interface AppDeps {
   metrics?: ApiMetrics;
   /** Chain reads for the operator health view (RPC_URL); null without one. */
   chain?: Pick<PublicClient, 'getBlockNumber' | 'getBalance'> | null;
+  /** Testnet faucet wallet (null: off). */
+  faucet?: FaucetSender | null;
 }
 
 export interface SessionUser {

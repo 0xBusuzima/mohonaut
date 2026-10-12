@@ -27,6 +27,7 @@ export const errors = {
   404: json(ErrorSchema, 'Not found'),
   409: json(ErrorSchema, 'Conflict'),
   429: json(ErrorSchema, 'Rate limited'),
+  503: json(ErrorSchema, 'Temporarily unavailable'),
 } as const;
 
 export const DepthSchema = z

@@ -461,7 +461,7 @@ export function registerOps(app: OpenAPIHono<AppEnv>): void {
           const refines = await db
             .select()
             .from(idx.refineRequests)
-            .where(eq(idx.refineRequests.account, wallet.toLowerCase()))
+            .where(eq(idx.refineRequests.account, wallet))
             .orderBy(desc(idx.refineRequests.requestId))
             .limit(20);
           chain = {

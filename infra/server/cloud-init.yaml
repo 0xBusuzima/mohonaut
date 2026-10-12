@@ -92,7 +92,7 @@ runcmd:
   - fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
   - echo '/swapfile none swap sw 0 0' >> /etc/fstab
   # Secret files live here, root only (infra/RUNBOOK.md §Secrets).
-  - install -d -m 0700 /etc/mohonaut /etc/mohonaut/secrets
+  - install -d -m 0700 /etc/mohonaut /etc/mohonaut/secrets /etc/mohonaut/secrets/faucet
   - sysctl --system
   - systemctl enable --now fail2ban unattended-upgrades
   - systemctl restart ssh

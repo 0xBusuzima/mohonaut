@@ -13,6 +13,8 @@ const PAGES = [
   '/faq/',
   '/status/',
   '/support/',
+  '/season0/',
+  '/faucet/',
   '/terms/',
   '/privacy/',
 ];

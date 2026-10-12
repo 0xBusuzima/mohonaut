@@ -9,6 +9,7 @@ import { createApp } from './app.js';
 import { externalAuthVerifier } from './auth/external.js';
 import { signatureVerifier } from './auth/siwe.js';
 import { loadConfig } from './config.js';
+import { faucetSender } from './faucet.js';
 import { ApiMetrics } from './metrics.js';
 import { turnstileVerifier } from './security.js';
 import { MemoryStore, RedisStore } from './store.js';
@@ -46,6 +47,10 @@ async function main(): Promise<void> {
     store,
     signatures: signatureVerifier(chain),
     chain,
+    faucet:
+      cfg.faucet === null || cfg.rpcUrl === null
+        ? null
+        : faucetSender(cfg.faucet, cfg.deployment.chainId, cfg.rpcUrl),
     externalAuth: cfg.externalAuth === null ? null : externalAuthVerifier(cfg.externalAuth),
     turnstile: cfg.turnstileSecret === null ? null : turnstileVerifier(cfg.turnstileSecret),
     now: Date.now,

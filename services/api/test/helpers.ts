@@ -65,6 +65,7 @@ export async function harness(overrides: Partial<Config> = {}): Promise<Harness>
     trustCloudflare: false,
     adminWallets: [],
     externalAuth: null,
+    faucet: null,
     ...overrides,
   };
   const deps: AppDeps = {

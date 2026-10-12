@@ -51,7 +51,7 @@ npm komutlarını Git Bash yerine `cmd.exe /c "..."` veya PowerShell ile çalı�
 | Kontrat kapsam kapısı (%95; `--code-size-limit` yalnızca optimizasyonsuz kapsam derlemesi için) | `cd contracts && forge coverage --report lcov --report-file lcov.info --no-match-coverage "(test|script)/" --code-size-limit 300000 && python ../tools/check_coverage.py lcov.info` |
 | Derin fuzz | `cd contracts && FOUNDRY_PROFILE=deep forge test` |
 | Simülatör testleri | `cd sim && .venv\Scripts\python.exe -m unittest discover -s tests -t .` |
-| Simülatör lint / ölü kod | `cd sim && .venv\Scripts\python.exe -m ruff check . && .venv\Scripts\python.exe -m vulture engine tests run_scenarios.py make_vectors.py --min-confidence 80` |
+| Simülatör lint / ölü kod | `cd sim && .venv\Scripts\python.exe -m ruff check . && .venv\Scripts\python.exe -m vulture engine tests run_scenarios.py make_vectors.py beta_report.py --min-confidence 80` |
 | Vektörleri yeniden üret | `cd sim && .venv\Scripts\python.exe make_vectors.py` (çıktı değişmemeli) |
 | Slither (yerel, WSL) | `wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/yazic/Desktop/crypto-game-project/contracts && forge clean && ~/halmos-venv/bin/slither . --config-file slither.config.json --fail-medium"` |
 | Halmos (yerel, WSL) | `wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/yazic/Desktop/crypto-game-project/contracts && ~/halmos-venv/bin/halmos --function prove_"` |
@@ -64,6 +64,7 @@ npm komutlarını Git Bash yerine `cmd.exe /c "..."` veya PowerShell ile çalı�
 | API (yerel) | `cd services/api && cp .env.example .env` → `node dist/main.js` (OpenAPI: `/openapi.json`); yük: `k6 run services/api/k6/load.js` |
 | İzleme yapılandırması ve uyarı kuralı testleri | CI `monitoring` işi (Docker ile `promtool check config` / `promtool test rules infra/monitoring/prometheus/tests/mohonaut_test.yml`, `amtool`, Loki, Alloy); panolar: `python tools/gen_dashboards.py` (`--check`) |
 | Web (Next.js statik) | `cd apps/web && npm run build` (out/); `npx playwright test` (e2e + axe; görsel anlık görüntüler `VISUAL=1` ile CI Linux imajında); oyun E2E'si anvil üzerinde `FOUNDRY_BIN=... npm run e2e:play` (out/'u yerel zincir için yeniden derler; sonra `npm run build`); `npm run budget` (JS bütçesi) ve `npm run lighthouse` (mobil kapı); metin denetimi `node tools/lint_copy.mjs` |
+| Beta raporu (canlı ekonomi ↔ sim) | `cd sim && .venv\Scripts\python.exe beta_report.py --api https://api.mohonaut.com --genesis <deployments/*.json genesisTime>` |
 | Mutasyon (Gambit) | Ayrı bir kopyada (kaynakları yerinde değiştirir): `contracts/audits/mutation/run_all.sh`; sonuçlar `audits/mutation/results/` |
 
 Sürümler: Node 24, npm 11, TypeScript 5.9, Foundry 1.8.5, solc 0.8.30 (`evm_version = prague`), OpenZeppelin 5.7.0, Solady 0.1.26, forge-std 1.17.0 (git submodule, sabit etiket).

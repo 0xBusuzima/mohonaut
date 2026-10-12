@@ -18,6 +18,12 @@ export const ACHIEVEMENTS = [
   },
   { id: 'core-collector', name: 'Core Collector', description: 'Completed a Survey set.' },
   { id: 'crew-hand', name: 'Crew Hand', description: 'Joined a crew.' },
+  {
+    id: 'pioneer',
+    name: 'Pioneer',
+    description:
+      'Season 0 on testnet: first diesel, a first rig, site level 3, a first refine and a crew. Cosmetic, not transferable.',
+  },
 ] as const;
 
 export type AchievementId = (typeof ACHIEVEMENTS)[number]['id'];
@@ -30,6 +36,13 @@ export interface AchievementInput {
   witnessedKola: boolean;
   completedSets: number;
   inCrew: boolean;
+  siteLevel: number;
+  /** Asked for at least one refine (queued or fast). */
+  refined: boolean;
+  /** Season 0 runs on testnet only (docs/09 §2). */
+  testnet: boolean;
+  /** Flagged accounts get no cosmetic rewards (docs/09 §5). */
+  flagged: boolean;
 }
 
 const FUEL_SAVER_EFFICIENCY = 80;
@@ -42,6 +55,9 @@ export function earnedAchievements(p: AchievementInput): AchievementId[] {
   if (p.witnessedKola) earned.push('kola-witness');
   if (p.completedSets > 0) earned.push('core-collector');
   if (p.inCrew) earned.push('crew-hand');
+  const milestones =
+    p.fuelEth > 0n && p.rigsBought > 0n && p.siteLevel >= 3 && p.refined && p.inCrew;
+  if (p.testnet && !p.flagged && milestones) earned.push('pioneer');
   return earned;
 }
 

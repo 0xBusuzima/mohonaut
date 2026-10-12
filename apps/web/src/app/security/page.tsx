@@ -75,6 +75,28 @@ export default function SecurityPage() {
         . Please do not post details publicly before we answer. Bug bounty rules are published with
         the public code review.
       </p>
+
+      <h2 className="mt-10 font-display text-3xl font-black tracking-wide uppercase">
+        Testnet Season 0 findings
+      </h2>
+      <ul className="mt-4 flex list-disc flex-col gap-2 pl-6">
+        <li>
+          Contract and API issues found on testnet are welcome by the same e-mail; game bugs go to{' '}
+          <a href="/support/" className="text-data underline">
+            support
+          </a>
+          .
+        </li>
+        <li>Valid findings are credited on this page by name or handle, if you want that.</li>
+        <li>
+          If the same issue would affect the mainnet contracts, it also qualifies for the mainnet
+          bug bounty once that is published.
+        </li>
+        <li>
+          Testing must stay on testnet and on your own accounts: no attacks on other players, no
+          volume denial of service, no social engineering.
+        </li>
+      </ul>
     </SitePage>
   );
 }

@@ -65,6 +65,7 @@ export function SiteFooter() {
     { href: '/privacy/', label: 'Privacy' },
     { href: '/status/', label: 'Status' },
     { href: '/support/', label: 'Support' },
+    { href: '/season0/', label: 'Season 0' },
     { href: '/security/', label: 'Security' },
     { href: '/contracts/', label: 'Contracts' },
   ];

@@ -81,6 +81,7 @@ describe('OpenAPI', () => {
         '/crews/{id}',
         '/crews/{id}/join',
         '/economy/daily',
+        '/faucet',
         '/governance/params',
         '/governance/timelock',
         '/leaderboards/contribution',

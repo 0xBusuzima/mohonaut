@@ -105,6 +105,13 @@ export interface Notice {
 export const SUPPORT_TOPICS = ['account', 'transaction', 'bug', 'safety', 'other'] as const;
 export type SupportTopic = (typeof SUPPORT_TOPICS)[number];
 
+export interface FaucetInfo {
+  enabled: boolean;
+  amountWei: string | null;
+  address: Address | null;
+  balanceWei: string | null;
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -174,6 +181,12 @@ export const api = {
   world: () => call<World>('GET', '/world'),
   cardUrl: (address: Address) => `${API_URL}/cards/${address}`,
   /** `fresh` skips the browser cache (the API allows 60 s): a new notice shows on next load. */
+  faucetInfo: () => call<FaucetInfo>('GET', '/faucet', { fresh: true }),
+  faucet: (address: Address) =>
+    call<{ txHash: string; amountWei: string }>('POST', '/faucet', {
+      body: { address },
+      botCheck: true,
+    }),
   announcements: (fresh = false) =>
     call<{ active: Notice[]; changelog: Notice[] }>('GET', '/announcements', { fresh }),
   support: (body: {
