@@ -43,3 +43,9 @@ Thumbs.db
 # Local embedded Postgres (PGlite) of the indexer
 services/indexer/data/
 services/keeper/data/
+# Next.js and Playwright output
+apps/*/.next/
+apps/*/out/
+apps/*/test-results/
+apps/*/playwright-report/
+.claude/launch.json

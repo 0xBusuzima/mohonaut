@@ -12,3 +12,8 @@ tools/
 packages/sdk/src/abi/
 deployments/
 infra/monitoring/grafana/dashboards/
+apps/*/.next/
+apps/*/out/
+apps/*/test-results/
+apps/*/playwright-report/
+apps/*/next-env.d.ts

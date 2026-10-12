@@ -207,7 +207,9 @@ infra/monitoring altında: OpenZeppelin Monitor (self-host) kuralları — emisy
 
 ## FAZ 4 — Oyun istemcisi ve web
 
-### 4.1 Tasarım sistemi
+### 4.1 Tasarım sistemi — ✅ 2026-10-12 (`apps/web`: Next.js 16 statik dışa aktarım, Tailwind v4)
+
+> Token'lar `src/app/globals.css` (docs/05 palet ve tipografi; koyu birincil, açık tema uzun okuma için; durum renkleri temaya göre). Bileşenler: Button, Card, Badge/StratumBadge, Table, Counter (formülden canlı değer), BoreLog (imza öğe), TankGauge, Toast (polite/assertive), Modal (odak tuzağı). `/design` sayfası. Testler: WCAG kontrastı CSS'ten hesaplanır (her tema, her yüzey), bileşen davranışı (Vitest + Testing Library), Playwright ile axe taraması (0 ihlal), klavye ve azaltılmış hareket; görsel anlık görüntüler CI'daki resmi Playwright Linux imajında. Paylaşım kartı da marka paletine geçirildi.
 
 ```text
 docs/05_MARKA_LANSMAN_X.md'deki marka kimliğine (renkler, tipografi, ton) göre apps/web'de Tailwind tabanlı tasarım sistemi kur: token'lar (renk/aralık/tipografi), bileşenler (buton, kart, tablo, sayaç, derinlik göstergesi, tank göstergesi, toast, modal), açık/koyu tema (oyun koyu birincil), erişilebilirlik (kontrast, klavye, reduced-motion). Storybook veya basit bir /design sayfası. Playwright görsel regresyon anlık görüntüleri.

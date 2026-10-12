@@ -1,0 +1,116 @@
+/*
+ * Design tokens (docs/05 §2.4 palette, §2.5 type). Dark ("night shift") is the primary theme;
+ * the light theme serves long-form reading (docs, terms). Semantic tokens switch with the
+ * theme; brand tokens never change.
+ */
+@import 'tailwindcss';
+
+@theme {
+  /* Brand palette */
+  --color-night: #0e1013;
+  --color-charcoal: #16191d;
+  --color-graphite: #22272d;
+  --color-steel: #39414a;
+  --color-concrete: #8b939c;
+  --color-bone: #ece7dc;
+  --color-orange: #ff6b1a;
+  --color-amber: #ffb31a;
+  --color-cyan: #2ee6d6;
+  --color-teal: #0d6e6a;
+  --color-alarm: #ff3d2e;
+  --color-ok: #8cff6a;
+
+  /* Lithology bands (bore log, strata badges) */
+  --color-stratum-1: #b08a5e;
+  --color-stratum-2: #d8c8a0;
+  --color-stratum-3: #b79a9a;
+  --color-stratum-4: #7e8288;
+  --color-stratum-5: #4a4444;
+  --color-stratum-6: #6e7d3c;
+  --color-stratum-7: #d2512b;
+  --color-stratum-8: #ffe27a;
+
+  --font-display: 'Big Shoulders Display', 'Barlow Condensed', sans-serif;
+  --font-stencil: 'Saira Stencil One', 'Big Shoulders Display', sans-serif;
+  --font-ui: 'Barlow', system-ui, sans-serif;
+  --font-condensed: 'Barlow Condensed', 'Barlow', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* Semantic tokens, used through the utilities below (bg-surface, text-fg, ...). */
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-line: var(--line);
+  --color-data: var(--data);
+  --color-focus: var(--focus);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+}
+
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+  --surface: var(--color-charcoal);
+  --surface-raised: var(--color-graphite);
+  --surface-sunken: var(--color-night);
+  --fg: var(--color-bone);
+  --fg-muted: var(--color-concrete);
+  --line: var(--color-steel);
+  --data: var(--color-cyan);
+  --focus: var(--color-amber);
+  --good: var(--color-ok);
+  --warn: var(--color-amber);
+  /* Alarm Red is 4.27:1 on graphite: text uses this lighter red; fills keep Alarm Red. */
+  --bad: #ff6455;
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  --surface: var(--color-bone);
+  --surface-raised: #f7f4ee;
+  --surface-sunken: #ddd6c8;
+  --fg: var(--color-charcoal);
+  --fg-muted: var(--color-steel);
+  --line: #b9b2a5;
+  /* Gauge cyan has too little contrast on bone: live data uses the teal on light. */
+  --data: var(--color-teal);
+  --focus: var(--color-teal);
+  /* Status Green and Sodium Amber vanish on bone: darker equivalents for text and meters. */
+  --good: #2f6b16;
+  --warn: #8a5300;
+  --bad: #b3261e;
+}
+
+html {
+  background: var(--surface);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: 16px; /* body text never below 16 px (docs/05 §2.5) */
+}
+
+/* Numbers never jitter (docs/05 §2.5). */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

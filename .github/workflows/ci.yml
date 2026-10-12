@@ -185,6 +185,34 @@ jobs:
       - name: Dashboards are generated
         run: python3 tools/gen_dashboards.py --check
 
+  web-e2e:
+    # Playwright in its official Linux image: behaviour, axe accessibility scan and visual
+    # snapshots of the static export. New screenshots are written (--update-snapshots=missing)
+    # and uploaded; commit them from the artifact to make them baselines.
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.64.0-noble
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx turbo run build --filter=@mohonaut/web...
+      - name: Playwright
+        working-directory: apps/web
+        env:
+          VISUAL: "1"
+          HOME: /root
+        run: npx playwright test --update-snapshots=missing
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: web-e2e
+          path: |
+            apps/web/playwright-report
+            apps/web/e2e/__screenshots__
+
   security:
     runs-on: ubuntu-latest
     steps:

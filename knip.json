@@ -35,6 +35,11 @@
         "@expo-google-fonts/big-shoulders-display",
         "@expo-google-fonts/jetbrains-mono"
       ]
+    },
+    "apps/web": {
+      "entry": ["src/app/**/{page,layout}.tsx", "e2e/**/*.{ts,mjs}"],
+      "project": ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx}", "e2e/**/*.{ts,mjs}"],
+      "ignoreDependencies": ["tailwindcss"]
     }
   }
 }
