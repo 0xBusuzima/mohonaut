@@ -11,7 +11,7 @@ import {
   seasonRanking,
 } from '../data.js';
 import { crewMembers, crews, notificationPrefs, seasons, surveyFinds } from '../db/schema.js';
-import { formatDepth, millimetres } from '../game/depth.js';
+import { formatDepth, millimetres } from '@mohonaut/sdk';
 import { SURVEY_ITEMS, SURVEY_SETS, completedSets, surveyFind } from '../game/survey.js';
 import { signedIn } from '../rbac.js';
 import { rateLimit, turnstile } from '../security.js';

@@ -3,7 +3,7 @@ import { getAddress } from 'viem';
 import { describe, expect, it } from 'vitest';
 import { cardSvg } from '../src/game/card.js';
 import { fleetEfficiency } from '../src/game/achievements.js';
-import { formatDepth, stratumAt } from '../src/game/depth.js';
+import { formatDepth, stratumAt } from '@mohonaut/sdk';
 import { T0, call, harness, mohn, newWallet, seedAccount, signIn } from './helpers.js';
 
 const HOUR0 = BigInt(Math.floor(T0 / 3_600_000)) - 48n;
@@ -210,7 +210,8 @@ describe('contribution card', () => {
       crew: 'Night <Shift>',
       name: 'Bea',
     });
-    expect(svg).toContain("I've cored 1,240 m");
+    expect(svg).toMatch(/I've cored <tspan[^>]*>1,240 m<\/tspan>/);
+    expect(svg).toContain('#FF6B1A'); // Safety Orange logo (docs/05 §2.4)
     expect(svg).toContain('Night &lt;Shift&gt;');
     for (const banned of ['$', 'USD', 'ROI', 'APY', 'APR', 'profit', 'earn'])
       expect(svg).not.toContain(banned);

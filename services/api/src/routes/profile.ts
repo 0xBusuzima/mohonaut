@@ -16,7 +16,7 @@ import {
 } from '../data.js';
 import { ACHIEVEMENTS, earnedAchievements, fleetEfficiency } from '../game/achievements.js';
 import { renderCardPng } from '../game/card.js';
-import { formatDepth, millimetres } from '../game/depth.js';
+import { formatDepth, millimetres } from '@mohonaut/sdk';
 import { completedSets } from '../game/survey.js';
 import { AddressSchema, DepthSchema, errors, json } from './common.js';
 

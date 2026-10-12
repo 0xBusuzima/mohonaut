@@ -4,7 +4,7 @@ import { addFlows, revenueCoverageRatio, sinkRatio, ZERO_FLOWS } from '@mohonaut
 import type { Flows } from '@mohonaut/sdk';
 import type { AppEnv } from '../context.js';
 import { contributionRanking, crewRanking, economyDays, worldEmitted } from '../data.js';
-import { KOLA_LINE_M, MOHO_LINE_M, formatDepth, millimetres, stratumAt } from '../game/depth.js';
+import { KOLA_LINE_M, MOHO_LINE_M, formatDepth, millimetres, stratumAt } from '@mohonaut/sdk';
 import { AddressSchema, AmountSchema, DepthSchema, json } from './common.js';
 
 const depth = (mm: bigint) => ({ mm: mm.toString(), text: formatDepth(mm) });

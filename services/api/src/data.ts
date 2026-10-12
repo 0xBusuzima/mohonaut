@@ -5,7 +5,7 @@ import { and, asc, count, desc, eq, gte, inArray, isNotNull, lte, sql } from 'dr
 import { getAddress } from 'viem';
 import type { Address } from 'viem';
 import { crewMembers, crews, surveyFinds, users } from './db/schema.js';
-import { KOLA_LINE_M } from './game/depth.js';
+import { KOLA_LINE_M } from '@mohonaut/sdk';
 
 const { accounts, events, hours, machineTypes, rigs } = schema;
 const WEI_PER_METRE = 1000n * 10n ** 18n;
