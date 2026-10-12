@@ -13,6 +13,7 @@ import { PixelWorld } from '../../game/pixel/PixelWorld';
 import type { Hit } from '../../game/pixel/world';
 import { describeHit, scenePads } from '../../game/play';
 import { useGameAction } from '../../game/actions';
+import { perHourEstimate } from '../../game/derive';
 import type { Action } from '../../game/actions';
 import { useGameState } from '../../game/state';
 import type { GameState } from '../../game/state';
@@ -57,13 +58,21 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
   // The tank gauge in whole percent, so the scene redraws only when it visibly moves.
   const fill = capacity === 0n ? 0 : Number((tank * 100n) / capacity) / 100;
   const running = tank > 0n;
+  // Unrefined $MOHN per hour per DP (3 significant figures), for the floats over drilling rigs.
+  const perHour =
+    state === null || p === null || p.dp === 0n
+      ? 0
+      : Number(perHourEstimate(p.dp, state.network.activeDp, state.network.hourEmission)) / 1e18;
+  const yieldPerDp =
+    p === null || p.dp === 0n ? 0 : Number((perHour / Number(p.dp)).toPrecision(3));
   const model = useMemo(
     () => ({
       pads: state === null ? [] : scenePads(level, state.rigs, running ? 1n : 0n),
       tankFill: fill,
+      yieldPerDp,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rigsKey stands for state.rigs
-    [level, running, rigsKey, fill],
+    [level, running, rigsKey, fill, yieldPerDp],
   );
   const [panel, setPanel] = useState<Panel | null>(null);
   const [named, setNamed] = useState(false);

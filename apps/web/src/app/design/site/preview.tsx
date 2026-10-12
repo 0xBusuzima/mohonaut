@@ -65,7 +65,8 @@ const SAMPLE: GameState = {
 const NO_ACTION = { busy: null, run: () => Promise.resolve(false) };
 
 export function SitePreview() {
-  const model = useMemo(() => ({ pads: PADS, tankFill: 0.7 }), []);
+  // 367 MOHN/h over 980 DP, as the sample HUD says.
+  const model = useMemo(() => ({ pads: PADS, tankFill: 0.7, yieldPerDp: 0.375 }), []);
   const [panel, setPanel] = useState<Panel | null>(null);
   return (
     <>

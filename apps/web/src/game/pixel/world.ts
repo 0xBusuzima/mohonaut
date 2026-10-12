@@ -6,9 +6,11 @@
  * with the lamps cut out of it, and rain. Pure drawing on a low-resolution canvas; gives back the
  * clickable areas.
  */
+import { GEN1_RIGS } from '../../lib/catalog';
 import type { ScenePad } from '../play';
 import { diamond, hash, line, px } from './draw';
 import type { Ctx } from './draw';
+import { drawText, textWidth } from './font';
 import { cached, night } from './light';
 import type { Light } from './light';
 import { P } from './palette';
@@ -58,7 +60,15 @@ export interface WorldModel {
   motion: boolean;
   /** Camera offset in art pixels (dragging the site around on small screens). */
   pan: { x: number; y: number };
+  /**
+   * The player's unrefined $MOHN per hour per DP right now (an estimate: it falls as others
+   * join). Running rigs show what they cored every few seconds; 0 or absent shows nothing.
+   */
+  yieldPerDp?: number;
 }
+
+/** Seconds between a rig's "+amount" floats. */
+const FLOAT_EVERY = 6;
 
 const TW = 32; // tile width (2:1 diamonds)
 const GW = 14; // site size in tiles
@@ -318,6 +328,26 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
     });
   }
   night(c, W, H, horizon, lights);
+  // What each drilling rig cored since its last float, rising from its crown and fading out.
+  const perDp = m.yieldPerDp ?? 0;
+  if (m.motion && perDp > 0) {
+    slots.forEach(([gx, gy], i) => {
+      const pad = m.pads[i];
+      if (pad?.typeId === null || pad?.typeId === undefined || !pad.running) return;
+      const phase = ((t + i * 0.83) % FLOAT_EVERY) / FLOAT_EVERY;
+      if (phase > 0.4) return;
+      const dp = GEN1_RIGS[pad.typeId]?.dp ?? 0;
+      const amount = (perDp * dp * FLOAT_EVERY) / 3600;
+      if (amount <= 0) return;
+      const text = `+${amount.toFixed(amount < 0.1 ? 3 : 2)}`;
+      const p = iso(gx, gy);
+      const top = rigTop(pad.typeId, p.x, p.y + TW / 2);
+      const k = phase / 0.4;
+      c.globalAlpha = k < 0.7 ? 1 : (1 - k) / 0.3;
+      drawText(c, top.x - textWidth(text) / 2, top.y - 10 - k * 14, text, P.cyan, P.night);
+      c.globalAlpha = 1;
+    });
+  }
   if (m.motion) rain(c, W, H, t);
   return hits;
 }

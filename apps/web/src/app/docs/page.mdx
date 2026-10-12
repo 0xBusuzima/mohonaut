@@ -1,6 +1,7 @@
 export const metadata = {
   title: 'Player guide',
-  description: 'How Mohonaut works: drill sites, rigs, diesel, the World Bore, the Refinery, Crews and the Survey.',
+  description:
+    'How Mohonaut works: drill sites, rigs, diesel, the World Bore, the Refinery, Crews and the Survey.',
 };
 
 # Player guide
@@ -15,12 +16,12 @@ Every site starts at level 1 with a free **Pilot Rig** (10 DP, 0.25 ℓ/h). A si
 (one rig each) and a **fuel line** that limits how much diesel its rigs can burn per hour.
 
 | Site level | Pads | Fuel line (ℓ/h) |
-| --- | --- | --- |
-| 1 | 4 | 6.0 |
-| 5 | 8 | 13.3 |
-| 10 | 13 | 35.9 |
-| 15 | 18 | 97.1 |
-| 20 | 23 | 262 |
+| ---------- | ---- | --------------- |
+| 1          | 4    | 6.0             |
+| 5          | 8    | 13.3            |
+| 10         | 13   | 35.9            |
+| 15         | 18   | 97.1            |
+| 20         | 23   | 262             |
 
 Pads grow as `3 + level`; the fuel line as `6 × 1.22^(level − 1)` ℓ/h. Levelling up costs $MOHN.
 

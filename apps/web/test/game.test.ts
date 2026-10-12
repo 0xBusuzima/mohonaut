@@ -12,7 +12,8 @@ import {
   withHeadroom,
 } from '../src/game/derive';
 import { explain } from '../src/game/errors';
-import { parseAmount, referrerFromUrl, rigName, scenePads } from '../src/game/play';
+import { describeHit, parseAmount, referrerFromUrl, rigName, scenePads } from '../src/game/play';
+import { textWidth } from '../src/game/pixel/font';
 import { siteRows } from '../src/game/pixel/world';
 import { formatEthInput } from '../src/lib/format';
 import { rigShape, rigSvg } from '../src/game/rigs';
@@ -166,5 +167,27 @@ describe('play screen helpers', () => {
     expect(referrerFromUrl()).toBe(ref);
     window.history.replaceState(null, '', '/play/?ref=nope');
     expect(referrerFromUrl()).toBe(zeroAddress);
+  });
+});
+
+describe('pixel world helpers', () => {
+  it('names what the pointer is over', () => {
+    const pads = [
+      { typeId: 4, running: true },
+      { typeId: 1, running: false },
+      { typeId: null, running: false },
+    ];
+    expect(describeHit('tank', pads)).toBe('Diesel tank');
+    expect(describeHit('market', pads)).toBe('Equipment market');
+    expect(describeHit('pad:0', pads)).toBe('Turbodrill: drilling');
+    expect(describeHit('pad:1', pads)).toBe('Rotary Rig: stopped');
+    expect(describeHit('pad:2', pads)).toBe('Empty pad: buy a rig');
+    expect(describeHit('pad:3', pads)).toBe('Locked pad: upgrade the site');
+  });
+
+  it('measures text in the 3x5 font, one pixel between glyphs', () => {
+    expect(textWidth('8')).toBe(3);
+    expect(textWidth('+0.08')).toBe(17);
+    expect(textWidth('')).toBe(0);
   });
 });
