@@ -404,9 +404,9 @@ Simülasyon `/sim` altında, bu dokümandaki formüllerle **günlük adımlı, a
 | Metrik | Tanım | Hedef | v0.1 sonucu | v0.2 sonucu | v1.1 sonucu |
 |---|---|---|---|---|---|
 | Fiyat dayanıklılığı | P(24. ay ort. fiyat > %30 × **2. ay** ort.)¹ | ≥ 0.5 (baz) | GEÇTİ | GEÇTİ | **GEÇTİ (1.00)** |
-| Kohort geri dönüşü | Haftalık kohortun ilk 14 günlük capex'inin, o DP'nin net (yakıt sonrası) MOHN üretimiyle geri ödendiği gün; kohort medyanı | ≥ %70 kohortta < 365 gün (baz) | **KALDI (0.15)** | **GEÇTİ (0.95; medyan 96 gün)** | **GEÇTİ (1.00; medyan 52 gün)** |
-| Sink oranı SR | 12. ay, 28 günlük ortalama | ≥ 0.6 (baz), ≥ 0.3 (ayı) | GEÇTİ | **GEÇTİ (0.72 / 0.65; derin ayı 0.81)** | **GEÇTİ (0.69 / 0.80; derin ayı 0.81)** |
-| Yoğunlaşma | Cüzdan bazında, aktif DP, 3–36. ayların aylık en yüksek Gini'si | < 0.8 (7 senaryo) | 5/7 | **7/7 (en yüksek 0.775, derin ayı)** | **7/7 (en yüksek 0.793, derin ayı)** |
+| Kohort geri dönüşü | Haftalık kohortun ilk 14 günlük capex'inin, o DP'nin net (yakıt sonrası) MOHN üretimiyle geri ödendiği gün; kohort medyanı | ≥ %70 kohortta < 365 gün (baz) | **KALDI (0.15)** | **GEÇTİ (0.95; medyan 96 gün)** | **GEÇTİ (1.00; medyan 51 gün)** |
+| Sink oranı SR | 12. ay, 28 günlük ortalama | ≥ 0.6 (baz), ≥ 0.3 (ayı) | GEÇTİ | **GEÇTİ (0.72 / 0.65; derin ayı 0.81)** | **GEÇTİ (0.71 / 0.82; derin ayı 0.81)** |
+| Yoğunlaşma | Cüzdan bazında, aktif DP, 3–36. ayların aylık en yüksek Gini'si | < 0.8 (7 senaryo) | 5/7 | **7/7 (en yüksek 0.775, derin ayı)** | **7/7 (en yüksek 0.788, derin ayı)** |
 | Sybil-nötrlük | Aynı gün, aynı makine tipiyle ℓ başına emisyon oranı (sybil / normal) | ≤ 1 + referans oranı | GEÇTİ (1.006) | GEÇTİ (1.026) | GEÇTİ (1.03) |
 | Ops runway | En kötü %5 hariç | > 12 ay | GEÇTİ | GEÇTİ | GEÇTİ |
 | RCR | Sağlık metriği (§10), kriter değil | Trend izlenir | 0.36 | 0.15 | 0.18 |
@@ -415,7 +415,7 @@ Simülasyon `/sim` altında, bu dokümandaki formüllerle **günlük adımlı, a
 
 **Önemli uyarı:** Simülasyondaki mutlak fiyat ve gelir seviyeleri, gerçek veri olmadan kurulmuş bir talep kalibrasyonuna dayanır. Önerilerin **yönü** talep yarıya indirildiğinde ve ikiye katlandığında da korunuyor; **seviyeleri** korunmuyor. Hiçbir simülasyon sonucu dışarıya fiyat veya getiri beklentisi olarak sunulmaz.
 
-**v1.1 doğrulaması (2026-10-12):** keeper tavanları kovadan (buyback 1/20, POL 1/7, günde 8 parça), 500K mint tavanı ve 96 saat timelock ile 2.850 koşu; bütün kriterler geçti. Derin ayıda Gini 0.793, sınıra yakın; 1/7 buyback ile 0.82'ydi ve bu yüzden 1/20 seçildi (§10.1).
+**v1.1 doğrulaması (2026-10-12, son koşu 2026-10-13):** keeper tavanları kovadan (buyback 1/20, POL 1/7, günde 8 parça), 500K mint tavanı ve 96 saat timelock ile 2.850 koşu; bütün kriterler geçti. Son koşu AI-8 düzeltmesini içerir: havuzun LP ücretleri artık modelde birikip günlük toplanıyor (ETH tarafı buyback kovasına, MOHN tarafı yakıma), zap formülü ücreti iki kez sayıyor. Derin ayıda Gini 0.788, sınıra yakın; 1/7 buyback ile 0.82'ydi ve bu yüzden 1/20 seçildi (§10.1). §12 kuralı kapalıyken de 7/7 (en yüksek churn 0.795). Arz invariant'ının en büyük sapması 8.6e-7.
 
 **v1.0 doğrulaması tamamlandı:** Genesis tank sınırı, §12 müdahale kuralı ve mint tavanları modele eklendi; 7 senaryo × 200 tohum, talep ×0.5 / ×2 sağlamlık testi ve 96 saatlik timelock kontrolü geçti. Arz invariant'ı her koşunun her gününde tuttu. En zayıf nokta: derin ayıda Gini 0.775 (sınıra yakın), 36. ayda Nakamoto ≈ 8 → canlıda izlenir.
 
