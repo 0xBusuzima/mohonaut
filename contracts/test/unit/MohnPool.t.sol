@@ -33,8 +33,10 @@ contract MohnPoolTest is Test {
     }
 
     function test_maximalNearTheUpperBound() public view {
-        // Price near the top of the range: the ETH side binds.
-        _assertMaximal(sqrtB / 2, 1e18, type(uint128).max);
+        // Price near the top of the range with ample MOHN: the ETH side binds (l0 < l1).
+        uint128 l = MohnPool.liquidityFor(sqrtB / 2, 1e18, 1e60);
+        assertLt(l, MohnPool.liquidityFor(sqrtB / 2, 1e19, 1e60), "more ETH, more liquidity");
+        _assertMaximal(sqrtB / 2, 1e18, 1e60);
     }
 
     function test_maximalNearTheLowerBound() public view {
