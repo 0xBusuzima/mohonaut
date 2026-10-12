@@ -15,6 +15,7 @@ export {
 export type { Flows } from './metrics.js';
 export { KOLA_LINE_M, MOHO_LINE_M, STRATA, formatDepth, millimetres, stratumAt } from './depth.js';
 export type { Stratum } from './depth.js';
+export { MAX_SITE_LEVEL, fuelLineWad, sitePads } from './site.js';
 export { PARAM_NAMES } from './params.js';
 export type { ParamName } from './params.js';
 export {

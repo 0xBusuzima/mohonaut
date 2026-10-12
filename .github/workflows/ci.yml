@@ -215,6 +215,35 @@ jobs:
             apps/web/playwright-report
             apps/web/e2e/__screenshots__
 
+  web-play-e2e:
+    # The game client against a local anvil deployment (apps/web/e2e/play): the real deploy
+    # script, a build pointed at it and the wallet mock connector buying diesel and running rigs.
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.64.0-noble
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx turbo run build --filter=@mohonaut/sdk
+      - name: Playwright (local chain)
+        working-directory: apps/web
+        env:
+          HOME: /root
+        run: npm run e2e:play
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: web-play-e2e
+          path: apps/web/playwright-report
+
   security:
     runs-on: ubuntu-latest
     steps:

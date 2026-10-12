@@ -14,6 +14,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
+  "overrides": {
+    "ws": "^8.21.0"
+  },
   "workspaces": [
     "packages/*",
     "apps/*",
