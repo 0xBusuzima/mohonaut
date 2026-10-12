@@ -95,9 +95,17 @@ export function SiteScene({ pads, label }: { pads: ScenePad[]; label: string }) 
           steam.push({ g: s, phase: i * 0.7 });
         }
       });
+      // Fit the whole site into the canvas (rigs, steam and all pads), up to 2.2x.
+      const bounds = world.getLocalBounds();
       const centre = () => {
-        world.x = app.screen.width / 2;
-        world.y = app.screen.height / 2 - Math.ceil(pads.length / 4) * 12;
+        const scale = Math.min(
+          2.2,
+          (app.screen.width * 0.9) / bounds.width,
+          (app.screen.height * 0.85) / (bounds.height + 20),
+        );
+        world.scale.set(scale);
+        world.x = app.screen.width / 2 - (bounds.x + bounds.width / 2) * scale;
+        world.y = app.screen.height / 2 - (bounds.y + bounds.height / 2 - 6) * scale;
       };
       centre();
       app.renderer.on('resize', () => {

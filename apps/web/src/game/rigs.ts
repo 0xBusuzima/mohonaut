@@ -97,7 +97,7 @@ function rigParts(typeId: number, running: boolean): Primitive[] {
         { kind: 'rect', x: 12, y: -5, w: 12, h: 3, fill: CONCRETE },
         lamp(10, -51, running),
       ];
-    case 4: // Turbodrill: a tall mast, a V-door ramp and a mud pump beside it.
+    case 4: // Turbodrill: a tall mast, a V-door ramp and a mud tank beside it.
       return [
         skid(44),
         ...mast(11, 4, 58, 3, paint),
