@@ -13,7 +13,57 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    # Runs the heavy jobs only when their inputs changed: Actions minutes are limited while the
+    # repository is private. A change to this workflow runs everything.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      contracts: ${{ steps.filter.outputs.contracts }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+      monitoring: ${{ steps.filter.outputs.monitoring }}
+      infra: ${{ steps.filter.outputs.infra }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            workflow: &workflow
+              - ".github/workflows/ci.yml"
+            contracts:
+              - *workflow
+              - "contracts/**"
+              - "packages/sdk/src/abi/**"
+              - "tools/gen_abis.mjs"
+              - "tools/gen_pool_manager_code.py"
+              - "tools/check_coverage.py"
+            e2e:
+              - *workflow
+              - "apps/**"
+              - "packages/**"
+              - "services/**"
+              - "contracts/src/**"
+              - "contracts/script/**"
+              - "contracts/test/fixtures/**"
+              - "deployments/**"
+              - "package-lock.json"
+            monitoring:
+              - *workflow
+              - "infra/monitoring/**"
+              - "tools/gen_dashboards.py"
+            infra:
+              - *workflow
+              - "infra/**"
+              - "services/**"
+              - "packages/**"
+              - "package-lock.json"
+
   contracts:
+    needs: changes
+    if: needs.changes.outputs.contracts == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -46,6 +96,8 @@ jobs:
 
   formal:
     # Halmos symbolic proofs (functions named prove_*); needs Linux (does not install on Windows).
+    needs: changes
+    if: needs.changes.outputs.contracts == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -65,6 +117,8 @@ jobs:
         run: halmos --function prove_
 
   slither:
+    needs: changes
+    if: needs.changes.outputs.contracts == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -77,6 +131,8 @@ jobs:
           fail-on: medium
 
   aderyn:
+    needs: changes
+    if: needs.changes.outputs.contracts == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -140,6 +196,8 @@ jobs:
   keeper-e2e:
     # Keeper on a local anvil chain with time travel: real deploy script, PoolManager bytecode,
     # indexer and keeper on Postgres, plus the two-keeper lock (services/keeper/test/e2e).
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -171,6 +229,8 @@ jobs:
 
   monitoring:
     # Validates the monitoring stack and unit-tests the alert rules (infra/monitoring).
+    needs: changes
+    if: needs.changes.outputs.monitoring == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -193,6 +253,8 @@ jobs:
     # Playwright in its official Linux image: behaviour, axe accessibility scan and visual
     # snapshots of the static export. New screenshots are written (--update-snapshots=missing)
     # and uploaded; commit them from the artifact to make them baselines.
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.64.0-noble
     steps:
@@ -230,6 +292,8 @@ jobs:
     # The game client against a local anvil deployment (apps/web/e2e/play): the real deploy
     # script, the indexer and the API, a build pointed at them and the wallet mock connector
     # (diesel, rigs, SIWE, crew, Survey, profile, alerts).
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.64.0-noble
     steps:
@@ -260,6 +324,8 @@ jobs:
     # Back-end infrastructure (infra/, docs/06 6.1): service images build and the API image
     # serves; compose, cloud-init and scripts validate; an encrypted backup of a real schema
     # restores with matching row counts (Kapı 6, restore half).
+    needs: changes
+    if: needs.changes.outputs.infra == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
