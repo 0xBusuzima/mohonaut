@@ -146,3 +146,66 @@ export function useAmbience(on: boolean): void {
     return startAmbience();
   }, [on]);
 }
+
+/** One-shot sounds for what the player just did. */
+export type Cue = 'buy' | 'fuel' | 'refine' | 'upgrade' | 'switch' | 'scrap' | 'error';
+
+let cueCtx: AudioContext | null = null;
+
+/** Plays a short synthesised cue when sound is on (no recordings). */
+export function cue(kind: Cue): void {
+  if (!(override ?? stored())) return;
+  const Ctor =
+    window.AudioContext ??
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (Ctor === undefined) return;
+  cueCtx ??= new Ctor();
+  const ctx = cueCtx;
+  void ctx.resume();
+  const t = ctx.currentTime;
+  const tone = (freq: number, at: number, dur: number, type: OscillatorType, gain: number) => {
+    const o = ctx.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t + at);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, t + at);
+    g.gain.linearRampToValueAtTime(gain, t + at + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + at + dur);
+    o.connect(g).connect(ctx.destination);
+    o.start(t + at);
+    o.stop(t + at + dur + 0.05);
+    return o;
+  };
+  const thud = (at: number, freq: number, gain: number) => {
+    const src = ctx.createBufferSource();
+    src.buffer = noise(ctx);
+    const band = ctx.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = freq;
+    band.Q.value = 4;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(gain, t + at);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + at + 0.25);
+    src.connect(band).connect(g).connect(ctx.destination);
+    src.start(t + at, 0, 0.3);
+  };
+  if (kind === 'buy') {
+    thud(0, 380, 0.35);
+    tone(110, 0, 0.3, 'square', 0.04);
+  } else if (kind === 'fuel') {
+    [220, 190, 160].forEach((f, i) => tone(f, i * 0.12, 0.1, 'sine', 0.12));
+  } else if (kind === 'refine') {
+    tone(880, 0, 0.5, 'sine', 0.08);
+    tone(1320, 0.04, 0.4, 'sine', 0.05);
+  } else if (kind === 'upgrade') {
+    tone(523, 0, 0.18, 'square', 0.04);
+    tone(784, 0.16, 0.35, 'square', 0.04);
+  } else if (kind === 'switch') {
+    thud(0, 1800, 0.12);
+  } else if (kind === 'scrap') {
+    thud(0, 600, 0.3);
+    thud(0.12, 300, 0.25);
+  } else {
+    tone(90, 0, 0.35, 'sawtooth', 0.05);
+  }
+}

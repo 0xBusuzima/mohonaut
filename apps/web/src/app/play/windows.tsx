@@ -192,6 +192,7 @@ export function SiteWindow({ state, action }: { state: GameState; action: Action
       />
       {price !== null ? (
         <>
+          <PadMap used={p.padsUsed} now={sitePads(p.level)} next={sitePads(p.level + 1)} />
           <p className="text-center text-lg">
             Level {p.level + 1}: {sitePads(p.level + 1)} pads,{' '}
             {formatLitres(fuelLineWad(p.level + 1), 2)}/h fuel line
@@ -213,6 +214,28 @@ export function SiteWindow({ state, action }: { state: GameState; action: Action
       ) : (
         <p className="text-center text-lg">Your site is at the top level.</p>
       )}
+    </div>
+  );
+}
+
+/** The site's pads as tiles: rigs on them, free ones, and the ones the next level adds. */
+function PadMap({ used, now, next }: { used: number; now: number; next: number }) {
+  return (
+    <div
+      role="img"
+      aria-label={`${used} of ${now} pads in use; the next level adds ${next - now}.`}
+      className="px-inset flex flex-wrap justify-center gap-1.5 p-3"
+    >
+      {Array.from({ length: next }, (_, i) => {
+        let cls = 'border-[3px] border-[#0b0d10] bg-orange';
+        if (i >= used) cls = 'border-[3px] border-steel bg-[#262c33]';
+        if (i >= now) cls = 'border-[3px] border-dashed border-amber bg-transparent text-amber';
+        return (
+          <span key={i} className={`grid h-7 w-7 place-items-center text-sm ${cls}`}>
+            {i >= now ? '+' : ''}
+          </span>
+        );
+      })}
     </div>
   );
 }

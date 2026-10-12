@@ -26,6 +26,7 @@ import { CrewPanel, ProfilePanel, SeasonsPanel, SignedIn, SurveyPanel } from '..
 import { BoreWindow } from './BoreWindow';
 import { Guide } from './Guide';
 import { Hud } from './Hud';
+import { StratumNotice } from './StratumNotice';
 import type { Panel } from './Hud';
 import { PxButton, PxIcon, PxModal, Steps, usePixelGame } from './px';
 import { MarketWindow, RigsWindow } from './RigCards';
@@ -125,6 +126,9 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
       {state !== null && onboarding === null && p !== null && <Hud state={state} open={setPanel} />}
       {state !== null && onboarding === null && panel === null && address !== undefined && (
         <Guide key={address} state={state} address={address} open={setPanel} />
+      )}
+      {state !== null && onboarding === null && panel === null && (
+        <StratumNotice depthMm={millimetres(state.network.emitted)} />
       )}
       {onboarding}
       {state !== null && onboarding === null && panel !== null && address !== undefined && (

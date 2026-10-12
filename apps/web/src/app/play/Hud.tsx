@@ -4,7 +4,7 @@ import { formatDepth, millimetres, stratumAt } from '@mohonaut/sdk';
 import { Counter } from '../../components/Counter';
 import { perHourEstimate, shareOfNetwork } from '../../game/derive';
 import type { GameState } from '../../game/state';
-import { formatLitres, formatMohn, formatUnits18 } from '../../lib/format';
+import { formatDuration, formatLitres, formatMohn, formatUnits18 } from '../../lib/format';
 import { setLowPower, useLowPower } from '../../lib/power';
 import { setSound, useAmbience, useSound } from '../../game/audio';
 import { apiEnabled } from '../../social/api';
@@ -70,6 +70,14 @@ export function Hud({ state, open }: { state: GameState; open: (p: Panel) => voi
         {shareOfNetwork(p.dp, n.activeDp)} of network DP · ≈ {formatMohn(perHour)}/h, falls as
         others join · Stratum {current.numeral}
       </p>
+      {/* Until the market opens: when it does (refining and the pool wait for it). */}
+      {!n.marketOpened && (
+        <p className="pointer-events-auto absolute top-[7.6rem] right-3 px-dark px-2 py-0.5 text-sm text-amber md:top-[6.7rem]">
+          {n.marketOpenTime > state.at
+            ? `Market Open in ${formatDuration(n.marketOpenTime - state.at)}`
+            : 'Market Open: waiting for the opening call'}
+        </p>
+      )}
       {/* Left: boards, crew, the World Bore and the power switch. */}
       <div className="pointer-events-auto absolute top-[7.6rem] left-3 flex flex-col items-start gap-2 md:top-16">
         <PxButton variant="light" className={side} onClick={() => open('board')}>

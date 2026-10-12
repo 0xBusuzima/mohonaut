@@ -4,6 +4,8 @@ import { miningCoreAbi } from '@mohonaut/sdk';
 import { useState } from 'react';
 import { useAccount, usePublicClient, useWriteContract } from 'wagmi';
 import { useToast } from '../components/Toast';
+import { cue } from './audio';
+import type { Cue } from './audio';
 import { explain } from './errors';
 import { GAME, txUrl } from './network';
 
@@ -25,6 +27,17 @@ export interface ActionInput {
   /** Toast title on success, e.g. "Fuel bought". */
   done: string;
 }
+
+/** The sound each call makes when it goes through (only with sound on). */
+const CUES: Record<Fn, Cue> = {
+  buyFuel: 'fuel',
+  buyMachines: 'buy',
+  setActiveRigs: 'switch',
+  scrapMachines: 'scrap',
+  upgradeSite: 'upgrade',
+  refine: 'refine',
+  finalizeRefine: 'refine',
+};
 
 /**
  * Sends one MiningCore call: estimate first (so a revert is explained before the wallet opens),
@@ -64,10 +77,12 @@ export function useGameAction(onDone: () => void) {
         title: done,
         ...(link === null ? {} : { body: `Confirmed: ${link}` }),
       });
+      cue(CUES[fn]);
       onDone();
       return true;
     } catch (err) {
       toast({ tone: 'warning', title: 'Not done', body: explain(err) });
+      cue('error');
       return false;
     } finally {
       setBusy(null);
