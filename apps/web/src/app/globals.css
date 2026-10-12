@@ -231,6 +231,14 @@ html {
   background: #262c33;
 }
 
+/* Rig cards on phones: the portrait at 2x (it is drawn for 3x) so a card fits the screen. */
+@media (max-width: 639px) {
+  .rig-portrait canvas {
+    width: 200px !important;
+    height: 184px !important;
+  }
+}
+
 /* Pixelify Sans draws "fi" as one ligature glyph that reads like an "A": spell it out. */
 .font-pixel,
 .px-btn,

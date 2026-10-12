@@ -27,7 +27,7 @@ function RigCard({
   const eff = efficiency(rig.dp, rig.burn);
   return (
     <li className="px-dark flex flex-col">
-      <div className="relative flex justify-center overflow-hidden border-b-[3px] border-[#0b0d10] bg-[#0d1220]">
+      <div className="rig-portrait relative flex justify-center overflow-hidden border-b-[3px] border-[#0b0d10] bg-[#0d1220]">
         <div className={dim ? 'opacity-50' : undefined}>
           <RigPortrait typeId={rig.id} running={running && !dim} />
         </div>
