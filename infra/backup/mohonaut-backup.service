@@ -1,0 +1,14 @@
+# Daily encrypted Postgres backup (infra/backup/backup.sh). Install: see infra/RUNBOOK.md.
+[Unit]
+Description=Mohonaut encrypted Postgres backup
+Wants=network-online.target
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+# pg_dump runs inside the Postgres container (same version as the server), over its socket.
+Environment=PG_DUMP="docker exec -i mohonaut-postgres-1 pg_dump"
+Environment=PGURL=postgresql:///mohonaut?user=mohonaut
+EnvironmentFile=-/etc/mohonaut/backup.env
+ExecStart=/opt/mohonaut/infra/backup/backup.sh
+Nice=10

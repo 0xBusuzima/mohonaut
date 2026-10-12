@@ -254,6 +254,74 @@ jobs:
           name: web-play-e2e
           path: apps/web/playwright-report
 
+  infra:
+    # Back-end infrastructure (infra/, docs/06 6.1): service images build and the API image
+    # serves; compose, cloud-init and scripts validate; an encrypted backup of a real schema
+    # restores with matching row counts (Kapı 6, restore half).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build service images
+        run: |
+          for s in api indexer keeper; do
+            docker buildx build --load -f infra/docker/Dockerfile --build-arg SERVICE=$s \
+              --cache-from type=gha,scope=$s --cache-to type=gha,mode=max,scope=$s \
+              -t mohonaut-$s:ci .
+          done
+      - name: Images start
+        run: |
+          docker network create ci
+          docker run -d --name pg --network ci -e POSTGRES_PASSWORD=ci -e POSTGRES_DB=mohonaut \
+            -p 5432:5432 postgres:17-bookworm
+          for i in $(seq 1 30); do docker exec pg pg_isready -U postgres && break; sleep 2; done
+          docker run -d --name api --network ci -p 8787:8787 --read-only --tmpfs /tmp \
+            -v "$PWD/deployments:/deployments:ro" \
+            -e NODE_ENV=development -e HOST=0.0.0.0 -e PORT=8787 \
+            -e DATABASE_URL=postgres://postgres:ci@pg:5432/mohonaut \
+            -e DEPLOYMENT_FILE=/deployments/46630.json -e WEB_ORIGIN=https://mohonaut.com \
+            -e SURVEY_SECRET=$(openssl rand -hex 32) mohonaut-api:ci
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8787/healthz && break; sleep 2; done
+          curl -fsS http://127.0.0.1:8787/world | jq -e '.depth.mm == "0"'
+          curl -fsS http://127.0.0.1:8787/openapi.json | jq -e '.info.title == "Mohonaut API"'
+          for s in indexer keeper; do
+            docker run --rm mohonaut-$s:ci node --check dist/main.js
+          done
+          docker logs api | tail -5
+      - name: Compose, image tags, cloud-init and shell scripts
+        run: |
+          mkdir -p /tmp/secrets
+          ENV_FILE=infra/stack/secrets.example.env SECRETS_DIR=/tmp/secrets \
+            docker compose -f infra/stack/compose.yml config -q
+          docker pull -q cloudflare/cloudflared:2025.4.0
+          docker pull -q valkey/valkey:8-bookworm
+          sudo apt-get install -y -qq cloud-init age >/dev/null
+          cloud-init schema --config-file infra/server/cloud-init.yaml
+          shellcheck infra/stack/deploy.sh infra/backup/*.sh
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx turbo run build --filter=@mohonaut/api...
+      - name: Backup and restore test
+        run: |
+          node infra/backup/ci-seed.mjs postgres://postgres:ci@127.0.0.1:5432/mohonaut
+          age-keygen -o /tmp/age.key 2>/dev/null
+          age-keygen -y /tmp/age.key > /tmp/recipients.txt
+          AGE_RECIPIENTS_FILE=/tmp/recipients.txt BACKUP_DIR=/tmp/backups \
+            PG_DUMP="docker exec -i pg pg_dump" PGURL="postgresql:///mohonaut?user=postgres" \
+            infra/backup/backup.sh
+          backup=$(ls /tmp/backups/*.dump.age | head -1)
+          if grep -q "audit_log" "$backup"; then echo "backup is not encrypted"; exit 1; fi
+          PG_RESTORE="docker exec -i pg pg_restore" PSQL="docker exec -i pg psql" \
+            infra/backup/restore-test.sh "$backup" /tmp/age.key \
+            "postgresql:///scratch?user=postgres" "postgresql:///mohonaut?user=postgres"
+          # The append-only trigger came back with the data.
+          if docker exec pg psql -U postgres -d scratch -c "DELETE FROM audit_log" 2>/dev/null; then
+            echo "audit_log accepted a DELETE after restore"; exit 1
+          fi
+
   security:
     runs-on: ubuntu-latest
     steps:

@@ -1,0 +1,136 @@
+# The back end on one server (docs/03 §6, docs/06 6.1): Postgres, Valkey (Redis protocol),
+# indexer, API, keeper, and a Cloudflare Tunnel as the only way in. No port is open to the
+# internet; metrics listen on 127.0.0.1 for the monitoring stack (infra/monitoring).
+#   ./deploy.sh    (decrypts the secrets, builds, starts and checks; see infra/RUNBOOK.md)
+# Values come from the decrypted env file (secrets.example.env lists them) and from files in
+# ${SECRETS_DIR}. The site itself is static and lives on Cloudflare Pages.
+name: mohonaut
+
+x-service: &service
+  restart: unless-stopped
+  read_only: true
+  tmpfs: [/tmp]
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  env_file:
+    - ${ENV_FILE:-/run/mohonaut/stack.env}
+  volumes:
+    - ${DEPLOYMENT_DIR:-../../deployments}:/deployments:ro
+  logging:
+    driver: json-file
+    options: { max-size: 20m, max-file: '5' }
+
+services:
+  postgres:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mohonaut
+      POSTGRES_USER: mohonaut
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ${SECRETS_DIR:-/etc/mohonaut/secrets}/postgres_password:/run/secrets/postgres_password:ro
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U mohonaut -d mohonaut]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    shm_size: 256m
+
+  valkey:
+    image: valkey/valkey:8-bookworm
+    restart: unless-stopped
+    command:
+      [
+        valkey-server,
+        --save,
+        '',
+        --appendonly,
+        'no',
+        --maxmemory,
+        128mb,
+        --maxmemory-policy,
+        allkeys-lru,
+      ]
+    healthcheck:
+      test: [CMD, valkey-cli, ping]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  indexer:
+    <<: *service
+    build: { context: ../.., dockerfile: infra/docker/Dockerfile, args: { SERVICE: indexer } }
+    image: mohonaut-indexer:local
+    environment:
+      METRICS_HOST: 0.0.0.0
+      METRICS_PORT: '9464'
+    ports: ['127.0.0.1:9464:9464']
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  api:
+    <<: *service
+    build: { context: ../.., dockerfile: infra/docker/Dockerfile, args: { SERVICE: api } }
+    image: mohonaut-api:local
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: '8787'
+      METRICS_HOST: 0.0.0.0
+      METRICS_PORT: '9466'
+      TRUST_CLOUDFLARE: 'true'
+      REDIS_URL: redis://valkey:6379
+    ports: ['127.0.0.1:8787:8787', '127.0.0.1:9466:9466']
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:8787/healthz').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      postgres: { condition: service_healthy }
+      valkey: { condition: service_healthy }
+      indexer: { condition: service_started }
+
+  keeper:
+    <<: *service
+    build: { context: ../.., dockerfile: infra/docker/Dockerfile, args: { SERVICE: keeper } }
+    image: mohonaut-keeper:local
+    environment:
+      METRICS_HOST: 0.0.0.0
+      METRICS_PORT: '9465'
+      RUN_INDEXER: 'false'
+      KEEPER_KEYSTORE: /run/secrets/keeper_keystore
+      KEEPER_PASSWORD_FILE: /run/secrets/keeper_password
+    ports: ['127.0.0.1:9465:9465']
+    volumes:
+      - ${DEPLOYMENT_DIR:-../../deployments}:/deployments:ro
+      - ${SECRETS_DIR:-/etc/mohonaut/secrets}/keeper_keystore:/run/secrets/keeper_keystore:ro
+      - ${SECRETS_DIR:-/etc/mohonaut/secrets}/keeper_password:/run/secrets/keeper_password:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+      indexer: { condition: service_started }
+
+  # api.mohonaut.com reaches the API only through this outbound tunnel (Cloudflare Zero Trust,
+  # free). The tunnel's routes are set in the Cloudflare dashboard (RUNBOOK.md).
+  tunnel:
+    image: cloudflare/cloudflared:2025.4.0
+    restart: unless-stopped
+    command: [tunnel, --no-autoupdate, run]
+    # TUNNEL_TOKEN comes from the decrypted env file.
+    env_file:
+      - ${ENV_FILE:-/run/mohonaut/stack.env}
+    read_only: true
+    security_opt: [no-new-privileges:true]
+    depends_on:
+      api: { condition: service_healthy }
+
+volumes:
+  postgres-data:
