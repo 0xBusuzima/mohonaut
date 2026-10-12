@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import type { Action } from '../../game/actions';
 import { efficiency, maxRigsToBuy, withHeadroom } from '../../game/derive';
 import { useRigQuote } from '../../game/quote';
+import type { QuoteHook } from '../../game/quote';
 import { rigName } from '../../game/play';
 import { RigPortrait } from '../../game/pixel/RigPortrait';
 import type { GameState, RigType } from '../../game/state';
@@ -56,7 +57,16 @@ function RigCard({
 }
 
 /** The equipment market: every rig type as a card, cheapest first. */
-export function MarketWindow({ state, action }: { state: GameState; action: Action }) {
+export function MarketWindow({
+  state,
+  action,
+  useQuote = useRigQuote,
+}: {
+  state: GameState;
+  action: Action;
+  /** Prices more than one rig (the chain's batch quote; the training site computes its own). */
+  useQuote?: QuoteHook;
+}) {
   const p = state.player;
   if (p === null) return null;
   const freePads = sitePads(p.level) - p.padsUsed;
@@ -103,7 +113,13 @@ export function MarketWindow({ state, action }: { state: GameState; action: Acti
                     </PxButton>
                   </>
                 ) : (
-                  <BuyRig rig={r} max={max} freePads={freePads} action={action} />
+                  <BuyRig
+                    rig={r}
+                    max={max}
+                    freePads={freePads}
+                    action={action}
+                    useQuote={useQuote}
+                  />
                 )}
               </RigCard>
             );
@@ -119,15 +135,17 @@ function BuyRig({
   max,
   freePads,
   action,
+  useQuote,
 }: {
   rig: RigType;
   max: number;
   freePads: number;
   action: Action;
+  useQuote: QuoteHook;
 }) {
   const [wanted, setWanted] = useState(1);
   const qty = Math.max(1, Math.min(wanted, max));
-  const { total, exact } = useRigQuote(rig.id, qty, rig.price);
+  const { total, exact } = useQuote(rig.id, qty, rig.price);
   const name = rigName(rig.id);
   let blocked: string | null = null;
   if (freePads <= 0) blocked = 'No free pad';

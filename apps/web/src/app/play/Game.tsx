@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Address } from 'viem';
-import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
+import { useAccount, useBalance, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
 import { useE2EConnect } from '../../game/e2e';
 import { gameChain } from '../../game/network';
 import { ForemanMo } from '../../game/pixel/ForemanMo';
@@ -50,6 +50,7 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
   const { address, chainId, isConnected } = useAccount();
   const lowPower = useLowPower();
   const { state, refetch, offline } = useGameState(address, lowPower);
+  const ethBalance = useBalance({ address, query: { refetchInterval: 12_000 } }).data?.value;
   const action = useGameAction(refetch);
   useE2EConnect();
   usePixelGame();
@@ -63,6 +64,9 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
   // The tank gauge in whole percent, so the scene redraws only when it visibly moves.
   const fill = capacity === 0n ? 0 : Number((tank * 100n) / capacity) / 100;
   const running = tank > 0n;
+  const burn = p?.burn ?? 0n;
+  // Less than half a day of diesel: the tank's lamp blinks red.
+  const tankLow = p !== null && p.registered && burn > 0n && tank < burn * 12n;
   // Unrefined $MOHN per hour per DP (3 significant figures), for the floats over drilling rigs.
   const perHour =
     state === null || p === null || p.dp === 0n
@@ -74,10 +78,11 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
     () => ({
       pads: state === null ? [] : scenePads(level, state.rigs, running ? 1n : 0n),
       tankFill: fill,
+      tankLow,
       yieldPerDp,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rigsKey stands for state.rigs
-    [level, running, rigsKey, fill, yieldPerDp],
+    [level, running, rigsKey, fill, yieldPerDp, tankLow],
   );
   const [panel, setPanel] = useState<Panel | null>(null);
   const [named, setNamed] = useState(false);
@@ -124,7 +129,7 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
     onboarding = (
       <PxModal title="Open your site">
         <Steps steps={[...ONBOARDING_STEPS, 'Diesel']} at={3} />
-        <FuelWindow state={state} action={action} first />
+        <FuelWindow state={state} action={action} first ethBalance={ethBalance} />
       </PxModal>
     );
   }
@@ -155,6 +160,7 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
           address={address}
           onClose={() => setPanel(null)}
           go={setPanel}
+          ethBalance={ethBalance}
         />
       )}
       {state !== null && state.network.pausedUntil > state.at && (
@@ -321,6 +327,7 @@ function PanelWindow({
   address,
   onClose,
   go,
+  ethBalance,
 }: {
   panel: Panel;
   state: GameState;
@@ -328,6 +335,7 @@ function PanelWindow({
   address: Address;
   onClose: () => void;
   go: (p: Panel) => void;
+  ethBalance: bigint | undefined;
 }) {
   const titles: Record<Panel, string> = {
     fuel: 'Diesel tank',
@@ -345,11 +353,13 @@ function PanelWindow({
   const n = state.network;
   const depth = millimetres(n.emitted);
   let body: ReactNode;
-  if (panel === 'fuel') body = <FuelWindow state={state} action={action} first={false} />;
+  if (panel === 'fuel')
+    body = <FuelWindow state={state} action={action} first={false} ethBalance={ethBalance} />;
   else if (panel === 'market') body = <MarketWindow state={state} action={action} />;
   else if (panel === 'rigs')
     body = <RigsWindow state={state} action={action} openMarket={() => go('market')} />;
-  else if (panel === 'refinery') body = <RefineryWindow state={state} action={action} />;
+  else if (panel === 'refinery')
+    body = <RefineryWindow state={state} action={action} address={address} />;
   else if (panel === 'site') body = <SiteWindow state={state} action={action} />;
   else if (panel === 'crew') body = <SignedIn>{(me) => <CrewPanel me={me} />}</SignedIn>;
   else if (panel === 'board') body = <SeasonsPanel address={address} />;

@@ -40,10 +40,20 @@ export function HomeHero() {
             <Link href="/play/" className="px-btn px-btn-primary px-6 py-3 text-xl uppercase">
               Play now
             </Link>
-            <Link href="/docs/" className="px-btn px-btn-light px-5 py-3 text-xl uppercase">
-              How it works
+            <Link href="/train/" className="px-btn px-btn-light px-5 py-3 text-xl uppercase">
+              Try the rig
             </Link>
           </div>
+          <p className="text-sm">
+            No wallet needed to try: the{' '}
+            <Link href="/train/" className="text-amber underline">
+              training site
+            </Link>{' '}
+            runs the game in your browser, nothing of value.{' '}
+            <Link href="/docs/" className="text-amber underline">
+              How it works
+            </Link>
+          </p>
           <p className="text-sm text-concrete">
             World Bore 0 m · Stratum I, Regolith · Genesis date to be announced
           </p>

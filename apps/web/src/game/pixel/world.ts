@@ -54,6 +54,8 @@ export interface WorldModel {
   pads: ScenePad[];
   /** 0..1, for the tank's gauge. */
   tankFill: number;
+  /** Diesel for less than half a day: the tank's lamp blinks red. */
+  tankLow?: boolean;
   /** Highlighted object (hover). */
   hover: Hit | null;
   /** Animate steam, lamps, crew and rain. */
@@ -248,7 +250,7 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   }
   at(6, 2, () => {
     const p = iso(5, 1);
-    tank(c, p.x, p.y + 16, m.tankFill, m.hover === 'tank', t, m.motion);
+    tank(c, p.x, p.y + 16, m.tankFill, m.tankLow === true, m.hover === 'tank', t, m.motion);
     hits.push({ id: 'tank', x: p.x - 16, y: p.y - 26, w: 32, h: 50 });
   });
   at(10, 2, () => {
@@ -344,7 +346,7 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
       }
     });
   }
-  if (m.tankFill < 0.1 && (!m.motion || Math.sin(t * 6) > 0)) {
+  if (m.tankLow === true && (!m.motion || Math.sin(t * 6) > 0)) {
     const p = iso(5, 1);
     lights.push({ x: p.x, y: p.y - 18, r: 10, tint: P.beacon, power: 0.8 });
   }

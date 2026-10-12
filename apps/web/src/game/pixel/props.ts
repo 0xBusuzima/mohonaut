@@ -66,6 +66,7 @@ export function tank(
   x: number,
   y: number,
   fill: number,
+  low: boolean,
   hover: boolean,
   t = 0,
   motion = false,
@@ -110,8 +111,8 @@ export function tank(
   rect(c, x - w / 2, top + 28, w, 3, P.orange);
   // Hose to the ground.
   polyline(c, [x + w / 2 - 1, top + 26, x + w / 2 + 4, top + 30, x + w / 2 + 6, y], P.graphite);
-  // A warning lamp on top that blinks red when the tank is nearly dry.
-  if (fill < 0.1) {
+  // A warning lamp on top that blinks red when the diesel runs low.
+  if (low) {
     const on = !motion || Math.sin(t * 6) > 0;
     rect(c, x - 2, top - 3, 4, 3, on ? P.beacon : '#6b1d18');
   }

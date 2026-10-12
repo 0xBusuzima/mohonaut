@@ -127,6 +127,7 @@ test('every page carries a hash-based CSP and breaks none of it', async ({ page 
   for (const path of [
     ...PAGES,
     '/play/',
+    '/train/',
     '/ops/',
     '/s/0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc',
   ]) {
@@ -180,4 +181,26 @@ test('/ops/ stays out of search and needs the API', async ({ page }) => {
   await page.goto('/ops/');
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
   await expect(page.getByText('The API is not configured for this build')).toBeVisible();
+});
+
+test('the training site runs the game without a wallet', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  // No chain access: the training site never needs one.
+  await page.route(/rpc\./, (route) => route.abort());
+  await page.goto('/train/');
+  await expect(page.getByRole('img', { name: /^Training site, level 1/ })).toBeVisible({
+    timeout: 15_000,
+  });
+  await page.getByRole('button', { name: 'Market', exact: true }).click();
+  await page.getByRole('button', { name: 'Buy one Rotary Rig' }).click();
+  await expect(page.getByText('Rotary Rig installed')).toBeVisible();
+  await page.getByRole('button', { name: 'Close' }).click();
+  await page.getByRole('button', { name: 'My rigs', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'My rigs' }).getByText('Rotary Rig')).toBeVisible();
+  const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(
+    axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`),
+  ).toEqual([]);
+  expect(errors).toEqual([]);
 });

@@ -4,6 +4,13 @@ import { miningCoreAbi } from '@mohonaut/sdk';
 import { useReadContract } from 'wagmi';
 import { GAME } from './network';
 
+/** A hook giving the cost of `qty` rigs of a type, and whether it is exact. */
+export type QuoteHook = (
+  typeId: number,
+  qty: number,
+  unitPrice: bigint,
+) => { total: bigint; exact: boolean };
+
 /**
  * The MOHN cost of `qty` rigs of a type (VRGDA batch price, before scrap credit). One rig uses
  * the price already read with the game state; more ask MiningCore.quoteMachines, and until the

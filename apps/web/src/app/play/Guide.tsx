@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import type { Address } from 'viem';
 import { ForemanMo } from '../../game/pixel/ForemanMo';
 import type { GameState } from '../../game/state';
 import { nextTip } from '../../game/tips';
@@ -9,9 +8,9 @@ import type { TipTarget } from '../../game/tips';
 import { apiEnabled } from '../../social/api';
 import { PxButton } from './px';
 
-const key = (a: Address) => `mohonaut.tips.${a.toLowerCase()}`;
+const key = (a: string) => `mohonaut.tips.${a.toLowerCase()}`;
 
-function load(a: Address): Set<string> {
+function load(a: string): Set<string> {
   try {
     return new Set(JSON.parse(window.localStorage.getItem(key(a)) ?? '[]') as string[]);
   } catch {
@@ -27,13 +26,17 @@ export function Guide({
   state,
   address,
   open,
+  social = apiEnabled,
 }: {
   state: GameState;
-  address: Address;
+  /** Whose tips (dismissed ones are remembered per wallet; the training site has its own key). */
+  address: string;
   open: (target: TipTarget) => void;
+  /** Whether crews exist here (the API is configured and this is not the training site). */
+  social?: boolean;
 }) {
   const [seen, setSeen] = useState(() => load(address));
-  const tip = nextTip(state, seen, apiEnabled);
+  const tip = nextTip(state, seen, social);
   if (tip === null) return null;
 
   const dismiss = () => {

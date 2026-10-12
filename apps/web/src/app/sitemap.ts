@@ -14,6 +14,7 @@ const PAGES = [
   'faq/',
   'status/',
   'season0/',
+  'train/',
   'faucet/',
   'support/',
 ];

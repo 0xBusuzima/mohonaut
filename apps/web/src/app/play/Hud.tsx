@@ -28,7 +28,16 @@ export type Panel =
  * The game HUD over the world. Kept apart from the wallet code so previews can render it on the
  * server.
  */
-export function Hud({ state, open }: { state: GameState; open: (p: Panel) => void }) {
+export function Hud({
+  state,
+  open,
+  training = false,
+}: {
+  state: GameState;
+  open: (p: Panel) => void;
+  /** The training site: no boards, crews or profile (nothing is on-chain or signed in). */
+  training?: boolean;
+}) {
   const lowPower = useLowPower();
   const sound = useSound();
   useAmbience(sound);
@@ -90,11 +99,13 @@ export function Hud({ state, open }: { state: GameState; open: (p: Panel) => voi
           <span className="w-5 text-center text-lg leading-none">?</span>
           <span className="hidden md:inline">How to play</span>
         </PxButton>
-        <PxButton variant="light" className={side} onClick={() => open('board')}>
-          <PxIcon name="trophy" size={20} />
-          <span className="hidden md:inline">Leaderboard</span>
-        </PxButton>
-        {apiEnabled && (
+        {!training && (
+          <PxButton variant="light" className={side} onClick={() => open('board')}>
+            <PxIcon name="trophy" size={20} />
+            <span className="hidden md:inline">Leaderboard</span>
+          </PxButton>
+        )}
+        {apiEnabled && !training && (
           <>
             <PxButton variant="light" className={side} onClick={() => open('crew')}>
               <PxIcon name="crew" size={20} />

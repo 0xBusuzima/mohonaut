@@ -3,7 +3,7 @@
 import { fuelLineWad, sitePads } from '@mohonaut/sdk';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { useAccount, useBalance } from 'wagmi';
+import type { Address } from 'viem';
 import type { Action } from '../../game/actions';
 import { tankRoom, weiForAtMostLitres, withHeadroom } from '../../game/derive';
 import { parseAmount, referrerFromUrl } from '../../game/play';
@@ -99,13 +99,14 @@ export function FuelWindow({
   state,
   action,
   first,
+  ethBalance,
 }: {
   state: GameState;
   action: Action;
   first: boolean;
+  /** ETH in the player's wallet, when known. */
+  ethBalance: bigint | undefined;
 }) {
-  const { address } = useAccount();
-  const balance = useBalance({ address, query: { refetchInterval: 12_000 } });
   const [typed, setTyped] = useState<string | null>(null);
   const [referrer] = useState(referrerFromUrl);
   const rate = state.network.litresPerEth;
@@ -164,7 +165,7 @@ export function FuelWindow({
       <AmountInput label="ETH to spend" value={eth} onChange={setTyped} />
       <p className="text-base">
         ≈ <b>{litres === null ? '—' : formatLitres(litres)}</b> · in wallet{' '}
-        <b>{balance.data === undefined ? '—' : formatEth(balance.data.value)}</b>
+        <b>{ethBalance === undefined ? '—' : formatEth(ethBalance)}</b>
       </p>
       {maxWei !== null && (
         <p className="text-base text-concrete">
@@ -262,8 +263,16 @@ function PadMap({ used, now, next }: { used: number; now: number; next: number }
 }
 
 /** Refining unrefined $MOHN into the wallet: the 72-hour queue or the fast route. */
-export function RefineryWindow({ state, action }: { state: GameState; action: Action }) {
-  const { address } = useAccount();
+export function RefineryWindow({
+  state,
+  action,
+  address,
+}: {
+  state: GameState;
+  action: Action;
+  /** The player (finalizeRefine takes the account). */
+  address: Address | undefined;
+}) {
   const [amount, setAmount] = useState('');
   const p = state.player;
   if (p === null || address === undefined) return null;

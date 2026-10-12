@@ -80,6 +80,13 @@ export function PlayShell({ onConnect }: { onConnect?: () => void }) {
         <p className="mt-3 text-center text-sm text-concrete">
           Connecting is free. The game never asks to approve token spending.
         </p>
+        <p className="mt-2 text-center text-sm">
+          No wallet?{' '}
+          <a href="/train/" className="text-amber underline">
+            Try the training site
+          </a>
+          .
+        </p>
       </PxModal>
     </>
   );
