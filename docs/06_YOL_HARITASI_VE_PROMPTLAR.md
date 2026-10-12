@@ -183,7 +183,9 @@ services/indexer altında kendi log okuyucumuzu yaz (TypeScript + viem getLogs, 
 services/api altında Hono + Zod + Drizzle + Postgres + Redis ile docs/03 §4.2 ve §4.4'ü uygula: SIWE oturumu (birincil), opsiyonel e-posta girişi için Dynamic/Privy JWT doğrulaması bir adaptör arkasında, kendi users tablomuz (auth_provider, provider_user_id, wallet, linked_x, risk_score), profil, crew (oluştur/katıl/ayrıl, 5–25 üye), günlük ücretsiz Survey (sunucu rastgeleliği, ekonomik değeri yok, günde 1, idempotent), başarımlar (indeksleyiciden türetilen), sezon sıralamaları, paylaşım kartı PNG üretimi (Satori + resvg; kazanç/USD rakamı içermez), bildirim tercihleri, admin API (RBAC + append-only audit log). Anti-bot: Cloudflare Turnstile sunucu doğrulaması, IP/ASN/cüzdan rate limit (Redis). OpenAPI şeması üret. Testler: vitest birim + supertest entegrasyon; yetki matrisi testi; rate limit testleri; k6 yük betiği.
 ```
 
-### 3.3 Keeper
+### 3.3 Keeper — ✅ 2026-10-12 (`services/keeper`)
+
+> Anvil üzerinde zaman atlamalı uçtan uca test: gerçek deploy script'i + zincirdeki PoolManager bytecode'u + 3 oyuncu + indeksleyici + keeper; ön dolum → genesis saatleri → Market Open → buyback → likidite ekleme → standart rafinenin tamamlanması. CI'da Postgres ile (iki keeper kilit testi dahil). Canlı testnet'te anahtarsız `DRY_RUN` ile doğrulandı. Not: playground2'de genesis sırasında yakıt alınmadığı için Market Open kalıcı olarak `NoGenesisActivity` ile reddediliyor (beklenen davranış).
 
 ```text
 services/keeper altında docs/03 §4.5'teki işçileri yaz: saatlik poke (gerekliyse), olgun rafine kuyruklarını finalize, günlük executeBuyback ve addLiquidity (minOut zincir dışında hesaplanır, tavanlar kontrattan okunur), keeper bakiye ve son başarılı iş metrikleri (Prometheus). Anahtar yalnızca ortam/sır yöneticisinden; idempotent ve yeniden denemeli; aynı anda iki keeper çalışırsa çift işlem yapmasın (Redis kilit). Testler: anvil üzerinde zaman atlamalı entegrasyon.

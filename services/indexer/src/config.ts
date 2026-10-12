@@ -19,6 +19,9 @@ export const deploymentSchema = z.object({
   LiquidityManager: address,
   ParamsTimelock: address,
   UpgradeTimelock: address,
+  /** Chainlink ETH/USD proxy (mainnet) or the keeper-owned ManualEthUsdFeed (testnet). */
+  EthUsdFeed: address.optional(),
+  Keeper: address.optional(),
 });
 
 export type Deployment = z.infer<typeof deploymentSchema>;

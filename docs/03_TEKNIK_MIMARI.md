@@ -256,6 +256,7 @@ Ayrıca: `setRecipients` (kurucu/hazine alıcıları, sıfır olamaz, 30 günde 
 ### 4.5 Keeper (`services/keeper`)
 - Saatlik `poke()`, olgun rafine kuyruklarını `finalizeRefine`, günlük `executeBuyback` ve `addLiquidity` (tavanlı, slippage hesabı zincir dışında), sağlık kontrolleri.
 - Anahtar: ayrı, düşük bakiyeli; yetkisi yalnızca KEEPER rolü. Bakiye alarmı.
+- **Uygulama (Faz 3.3, 2026-10-12):** `services/keeper` — işler sırayla: testnet fiyat beslemesini tazeleme, `poke`, `openMarket`, olgun kuyrukları `finalizeRefine` (adaylar indeksleyiciden, her biri zincirde ve saatlik mint penceresinde doğrulanır), günde bir `executeBuyback` ve `addLiquidity`. Her işlem önce simüle edilir; gaz tahminine %25 pay eklenir (iç içe Uniswap çağrılarında tahmin sınırda kalıyor). `minOut`, `packages/sdk`'teki kesin v4 kotasından (Solidity `SwapMath` ile çapraz test) kayma payı düşülerek bulunur; havuz fiyatı referanstan (son 24 saatin swap medyanı + Market Open fiyatı) %10'dan fazla saparsa alım/ekleme atlanır. Aynı anda tek keeper: Postgres advisory lock (Redis gerekmez). Anahtar şifreli Foundry keystore'dan (önerilen) veya sır yöneticisinden; `DRY_RUN` anahtarsız simülasyon yapar. Tek makinede (PGlite) `RUN_INDEXER=true` ile indeksleyici aynı süreçte çalışır.
 
 ### 4.6 İzleme ve uyarı
 - **Zincir:** OpenZeppelin Monitor (açık kaynak, self-host) — emisyon eğrisine göre anormal mint, rol/yükseltme/pause olayları, timelock kuyruğu, büyük transferler, LP olayları, keeper bakiyesi. Bildirim: Telegram + e-posta + (kritikte) telefon.

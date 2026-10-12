@@ -39,3 +39,26 @@ export function poolId(key: PoolKey): Hex {
     ),
   );
 }
+
+const Q96 = 2n ** 96n;
+const MAX_FEE_PIPS = 1_000_000n;
+
+/**
+ * Exact-input ETH -> MOHN swap within one liquidity range (the protocol position is full
+ * range, so no tick is crossed), as Uniswap v4 SwapMath computes it: the fee is taken from the
+ * input, the price rounds up, the output rounds down. Returns the MOHN out and the new price.
+ */
+export function quoteEthForMohn(
+  sqrtPriceX96: bigint,
+  liquidity: bigint,
+  ethIn: bigint,
+  feePips: bigint = BigInt(MOHN_POOL_FEE),
+): { mohnOut: bigint; sqrtPriceNextX96: bigint } {
+  if (liquidity === 0n || ethIn === 0n) return { mohnOut: 0n, sqrtPriceNextX96: sqrtPriceX96 };
+  const amountIn = (ethIn * (MAX_FEE_PIPS - feePips)) / MAX_FEE_PIPS;
+  const numerator = liquidity << 96n;
+  const denominator = numerator + amountIn * sqrtPriceX96;
+  // mulDivRoundingUp(numerator, sqrtPrice, denominator)
+  const next = (numerator * sqrtPriceX96 + denominator - 1n) / denominator;
+  return { mohnOut: (liquidity * (sqrtPriceX96 - next)) / Q96, sqrtPriceNextX96: next };
+}

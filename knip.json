@@ -22,6 +22,10 @@
     "services/indexer": {
       "entry": ["src/index.ts", "src/main.ts"],
       "project": ["src/**/*.ts", "test/**/*.ts"]
+    },
+    "services/keeper": {
+      "entry": ["src/index.ts", "src/main.ts"],
+      "project": ["src/**/*.ts", "test/**/*.ts"]
     }
   }
 }

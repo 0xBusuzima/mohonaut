@@ -133,6 +133,38 @@ jobs:
       - name: Format
         run: npx prettier --check .
 
+  keeper-e2e:
+    # Keeper on a local anvil chain with time travel: real deploy script, PoolManager bytecode,
+    # indexer and keeper on Postgres, plus the two-keeper lock (services/keeper/test/e2e).
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx turbo run build --filter=@mohonaut/keeper...
+      - name: End-to-end
+        working-directory: services/keeper
+        run: npx vitest run test/e2e
+        env:
+          KEEPER_E2E: "1"
+          KEEPER_E2E_PG_URL: postgres://postgres:postgres@localhost:5432/postgres
+
   security:
     runs-on: ubuntu-latest
     steps:

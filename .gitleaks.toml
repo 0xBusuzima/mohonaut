@@ -13,3 +13,7 @@ paths = ['''^sim/run_scenarios\.py$''']
 [[allowlists]]
 description = "Public on-chain runtime bytecode of the Uniswap v4 PoolManager (codehash checked in tests)"
 paths = ['''^contracts/test/fixtures/PoolManager\.runtime\.hex$''']
+
+[[allowlists]]
+description = "Encrypted keystore of a throwaway test key (cast wallet new, holds nothing; password in the test)"
+paths = ['''^services/keeper/test/fixtures/throwaway\.keystore\.json$''']

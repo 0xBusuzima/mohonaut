@@ -15,7 +15,13 @@ export {
 export type { Flows } from './metrics.js';
 export { PARAM_NAMES } from './params.js';
 export type { ParamName } from './params.js';
-export { MOHN_POOL_FEE, MOHN_POOL_TICK_SPACING, mohnPoolKey, poolId } from './pool.js';
+export {
+  MOHN_POOL_FEE,
+  MOHN_POOL_TICK_SPACING,
+  mohnPoolKey,
+  poolId,
+  quoteEthForMohn,
+} from './pool.js';
 export type { PoolKey } from './pool.js';
 export { miningCoreAbi } from './abi/MiningCore.js';
 export { mohnTokenAbi } from './abi/MohnToken.js';

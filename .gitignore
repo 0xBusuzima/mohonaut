@@ -17,7 +17,7 @@ contracts/out/
 contracts/cache/
 contracts/broadcast/
 contracts/slither_results.json
-deployments/31337.json
+deployments/31337*.json
 contracts/broadcast/**/dry-run/
 contracts/crytic-export/
 contracts/medusa-corpus/
@@ -42,3 +42,4 @@ Thumbs.db
 .venv/
 # Local embedded Postgres (PGlite) of the indexer
 services/indexer/data/
+services/keeper/data/

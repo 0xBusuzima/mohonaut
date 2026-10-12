@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {SqrtPriceMath} from "@uniswap/v4-core/src/libraries/SqrtPriceMath.sol";
 import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
+import {SwapMath} from "@uniswap/v4-core/src/libraries/SwapMath.sol";
 import {MohnPool} from "../../src/lib/MohnPool.sol";
 
 /// @notice liquidityFor returns the largest full-range liquidity the amounts can fund: the pool
@@ -61,5 +62,15 @@ contract MohnPoolTest is Test {
         assertEq(
             PoolId.unwrap(id), 0xe618da777871bd937c464672d56433cb28488bc498fe65a461f94636532e43da
         );
+    }
+
+    function test_quoteVector() public pure {
+        // An exact-input ETH -> MOHN swap inside the full range (no tick crossing): the keeper
+        // quotes it off-chain (packages/sdk quoteEthForMohn) to set minOut. Same vector there.
+        (uint160 next,, uint256 out,) = SwapMath.computeSwapStep(
+            1e27, TickMath.MIN_SQRT_PRICE + 1, 1e22, -int256(1e17), MohnPool.FEE
+        );
+        assertEq(out, 15_883_124_355_272);
+        assertEq(next, 999_999_874_160_924_234_619_179_008);
     }
 }
