@@ -244,6 +244,24 @@ html {
   }
 }
 
+/* Short screens (phones held sideways): Foreman Mo's tip box shrinks to a strip at the bottom
+   left so the site and the HUD stay visible. */
+@media (max-height: 520px) {
+  .guide {
+    right: auto;
+    left: 0.75rem;
+    bottom: 5.5rem;
+    max-width: 22rem;
+    padding: 0.5rem;
+  }
+  .guide .guide-mo {
+    display: none;
+  }
+  .guide [role='status'] {
+    font-size: 0.8rem;
+  }
+}
+
 /* Pixelify Sans draws "fi" as one ligature glyph that reads like an "A": spell it out. */
 .font-pixel,
 .px-btn,

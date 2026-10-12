@@ -49,9 +49,11 @@ export function Guide({
   return (
     <aside
       aria-label="Foreman Mo"
-      className="px-panel pointer-events-auto fixed inset-x-3 bottom-[6.5rem] z-20 flex items-end gap-3 p-3 font-pixel md:right-auto md:bottom-24 md:left-3 md:max-w-md"
+      className="guide px-panel pointer-events-auto fixed inset-x-3 bottom-[6.5rem] z-20 flex items-end gap-3 p-3 font-pixel md:right-auto md:bottom-24 md:left-3 md:max-w-md"
     >
-      <ForemanMo scale={3} />
+      <span className="guide-mo">
+        <ForemanMo scale={3} />
+      </span>
       <div className="flex min-w-0 flex-col gap-2">
         <p className="text-xs tracking-widest text-amber uppercase">Foreman Mo</p>
         <p role="status" className="text-base">

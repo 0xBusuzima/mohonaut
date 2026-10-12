@@ -39,7 +39,7 @@ export function Hud({ state, open }: { state: GameState; open: (p: Panel) => voi
   const { current } = stratumAt(depth);
   const side = 'flex items-center gap-2 !px-2 !py-1 !text-base';
   const main =
-    'flex flex-col items-center gap-1 !px-2 !py-2 !text-base md:flex-row md:gap-2 md:!px-5 md:!py-3 md:!text-xl';
+    'flex flex-col items-center gap-1 whitespace-nowrap !px-2 !py-2 !text-base md:flex-row md:gap-2 md:!px-5 md:!py-3 md:!text-xl';
   return (
     <div className="pointer-events-none fixed inset-0 z-20 font-pixel">
       {/* Readouts: a row under the brand on phones, top right on wider screens. */}

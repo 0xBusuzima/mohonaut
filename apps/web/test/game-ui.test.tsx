@@ -1,6 +1,8 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Guide } from '../src/app/play/Guide';
 import { StratumNotice } from '../src/app/play/StratumNotice';
+import type { GameState } from '../src/game/state';
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -34,5 +36,67 @@ describe('the new-stratum notice', () => {
     window.localStorage.setItem('mohonaut.stratum', '1');
     render(<StratumNotice depthMm={3_000_000n} />);
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+});
+
+const E18 = 10n ** 18n;
+const NEW_SITE: GameState = {
+  at: 1_791_900_000,
+  network: {
+    activeDp: 1_000n,
+    hourEmission: 2_000n * E18,
+    emitted: 0n,
+    pausedUntil: 0,
+    marketOpened: false,
+    marketOpenTime: 1_791_990_000,
+    genesisTime: 1_791_800_000,
+    litresPerEth: 25_000n * E18,
+    maxTankHours: 720,
+  },
+  rigs: [
+    {
+      id: 0,
+      dp: 10n,
+      burn: E18 / 4n,
+      premiumBps: 0,
+      minLevel: 0,
+      generation: 1,
+      price: 0n,
+      owned: 1,
+      active: 1,
+    },
+  ],
+  player: {
+    registered: true,
+    level: 1,
+    dp: 10n,
+    burn: E18 / 4n,
+    tank: 100n * E18,
+    pending: 0n,
+    scrapCredit: 0n,
+    padsUsed: 1,
+    walletMohn: 0n,
+    siteUpgradePrice: null,
+    refines: [],
+  },
+};
+const WALLET = '0x000000000000000000000000000000000000dEaD';
+
+describe("Foreman Mo's guide", () => {
+  it('opens the window a tip points at and moves on', () => {
+    const open = vi.fn();
+    render(<Guide state={NEW_SITE} address={WALLET} open={open} />);
+    expect(screen.getByRole('status').textContent).toContain('Equipment Market');
+    fireEvent.click(screen.getByRole('button', { name: 'Equipment market' }));
+    expect(open).toHaveBeenCalledWith('market');
+    expect(screen.getByRole('status').textContent).toContain('World Bore');
+  });
+
+  it('remembers dismissed tips per wallet on the device', () => {
+    const { unmount } = render(<Guide state={NEW_SITE} address={WALLET} open={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Got it' }));
+    unmount();
+    render(<Guide state={NEW_SITE} address={WALLET} open={() => {}} />);
+    expect(screen.getByRole('status').textContent).toContain('World Bore');
   });
 });

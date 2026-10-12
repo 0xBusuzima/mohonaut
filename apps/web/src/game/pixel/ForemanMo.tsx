@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useReducedMotion } from '../../lib/motion';
+import { useLowPower } from '../../lib/power';
 import { ART, COLORS } from './mo-art';
 
 /**
@@ -12,6 +13,8 @@ import { ART, COLORS } from './mo-art';
 export function ForemanMo({ scale = 3, label }: { scale?: number; label?: string }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const reduced = useReducedMotion();
+  const lowPower = useLowPower();
+  const still = reduced || lowPower;
 
   useEffect(() => {
     const c = canvas.current?.getContext('2d');
@@ -31,7 +34,7 @@ export function ForemanMo({ scale = 3, label }: { scale?: number; label?: string
       });
     };
     draw(false, true);
-    if (reduced) return undefined;
+    if (still) return undefined;
     let tick = 0;
     const id = window.setInterval(() => {
       tick++;
@@ -39,7 +42,7 @@ export function ForemanMo({ scale = 3, label }: { scale?: number; label?: string
       draw(tick % 27 === 0, tick % 8 < 5);
     }, 150);
     return () => window.clearInterval(id);
-  }, [reduced]);
+  }, [still]);
 
   return (
     <canvas
