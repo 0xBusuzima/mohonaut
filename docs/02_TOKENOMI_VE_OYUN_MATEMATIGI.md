@@ -164,7 +164,7 @@ acc_bitiş = (now < expiry_i) ? acc_şimdi : accAtHour[expiry_i]
 ```
 Saatlik tüketim (ℓ/h)      = Σ aktif makinelerin ℓ/h tüketimi  (≤ saha yakıt hattı kapasitesi)
 Tank (ℓ)                = satın alınan − tüketilen
-Bitiş zamanı              = floor_saat( now + tank / aktif_kW )
+Bitiş zamanı              = floor_saat( now + tank / aktif_ℓ_saat )
 ETH maliyeti              = ℓ × π_ℓ / ETHUSD          (Chainlink ETH/USD; sequencer uptime feed bu zincirde yok → kontrolü opsiyonel)
 ```
 
@@ -300,6 +300,7 @@ Koşullar           = davet edilenin toplam yakıt harcaması ≥ 0.003 ETH ve d
 
 - En kötü durumda (herkesin davet edeni var): `%3 × %90 = %2.7 < %5` → **hazine payını asla aşamaz**.
 - Koşul sağlanmazsa kredi hazinede kalır. Çok seviyeli referans yok (MLM görüntüsü yok).
+- **Zamanlama (AI denetimi SPEC-8):** koşullar, davet edilenin tahakkuku hesaplandığında (davet edilenin her işleminde) **bir kez** kontrol edilir ve sonuç son hesaplamadan bu yana geçen aralığın tamamına uygulanır. Davet edenin yakıtı o an bitmişse aralığın kredisi hazinede kalır; o an varsa aralığın tamamı için ödenir. Davet edilen uzun süre işlem yapmazsa aralık da uzar. Kredi her durumda davet edilenin tahakkukunun %3'üyle sınırlıdır ve yeni emisyon basılmaz. Simülasyon koşulları günlük kontrol eder; bu, günde en az bir kez işlem yapan oyuncular için aynı sonucu verir.
 
 ---
 
@@ -308,7 +309,7 @@ Koşullar           = davet edilenin toplam yakıt harcaması ≥ 0.003 ETH ve d
 | Hedef | Pay | Sınır | Açıklama |
 |---|---|---|---|
 | Buyback & Burn | **%55** (v0.1: %40) | %30–60 | Keeper rolü; günde kovanın en çok **1/20**'si (§10.1); fiyat çapası; alınan MOHN %100 yakılır |
-| Protokol Likiditesi (POL) | **%30** | %20–50 | Tam aralık Uniswap v4 pozisyonu, **çekilemez**; günde kovanın en çok **1/7**'si eklenir (§10.1) |
+| Protokol Likiditesi (POL) | **%30** | %20–50 | Tam aralık Uniswap v4 pozisyonu, **çekilemez**; günde kovanın en çok **1/7**'si eklenir (§10.1). Pozisyonun **işlem ücretleri** her eklemede ya da `collectFees` çağrısında pozisyondan alınır: MOHN ücretleri **yakılır**, ETH ücretleri buyback kovasına gider. Havuzda birikmez (AI denetimi SPEC-5; simülasyon da böyle modeller) |
 | Operasyon (Safe) | **%15** (v0.1: %30) | %10–35 | Sunucu, bağımsız denetim fonu, bug bounty, giriş servisi, ekip; aylık rapor (08 §3 sırası) |
 
 > **Neden 55/30/15?** Ops payı, gelirin MOHN piyasasından kalıcı olarak çıkan kısmıdır; buyback ise dış gelirin tokene dönen tek kanalıdır. Simülasyonda tek başına bu değişiklik SR'yi 0.65 → 0.86'ya çıkardı ve en yüksek Gini'yi 0.74 → 0.56'ya indirdi. Simülasyonun mutlak gelir rakamları uydurma bir talep kalibrasyonuna dayandığı için ops payının nihai değeri gerçek bütçeye göre seçilir. Kural: kötü senaryoda ops geliri aylık bütçenin ≈ 2 katını karşılamalı. **Bu oran kurucunun kararıdır.**
@@ -355,7 +356,7 @@ MOHN_LP   = min( POL_ETH × ETHUSD / P0_USD , 1,000,000 , saatlik mint sınırı
             (pratikte = 0.30 × genesis madenci tahakkuku ≈ 40K; tavanlar hiç bağlamaz)
             LP kırpılırsa havuz yine P0'da açılır; yalnızca LP ile eşleşen POL ETH kullanılır, kalan ETH
             POL kovasında addLiquidity için bekler (v1.0.1)
-Havuz    = Uniswap v4, ETH/MOHN, tam aralık, pozisyon NFT'si çekilemez kontratta
+Havuz    = Uniswap v4, ETH/MOHN, tam aralık; pozisyon doğrudan PoolManager'da LiquidityManager adına, NFT yok, çekme yolu yok
 ```
 
 - **Genesis'te tank üst sınırı:** Pre-fill ve Genesis boyunca bir hesabın tankı en fazla **Market Open + 24 saat** sonrasına kadar yetecek kadar doldurulabilir. Böylece "genesis yakıt harcaması" ≈ genesis'te gerçekten tüketilen yakıt olur. 30 günlük ön doldurma P0'ı 3–4 kat şişirirdi.

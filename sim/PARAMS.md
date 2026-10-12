@@ -1,6 +1,6 @@
 # params.json — what every parameter means
 
-`spec.*` mirrors `docs/02_TOKENOMI_VE_OYUN_MATEMATIGI.md` **v0.2** (token MOHO; `DIG` is the simulator's
+`spec.*` mirrors `docs/02_TOKENOMI_VE_OYUN_MATEMATIGI.md` **v1.1** (token MOHN; `DIG` is the simulator's
 code name). The table gives the spec section for each value. `model.*` are **simulation assumptions** that the spec does not fix.
 
 Change a spec value only after the spec changes. Model values are the calibration levers; `RAPOR.md`
@@ -25,9 +25,9 @@ Parameter sets in `param_sets/` override values by dotted path (e.g. `"spec.vrgd
 | `emission.split_*` | 0.90 / 0.05 / 0.05 | §3.3 | Miners pro-rata to active DP / dev / treasury |
 | `referral.rate` | 0.03 | §9 | Referrer credit = 3 % of the invitee's miner accrual, paid from the treasury share |
 | `referral.min_invitee_energy_eth` | 0.003 | §9 | Invitee must have spent ≥ 0.003 ETH on energy |
-| `energy.price_usd_per_kwh` | 0.10 | §5.1 | π_kWh; paid in ETH at ETH/USD |
-| `energy.tank_cap_hours` | 720 | §5.1 | Tank upper bound = outpost capacity × 720 h |
-| `machines.*` | catalog | §6.1 | DP, kW, premium, unlock level for tiers 0–5 (tier 0 = free Hand Auger, 1 per account) |
+| `fuel.price_usd_per_litre` | 0.10 | §5.1 | π_ℓ; paid in ETH at ETH/USD |
+| `fuel.tank_cap_hours` | 720 | §5.1 | Tank upper bound = site fuel-line capacity × 720 h |
+| `machines.*` | catalog | §6.1 | DP, litres per hour, premium, unlock level for tiers 0–5 (tier 0 = free Pilot Rig, 1 per account) |
 | `vrgda.p0`, `k`, `r` | 10, 0.15, **2000** (v0.1: 8000) | §6.2 | p(t,n) = p0·(1−k)^(t − n/r) DIG per DP unit; r changes are re-anchored (see `governance`) |
 | `vrgda.max_units_per_tx` | 10,000 | §6.2 | Not binding in the daily model (purchases are aggregated) |
 | `vrgda.price_floor` | 0 | — | **Not in spec v0.1.** 0 = off. Optional floor on p(t,n), used only to test a recommendation |

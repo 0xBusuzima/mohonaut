@@ -70,7 +70,7 @@ SERIES: tuple[str, ...] = (
     "emission", "burn_spend", "burn_cosmetic", "burn_fee", "burn_buyback", "recycled",
     "reserve", "circulating", "pending", "queue", "burned_cum",
     "vrgda_price", "idx", "units_sold", "dig_machines", "dig_outposts",
-    "revenue_eth", "revenue_usd", "buyback_eth", "bb_backlog_eth", "pol_eth_added", "ops_eth",
+    "revenue_eth", "revenue_usd", "buyback_eth", "bb_backlog_eth", "pol_eth_added", "lp_fee_eth", "ops_eth",
     "pool_eth", "pool_dig", "depth2_usd", "sold_emission", "refined",
     "sold_wallets", "sold_exits", "sold_dev", "spec_sold", "spec_bought_usd", "player_buy_usd",
     "spec_dig", "treasury_pending", "dev_pending", "dev_dig", "energy_usd", "ops_income_usd", "depth_m",
@@ -444,6 +444,11 @@ class Simulation:
             pol_added = min(self.pol_pending * md.pol_bucket_frac, 2 * md.keeper_chunks * chunk_eth)
             self.pool.zap_eth(pol_added)
             self.pol_pending -= pol_added
+            # The day's swap fees leave the position (AI-8): DIG fees burned, ETH fees to buyback.
+            fee_eth, fee_dig = self.pool.collect_fees()
+            self.bb_backlog += fee_eth
+            burn_fee += fee_dig
+            rec["lp_fee_eth"][d] = fee_eth
             sold_emission = float(sell.sum()) + exit_sell + dev_sell
             rec["sold_wallets"][d] = float(sell.sum())
             rec["sold_exits"][d] = exit_sell

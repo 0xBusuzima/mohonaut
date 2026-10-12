@@ -273,7 +273,7 @@ VECTORS = {
 def main() -> None:
     OUT.mkdir(exist_ok=True)
     for name, build in VECTORS.items():
-        (OUT / name).write_text(json.dumps(build(), indent=1), encoding="utf-8")
+        (OUT / name).write_text(json.dumps(build(), indent=1), encoding="utf-8", newline="\n")
         print("wrote", OUT / name)
 
 

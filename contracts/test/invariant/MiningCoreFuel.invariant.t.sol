@@ -7,6 +7,7 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 import {MiningCore} from "../../src/MiningCore.sol";
 import {MohnToken} from "../../src/MohnToken.sol";
 import {EmissionMath} from "../../src/lib/EmissionMath.sol";
+import {SiteMath} from "../../src/lib/SiteMath.sol";
 import {MockAggregator} from "../mocks/MockAggregator.sol";
 import {MockRouter} from "../mocks/MockRouter.sol";
 
@@ -15,6 +16,9 @@ contract FuelHandler is Test {
     MockAggregator public immutable feed;
     address[] public actors;
     uint256 public ghostEthIn;
+    /// NEW-25b: purchases that left a tank above the cap in force at that moment.
+    uint256 public tankCapViolations;
+    uint256 public tankCapChanges;
 
     constructor(MiningCore core_, MockAggregator feed_) {
         core = core_;
@@ -38,6 +42,19 @@ contract FuelHandler is Test {
         vm.prank(a);
         try core.buyFuel{value: weiAmount}(actors[refSeed % actors.length]) {
             ghostEthIn += weiAmount;
+            MiningCore.Site memory s = core.siteOf(a);
+            if (s.tank > SiteMath.fuelLineCapacity(s.level) * core.maxTankHours()) {
+                ++tankCapViolations;
+            }
+        } catch {}
+    }
+
+    /// Timelock lowers or raises the tank cap (168-2,160 h, once per 7 days). The cap applies
+    /// to new purchases only; fuel already bought stays (AI review ACC-6).
+    function setMaxTankHours(uint256 hoursSeed) external {
+        uint256 value = bound(hoursSeed, 168, 2160);
+        try core.setParam(MiningCore.Param.MaxTankHours, value) {
+            ++tankCapChanges;
         } catch {}
     }
 
@@ -85,6 +102,7 @@ contract MiningCoreFuelInvariantTest is Test {
             )
         );
         handler = new FuelHandler(core, feed);
+        core.grantRole(core.DEFAULT_ADMIN_ROLE(), address(handler));
         targetContract(address(handler));
     }
 
@@ -120,10 +138,23 @@ contract MiningCoreFuelInvariantTest is Test {
         );
     }
 
-    /// No tank ever exceeds its capacity cap (4,320 litres at level 1).
-    function invariant_tankWithinCapacity() public view {
-        for (uint256 i = 0; i < handler.actorCount(); ++i) {
-            assertLe(core.siteOf(handler.actors(i)).tank, 6e18 * core.maxTankHours());
-        }
+    /// NEW-25b (AI review ACC-6): right after every successful purchase the tank is within the cap
+    /// in force at that moment (fuel line capacity x maxTankHours). The cap is not retroactive: a
+    /// later, lower cap leaves fuel already bought in the tank, so "tank <= cap" at any time is
+    /// not a property of the contract.
+    function invariant_tankWithinCapAtPurchase() public view {
+        assertEq(handler.tankCapViolations(), 0);
+    }
+
+    /// Non-vacuity: a purchase, a lower cap, and the tank above the new cap stays legal.
+    function test_capChangeIsNotRetroactive() public {
+        handler.warp(13 hours); // into genesis
+        handler.warp(3 days); // past Market Open: no genesis tank limit
+        handler.buyFuel(0, 0.15 ether, 1); // 3,750 L of the 4,320 L level-1 tank
+        uint256 tank = core.siteOf(handler.actors(0)).tank;
+        handler.setMaxTankHours(168);
+        assertEq(handler.tankCapChanges(), 1);
+        assertGt(tank, SiteMath.fuelLineCapacity(1) * core.maxTankHours(), "above the new cap");
+        assertEq(handler.tankCapViolations(), 0);
     }
 }

@@ -205,7 +205,7 @@ def build_params(raw: dict[str, Any]) -> Params:
     machines = Machines(
         names=tuple(mach["names"]),
         dp=np.asarray(mach["dp"], dtype=float),
-        kw=np.asarray(mach["kw"], dtype=float),
+        kw=np.asarray(mach["litres_per_hour"], dtype=float),
         premium=np.asarray(mach["premium"], dtype=float),
         unlock_level=np.asarray(mach["unlock_level"], dtype=float),
     )
@@ -217,8 +217,8 @@ def build_params(raw: dict[str, Any]) -> Params:
         split_treasury=float(s["emission"]["split_treasury"]),
         referral_rate=float(s["referral"]["rate"]),
         referral_min_energy_eth=float(s["referral"]["min_invitee_energy_eth"]),
-        energy_usd_per_kwh=float(s["energy"]["price_usd_per_kwh"]),
-        tank_cap_hours=float(s["energy"]["tank_cap_hours"]),
+        energy_usd_per_kwh=float(s["fuel"]["price_usd_per_litre"]),
+        tank_cap_hours=float(s["fuel"]["tank_cap_hours"]),
         machines=machines,
         p0=float(s["vrgda"]["p0"]),
         k=float(s["vrgda"]["k"]),

@@ -2,6 +2,7 @@
 pragma solidity 0.8.30;
 
 import {MiningCore} from "../../src/MiningCore.sol";
+import {SiteMath} from "../../src/lib/SiteMath.sol";
 import {Properties} from "./Properties.sol";
 import {Actor} from "./Setup.sol";
 import {MarketOpenCheat} from "../utils/MarketOpenCheat.sol";
@@ -54,12 +55,18 @@ abstract contract TargetFunctions is Properties {
     function buyFuel(uint256 actorSeed, uint256 weiAmount, uint256 refSeed) public {
         feed.set(2500e8, block.timestamp, block.timestamp);
         _catchUp();
-        _actor(actorSeed)
-            .call(
-                address(core),
-                _clamp(weiAmount, 1e12, 0.05 ether),
-                abi.encodeCall(MiningCore.buyFuel, (address(_actor(refSeed))))
-            );
+        Actor a = _actor(actorSeed);
+        bool ok = a.call(
+            address(core),
+            _clamp(weiAmount, 1e12, 0.05 ether),
+            abi.encodeCall(MiningCore.buyFuel, (address(_actor(refSeed))))
+        );
+        if (ok) {
+            MiningCore.Site memory s = core.siteOf(address(a));
+            if (s.tank > SiteMath.fuelLineCapacity(s.level) * core.maxTankHours()) {
+                ++tankCapViolations;
+            }
+        }
     }
 
     function buyMachines(uint256 actorSeed, uint256 typeSeed, uint256 qty) public {

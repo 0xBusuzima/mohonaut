@@ -14,6 +14,7 @@ abstract contract Properties is Setup {
     uint256 internal s1Violations; // a spend not split exactly 80/20
     uint256 internal b1Violations; // > 150K minted within 60 minutes
     uint256 internal rateViolations; // a parameter changed twice within its period
+    uint256 internal tankCapViolations; // a purchase left a tank above the cap in force then
     uint256[] internal mintTimes;
     uint256[] internal mintAmounts;
     mapping(uint256 param => uint256 timestamp) internal lastParamChange;
@@ -135,6 +136,12 @@ abstract contract Properties is Setup {
     }
 
     /// Echidna (assertion mode) entry point: all properties at once.
+    /// NEW-25b (AI review ACC-6): right after every purchase the tank is within the cap in force
+    /// then (the cap is not retroactive, so it is not checked at other times).
+    function invariant_tankWithinCapAtPurchase() public view returns (bool) {
+        return tankCapViolations == 0;
+    }
+
     function check_all() public view {
         assert(invariant_T1_supplyBelowCap());
         assert(invariant_E2_conservation());
@@ -148,5 +155,6 @@ abstract contract Properties is Setup {
         assert(invariant_R2_referralBounded());
         assert(invariant_P1_params());
         assert(invariant_P2_pauseBounded());
+        assert(invariant_tankWithinCapAtPurchase());
     }
 }

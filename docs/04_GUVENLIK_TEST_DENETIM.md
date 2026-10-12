@@ -79,6 +79,7 @@
 | NEW-18 | BuybackBurner'dan geçen ETH korunur; kontratta ETH kalmaz | aynı | aynı |
 | NEW-19 | POL kovası ve MOHN yakımları korunur; R1 | aynı | aynı |
 | NEW-20 | Market Open bir kez | aynı | aynı |
+| NEW-25b | Her başarılı yakıt alımından hemen sonra tank, o anki tavanın (yakıt hattı kapasitesi × `maxTankHours`) altındadır. Tavan geriye dönük değildir: sonradan düşürülen tavan, alınmış yakıtı tankta bırakır. Bu yüzden "tank ≤ tavan her an" bir kontrat özelliği değildir (AI denetimi ACC-6) | `invariant/MiningCoreFuel.invariant.t.sol` (Timelock tavan değişikliği dahil) | `CryticTester` |
 | K1–K3 | (yukarıda) | aynı + `unit/PriceAnchor.t.sol`, `integration/Market.t.sol` | aynı |
 
 Medusa/Echidna sütununda "—" olanlar Foundry'ye özgü araçlara dayanır: durum anlık görüntüsü ya da olay okuma. Bunlar Foundry'nin derin profilinde (`FOUNDRY_PROFILE=deep`) uzun koşar. Piyasa özellikleri için ayrı bir test kontratı var: MiningCore ile Uniswap kodu tek kontrata 96 KB sınırı içinde sığmıyor. Bu kontratta MiningCore'un rolünü tester üstlenir: minter, yatıran ve `openMarket` çağıran tester'dır.

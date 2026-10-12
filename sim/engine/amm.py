@@ -1,8 +1,10 @@
 """Constant-product ETH/DIG pool (full range ≙ Uniswap v2 math) with protocol-owned liquidity.
 
-Swap fees stay in the reserves (v2-style auto-compounding); since the protocol never
-withdraws its position (spec §10), fees simply deepen the pool. Third-party LPs are
-not modelled, so all liquidity is POL — a conservative lower bound on depth.
+Swap fees do not stay in the reserves: as in Uniswap v4 they accrue to the position, and the
+LiquidityManager takes them out at every addition or collection (docs/02 §10, AI review AI-8 /
+SPEC-5): DIG fees are burned, ETH fees go to the buyback bucket. The model keeps them in
+``fee_eth`` / ``fee_dig`` until ``collect_fees``. Third-party LPs are not modelled, so all
+liquidity (and all fees) are POL — a conservative lower bound on depth.
 """
 from __future__ import annotations
 
@@ -19,6 +21,8 @@ class Pool:
     fee: float
     shares: float      # total LP shares
     pol_shares: float  # shares owned by the protocol (never withdrawn)
+    fee_eth: float = 0.0  # swap fees accrued to the position, not yet collected
+    fee_dig: float = 0.0
 
     @classmethod
     def create(cls, eth: float, dig: float, fee: float) -> Pool:
@@ -35,7 +39,8 @@ class Pool:
             return 0.0
         eff = eth_in * (1.0 - self.fee)
         out = self.dig * eff / (self.eth + eff)
-        self.eth += eth_in
+        self.eth += eff
+        self.fee_eth += eth_in - eff
         self.dig -= out
         return out
 
@@ -45,21 +50,24 @@ class Pool:
             return 0.0
         eff = dig_in * (1.0 - self.fee)
         out = self.eth * eff / (self.dig + eff)
-        self.dig += dig_in
+        self.dig += eff
+        self.fee_dig += dig_in - eff
         self.eth -= out
         return out
 
     def zap_eth(self, eth_in: float) -> float:
         """Add single-sided ETH as POL: swap the optimal part s to DIG, add the rest at the pool ratio.
 
-        s solves (1 − f)s² + x(2 − f)s − x·A = 0 (x = ETH reserve, A = ETH in), which makes
-        the leftover ETH and the bought DIG exactly proportional to the post-swap reserves.
-        Net effect: the pool gains A ETH, its DIG reserve is unchanged. Returns shares minted.
+        With the fee leaving the reserves, s solves (1 − f)²s² + x(2 − f)s − x·A = 0 (x = ETH
+        reserve, A = ETH in), which makes the leftover ETH and the bought DIG exactly proportional
+        to the post-swap reserves. Net effect: the pool gains A − f·s ETH (f·s is the swap fee,
+        accrued to the position), its DIG reserve is unchanged. Returns shares minted.
         """
         if eth_in <= 0.0:
             return 0.0
         f, x = self.fee, self.eth
-        s = (math.sqrt(x * x * (2.0 - f) ** 2 + 4.0 * (1.0 - f) * x * eth_in) - x * (2.0 - f)) / (2.0 * (1.0 - f))
+        g = 1.0 - f
+        s = (math.sqrt(x * x * (2.0 - f) ** 2 + 4.0 * g * g * x * eth_in) - x * (2.0 - f)) / (2.0 * g * g)
         dig_bought = self.buy_dig(s)
         eth_left = eth_in - s
         minted = self.shares * min(eth_left / self.eth, dig_bought / self.dig)
@@ -68,6 +76,12 @@ class Pool:
         self.shares += minted
         self.pol_shares += minted
         return minted
+
+    def collect_fees(self) -> tuple[float, float]:
+        """Take the accrued fees out of the position: returns (ETH, DIG) and resets them."""
+        eth, dig = self.fee_eth, self.fee_dig
+        self.fee_eth = self.fee_dig = 0.0
+        return eth, dig
 
     def eth_to_move_price(self, pct: float) -> float:
         """ETH that must be bought in (fee ignored) to raise the spot price by ``pct``."""
