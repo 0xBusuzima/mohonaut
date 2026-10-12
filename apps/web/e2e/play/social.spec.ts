@@ -82,6 +82,10 @@ test('sign in, start a crew, survey, name the site, set alerts and see the publi
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('driller_one', {
     timeout: 15_000,
   });
+  await expect(page.getByRole('img', { name: /^Drill site level 1 at night/ })).toBeVisible({
+    timeout: 15_000,
+  });
+  await shot(page, 's5-public');
   await expect(page.getByRole('link', { name: 'Start drilling' })).toHaveAttribute(
     'href',
     `/play/?ref=${PLAYER}`,

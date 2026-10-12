@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { isAddress } from 'viem';
 import type { Address } from 'viem';
@@ -15,6 +16,9 @@ export function addressFromPath(path: string): Address | null {
   const part = path.split('/').filter(Boolean)[1] ?? '';
   return isAddress(part, { strict: false }) ? (part as Address) : null;
 }
+
+/** The pixel site loads after the profile (it is the heaviest part of the page). */
+const SiteView = dynamic(() => import('./SiteView').then((m) => m.SiteView), { ssr: false });
 
 type View =
   { kind: 'loading' } | { kind: 'error'; text: string } | { kind: 'ok'; profile: Profile };
@@ -104,6 +108,7 @@ function Site({ profile: p }: { profile: Profile }) {
           'Has not opened a drill site yet.'
         )}
       </p>
+      {p.registered && <SiteView profile={p} />}
       {p.registered && (
         <Card label="Drill site" title={`Site L${p.siteLevel}`}>
           <ul className="flex flex-col gap-1">

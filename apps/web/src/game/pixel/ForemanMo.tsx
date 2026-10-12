@@ -2,57 +2,13 @@
 
 import { useEffect, useRef } from 'react';
 import { useReducedMotion } from '../../lib/motion';
+import { ART, COLORS } from './mo-art';
 
 /**
  * Foreman Mo (docs/01 §7, docs/05 §2.3): the one mascot, a mole foreman in a safety-orange hard
  * hat with a warm white headlamp, thick round glasses and a hi-vis vest. Our own 24x24 pixel art;
  * his glasses catch the light and his lamp glints.
  */
-const ART = [
-  '........OOOOOOOO........',
-  '......OOooooooooOO......',
-  '.....OooooyyyyooooO.....',
-  '....OooooyywwyyooooO....',
-  '....OoooooyyyyoooooO....',
-  '..OOOOOOOOOOOOOOOOOOOO..',
-  '....BbbbbbbbbbbbbbbB....',
-  '...BbbkkbbbbbbbbkkbbB...',
-  '...BbkwekkkkkkkkwekbB...',
-  '...BbbkkbllllllbkkbbB...',
-  '..hBbbbbbllllllbbbbbBh..',
-  '...hbbbbllllllllbbbbh...',
-  '..hBbbbblllppplllbbbBh..',
-  '....BbbbllpppppllbbB....',
-  '.....BBbbblllllbbBB.....',
-  '....ggvvvvvvvvvvvvgg....',
-  '...gggvvvvvvvvvvvvggg...',
-  '..ggggssssssssssssgggg..',
-  '.bbgggvvvvvvvvvvvvgggbb.',
-  'cbbbggvvvvvvvvvvvvggbbbc',
-  '.cbcggvvvvvvvvvvvvggcbc.',
-  '....ggvvvvvvvvvvvvgg....',
-  '....ggvvvvvvvvvvvvgg....',
-  '....gggggggggggggggg....',
-];
-
-const COLORS: Record<string, string> = {
-  O: '#c4501a',
-  o: '#ff6b1a',
-  y: '#ffb31a',
-  w: '#fff6e6',
-  B: '#3e2a1e',
-  b: '#6b4a35',
-  l: '#9a7457',
-  p: '#e88a8a',
-  k: '#0e1013',
-  g: '#39414a',
-  v: '#ffb31a',
-  s: '#ece7dc',
-  c: '#ece7dc',
-  h: '#b9b2a5',
-  e: '#59626c',
-};
-
 export function ForemanMo({ scale = 3, label }: { scale?: number; label?: string }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const reduced = useReducedMotion();
