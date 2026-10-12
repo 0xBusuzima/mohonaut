@@ -4,8 +4,9 @@ import { useEffect, useRef } from 'react';
 import { useReducedMotion } from '../../lib/motion';
 
 /**
- * Foreman Mo (docs/01 §7): the one mascot, a mole foreman in a safety-orange hard hat with a
- * headlamp and a hi-vis vest. Our own 24x24 pixel art; he blinks and his lamp glints.
+ * Foreman Mo (docs/01 §7, docs/05 §2.3): the one mascot, a mole foreman in a safety-orange hard
+ * hat with a warm white headlamp, thick round glasses and a hi-vis vest. Our own 24x24 pixel art;
+ * his glasses catch the light and his lamp glints.
  */
 const ART = [
   '........OOOOOOOO........',
@@ -15,9 +16,9 @@ const ART = [
   '....OoooooyyyyoooooO....',
   '..OOOOOOOOOOOOOOOOOOOO..',
   '....BbbbbbbbbbbbbbbB....',
-  '...BbbbbbbbbbbbbbbbbB...',
-  '...BbbbkbbbbbbbbkbbbB...',
-  '...BbbbbbbllllbbbbbbB...',
+  '...BbbkkbbbbbbbbkkbbB...',
+  '...BbkwekkkkkkkkwekbB...',
+  '...BbbkkbllllllbkkbbB...',
   '..hBbbbbbllllllbbbbbBh..',
   '...hbbbbllllllllbbbbh...',
   '..hBbbbblllppplllbbbBh..',
@@ -49,6 +50,7 @@ const COLORS: Record<string, string> = {
   s: '#ece7dc',
   c: '#ece7dc',
   h: '#b9b2a5',
+  e: '#59626c',
 };
 
 export function ForemanMo({ scale = 3, label }: { scale?: number; label?: string }) {
@@ -63,7 +65,7 @@ export function ForemanMo({ scale = 3, label }: { scale?: number; label?: string
       ART.forEach((row, y) => {
         for (let x = 0; x < row.length; x++) {
           let ch = row[x] ?? '.';
-          if (blink && ch === 'k') ch = 'B';
+          if (blink && ch === 'w' && y > 4) ch = 'e';
           if (ch === 'w' && y === 3 && !glint) ch = 'y';
           const col = COLORS[ch];
           if (col === undefined) continue;
