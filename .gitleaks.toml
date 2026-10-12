@@ -17,6 +17,8 @@ paths = ['''^contracts/test/fixtures/PoolManager\.runtime\.hex$''']
 [[allowlists]]
 description = "Encrypted keystore of a throwaway test key (cast wallet new, holds nothing; password in the test)"
 paths = ['''^services/keeper/test/fixtures/throwaway\.keystore\.json$''']
+
+[[allowlists]]
 description = "Public contract addresses in deployment records (keys such as MohnToken trigger generic-api-key)"
 condition = "AND"
 regexes = ['''0x[0-9a-fA-F]{40}''']
