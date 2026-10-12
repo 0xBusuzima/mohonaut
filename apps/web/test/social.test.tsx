@@ -3,7 +3,13 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { addressFromPath } from '../src/app/s/ProfileView';
 import { Tabs } from '../src/components/Tabs';
 import { ApiError, apiMessage } from '../src/social/api';
-import { contributionPost, profileUrl, shortAddress, xIntentUrl } from '../src/social/share';
+import {
+  contributionPost,
+  profileUrl,
+  shortAddress,
+  trainingPost,
+  xIntentUrl,
+} from '../src/social/share';
 
 const ADDR = '0xAbCdEf0123456789aBCdEf0123456789AbCdEf01' as const;
 
@@ -91,5 +97,16 @@ describe('Tabs', () => {
     expect(screen.getByRole('tabpanel').textContent).toContain('Panel C');
     fireEvent.keyDown(list, { key: 'Home' });
     expect(screen.getByRole('tab', { name: 'Alpha' }).getAttribute('tabindex')).toBe('0');
+  });
+});
+
+describe('the training site post', () => {
+  it('says what was built and that it is simulated, never an amount', () => {
+    const text = trainingPost({ level: 3, rigs: 1 });
+    expect(text).toContain('level 3 drill site with 1 rig,');
+    expect(text).toContain('simulated');
+    expect(text).toContain('mohonaut.com/train/');
+    for (const banned of ['MOHN', '$', 'earn', 'profit', 'ROI']) expect(text).not.toContain(banned);
+    expect(text.length).toBeLessThanOrEqual(280);
   });
 });

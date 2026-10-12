@@ -31,6 +31,15 @@ export function contributionPost(input: {
 }
 
 /** X web intent; the player reviews and sends it themselves (docs/05 §3.4). */
+/** The training site's post: what was built, never an amount of tokens (docs/09 §A). */
+export function trainingPost(input: { level: number; rigs: number }): string {
+  return (
+    `I ran a test rig at the Mohonaut training site: a level ${input.level} drill site with ` +
+    `${input.rigs} rig${input.rigs === 1 ? '' : 's'}, all simulated, no wallet. ` +
+    'Try it: https://mohonaut.com/train/'
+  );
+}
+
 export function xIntentUrl(text: string): string {
   return `https://x.com/intent/post?text=${encodeURIComponent(text)}`;
 }

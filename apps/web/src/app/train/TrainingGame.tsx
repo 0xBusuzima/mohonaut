@@ -20,6 +20,7 @@ import {
 } from '../../game/training';
 import type { TrainingState } from '../../game/training';
 import { useLowPower } from '../../lib/power';
+import { trainingPost, xIntentUrl } from '../../social/share';
 import { BoreWindow } from '../play/BoreWindow';
 import { Guide } from '../play/Guide';
 import { HelpWindow } from '../play/HelpWindow';
@@ -198,6 +199,19 @@ export function TrainingGame() {
           <div className="flex flex-wrap gap-2">
             <a href="/play/" className="px-btn px-btn-primary px-2 py-1">
               Play for real
+            </a>
+            <a
+              href={xIntentUrl(
+                trainingPost({
+                  level: sim.level,
+                  rigs: sim.rigs.reduce((n, r) => n + r.owned, 0),
+                }),
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-btn px-btn-light px-2 py-1"
+            >
+              Share
             </a>
             <PxButton
               variant="dark"
