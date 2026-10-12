@@ -26,7 +26,9 @@ test('sign in, start a crew, survey, name the site, set alerts and see the publi
 
   // A returning player signs in again; the name from the first visit leads straight to the site.
   await page.getByRole('button', { name: 'Sign in' }).click({ timeout: 30_000 });
-  await expect(page.getByRole('button', { name: 'Market' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('button', { name: 'Market', exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
   await page.getByRole('button', { name: 'Crew', exact: true }).click();
   const win = page.getByRole('dialog');
   await expect(win.getByRole('heading', { name: 'Start a crew' })).toBeVisible({

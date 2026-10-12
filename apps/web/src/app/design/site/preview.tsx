@@ -6,6 +6,7 @@ import { describeHit } from '../../../game/play';
 import type { ScenePad } from '../../../game/play';
 import type { GameState } from '../../../game/state';
 import { GEN1_RIGS } from '../../../lib/catalog';
+import { Guide } from '../../play/Guide';
 import { Hud } from '../../play/Hud';
 import type { Panel } from '../../play/Hud';
 import { PxModal } from '../../play/px';
@@ -97,6 +98,13 @@ export function SitePreview() {
       />
       <Brand />
       <Hud state={SAMPLE} open={setPanel} />
+      {panel === null && (
+        <Guide
+          state={SAMPLE}
+          address="0x000000000000000000000000000000000000dEaD"
+          open={(t) => setPanel(t === 'market' ? 'market' : 'rigs')}
+        />
+      )}
       {(panel === 'market' || panel === 'rigs') && (
         <PxModal
           title={panel === 'market' ? 'Equipment market' : 'My rigs'}

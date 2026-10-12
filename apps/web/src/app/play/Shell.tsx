@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { PixelWorld } from '../../game/pixel/PixelWorld';
+import { ForemanMo } from '../../game/pixel/ForemanMo';
 import { RigPortrait } from '../../game/pixel/RigPortrait';
 import type { ScenePad } from '../../game/play';
 import { isTestnet } from '../../game/network';
@@ -66,10 +67,13 @@ export function PlayShell({ onConnect }: { onConnect?: () => void }) {
       <Brand />
       <PxModal title="Welcome">
         <Steps steps={ONBOARDING_STEPS} at={0} />
-        <p className="text-center text-lg">
-          Run a drill site at night. Fuel your rigs with diesel and core one shared bore with every
-          other driller.
-        </p>
+        <div className="flex items-center gap-3">
+          <ForemanMo scale={3} label="Foreman Mo, the site foreman" />
+          <p className="text-lg">
+            Evening, driller. Run a drill site at night: fuel your rigs with diesel and core one
+            shared bore with every other driller.
+          </p>
+        </div>
         <PxButton className="mt-5 w-full" onClick={onConnect} disabled={onConnect === undefined}>
           {onConnect === undefined ? 'Loading wallets…' : 'Connect wallet'}
         </PxButton>

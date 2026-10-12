@@ -8,6 +8,7 @@ import type { Address } from 'viem';
 import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
 import { useE2EConnect } from '../../game/e2e';
 import { gameChain } from '../../game/network';
+import { ForemanMo } from '../../game/pixel/ForemanMo';
 import { PixelWorld } from '../../game/pixel/PixelWorld';
 import type { Hit } from '../../game/pixel/world';
 import { describeHit, scenePads } from '../../game/play';
@@ -22,6 +23,7 @@ import { useLowPower } from '../../lib/power';
 import { api, apiEnabled, apiMessage } from '../../social/api';
 import { ME_KEY, useMe } from '../../social/session';
 import { CrewPanel, ProfilePanel, SeasonsPanel, SignedIn, SurveyPanel } from '../../social/panels';
+import { Guide } from './Guide';
 import { Hud } from './Hud';
 import type { Panel } from './Hud';
 import { PxButton, PxIcon, PxModal, Steps, usePixelGame } from './px';
@@ -120,6 +122,9 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
       />
       <Brand />
       {state !== null && onboarding === null && p !== null && <Hud state={state} open={setPanel} />}
+      {state !== null && onboarding === null && panel === null && address !== undefined && (
+        <Guide key={address} state={state} address={address} open={setPanel} />
+      )}
       {onboarding}
       {state !== null && onboarding === null && panel !== null && address !== undefined && (
         <PanelWindow
@@ -155,7 +160,10 @@ function WalletStep({ autoOpen }: { autoOpen: boolean }) {
   return (
     <PxModal title="Welcome">
       <Steps steps={ONBOARDING_STEPS} at={0} />
-      <p className="mb-4 text-center text-lg">Connect your wallet to open your drill site.</p>
+      <div className="mb-4 flex items-center gap-3">
+        <ForemanMo scale={2} label="Foreman Mo, the site foreman" />
+        <p className="text-lg">Connect your wallet and I will show you to your drill site.</p>
+      </div>
       <ul className="flex flex-col gap-2">
         {list.map((c) => (
           <li key={c.uid}>

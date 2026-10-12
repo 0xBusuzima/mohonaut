@@ -147,6 +147,11 @@ html {
   image-rendering: pixelated;
 }
 
+/* Windows take focus when they open (for screen readers and Esc), without a focus frame. */
+[role='dialog'].px-panel:focus {
+  outline: none;
+}
+
 .px-dark {
   background: #262c33;
   color: #ece7dc;
@@ -249,13 +254,15 @@ html {
     'clig' 0;
 }
 
-/* In the game the toasts sit just above the main buttons, on the right on wider screens (clear
-   of the windows' close buttons), as small steel plates. */
+/* In the game the toasts sit under the read-outs on phones (Foreman Mo has the bottom) and
+   above the main buttons on the right on wider screens, clear of the windows' close buttons. */
 body.pixel-game .toast-region {
-  bottom: 6.5rem;
+  top: 7.6rem;
+  bottom: auto;
 }
 @media (min-width: 768px) {
   body.pixel-game .toast-region {
+    top: auto;
     right: 0.75rem;
     bottom: 6.5rem;
     left: auto;
