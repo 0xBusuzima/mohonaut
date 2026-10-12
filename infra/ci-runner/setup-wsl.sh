@@ -26,6 +26,10 @@ echo "== 1/4 packages (Docker, jq, age, cloud-init, shellcheck)"
 sudo apt-get update -qq
 sudo apt-get install -y -qq docker.io docker-buildx docker-compose-v2 jq age cloud-init \
   shellcheck curl tar unzip zstd >/dev/null
+# The runner (.NET) needs ICU; its own installdependencies.sh does not know new Ubuntu
+# releases, so install whichever libicuNN this release ships.
+ICU_PKG="$(apt-cache pkgnames | grep -E '^libicu[0-9]+$' | sort -V | tail -1)"
+sudo apt-get install -y -qq "$ICU_PKG" >/dev/null
 sudo systemctl enable --now docker
 if ! id -nG "$USER" | grep -qw docker; then
   sudo usermod -aG docker "$USER"
