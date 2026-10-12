@@ -435,12 +435,16 @@ function RefineryPanel({ state, action }: { state: GameState; action: Action }) 
   const [amount, setAmount] = useState('');
   const p = state.player;
   if (p === null || address === undefined) return null;
-  const open = state.at >= state.network.marketOpenTime;
+  // The contract opens the refinery once openMarket has run, not at the time alone.
+  const open = state.network.marketOpened;
   const wei = parseAmount(amount);
   return (
     <Card label="Refinery" title="Refine">
       {!open ? (
-        <p>Refining opens at Market Open: {formatUtc(state.network.marketOpenTime)}.</p>
+        <p>
+          Refining opens at Market Open ({formatUtc(state.network.marketOpenTime)}), as soon as the
+          market is opened on chain.
+        </p>
       ) : (
         <>
           <p className="text-fg-muted">
