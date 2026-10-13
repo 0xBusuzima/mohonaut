@@ -37,12 +37,18 @@
       ]
     },
     "apps/web": {
-      "entry": ["src/app/**/{page,layout}.tsx", "e2e/**/*.{ts,mjs}", "scripts/**/*.mjs"],
+      "entry": [
+        "src/app/**/{page,layout}.tsx",
+        "e2e/**/*.{ts,mjs}",
+        "scripts/**/*.mjs",
+        "functions/**/*.ts"
+      ],
       "project": [
         "src/**/*.{ts,tsx}",
         "test/**/*.{ts,tsx}",
         "e2e/**/*.{ts,mjs}",
-        "scripts/**/*.mjs"
+        "scripts/**/*.mjs",
+        "functions/**/*.ts"
       ],
       "ignoreDependencies": [
         "tailwindcss",

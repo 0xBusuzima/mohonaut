@@ -20,6 +20,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "src", "test", "e2e", "*.ts"],
+  "include": ["next-env.d.ts", "src", "test", "e2e", "functions", "*.ts"],
   "exclude": ["node_modules", "out"]
 }
