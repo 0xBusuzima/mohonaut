@@ -38,6 +38,8 @@ import {
 } from './props';
 import { land, sky, skyLife, skyStill } from './terrain';
 
+import { DECOR_SPOTS, drawDecor } from './decor';
+import type { DecorSet } from './decor';
 export { drawRig, padTile } from './props';
 
 export type Hit = 'tank' | 'shack' | 'market' | 'bore' | `pad:${number}`;
@@ -69,6 +71,8 @@ export interface WorldModel {
   yieldPerDp?: number;
   /** One-off effects: a new rig dropping onto its pad, diesel arriving in the tank. */
   fx?: WorldFx[];
+  /** Decor in the yard for the player's completed Core Collection sets. */
+  decor?: readonly DecorSet[];
 }
 
 export interface WorldFx {
@@ -270,6 +274,16 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
     const p = iso(0.4, 3.4);
     pipeRack(c, p.x, p.y);
   });
+  for (const set of m.decor ?? []) {
+    const [gx, gy] = DECOR_SPOTS[set];
+    at(gx, gy, () => {
+      const p = iso(gx, gy);
+      drawDecor(c, set, p.x, p.y);
+    });
+    // A work light on each piece, so it reads at night.
+    const p = iso(gx, gy);
+    lights.push({ x: p.x, y: p.y + 2, r: 22, tint: P.window, power: 0.9 });
+  }
   at(7, 7, () => {
     const p = iso(7, 6.5);
     wellhead(c, p.x, p.y + 8, t, m.motion, m.hover === 'bore');

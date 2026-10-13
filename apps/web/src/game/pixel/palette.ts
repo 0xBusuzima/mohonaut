@@ -43,6 +43,12 @@ export const P = {
   rain: '#8fa3c4',
   glow: '#ffb31a',
   // Open land around the site: warm dark earth, scrub and rock, fading into haze at the horizon.
+  wood: '#8a6448',
+  woodDark: '#5e4330',
+  glassTop: '#3a5a66',
+  glass: '#26404c',
+  glassDark: '#1b2e38',
+  glassShine: '#9fc4cc',
   earth: '#2a2420',
   earthAlt: '#2f2823',
   earthDark: '#211c19',

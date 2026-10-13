@@ -297,3 +297,18 @@ describe('emittedAt', () => {
     expect(emittedAt({ ...base, genesisTime: later + 10, now: later })).toBe(base.emitted);
   });
 });
+
+describe('site decor for completed sets', () => {
+  it('has a piece for every Survey set, and only those', async () => {
+    const { FIND_SETS } = await import('../src/game/finds');
+    const { DECOR_SETS, DECOR_SPOTS } = await import('../src/game/pixel/decor');
+    expect([...DECOR_SETS].sort()).toEqual(FIND_SETS.map((s) => s.id).sort());
+    expect(Object.keys(DECOR_SPOTS).sort()).toEqual([...DECOR_SETS].sort());
+  });
+
+  it('stands a piece for each completed set, in order, ignoring unknown ids', async () => {
+    const { decorFor } = await import('../src/game/pixel/decor');
+    expect(decorFor(['relics', 'nope', 'fossils'])).toEqual(['fossils', 'relics']);
+    expect(decorFor([])).toEqual([]);
+  });
+});

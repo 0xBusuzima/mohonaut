@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { decorFor } from '../../game/pixel/decor';
 import { PixelWorld } from '../../game/pixel/PixelWorld';
 import { scenePads } from '../../game/play';
 import { useNow } from '../../lib/clock';
@@ -22,6 +23,7 @@ export function SiteView({ profile }: { profile: Profile }) {
         fuelled ? 1n : 0n,
       ),
       tankFill: fuelled ? 0.6 : 0,
+      decor: decorFor(profile.collection.completedSets),
     }),
     [profile, fuelled],
   );

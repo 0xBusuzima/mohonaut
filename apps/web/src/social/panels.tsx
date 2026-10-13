@@ -273,6 +273,8 @@ export function SurveyPanel({ now }: { now: number }) {
         id: r.find.id,
       });
       await client.invalidateQueries({ queryKey: ['collection'] });
+      // A completed set adds its decor to the site.
+      await client.invalidateQueries({ queryKey: ['profile'] });
     } catch (err) {
       toast({ tone: 'warning', title: 'Not done', body: apiMessage(err) });
     } finally {

@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { DECOR_SETS } from '../../../game/pixel/decor';
 import { PixelWorld } from '../../../game/pixel/PixelWorld';
 import { describeHit } from '../../../game/play';
 import type { ScenePad } from '../../../game/play';
@@ -109,10 +110,21 @@ export function SitePreview() {
         : [...PADS, ...DEMO_ADDS.slice(0, step % 3)],
     [step, big],
   );
+  // ?decor=1 adds the yard decor of all four completed Core Collection sets.
+  const decor = useSyncExternalStore(
+    noSubscribe,
+    () => new URLSearchParams(window.location.search).has('decor'),
+    () => false,
+  );
   // 367 MOHN/h over 980 DP, as the sample HUD says.
   const model = useMemo(
-    () => ({ pads, tankFill: 0.4 + (step % 3) * 0.2, yieldPerDp: 0.375 }),
-    [pads, step],
+    () => ({
+      pads,
+      tankFill: 0.4 + (step % 3) * 0.2,
+      yieldPerDp: 0.375,
+      decor: decor ? DECOR_SETS : [],
+    }),
+    [pads, step, decor],
   );
   const [panel, setPanel] = useState<Panel | null>(null);
   // ?shift=1 opens the shift report a returning player sees.

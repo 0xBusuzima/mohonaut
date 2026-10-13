@@ -1,13 +1,14 @@
 'use client';
 
 import { fuelLineWad, millimetres } from '@mohonaut/sdk';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Address } from 'viem';
 import { useAccount, useBalance, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
 import { useE2EConnect } from '../../game/e2e';
 import { gameChain } from '../../game/network';
+import { decorFor } from '../../game/pixel/decor';
 import { ForemanMo } from '../../game/pixel/ForemanMo';
 import { PixelWorld } from '../../game/pixel/PixelWorld';
 import type { Hit } from '../../game/pixel/world';
@@ -76,15 +77,25 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
       : Number(perHourEstimate(p.dp, state.network.activeDp, state.network.hourEmission)) / 1e18;
   const yieldPerDp =
     p === null || p.dp === 0n ? 0 : Number((perHour / Number(p.dp)).toPrecision(3));
+  // Completed Core Collection sets put their decor on the site (from the public profile).
+  const completed = useQuery({
+    queryKey: ['profile', address],
+    queryFn: () => api.profile(address as Address),
+    enabled: apiEnabled && address !== undefined,
+    staleTime: 300_000,
+    retry: false,
+  }).data?.collection.completedSets;
+  const decorKey = (completed ?? []).join(',');
   const model = useMemo(
     () => ({
       pads: state === null ? [] : scenePads(level, state.rigs, running ? 1n : 0n),
       tankFill: fill,
       tankLow,
       yieldPerDp,
+      decor: decorFor(decorKey === '' ? [] : decorKey.split(',')),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rigsKey stands for state.rigs
-    [level, running, rigsKey, fill, yieldPerDp, tankLow],
+    [level, running, rigsKey, fill, yieldPerDp, tankLow, decorKey],
   );
   const [panel, setPanel] = useState<Panel | null>(null);
   const [named, setNamed] = useState(false);
