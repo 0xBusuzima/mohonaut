@@ -203,6 +203,8 @@ test('the training site runs the game without a wallet', async ({ page }) => {
     timeout: 15_000,
   });
   await page.getByRole('button', { name: 'Market', exact: true }).click();
+  // The training site's illustrative price: 10 practice $MOHN per DP.
+  await expect(page.getByText(/Right now 1 DP costs 10\.00 MOHN/)).toBeVisible();
   await page.getByRole('button', { name: 'Buy one Rotary Rig' }).click();
   await expect(page.getByText('Rotary Rig installed')).toBeVisible();
   await page.getByRole('button', { name: 'Close' }).click();

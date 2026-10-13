@@ -124,6 +124,9 @@ describe('the diesel tank window', () => {
     expect(lit('bg-alarm')).toBe(0);
     // 0.001 ETH buys 25 l: about 100 hours for the Pilot Rig's 0.25 l/h.
     expect(screen.getByText(/about 4\.2 days for your rigs/)).toBeTruthy();
+    // The burn in ETH an hour (0.25 l/h at 25,000 l per ETH) and when the tank runs dry (96 h).
+    expect(screen.getByText('0.25 ℓ/h ≈ 0.000010 ETH/h')).toBeTruthy();
+    expect(screen.getByText(/^\d+ \w{3} \d\d:\d\d UTC \(≈ 96\.0 h\)$/)).toBeTruthy();
     // An empty wallet: said before the wallet opens.
     expect(screen.getByText(/more than your wallet holds/)).toBeTruthy();
     expect((screen.getByRole('button', { name: /Buy diesel/ }) as HTMLButtonElement).disabled).toBe(

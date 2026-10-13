@@ -73,11 +73,21 @@ export function MarketWindow({
   const p = state.player;
   if (p === null) return null;
   const freePads = sitePads(p.level) - p.padsUsed;
+  // The auction's price of one Drill Power now: a premium-free rig's price over its DP.
+  const base = state.rigs.find((r) => r.id !== 0 && r.premiumBps === 0 && r.dp > 0n);
+  const perDp = base === undefined ? null : base.price / base.dp;
   return (
     <>
       <p className="mb-4 text-center text-base text-concrete">
         Choose rigs for your free pads. Prices follow the public auction formula and move with time
         and sales; you pay from scrap credit first, then unrefined $MOHN.
+        {perDp !== null && perDp > 0n && (
+          <>
+            {' '}
+            Right now 1 DP costs <span className="text-cyan">{formatMohn(perDp)}</span> before tier
+            premiums.
+          </>
+        )}
       </p>
       <p className="mb-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-lg">
         <PxIcon name="rig" /> {freePads > 0 ? freePads : 'No'} free pad

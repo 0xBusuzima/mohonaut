@@ -174,8 +174,19 @@ export function FuelWindow({
           <Readout
             rows={[
               ['In tank', formatLitres(tank)],
-              ['Burn', `${formatLitres(p.burn, 2)}/h`],
-              ['Runs for', hoursLeft === null ? '—' : `≈ ${hoursLeft.toFixed(1)} h`],
+              [
+                'Burn',
+                // The burn in ETH too (docs/01 6): what an hour of drilling costs in diesel.
+                rate === null || rate === 0n
+                  ? `${formatLitres(p.burn, 2)}/h`
+                  : `${formatLitres(p.burn, 2)}/h ≈ ${formatEth((p.burn * 10n ** 18n) / rate, 6)}/h`,
+              ],
+              [
+                'Runs until',
+                hoursLeft === null || now === 0
+                  ? '—'
+                  : `${formatUtc(now + Math.floor(hoursLeft * 3600))} (≈ ${hoursLeft.toFixed(1)} h)`,
+              ],
             ]}
           />
         </>
