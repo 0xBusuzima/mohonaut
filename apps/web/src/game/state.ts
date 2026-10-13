@@ -1,8 +1,10 @@
 'use client';
 
 import { miningCoreAbi, mohnTokenAbi } from '@mohonaut/sdk';
+import { multicall3Abi } from 'viem';
 import type { Address } from 'viem';
 import { useReadContracts } from 'wagmi';
+import { emittedAt } from './derive';
 import { GAME } from './network';
 
 const core = { address: GAME.MiningCore, abi: miningCoreAbi } as const;
@@ -38,6 +40,7 @@ export interface GameState {
   network: {
     activeDp: bigint;
     hourEmission: bigint;
+    /** All $MOHN emitted so far, as of `at` (World Bore depth = emitted / 1,000 $MOHN). */
     emitted: bigint;
     pausedUntil: number;
     marketOpened: boolean;
@@ -62,9 +65,12 @@ export interface GameState {
   };
 }
 
+/** Multicall3, at the same address on every EVM chain (and on the e2e anvil). */
+const MULTICALL3: Address = '0xcA11bde05977b3631167028862bE2a173976CA11';
+
 type Call = {
   address: Address;
-  abi: typeof miningCoreAbi | typeof mohnTokenAbi;
+  abi: typeof miningCoreAbi | typeof mohnTokenAbi | typeof multicall3Abi;
   functionName: string;
   args?: readonly unknown[];
 };
@@ -97,6 +103,9 @@ export function useGameState(
     { ...core, functionName: 'maxTankHours' },
     ...types.map((i) => ({ ...core, functionName: 'machineType', args: [BigInt(i)] })),
     ...types.map((i) => ({ ...core, functionName: 'quoteMachines', args: [BigInt(i), 1] })),
+    // Last, so the indices above stay put: the last checkpoint and the chain's own clock.
+    { ...core, functionName: 'lastUpdate' },
+    { address: MULTICALL3, abi: multicall3Abi, functionName: 'getCurrentBlockTimestamp' },
   ];
   const playerCalls: Call[] =
     player === undefined
@@ -205,19 +214,34 @@ export function useGameState(
     };
   }
 
+  const at = Math.floor(read.dataUpdatedAt / 1000);
+  const activeDp = ok<bigint>(r[0]) ?? 0n;
+  const hourEmission = ok<bigint>(r[1]) ?? 0n;
+  const pausedUntil = Number(ok<bigint>(r[3]) ?? 0n);
+  const genesisTime = Number(ok<bigint>(r[6]) ?? 0n);
   return {
     refetch,
     offline,
     state: {
-      at: Math.floor(read.dataUpdatedAt / 1000),
+      at,
       network: {
-        activeDp: ok<bigint>(r[0]) ?? 0n,
-        hourEmission: ok<bigint>(r[1]) ?? 0n,
-        emitted: ok<bigint>(r[2]) ?? 0n,
-        pausedUntil: Number(ok<bigint>(r[3]) ?? 0n),
+        activeDp,
+        hourEmission,
+        // The chain stores `emitted` at each checkpoint; brought forward to the read, like the
+        // player's own unrefined balance, so the World Bore never lags the HUD.
+        emitted: emittedAt({
+          emitted: ok<bigint>(r[2]) ?? 0n,
+          hourEmission,
+          activeDp,
+          lastUpdate: Number(ok<bigint>(r[calls.length - 2]) ?? 0n),
+          pausedUntil,
+          genesisTime,
+          now: Number(ok<bigint>(r[calls.length - 1]) ?? BigInt(at)),
+        }),
+        pausedUntil,
         marketOpened: ok<boolean>(r[4]) ?? false,
         marketOpenTime: Number(ok<bigint>(r[5]) ?? 0n),
-        genesisTime: Number(ok<bigint>(r[6]) ?? 0n),
+        genesisTime,
         litresPerEth: ok<bigint>(r[7]) ?? null,
         maxTankHours: Number(ok<bigint>(r[9]) ?? 720n),
       },

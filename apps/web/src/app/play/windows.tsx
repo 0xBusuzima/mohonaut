@@ -20,7 +20,7 @@ import {
 import { PxButton, PxIcon } from './px';
 
 /** A dark read-out box: label on the left, value on the right. */
-function Readout({ rows }: { rows: [string, ReactNode][] }) {
+export function Readout({ rows }: { rows: [string, ReactNode][] }) {
   return (
     <dl className="px-inset grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 px-4 py-3 text-lg">
       {rows.map(([k, v]) => (

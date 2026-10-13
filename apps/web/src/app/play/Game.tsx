@@ -27,6 +27,7 @@ import { BoreWindow } from './BoreWindow';
 import { Guide } from './Guide';
 import { HelpWindow } from './HelpWindow';
 import { Hud } from './Hud';
+import { ShiftReportNotice } from './ShiftReport';
 import { StratumNotice } from './StratumNotice';
 import type { Panel } from './Hud';
 import { PxButton, PxIcon, PxModal, Steps, usePixelGame } from './px';
@@ -149,8 +150,10 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
       {state !== null && onboarding === null && panel === null && address !== undefined && (
         <Guide key={address} state={state} address={address} open={setPanel} />
       )}
-      {state !== null && onboarding === null && panel === null && (
-        <StratumNotice depthMm={millimetres(state.network.emitted)} />
+      {state !== null && onboarding === null && panel === null && address !== undefined && (
+        <ShiftReportNotice state={state} address={address} open={setPanel}>
+          <StratumNotice depthMm={millimetres(state.network.emitted)} />
+        </ShiftReportNotice>
       )}
       {onboarding}
       {state !== null && onboarding === null && panel !== null && address !== undefined && (

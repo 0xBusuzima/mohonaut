@@ -93,3 +93,22 @@ export function maxRigsToBuy(p: {
   const byTx = p.rigDp === 0n ? Infinity : Number(MAX_UNITS_PER_TX / p.rigDp);
   return Math.max(0, Math.min(p.freePads, byLine, byTx));
 }
+
+/**
+ * `emitted` as of `now`: the stored value from the last checkpoint plus the hour's slice since,
+ * while someone drills, after Genesis and outside a pause. For display only; the next hours'
+ * slices are a little smaller, so a checkpoint long ago is overstated by about 0.05% a day.
+ */
+export function emittedAt(p: {
+  emitted: bigint;
+  hourEmission: bigint;
+  activeDp: bigint;
+  lastUpdate: number;
+  pausedUntil: number;
+  genesisTime: number;
+  now: number;
+}): bigint {
+  const from = Math.max(p.lastUpdate, p.genesisTime, p.pausedUntil);
+  if (p.activeDp === 0n || p.now <= from) return p.emitted;
+  return p.emitted + (p.hourEmission * BigInt(p.now - from)) / 3600n;
+}

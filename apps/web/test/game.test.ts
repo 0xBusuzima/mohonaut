@@ -3,6 +3,7 @@ import { MAX_SITE_LEVEL, miningCoreAbi, sitePads } from '@mohonaut/sdk';
 import { describe, expect, it } from 'vitest';
 import {
   efficiency,
+  emittedAt,
   maxRigsToBuy,
   minersShare,
   perHourEstimate,
@@ -273,5 +274,25 @@ describe('site effects', () => {
     expect(opened).toContainEqual({ kind: 'rig', pad: 0, at: 5 });
     // A burning tank or a stopped rig makes no effect.
     expect(siteEffects(was, { ...was, tankFill: 0.19 }, 5)).toEqual([]);
+  });
+});
+
+describe('emittedAt', () => {
+  const base = {
+    emitted: 1_000n * 10n ** 18n,
+    hourEmission: 3_600n * 10n ** 18n,
+    activeDp: 10n,
+    lastUpdate: 1_000_000,
+    pausedUntil: 0,
+    genesisTime: 0,
+  };
+  it('adds the slice since the last checkpoint while someone drills', () => {
+    expect(emittedAt({ ...base, now: 1_000_000 + 1800 })).toBe(2_800n * 10n ** 18n);
+  });
+  it('adds nothing with nobody drilling, before Genesis or during a pause', () => {
+    const later = 1_000_000 + 1800;
+    expect(emittedAt({ ...base, activeDp: 0n, now: later })).toBe(base.emitted);
+    expect(emittedAt({ ...base, genesisTime: later + 10, now: later })).toBe(base.emitted);
+    expect(emittedAt({ ...base, pausedUntil: later + 10, now: later })).toBe(base.emitted);
   });
 });

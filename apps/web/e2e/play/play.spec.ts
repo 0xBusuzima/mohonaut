@@ -80,15 +80,30 @@ test('a new player opens a drill site, then stops and restarts the Pilot Rig', a
   expect(errors).toEqual([]);
 });
 
-test('after genesis, a driller buys two Rotary Rigs in one go', async ({ page }) => {
+test('after genesis, a returning driller reads the shift report and buys two Rotary Rigs', async ({
+  page,
+}) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   // Genesis is at most three hours ahead (start.mjs): four hours on, the lone driller holds
   // a whole slice of the emission in unrefined $MOHN.
   await rpc(page, 'evm_increaseTime', [4 * 3600]);
   await rpc(page, 'evm_mine', []);
+  // This device last saw the site four hours ago (wall clock, as the game's reads are stamped),
+  // empty: Foreman Mo has a shift report.
+  const then = Math.floor(Date.now() / 1000) - 4 * 3600;
+  await page.addInitScript((at) => {
+    window.localStorage.setItem(
+      'mohonaut.shift.0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc', // anvil account 2
+      JSON.stringify({ at, pending: '0', tank: (10n ** 24n).toString(), emitted: '0' }),
+    );
+  }, then);
   await page.goto('/play/');
   await page.getByRole('button', { name: 'Sign in' }).click({ timeout: 30_000 });
+  const report = page.getByRole('dialog', { name: 'Shift report' });
+  await expect(report.getByText('Cored, unrefined')).toBeVisible({ timeout: 30_000 });
+  await shot(page, '6-shift-report');
+  await report.getByRole('button', { name: 'Back to work' }).click();
   await page.getByRole('button', { name: 'Market', exact: true }).click({ timeout: 30_000 });
   const market = page.getByRole('dialog', { name: 'Market' });
   await market.getByRole('button', { name: 'One Rotary Rig more' }).click({ timeout: 30_000 });
@@ -96,7 +111,7 @@ test('after genesis, a driller buys two Rotary Rigs in one go', async ({ page })
   // The batch quote comes from the chain; the button waits for it.
   const buy = market.getByRole('button', { name: 'Buy 2 Rotary Rigs' });
   await expect(buy).toBeEnabled({ timeout: 30_000 });
-  await shot(page, '6-market-two');
+  await shot(page, '7-market-two');
   await buy.click();
   await expect(page.getByText('2 Rotary Rigs installed')).toBeVisible({ timeout: 30_000 });
   await market.getByRole('button', { name: 'Close' }).click();

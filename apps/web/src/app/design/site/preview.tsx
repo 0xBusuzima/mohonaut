@@ -80,6 +80,10 @@ const BoreWindow = dynamic(() => import('../../play/BoreWindow').then((m) => m.B
   ssr: false,
 });
 
+const ShiftPreview = dynamic(() => import('./shift-preview').then((m) => m.ShiftPreview), {
+  ssr: false,
+});
+
 /** The rig windows read the chain (batch quotes): loaded with their providers when opened. */
 const RigWindows = dynamic(() => import('./rig-windows').then((m) => m.RigWindows), {
   ssr: false,
@@ -111,6 +115,12 @@ export function SitePreview() {
     [pads, step],
   );
   const [panel, setPanel] = useState<Panel | null>(null);
+  // ?shift=1 opens the shift report a returning player sees.
+  const shift = useSyncExternalStore(
+    noSubscribe,
+    () => new URLSearchParams(window.location.search).has('shift'),
+    () => false,
+  );
   return (
     <>
       <PixelWorld
@@ -131,6 +141,7 @@ export function SitePreview() {
           open={(t) => setPanel(t === 'market' ? 'market' : 'rigs')}
         />
       )}
+      {shift && panel === null && <ShiftPreview state={SAMPLE} open={setPanel} />}
       {panel === 'help' && (
         <PxModal title="How to play" onClose={() => setPanel(null)} wide>
           <HelpWindow />
