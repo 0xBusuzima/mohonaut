@@ -370,7 +370,9 @@ docs/09_ONBOARDING.md §3'e göre Testnet Sezon 0'ı kur: apps/web'de testnet mo
 
 ## FAZ 9 — Mainnet lansmanı
 
-### 9.1 Prova
+### 9.1 Prova — 🟡 runbook hazır, Prova 1 sürüyor (2026-10-13)
+
+> Adımlar, sorumlular, süreler ve prova kayıtları: `docs/runbooks/lansman-provasi.md`. Prova 1 mevcut testnet dağıtımı (Genesis 2026-10-11 22:00 UTC, Market Open 2026-10-14 22:00 UTC, keeper sürekli çalışıyor). İlk bulgu: keeper Genesis'ten önce sürekli çalışmalı (checkpoint 9 saat gecikmişti). Prova 2 için kurucu `redeploy.ps1` çalıştırır.
 
 ```text
 docs/05'teki lansman günü runbook'u ve docs/04 §4 deploy prosedürünü testnet'te mainnet'in birebir kopyası olarak prova et: deploy → verify → handover assert → /contracts sayfası güncelle → pre-fill penceresi → T0 (Genesis Dig) → 72 saat (testnette hızlandırılmış zaman yok; gerçek süreyle) → openMarket → ilk buyback/POL. Her adımın süresini ve sorumlusunu çıkar; eksik olan her şeyi listele.
