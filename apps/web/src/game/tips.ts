@@ -53,6 +53,14 @@ export function nextTip(state: GameState, seen: ReadonlySet<string>, social: boo
           action: { label: 'Refinery', target: 'refinery' },
         }
       : null,
+    // The first goal (docs/09 3): enough cored for the next site level.
+    p.siteUpgradePrice !== null && p.pending + p.scrapCredit >= p.siteUpgradePrice
+      ? {
+          id: `afford-site-${p.level + 1}`,
+          text: `What your rigs have cored now covers site level ${p.level + 1}: ${sitePads(p.level + 1)} pads and a wider fuel line.`,
+          action: { label: 'Expand the site', target: 'site' },
+        }
+      : null,
     freePads > 0 && extraRigs > 0
       ? {
           id: `free-pad-${p.padsUsed}`,

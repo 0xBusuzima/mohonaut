@@ -91,6 +91,19 @@ describe("Foreman Mo's tips", () => {
     expect(nextTip(state, new Set(), true)?.id).toBe('refine');
   });
 
+  it('names the first goal: enough cored, scrap credit included, for the next site level', () => {
+    const short = site({ siteUpgradePrice: 150n * E18, pending: 140n * E18 }, [1, 1]);
+    expect(nextTip(short, new Set(), true)?.id).toBe('free-pad-1');
+    const enough = site(
+      { siteUpgradePrice: 150n * E18, pending: 140n * E18, scrapCredit: 10n * E18 },
+      [1, 1],
+    );
+    const tip = nextTip(enough, new Set(), true);
+    expect(tip?.id).toBe('afford-site-2');
+    expect(tip?.action?.target).toBe('site');
+    expect(tip?.text).toContain('site level 2: 5 pads');
+  });
+
   it('suggests a bigger site when every pad is taken', () => {
     expect(nextTip(site({ padsUsed: 4 }, [1, 3]), new Set(), true)?.id).toBe('site-full-1');
   });
