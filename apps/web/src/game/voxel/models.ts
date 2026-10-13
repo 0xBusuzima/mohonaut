@@ -500,3 +500,40 @@ export function pipeRackModel(): Model {
       m.box(0, y, 1 + layer, 11, y, 1 + layer, v(layer % 2 === 0 ? P.concrete : P.steelLight));
   return m;
 }
+
+/** Voxels per site grid cell for the fence (finer than the ground: thin posts). */
+export const FENCE_VOXELS = 8;
+
+/** One fence run from grid cell (x0, y0) to (x1, y1) along one axis: posts and two rails. */
+function fenceRun(m: Model, from: [number, number], to: [number, number]): void {
+  const k = FENCE_VOXELS;
+  const [x0, y0] = [from[0] * k, from[1] * k];
+  const [x1, y1] = [to[0] * k, to[1] * k];
+  const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+  for (let i = 0; i <= steps; i++) {
+    const x = x0 + Math.sign(x1 - x0) * i;
+    const y = y0 + Math.sign(y1 - y0) * i;
+    if (i % k === 0) m.box(x, y, 0, x, y, 4, v(P.fence));
+    else {
+      m.set(x, y, 1, v(P.fenceDark));
+      m.set(x, y, 3, v(P.fenceDark));
+    }
+  }
+}
+
+/** The fence behind the site: along its back edge, and the left edge up to the gate. */
+export function fenceBackModel(gw: number): Model {
+  const m = new Model();
+  fenceRun(m, [0, 0], [gw, 0]);
+  fenceRun(m, [0, 0], [0, 2]);
+  return m;
+}
+
+/** The fence in front: the right and near edges, and the left edge below the gate. */
+export function fenceFrontModel(gw: number, gh: number): Model {
+  const m = new Model();
+  fenceRun(m, [gw, 0], [gw, gh]);
+  fenceRun(m, [0, gh], [gw, gh]);
+  fenceRun(m, [0, 4], [0, gh]);
+  return m;
+}

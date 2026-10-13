@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  FENCE_VOXELS,
   GROUND_VOXELS,
   emptyPad,
+  fenceBackModel,
+  fenceFrontModel,
   generatorModel,
   lampModel,
   pipeRackModel,
@@ -200,5 +203,20 @@ describe('the voxel models', () => {
     const rack = pipeRackModel();
     expect(Math.max(...rack.entries().map(([, , z]) => z))).toBe(3);
     expect(rack.get(1, 0, 0)?.colour).toEqual(hex('#5e4330'));
+  });
+
+  it('runs the fence round the site at the scene grid, leaving the gate open on the left', () => {
+    const k = FENCE_VOXELS;
+    const back = fenceBackModel(GW);
+    const front = fenceFrontModel(GW, siteDepth(3));
+    // Posts every cell, rails between.
+    expect(back.get(k, 0, 4)?.colour).toEqual(hex('#7b8692'));
+    expect(back.get(k + 1, 0, 1)?.colour).toEqual(hex('#56606b'));
+    // The gate: the left edge has no fence between rows 2 and 4.
+    for (let y = 2 * k + 1; y < 4 * k; y++) {
+      expect(back.has(0, y, 1)).toBe(false);
+      expect(front.has(0, y, 1)).toBe(false);
+    }
+    expect(front.has(GW * k, siteDepth(3) * k, 4)).toBe(true); // the near corner post
   });
 });

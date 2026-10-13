@@ -109,6 +109,32 @@ for (let rows = 3; rows <= 9; rows++) {
     ay: image.origin[1],
   };
 }
+// The fence at the scene's grid (FENCE_VOXELS voxels a cell): the back run once, the front one
+// for each number of pad rows; anchored at iso(0, 0) on the ground.
+{
+  const scale = 16 / models.FENCE_VOXELS;
+  const back = voxel.render(models.fenceBackModel(world.GW), { scale, light: LIGHT });
+  writeFileSync(join(out, 'site-fence-back.png'), png(back));
+  manifest['fence-back'] = {
+    w: back.width,
+    h: back.height,
+    ax: back.origin[0],
+    ay: back.origin[1],
+  };
+  for (let rows = 3; rows <= 9; rows++) {
+    const front = voxel.render(models.fenceFrontModel(world.GW, world.siteDepth(rows)), {
+      scale,
+      light: LIGHT,
+    });
+    writeFileSync(join(out, `site-fence-front-${rows}.png`), png(front));
+    manifest[`fence-front-${rows}`] = {
+      w: front.width,
+      h: front.height,
+      ax: front.origin[0],
+      ay: front.origin[1],
+    };
+  }
+}
 // Small props at 2 px a voxel, each anchored where the scene's pixel drawing stands.
 for (const [name, model, at] of [
   ['pad', models.emptyPad(), [8, 8, 1]],

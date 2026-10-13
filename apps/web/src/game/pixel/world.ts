@@ -195,7 +195,8 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   // ---- Still layer: sky, land, site ground, pads, back fence, the road's furniture.
   const ground = m.voxel === true ? voxelSprite(`ground-${rows}`) : null;
   const padSprite = m.voxel === true ? voxelSprite('pad') : null;
-  const key = `${W}x${H}:${ox},${oy}:${gh}:${m.pads.length}:${m.hover ?? ''}:${ground === null ? 'px' : 'vx'}:${padSprite === null ? 'px' : 'vx'}`;
+  const backFence = m.voxel === true ? voxelSprite('fence-back') : null;
+  const key = `${W}x${H}:${ox},${oy}:${gh}:${m.pads.length}:${m.hover ?? ''}:${ground === null ? 'px' : 'vx'}:${padSprite === null ? 'px' : 'vx'}:${backFence === null ? 'px' : 'vx'}`;
   cached(c, W, H, key, (g) => {
     sky(g, W, horizon);
     land(g, W, H, horizon, ox, oy, iso, GW, gh);
@@ -216,7 +217,8 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
     // Site ground: the baked voxel yard, or the pixel one.
     if (ground !== null) g.drawImage(ground.img, ox - ground.ax, oy - ground.ay);
     else drawPixelGround(g, iso, gh);
-    fenceBack(g, iso);
+    if (backFence === null) fenceBack(g, iso);
+    else g.drawImage(backFence.img, ox - backFence.ax, oy - backFence.ay);
     slots.forEach(([gx, gy], i) => {
       const p = iso(gx, gy);
       const open = i < m.pads.length;
@@ -376,7 +378,9 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   });
   items.sort((a, b) => a.depth - b.depth);
   for (const it of items) it.draw();
-  fenceFront(c, iso, gh);
+  const frontFence = m.voxel === true ? voxelSprite(`fence-front-${rows}`) : null;
+  if (frontFence === null) fenceFront(c, iso, gh);
+  else c.drawImage(frontFence.img, ox - frontFence.ax, oy - frontFence.ay);
 
   // Lights out on the land: the truck's headlights and the neighbours' lamps and beacons.
   const head = truckLights(truckAt.x, truckAt.y);
