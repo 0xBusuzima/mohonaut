@@ -18,11 +18,13 @@ const PIXELS_PHONE = 600_000;
 const PIXELS_LARGE = 2_500_000;
 /** The longest the voxel scene waits for its sprites before it shows anyway. */
 const SHOW_AFTER_MS = 2500;
+/** How long after the scene shows its animation waits, then for the page to be idle. */
+const WAKE_AFTER_MS = 2500;
 
 /**
- * The full-screen drill site, redrawn 10 times a second (once when motion is reduced): the voxel
- * scene near screen resolution, or (low-power mode) the pixel scene on a low-resolution canvas
- * scaled up by a whole number with `image-rendering: pixelated`. Five canvases are stacked (the
+ * The full-screen drill site, redrawn 10 times a second once the page has settled (once when
+ * motion is reduced): the voxel scene near screen resolution, or (low-power mode) the pixel scene
+ * on a low-resolution canvas scaled up by a whole number with `image-rendering: pixelated`. Five canvases are stacked (the
  * still layer, the scene, the night, the glow, and the top one that takes the pointer) so a frame
  * repaints only what moved.
  * Clicking a building or a pad calls `onSelect`. Where the site is larger than the screen (phones)
@@ -146,6 +148,23 @@ export function PixelWorld({
     const id = window.setTimeout(() => setSettled(true), SHOW_AFTER_MS);
     return () => window.clearTimeout(id);
   }, [voxel]);
+  // The animation starts once the page has settled (shown, then idle): on a slow phone the page
+  // and its buttons are ready first, then the steam and the crew start moving. Until then the
+  // scene is drawn once, and again when something changes.
+  const [awake, setAwake] = useState(false);
+  useEffect(() => {
+    if (!shown || awake) return undefined;
+    let idle = 0;
+    const id = window.setTimeout(() => {
+      if (typeof window.requestIdleCallback === 'function')
+        idle = window.requestIdleCallback(() => setAwake(true), { timeout: 3000 });
+      else setAwake(true);
+    }, WAKE_AFTER_MS);
+    return () => {
+      window.clearTimeout(id);
+      if (idle !== 0) window.cancelIdleCallback(idle);
+    };
+  }, [shown, awake]);
   useEffect(() => {
     if (!voxel) return undefined;
     let queued = 0;
@@ -205,6 +224,7 @@ export function PixelWorld({
       return undefined;
     }
     draw(performance.now());
+    if (!awake) return undefined;
     const loop = (now: number) => {
       // 10 frames a second: plenty for pixel art, and kind to phone batteries (the margin lets
       // a 60 Hz display hit every sixth frame).
@@ -216,7 +236,7 @@ export function PixelWorld({
     };
     frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
-  }, [size, model, voxel, hover, motion, vx, vy, res, arrivals, shown]);
+  }, [size, model, voxel, hover, motion, vx, vy, res, arrivals, shown, awake]);
 
   const hitAt = (clientX: number, clientY: number): HitBox | null => {
     const at = canvas.current?.getBoundingClientRect();
