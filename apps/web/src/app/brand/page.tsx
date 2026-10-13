@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Card } from '../../components/Card';
 import { SitePage } from '../../components/SiteChrome';
 import { ForemanMoSvg } from '../../game/pixel/mo-art';
+import { GEN1_RIGS } from '../../lib/catalog';
 import { LINKS } from '../../lib/site';
 
 export const metadata: Metadata = {
@@ -142,6 +143,34 @@ export default function BrandPage() {
           talks about the bore, safety, diesel and the shift, never about prices or buying.
         </p>
       </div>
+
+      <h2 className="mt-12 font-display text-3xl font-black tracking-wide uppercase">Rigs</h2>
+      <p className="mt-4 max-w-2xl">
+        The six Generation 1 rigs as they stand on a pad at night, drawn by the game itself. Scale
+        them only by whole numbers (2x, 3x) with nearest-neighbour, so the pixels stay square.
+      </p>
+      <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {GEN1_RIGS.map((r) => (
+          <li key={r.id}>
+            <figure className="overflow-hidden rounded-lg border border-line bg-surface-raised">
+              <img
+                src={`/rigs/rig-${r.id}.png`}
+                alt={`${r.name} on its pad at night`}
+                width={300}
+                height={276}
+                loading="lazy"
+                className="pixel-canvas h-auto w-full"
+              />
+              <figcaption className="flex items-center justify-between p-3 text-sm">
+                {r.name}
+                <a href={`/rigs/rig-${r.id}.png`} download className="text-data underline">
+                  PNG
+                </a>
+              </figcaption>
+            </figure>
+          </li>
+        ))}
+      </ul>
 
       <h2 className="mt-12 font-display text-3xl font-black tracking-wide uppercase">Contact</h2>
       <p className="mt-4">
