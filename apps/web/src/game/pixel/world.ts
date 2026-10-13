@@ -20,7 +20,7 @@ import {
   drawRig,
   generator,
   lampPost,
-  lockSign,
+  surveyPlot,
   neighbourBeacons,
   neighbourSite,
   padTile,
@@ -345,7 +345,7 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
     const pad = m.pads[i];
     at(gx + 1, gy + 1, () => {
       if (i >= m.pads.length) {
-        lockSign(c, cx, cy);
+        surveyPlot(c, cx, cy);
         return;
       }
       // A pad the site just gained: dust settles and its rim flashes amber.

@@ -46,20 +46,38 @@ export function padTile(c: Ctx, x: number, y: number, unlocked: boolean, hover: 
   if (hover) diamondEdge(c, x, y, w, P.amber);
 }
 
-export function lockSign(c: Ctx, x: number, y: number): void {
-  // Chain between two bollards and a sign with a padlock.
-  rect(c, x - 14, y - 8, 2, 8, P.hazard);
-  rect(c, x + 12, y - 8, 2, 8, P.hazard);
-  for (let i = -12; i < 12; i += 2) px(c, x + i, y - 6 + Math.round(Math.abs(i) / 6), P.concrete);
-  rect(c, x - 1, y - 20, 2, 14, P.steel);
-  rect(c, x - 8, y - 30, 16, 12, P.lockSign);
-  rect(c, x - 8, y - 30, 16, 1, P.steelLight);
-  // Padlock.
-  rect(c, x - 3, y - 25, 6, 5, P.lockMetal);
-  rect(c, x - 2, y - 28, 1, 3, P.lockMetal);
-  rect(c, x + 1, y - 28, 1, 3, P.lockMetal);
-  rect(c, x - 1, y - 29, 2, 1, P.lockMetal);
-  px(c, x, y - 23, P.lockSign);
+/**
+ * A pad the site has not reached yet, staked out by the surveyors: flagged stakes at its corners
+ * with hazard tape between them, and a levelling tripod in the middle (ours; not a padlock sign).
+ */
+export function surveyPlot(c: Ctx, x: number, y: number): void {
+  const corners: [number, number][] = [
+    [x - 26, y],
+    [x, y - 13],
+    [x + 26, y],
+    [x, y + 13],
+  ];
+  // Tape: dashes of hazard orange and bone from stake to stake, a little above the ground.
+  corners.forEach(([ax, ay], k) => {
+    const [bx, by] = corners[(k + 1) % 4] ?? corners[0] ?? [x, y];
+    const steps = 26;
+    for (let i = 0; i <= steps; i++) {
+      const tx = Math.round(ax + ((bx - ax) * i) / steps);
+      const ty = Math.round(ay + ((by - ay) * i) / steps) - 4;
+      px(c, tx, ty, Math.floor(i / 3) % 2 === 0 ? P.hazard : P.bone);
+    }
+  });
+  // Stakes with orange flagged tips.
+  for (const [sx, sy] of corners) {
+    rect(c, sx, sy - 7, 1, 7, P.wood);
+    rect(c, sx, sy - 9, 2, 2, P.orange);
+  }
+  // The levelling tripod and its instrument.
+  line(c, x - 4, y + 1, x, y - 11, P.woodDark);
+  line(c, x + 4, y + 1, x, y - 11, P.woodDark);
+  line(c, x, y + 3, x, y - 11, P.woodDark);
+  rect(c, x - 2, y - 15, 5, 4, P.amber);
+  px(c, x + 2, y - 14, P.night);
 }
 
 /** Lamp mast with a sodium head; `on` false during a flicker. */
