@@ -6,6 +6,7 @@
  * with the lamps cut out of it, and rain. Pure drawing on a low-resolution canvas; gives back the
  * clickable areas.
  */
+import { STRATA } from '@mohonaut/sdk';
 import { GEN1_RIGS } from '../../lib/catalog';
 import type { ScenePad } from '../play';
 import { diamond, diamondEdge, hash, line, px } from './draw';
@@ -310,7 +311,17 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   }
   at(7, 7, () => {
     const p = iso(7, 6.5);
-    wellhead(c, p.x, p.y + 8, t, m.motion, m.hover === 'bore', m.stratum);
+    const layer = Math.max(
+      0,
+      STRATA.findIndex((s) => s.colour === m.stratum),
+    );
+    const built = m.voxel === true ? voxelSprite(`wellhead-${layer}`) : null;
+    if (built === null) wellhead(c, p.x, p.y + 8, t, m.motion, m.hover === 'bore', m.stratum);
+    else {
+      // The cellar's back corner sits where the pixel cellar's does; the core glows by itself.
+      c.drawImage(built.img, p.x - built.ax, p.y + 4 - built.ay);
+      if (m.hover === 'bore') diamondEdge(c, p.x, p.y + 4, 40, P.amber);
+    }
     hits.push({ id: 'bore', x: p.x - 20, y: p.y - 10, w: 40, h: 30 });
   });
   {

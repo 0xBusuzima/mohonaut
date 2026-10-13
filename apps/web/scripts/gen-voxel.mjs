@@ -148,6 +148,18 @@ for (const [name, model, at] of [
   writeFileSync(join(out, `site-${name}.png`), png(image));
   manifest[name] = { w: image.width, h: image.height, ax: Math.round(ax), ay: Math.round(ay) };
 }
+// The wellhead with the cuttings of each stratum (8 variants), anchored at the cellar's back corner.
+const { module: sdk } = await runnerImport(join(web, '../../packages/sdk/src/depth.ts'));
+for (const [i, s] of sdk.STRATA.entries()) {
+  const image = voxel.render(models.wellheadModel(s.colour), { scale: 2, bloom: 4, light: LIGHT });
+  writeFileSync(join(out, `site-wellhead-${i}.png`), png(image));
+  manifest[`wellhead-${i}`] = {
+    w: image.width,
+    h: image.height,
+    ax: image.origin[0],
+    ay: image.origin[1],
+  };
+}
 // The tank stands on its centre: anchored at its footprint's middle on the ground.
 {
   const image = voxel.render(models.tankModel(), { scale: 2, bloom: 4, light: LIGHT });

@@ -18,6 +18,7 @@ import {
   shackModel,
   siteGround,
   tankerModel,
+  wellheadModel,
   siteDiorama,
   tankModel,
   topDrive,
@@ -227,5 +228,13 @@ describe('the voxel models', () => {
     expect(tanker.get(15, 4, 2)?.emissive).toBe(true);
     expect(tanker.has(2, 0, 6)).toBe(false); // the tank's top corners are rounded off
     expect(tanker.get(4, 2, 3)?.colour).toEqual(hex('#ff6b1a'));
+  });
+
+  it('builds the wellhead: casing rings round a glowing core, cuttings only when a stratum is given', () => {
+    const bare = wellheadModel();
+    expect(bare.get(4, 4, 1)?.emissive).toBe(true);
+    expect(bare.get(0, 4, 1)?.colour).toEqual(hex('#ff6b1a')); // the outer casing ring
+    expect(bare.has(11, 1, 1)).toBe(false);
+    expect(wellheadModel('#B79A9A').get(11, 1, 1)?.colour).toEqual(hex('#B79A9A'));
   });
 });

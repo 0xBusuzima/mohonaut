@@ -2,6 +2,7 @@
  * Voxel models of the drill site, all ours and defined in code (docs/01 7: the voxel diorama
  * look of our own night drilling plateau; no island, no pastel trees, no outside models).
  */
+import { shade } from '../pixel/draw';
 import { P } from '../pixel/palette';
 import { Model } from './render';
 import type { Rgb, Voxel } from './render';
@@ -558,5 +559,42 @@ export function tankerModel(): Model {
   m.box(15, 1, 4, 15, 3, 5, v(P.glassShine));
   m.set(15, 0, 2, LAMP);
   m.set(15, 4, 2, LAMP);
+  return m;
+}
+
+/**
+ * The World Bore's wellhead on a 10 x 10 concrete cellar: the casing rings seen from above (the
+ * brand mark), a flanged spool with its valve wheel, and, when `stratum` is given, the cuttings
+ * of the stratum being cored heaped beside the cellar in its colour (docs/01 4.6).
+ */
+export function wellheadModel(stratum?: string): Model {
+  const m = new Model();
+  m.box(0, 0, 0, 9, 9, 0, v(P.padEdge));
+  for (let x = 0; x <= 9; x++)
+    for (let y = 0; y <= 9; y++) {
+      const d = Math.hypot(x - 4.5, y - 4.5);
+      const ring =
+        d <= 1
+          ? P.cyan
+          : d <= 1.8
+            ? P.graphite
+            : d <= 2.7
+              ? P.bone
+              : d <= 3.6
+                ? P.graphite
+                : d <= 4.6
+                  ? P.orange
+                  : null;
+      if (ring !== null) m.set(x, y, 1, v(ring, ring === P.cyan));
+    }
+  m.box(4, 4, 2, 5, 5, 4, v(P.steelLight));
+  m.box(3, 3, 5, 6, 6, 5, v(P.concrete));
+  m.set(7, 5, 3, v(P.amber));
+  if (stratum !== undefined) {
+    const dark = shade(stratum, 0.6);
+    m.box(10, 0, 0, 13, 3, 0, v(dark));
+    m.box(11, 1, 1, 12, 2, 1, v(stratum));
+    m.set(11, 1, 2, v(shade(stratum, 1.2)));
+  }
   return m;
 }
