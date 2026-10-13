@@ -7,6 +7,7 @@ const DOCS = [
   { href: '/docs/economy/', label: 'Economy paper' },
   { href: '/docs/refining/', label: 'Refining' },
   { href: '/docs/genesis/', label: 'Genesis and Market Open' },
+  { href: '/docs/eth/', label: 'Getting ETH' },
 ];
 
 export default function DocsLayout({ children }: { children: ReactNode }) {

@@ -1,0 +1,53 @@
+export const metadata = {
+  title: 'Getting ETH to Robinhood Chain',
+  description:
+    "Diesel is paid in ETH on Robinhood Chain. The bridges listed in Robinhood Chain's own documentation, how much ETH you need, and how to avoid fake bridges.",
+};
+
+# Getting ETH to Robinhood Chain
+
+Diesel is paid in ETH on Robinhood Chain (chain ID 4663). This page lists only the routes in
+**Robinhood Chain's own documentation**, checked on 13 October 2026. Before you bridge, open
+the official page yourself and compare the address: [docs.robinhood.com/chain/bridging](https://docs.robinhood.com/chain/bridging).
+
+These are third-party services. Mohonaut has no relationship with them, is paid nothing by them
+and cannot help with a transfer that went wrong.
+
+## How much ETH you need
+
+A game transaction costs a fraction of a cent in gas. A few dollars of ETH covers diesel for a
+first site and many transactions. Start small: you can always add more.
+
+## Routes in the chain's documentation
+
+| Route                         | Kind                                  | Time                                       |
+| ----------------------------- | ------------------------------------- | ------------------------------------------ |
+| Arbitrum canonical bridge     | From Ethereum, trustless              | Deposit ≈ 10 min; withdrawal ≈ 7 days      |
+| Relay                         | Intents-based bridge                  | Seconds                                    |
+| Across                        | Intents-based bridge                  | Seconds                                    |
+| LI.FI, 0x                     | Cross-chain swap aggregators          | Seconds to minutes                         |
+| Stargate (LayerZero)          | Omnichain tokens                      | Minutes                                    |
+| Transporter (Chainlink CCIP)  | Token transfers                       | Minutes                                    |
+
+Follow the links on that page rather than searching for these names: search results and
+ads are where fake bridges live.
+
+### Withdrawing through the canonical bridge
+
+Going back from Robinhood Chain to Ethereum through the Arbitrum bridge takes three steps:
+start the withdrawal on Robinhood Chain, wait the 7-day challenge period, then finish it on Ethereum
+(that last step costs Ethereum gas and is required).
+
+## If your exchange or wallet supports Robinhood Chain
+
+Some apps let you send or withdraw ETH on the Robinhood Chain network directly. If yours does,
+send a small test amount first and check that it arrives in the wallet you play with.
+
+## Stay safe
+
+- We never send the first message, never ask for your seed phrase and never ask you to approve
+  token spending. The game only asks you to pay ETH for diesel.
+- A token that appears in your wallet unasked is not ours. Don't interact with it.
+- There is no $MOHN market before Market Open. Anything you can buy before then is fake.
+- Official addresses are only on [/contracts](/contracts/) and in the pinned post of
+  @playmohonaut.

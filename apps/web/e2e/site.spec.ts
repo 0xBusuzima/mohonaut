@@ -7,6 +7,7 @@ const PAGES = [
   '/docs/economy/',
   '/docs/refining/',
   '/docs/genesis/',
+  '/docs/eth/',
   '/economy/',
   '/contracts/',
   '/security/',
