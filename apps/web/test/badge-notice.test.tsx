@@ -37,6 +37,12 @@ describe('the new badge notice', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('treats a stored value that is not a list as a first visit', () => {
+    window.localStorage.setItem(`mohonaut.badges.${A.toLowerCase()}`, '{}');
+    render(<BadgeNotice address={A} held={['spud-in']} />);
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
   it('posts what the badge marks, with the invite link and no value', () => {
     const text = badgePost({ name: 'Spud-In', description: 'Fuelled a drill site.', address: A });
     expect(text).toContain('Got the Spud-In badge');

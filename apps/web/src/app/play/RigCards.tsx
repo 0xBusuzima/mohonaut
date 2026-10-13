@@ -315,6 +315,7 @@ export function RigsWindow({
                       : `Scrap one ${rigName(r.id)}`
                   }
                   onBlur={scrap.disarm}
+                  onKeyDown={scrap.ignoreRepeats}
                   onClick={() =>
                     // Scrapping destroys the rig: a second, separate press confirms.
                     scrap.press(String(r.id), () => {

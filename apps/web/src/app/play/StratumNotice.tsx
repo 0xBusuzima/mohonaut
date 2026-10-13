@@ -2,6 +2,7 @@
 
 import { KOLA_LINE_M, MOHO_LINE_M, STRATA, stratumAt } from '@mohonaut/sdk';
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import type { Address } from 'viem';
 import { stratumPost, xIntentUrl } from '../../social/share';
 import { ForemanMo } from '../../game/pixel/ForemanMo';
@@ -33,10 +34,13 @@ function remember(index: number): void {
 export function StratumNotice({
   depthMm,
   address,
+  children,
 }: {
   depthMm: bigint;
   /** The player's wallet, for the share link (their invite link). */
   address?: Address;
+  /** Shown when there is no crossing to announce (the next notice in line). */
+  children?: ReactNode;
 }) {
   const { current } = stratumAt(depthMm);
   const index = STRATA.findIndex((s) => s.numeral === current.numeral);
@@ -47,7 +51,7 @@ export function StratumNotice({
     remember(index);
     return index;
   });
-  if (index <= seen) return null;
+  if (index <= seen) return <>{children}</>;
   // A line crossed since this device last looked, even if a stratum went by unseen.
   const crossed = (m: number) => STRATA.slice(seen + 1, index + 1).some((st) => st.fromM === m);
   const close = () => {

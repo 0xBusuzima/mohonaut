@@ -251,6 +251,7 @@ export function TrainingGame() {
                 )
               }
               onBlur={reset.disarm}
+              onKeyDown={reset.ignoreRepeats}
             >
               {reset.armed !== null ? 'Sure? Erase my site' : 'Start over'}
             </PxButton>

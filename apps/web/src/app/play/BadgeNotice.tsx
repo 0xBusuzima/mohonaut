@@ -13,7 +13,9 @@ const key = (address: string) => `mohonaut.badges.${address.toLowerCase()}`;
 function seenBadges(address: string): string[] | null {
   try {
     const raw = window.localStorage.getItem(key(address));
-    return raw === null ? null : (JSON.parse(raw) as string[]);
+    if (raw === null) return null;
+    const ids: unknown = JSON.parse(raw);
+    return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === 'string') : null;
   } catch {
     return null;
   }

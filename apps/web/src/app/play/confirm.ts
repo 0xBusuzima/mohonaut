@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
 
 /** A second press sooner than this is the same gesture (a double click or a double tap). */
 const SAME_GESTURE_MS = 400;
@@ -16,6 +17,8 @@ export function useTwoStep(): {
   armed: string | null;
   press: (key: string, act: () => void) => void;
   disarm: () => void;
+  /** For the button's onKeyDown: a held Enter repeats clicks, and a repeat is no second press. */
+  ignoreRepeats: (e: KeyboardEvent) => void;
 } {
   const [armed, setArmed] = useState<string | null>(null);
   const armedAt = useRef(0);
@@ -38,5 +41,8 @@ export function useTwoStep(): {
       act();
     },
     disarm: () => setArmed(null),
+    ignoreRepeats: (e) => {
+      if (e.repeat) e.preventDefault();
+    },
   };
 }

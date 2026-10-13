@@ -177,9 +177,10 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
       )}
       {state !== null && onboarding === null && panel === null && address !== undefined && (
         <ShiftReportNotice state={state} address={address} open={setPanel}>
-          <BadgeNotice address={address} held={profile?.badges.map((b) => b.id)}>
-            <StratumNotice depthMm={millimetres(state.network.emitted)} address={address} />
-          </BadgeNotice>
+          {/* A crossing comes first; a badge waits for it (one window at a time). */}
+          <StratumNotice depthMm={millimetres(state.network.emitted)} address={address}>
+            <BadgeNotice key={address} address={address} held={profile?.badges.map((b) => b.id)} />
+          </StratumNotice>
         </ShiftReportNotice>
       )}
       {onboarding}

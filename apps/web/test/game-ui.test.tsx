@@ -50,6 +50,16 @@ describe('the new-stratum notice', () => {
     expect(screen.getByText(/Past the Kola Line/)).toBeTruthy();
   });
 
+  it('shows the next notice in line when there is no crossing', () => {
+    window.localStorage.setItem('mohonaut.stratum', '1');
+    render(
+      <StratumNotice depthMm={3_000_000n}>
+        <p>next in line</p>
+      </StratumNotice>,
+    );
+    expect(screen.getByText('next in line')).toBeTruthy();
+  });
+
   it('stays quiet within the same stratum', () => {
     window.localStorage.setItem('mohonaut.stratum', '1');
     render(<StratumNotice depthMm={3_000_000n} />);
@@ -227,6 +237,10 @@ describe('scrapping a rig', () => {
     vi.advanceTimersByTime(600);
     fireEvent.click(screen.getByRole('button', { name: 'Confirm: scrap one Pilot Rig' }));
     expect(run).toHaveBeenCalledWith(expect.objectContaining({ fn: 'scrapMachines' }));
+    // A held Enter repeats keydowns: a repeat is refused (no click), so it never confirms.
+    const armed = screen.getByRole('button', { name: 'Scrap one Pilot Rig' });
+    expect(fireEvent.keyDown(armed, { key: 'Enter', repeat: true })).toBe(false);
+    expect(fireEvent.keyDown(armed, { key: 'Enter' })).toBe(true);
     // Armed and left alone, it disarms by itself.
     fireEvent.click(screen.getByRole('button', { name: 'Scrap one Pilot Rig' }));
     act(() => {
