@@ -5,7 +5,6 @@ import { BoreLog } from '../components/BoreLog';
 import { Card } from '../components/Card';
 import { LiveStrip } from '../components/LiveStrip';
 import { SiteFooter, SiteHeader } from '../components/SiteChrome';
-import { Table } from '../components/Table';
 import { GEN1_RIGS, efficiency } from '../lib/catalog';
 import { LINKS } from '../lib/site';
 import { HomeHero } from './HomeHero';
@@ -39,7 +38,7 @@ const FAQ_PREVIEW = [
 
 const ROADMAP = [
   ['Design system and services', 'done'],
-  ['Training Site', 'next'],
+  ['Training Site', 'done'],
   ['Testnet Season 0', 'next'],
   ['Economy paper', 'next'],
   ['Public code review (4 weeks)', 'next'],
@@ -117,25 +116,42 @@ export default function Home() {
         {/* S5 — The rigs */}
         <section className="mx-auto max-w-6xl px-4 py-16">
           <h2 className="font-display text-4xl font-black tracking-wide uppercase">The rigs</h2>
-          <div className="mt-6">
-            <Table
-              caption="Generation 1 rigs"
-              rowKey={(r) => String(r.id)}
-              rows={GEN1_RIGS}
-              columns={[
-                { key: 'name', header: 'Rig', render: (r) => r.name },
-                {
-                  key: 'dp',
-                  header: 'DP',
-                  numeric: true,
-                  render: (r) => r.dp.toLocaleString('en-US'),
-                },
-                { key: 'burn', header: 'ℓ/h', numeric: true, render: (r) => r.litresPerHour },
-                { key: 'eff', header: 'DP per ℓ/h', numeric: true, render: (r) => efficiency(r) },
-                { key: 'unlock', header: 'Unlock', render: (r) => r.unlock },
-              ]}
-            />
-          </div>
+          <ul
+            aria-label="Generation 1 rigs"
+            className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            {GEN1_RIGS.map((r) => (
+              <li
+                key={r.id}
+                className="overflow-hidden rounded-lg border border-line bg-surface-raised"
+              >
+                {/* Drawn by the game's own pixel code at build time (scripts/gen-rig-art.mjs). */}
+                <img
+                  src={`/rigs/rig-${r.id}.png`}
+                  alt={`${r.name} on its pad at night`}
+                  width={300}
+                  height={276}
+                  loading="lazy"
+                  className="pixel-canvas h-auto w-full"
+                />
+                <div className="p-4">
+                  <h3 className="font-display text-2xl font-extrabold tracking-wide uppercase">
+                    {r.name}
+                  </h3>
+                  <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                    <dt className="text-fg-muted">Drill Power</dt>
+                    <dd className="num text-right">{r.dp.toLocaleString('en-US')} DP</dd>
+                    <dt className="text-fg-muted">Diesel</dt>
+                    <dd className="num text-right">{r.litresPerHour} ℓ/h</dd>
+                    <dt className="text-fg-muted">DP per ℓ/h</dt>
+                    <dd className="num text-right">{efficiency(r)}</dd>
+                    <dt className="text-fg-muted">Unlock</dt>
+                    <dd className="text-right">{r.unlock}</dd>
+                  </dl>
+                </div>
+              </li>
+            ))}
+          </ul>
           <p className="mt-4 max-w-3xl text-fg-muted">
             Bigger rigs buy fuel efficiency, not cheaper Drill Power. Existing rigs never change:
             the contracts have no function to edit them, and any upgrade waits 7 days in a public

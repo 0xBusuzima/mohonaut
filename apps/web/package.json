@@ -6,7 +6,7 @@
   "description": "Game client, landing, docs and economy pages (Next.js static export).",
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node scripts/flatten-segments.mjs && node scripts/csp.mjs",
+    "build": "node scripts/gen-rig-art.mjs && next build && node scripts/flatten-segments.mjs && node scripts/csp.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",

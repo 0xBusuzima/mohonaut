@@ -1,6 +1,6 @@
 /* global process, console */
 // Screenshots of pages for reviewing the art, headless (no window needed).
-// Usage: node scripts/shoot.mjs <base-url> <out-dir> <path>[@WxH][#click-text] ...
+// Usage (FULL=1 for whole pages): node scripts/shoot.mjs <base-url> <out-dir> <path>[@WxH][#click-text] ...
 // e.g. node scripts/shoot.mjs http://localhost:3100 shots /design/site/ "/design/site/@375x812" "/design/site/#Market"
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -27,7 +27,7 @@ for (const [i, target] of targets.entries()) {
     await page.waitForTimeout(800);
   }
   const file = join(out, `${i + 1}.png`);
-  await page.screenshot({ path: file });
+  await page.screenshot({ path: file, fullPage: process.env.FULL === '1' });
   console.log(file, target, errors.length === 0 ? '' : `ERRORS: ${errors.join(' | ')}`);
   await page.close();
 }
