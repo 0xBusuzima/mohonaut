@@ -6,6 +6,7 @@ import { isAddress } from 'viem';
 import type { Address } from 'viem';
 import { Card } from '../../components/Card';
 import { BadgeShelf } from '../../game/BadgeShelf';
+import { FIND_SETS } from '../../game/finds';
 import { PlaqueList } from '../../game/PlaqueList';
 import { GEN1_RIGS } from '../../lib/catalog';
 import { api, apiEnabled, apiMessage } from '../../social/api';
@@ -93,6 +94,11 @@ function Site({ profile: p }: { profile: Profile }) {
   const rigs = p.rigs.filter((r) => r.owned !== '0');
   return (
     <div className="mt-6 flex flex-col gap-6">
+      {(p.titles ?? []).length > 0 && (
+        <p className="font-condensed text-lg tracking-wide text-amber uppercase">
+          {(p.titles ?? []).join(' · ')}
+        </p>
+      )}
       <p className="text-lg">
         {p.registered ? (
           <>
@@ -136,7 +142,12 @@ function Site({ profile: p }: { profile: Profile }) {
         <p>
           <span className="num">{p.collection.finds}</span> finds
           {p.collection.completedSets.length > 0 && (
-            <>, complete sets: {p.collection.completedSets.join(', ')}</>
+            <>
+              , complete sets:{' '}
+              {p.collection.completedSets
+                .map((id) => FIND_SETS.find((s) => s.id === id)?.name ?? id)
+                .join(', ')}
+            </>
           )}
           .
         </p>

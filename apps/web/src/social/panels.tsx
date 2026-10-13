@@ -562,6 +562,11 @@ function BadgesCard({ address }: { address: Address }) {
         <Status>{profile.isError ? apiMessage(profile.error) : 'Loading…'}</Status>
       ) : (
         <>
+          {(profile.data.titles ?? []).length > 0 && (
+            <p className="mb-3 text-amber uppercase">
+              Titles: {(profile.data.titles ?? []).join(' · ')}
+            </p>
+          )}
           <BadgeShelf awarded={profile.data.badges.map((b) => b.id)} all />
           {(profile.data.plaques ?? []).length > 0 && (
             <>

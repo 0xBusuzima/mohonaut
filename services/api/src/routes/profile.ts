@@ -20,7 +20,7 @@ import { ACHIEVEMENTS, earnedAchievements, fleetEfficiency } from '../game/achie
 import { MAINNET_CHAIN_ID } from '../faucet.js';
 import { renderCardPng } from '../game/card.js';
 import { formatDepth, millimetres } from '@mohonaut/sdk';
-import { completedSets } from '../game/survey.js';
+import { SURVEY_SETS, completedSets } from '../game/survey.js';
 import { AddressSchema, DepthSchema, errors, json } from './common.js';
 
 const BadgeSchema = z.object({ id: z.string(), name: z.string(), description: z.string() });
@@ -76,6 +76,8 @@ export function registerProfile(app: OpenAPIHono<AppEnv>): void {
             /** Top-10 places in seasons that have ended: cosmetic plaques on the site. */
             plaques: z.array(z.object({ season: z.number(), name: z.string(), rank: z.number() })),
             collection: z.object({ finds: z.number(), completedSets: z.array(z.string()) }),
+            /** Titles from completed Core Collection sets (docs/01 §4.9), cosmetic. */
+            titles: z.array(z.string()),
           }),
           'Profile',
         ),
@@ -112,6 +114,7 @@ export function registerProfile(app: OpenAPIHono<AppEnv>): void {
             Math.floor(c.var.deps.now() / 1000),
           ),
           collection: { finds: p.finds.length, completedSets: p.sets },
+          titles: SURVEY_SETS.filter((s) => p.sets.includes(s.id)).map((s) => s.title),
         },
         200,
       );

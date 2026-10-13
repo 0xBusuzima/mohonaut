@@ -100,6 +100,8 @@ export interface Profile {
   /** Season plaques; absent from an API older than them. */
   plaques?: Plaque[];
   collection: { finds: number; completedSets: string[] };
+  /** Titles from completed Core Collection sets; absent from an older API. */
+  titles?: string[];
 }
 /** One day of rig sales: the average paid per DP (wei), null without sales. */
 export interface DpPriceDay {

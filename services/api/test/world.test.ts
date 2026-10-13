@@ -165,8 +165,21 @@ describe('profiles and badges', () => {
       data: '0x',
       args: { account: player.address, dp: '210', expiryHour: (HOUR0 + 500n).toString() },
     });
+    // A complete Fossils set: its title shows on the profile.
+    const [user] = await h.database.db
+      .insert(socialSchema.users)
+      .values({ authProvider: 'siwe', providerUserId: player.address, wallet: player.address })
+      .returning({ id: socialSchema.users.id });
+    await h.database.db.insert(socialSchema.surveyFinds).values(
+      Array.from({ length: 6 }, (_, i) => ({
+        userId: user?.id ?? 0,
+        day: 20_000 + i,
+        itemId: `fossils-${i + 1}`,
+      })),
+    );
     const profile = await call(h, 'GET', `/profiles/${player.address.toLowerCase()}`);
     expect(profile.status).toBe(200);
+    expect(profile.json['titles']).toEqual(['Fossil Hunter']);
     expect(profile.json).toMatchObject({
       address: player.address,
       registered: true,
@@ -176,7 +189,7 @@ describe('profiles and badges', () => {
     });
     const badges = (profile.json['badges'] as { id: string }[]).map((b) => b.id);
     // 2 active rigs of 100 DP burning 1 L/h each: efficiency 100 >= 80.
-    expect(badges).toEqual(['spud-in', 'rig-up', 'fuel-saver', 'kola-witness']);
+    expect(badges).toEqual(['spud-in', 'rig-up', 'fuel-saver', 'kola-witness', 'core-collector']);
     expect((await call(h, 'GET', `/profiles/${newWallet().address}`)).status).toBe(404);
     expect((await call(h, 'GET', '/profiles/0x123')).status).toBe(400);
   });
