@@ -272,6 +272,14 @@ html {
     align-content: flex-start;
     max-height: max(8rem, calc(100dvh - 7.6rem - 19.5rem));
   }
+  /* Before Market Open the refining note has the row under the gauges: the column starts below
+     it, so a wrapped second column never runs into it. */
+  .hud-side-low {
+    top: 9.6rem;
+  }
+  body:has(.guide) .hud-side-low {
+    max-height: max(8rem, calc(100dvh - 9.6rem - 19.5rem));
+  }
 }
 
 /* Short screens (phones held sideways): Foreman Mo's tip box shrinks to a wide, low strip at

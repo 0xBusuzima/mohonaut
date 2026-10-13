@@ -97,6 +97,34 @@ function hazard(width: number, y: number, h: number): string {
   return out.join('');
 }
 
+/** A rough width of Barlow 24 px text: wide capitals count more (an estimate, kept on the safe side). */
+function textWidth24(text: string): number {
+  let w = 0;
+  for (const ch of text) w += /[MWmw@]/.test(ch) ? 22 : /[A-Z0-9]/.test(ch) ? 15 : 12;
+  return w;
+}
+
+/** Room after x = 64 before Foreman Mo's art at x = 852. */
+const NAME_LINE_PX = 780;
+
+/** The titles after the name, as many as fit; the rest become "+N". */
+function nameLine(name: string, titles: readonly string[]): string {
+  let used = textWidth24(name);
+  const shown: string[] = [];
+  for (const [i, t] of titles.entries()) {
+    const rest = titles.length - i - 1;
+    const more = rest > 0 ? textWidth24(` +${rest}`) : 0;
+    if (used + textWidth24(` · ${t}`) + more > NAME_LINE_PX) break;
+    used += textWidth24(` · ${t}`);
+    shown.push(t);
+  }
+  const hidden = titles.length - shown.length;
+  return (
+    shown.map((t) => ` · <tspan fill="#FFB31A">${escapeXml(t)}</tspan>`).join('') +
+    (hidden > 0 ? ` <tspan fill="#FFB31A">+${hidden}</tspan>` : '')
+  );
+}
+
 export function cardSvg(input: CardInput): string {
   const { current } = stratumAt(input.worldDepthMm);
   const crewLine = input.crew === null ? '' : ` · Crew ${escapeXml(input.crew)}`;
@@ -137,7 +165,7 @@ export function cardSvg(input: CardInput): string {
   <text x="64" y="320" font-family="Barlow" font-weight="400" font-size="40" fill="${C.bone}">of the World Bore${crewLine}</text>
   <text x="64" y="430" font-family="Barlow" font-weight="400" font-size="32" fill="${C.concrete}">World depth ${depth(input.worldDepthMm)} · Stratum ${current.numeral} — ${escapeXml(current.name)}</text>
   <text x="64" y="560" font-family="Barlow" font-weight="700" font-size="32" fill="${C.bone}">Race to the Moho</text>
-  <text x="64" y="590" font-family="Barlow" font-weight="400" font-size="24" fill="${C.concrete}">${escapeXml(input.name)}${(input.titles ?? []).map((t) => ` · <tspan fill="#FFB31A">${escapeXml(t)}</tspan>`).join('')}</text>
+  <text x="64" y="590" font-family="Barlow" font-weight="400" font-size="24" fill="${C.concrete}">${escapeXml(input.name)}${nameLine(input.name, input.titles ?? [])}</text>
 </svg>`;
 }
 

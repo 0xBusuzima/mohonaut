@@ -106,9 +106,15 @@ describe('crews', () => {
     expect(
       await rows(id, ` AND user_id = (SELECT id FROM users WHERE wallet = '${captain.address}')`),
     ).toBe(3);
-    for (const m of [b, c, d, e]) for (let k = 0; k < 3; k++) await send(m, 'fuel-check');
+    for (const m of [b, c, d, e])
+      for (let k = 0; k < 3; k++) expect((await send(m, 'fuel-check')).status).toBe(200);
+    expect((await send(e, 'signing-off')).status).toBe(200);
     expect(await rows(id)).toBe(12);
-    expect(await signals(b)).toHaveLength(12);
+    // The newest twelve survive: the captain's three (the oldest) are gone, e's last is first.
+    const kept = await signals(b);
+    expect(kept).toHaveLength(12);
+    expect(kept[0]?.signal).toBe('signing-off');
+    expect(kept.map((k) => k.wallet)).not.toContain(captain.address);
     expect(await rows(otherCrew)).toBe(1);
 
     // A player who leaves takes their signals along.

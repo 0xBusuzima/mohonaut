@@ -147,6 +147,18 @@ export function SitePreview() {
     () => new URLSearchParams(window.location.search).has('milestone'),
     () => false,
   );
+  // ?premarket=1: the HUD before Market Open (the refining note, three days out).
+  const premarket = useSyncExternalStore(
+    noSubscribe,
+    () => new URLSearchParams(window.location.search).has('premarket'),
+    () => false,
+  );
+  const hud = premarket
+    ? {
+        ...SAMPLE,
+        network: { ...SAMPLE.network, marketOpened: false, marketOpenTime: SAMPLE.at + 266_400 },
+      }
+    : SAMPLE;
   return (
     <>
       <PixelWorld
@@ -159,7 +171,7 @@ export function SitePreview() {
         label={`Sample drill site: ${GEN1_RIGS.map((r) => r.name).join(', ')}.`}
       />
       <Brand />
-      <Hud state={SAMPLE} open={setPanel} />
+      <Hud state={hud} open={setPanel} />
       {panel === null && (
         <Guide
           state={SAMPLE}

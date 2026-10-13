@@ -7,6 +7,9 @@ vi.mock('../src/social/api', async (actual) => ({
   ...(await actual<typeof import('../src/social/api')>()),
   apiEnabled: true,
   api: {
+    cardUrl: () => '/card.png',
+    world: async () => ({ depth: { mm: '52082', text: '52 m' } }),
+    prefs: async () => ({ email: null, telegramChatId: null, events: [] }),
     profile: async () => ({
       address: A,
       displayName: 'bea',
@@ -37,5 +40,24 @@ describe('the public profile', () => {
     expect(await screen.findByText('Fossil Hunter · Core Librarian')).toBeTruthy();
     expect(screen.getByText('Season 0: 2nd in World Bore contribution')).toBeTruthy();
     expect(screen.getByText(/complete sets: Fossils, Core Samples/)).toBeTruthy();
+  });
+});
+
+describe('the profile window', () => {
+  it('names the titles above the badge shelf', async () => {
+    const { QueryClient, QueryClientProvider } = await import('@tanstack/react-query');
+    const { ToastProvider } = await import('../src/components/Toast');
+    const { ProfilePanel } = await import('../src/social/panels');
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ToastProvider>
+          <ProfilePanel
+            me={{ id: 1, wallet: A, displayName: 'bea', roles: [], crewId: null }}
+            address={A}
+          />
+        </ToastProvider>
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByText('Titles: Fossil Hunter · Core Librarian')).toBeTruthy();
   });
 });
