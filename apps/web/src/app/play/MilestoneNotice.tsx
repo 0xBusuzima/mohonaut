@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Address } from 'viem';
 import { RigPicture } from '../../components/RigPicture';
+import { GEN1_RIGS } from '../../lib/catalog';
 import { ForemanMo } from '../../game/pixel/ForemanMo';
 import { rigName } from '../../game/play';
 import type { GameState } from '../../game/state';
@@ -83,7 +84,10 @@ export function MilestoneNotice({
   const player = state.player;
   // A failed read shows less than the site holds; it is no snapshot to keep.
   const now =
-    player === null || !player.registered || player.readFailed === true
+    player === null ||
+    !player.registered ||
+    player.readFailed === true ||
+    player.rigsReadFailed === true
       ? null
       : marksOf(player, state.rigs);
   const [seen, setSeen] = useState<SiteMarks | null>(() => seenMarks(address));
@@ -103,9 +107,16 @@ export function MilestoneNotice({
     next.kind === 'level'
       ? levelPost({ level: next.level, pads: sitePads(next.level), address })
       : rigTypePost({ rig: rigName(next.typeId), address });
-  const unlocked = next.kind === 'level' ? state.rigs.filter((r) => r.minLevel === next.level) : [];
+  // Every rig unlocked since the level this device last saw, not only at the newest level.
+  const from = seen?.level ?? 0;
+  const unlocked =
+    next.kind === 'level'
+      ? state.rigs.filter((r) => r.minLevel > from && r.minLevel <= next.level)
+      : [];
   return (
     <PxModal
+      // A fresh dialog per milestone, so each one takes focus and is announced.
+      key={next.kind === 'level' ? `level-${next.level}` : `rig-${next.typeId}`}
       title={next.kind === 'level' ? 'Site level up' : 'New rig on the pads'}
       onClose={close}
     >
@@ -126,7 +137,10 @@ export function MilestoneNotice({
         </div>
       ) : (
         <div>
-          <RigPicture id={next.typeId} name={rigName(next.typeId)} />
+          {/* Portraits exist for the catalogue's rigs (drawn at build time). */}
+          {GEN1_RIGS[next.typeId] !== undefined && (
+            <RigPicture id={next.typeId} name={rigName(next.typeId)} />
+          )}
           <p className="mt-3 text-2xl text-amber">{rigName(next.typeId)}</p>
           <p className="mt-1">Your first one is on its pad. Mo says it sounds right.</p>
         </div>

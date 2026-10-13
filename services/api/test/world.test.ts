@@ -219,6 +219,38 @@ describe('profiles and badges', () => {
     expect(await plaques(d(1))).toEqual([{ season: 1, name: 'Season 0', rank: 1 }]);
     expect(await plaques(d(10))).toEqual([{ season: 1, name: 'Season 0', rank: 10 }]);
     expect(await plaques(d(11))).toEqual([]);
+    // The public season table ranks the same way.
+    const board = await call(h, 'GET', '/seasons/1/leaderboard');
+    const rows = board.json['rows'] as { rank: number; address: string }[];
+    expect(rows[0]).toMatchObject({ rank: 1, address: d(1) });
+    expect(rows.map((r) => r.address)).not.toContain(d(0));
+
+    // A season still running gives no plaque, however far ahead a driller is.
+    await h.database.db.insert(idx.events).values({
+      blockNumber: 99n,
+      logIndex: 0,
+      txHash: '0x99',
+      blockTime: BigInt(now - 3_600),
+      address: '0x1000000000000000000000000000000000000002',
+      contract: 'MiningCore',
+      event: 'Accrued',
+      topics: [],
+      data: '0x',
+      args: { account: d(11), amount: mohn(1_000_000).toString() },
+    });
+    expect(await plaques(d(11))).toEqual([]);
+
+    // An ended season's top ten is kept for ten minutes: a new flag counts after that.
+    await h.database.db.insert(socialSchema.users).values({
+      authProvider: 'siwe',
+      providerUserId: d(1),
+      wallet: d(1),
+      flagged: true,
+    });
+    expect(await plaques(d(2))).toEqual([{ season: 1, name: 'Season 0', rank: 2 }]);
+    h.clock.now += 601_000;
+    expect(await plaques(d(1))).toEqual([]);
+    expect(await plaques(d(2))).toEqual([{ season: 1, name: 'Season 0', rank: 1 }]);
   });
 
   it('computes fleet efficiency over active rigs only', () => {

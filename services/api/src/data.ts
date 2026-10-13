@@ -157,14 +157,11 @@ export async function crewMembersWithAccrual(database: Database, crewId: number)
     .orderBy(asc(crewMembers.joinedAt), asc(users.id));
 }
 
-/** Accrual inside [from, to) per wallet, from the indexer's raw Accrued events. */
-export async function seasonRanking(
-  database: Database,
-  from: number,
-  to: number,
-  limit: number,
-  opts: { skipFlagged?: boolean } = {},
-) {
+/**
+ * Accrual inside [from, to) per wallet, from the indexer's raw Accrued events. Flagged accounts
+ * take no place (they get no badges or plaques either); ties go by address, so a rank is stable.
+ */
+export async function seasonRanking(database: Database, from: number, to: number, limit: number) {
   const rows = await database.db
     .select({
       address: sql<string>`${events.args}->>'account'`,
@@ -177,19 +174,23 @@ export async function seasonRanking(
         eq(events.event, 'Accrued'),
         gte(events.blockTime, BigInt(from)),
         sql`${events.blockTime} < ${BigInt(to)}`,
-        opts.skipFlagged === true
-          ? sql`NOT EXISTS (SELECT 1 FROM ${users} WHERE ${users.wallet} = ${events.args}->>'account' AND ${users.flagged})`
-          : undefined,
+        sql`NOT EXISTS (SELECT 1 FROM ${users} WHERE ${users.wallet} = ${events.args}->>'account' AND ${users.flagged})`,
       ),
     )
     .groupBy(sql`${events.args}->>'account'`)
-    .orderBy(desc(sql`sum((${events.args}->>'amount')::numeric)`))
+    .orderBy(
+      desc(sql`sum((${events.args}->>'amount')::numeric)`),
+      asc(sql`${events.args}->>'account'`),
+    )
     .limit(limit);
   return rows.map((r) => ({ address: getAddress(r.address), accrued: BigInt(r.accrued) }));
 }
 
 /** Ranks in a season's World Bore contribution that carry a site plaque (docs/05 P-34). */
 const PLAQUE_RANKS = 10;
+/** An ended season's top ten is kept this long (seconds); a flag takes effect within it. */
+const PLAQUE_CACHE_S = 600;
+const plaqueTops = new WeakMap<Database, Map<number, { until: number; top: Address[] }>>();
 
 /**
  * The player's season plaques: a top-10 World Bore contribution in a season that has ended
@@ -202,11 +203,21 @@ export async function seasonPlaques(database: Database, address: Address, now: n
     .where(lte(seasons.endsAt, now))
     .orderBy(asc(seasons.startsAt));
   const plaques: { season: number; name: string; rank: number }[] = [];
+  // An ended season no longer changes: its top ten is read once per PLAQUE_CACHE_S, not on
+  // every profile request (the ranking scans the season's events).
+  let cache = plaqueTops.get(database);
+  if (cache === undefined) {
+    cache = new Map();
+    plaqueTops.set(database, cache);
+  }
   for (const s of ended) {
-    const top = await seasonRanking(database, s.startsAt, s.endsAt, PLAQUE_RANKS, {
-      skipFlagged: true,
-    });
-    const at = top.findIndex((r) => r.address === address);
+    let entry = cache.get(s.id);
+    if (entry === undefined || entry.until <= now) {
+      const rows = await seasonRanking(database, s.startsAt, s.endsAt, PLAQUE_RANKS);
+      entry = { until: now + PLAQUE_CACHE_S, top: rows.map((r) => r.address) };
+      cache.set(s.id, entry);
+    }
+    const at = entry.top.indexOf(address);
     if (at >= 0) plaques.push({ season: s.id, name: s.name, rank: at + 1 });
   }
   return plaques;

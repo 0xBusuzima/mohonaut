@@ -64,6 +64,8 @@ export interface GameState {
     refines: RefineItem[];
     /** The tank or unrefined balance did not read: shown as 0, not to be compared over time. */
     readFailed?: boolean;
+    /** A rig type or the player's count of it did not read: the rig list is short. */
+    rigsReadFailed?: boolean;
   };
 }
 
@@ -154,7 +156,9 @@ export function useGameState(
   const offline = read.isError || (r !== undefined && r[0]?.status !== 'success');
   if (r === undefined || offline) return { state: null, refetch, offline };
 
-  const typeCount = Number(ok<bigint>(r[8]) ?? 0n);
+  const typeCountRead = ok<bigint>(r[8]);
+  const typeCount = Number(typeCountRead ?? 0n);
+  let rigsFailed = typeCountRead === undefined;
   const rigs: RigType[] = [];
   for (let i = 0; i < Math.min(typeCount, MAX_TYPES); i++) {
     const m = ok<{
@@ -164,11 +168,15 @@ export function useGameState(
       generation: number;
       burn: bigint;
     }>(r[TYPES_AT + i]);
-    if (m === undefined) continue;
+    if (m === undefined) {
+      rigsFailed = true;
+      continue;
+    }
     const held =
       player === undefined
         ? undefined
         : ok<{ owned: number; active: number }>(r[calls.length + 5 + i]);
+    if (player !== undefined && held === undefined) rigsFailed = true;
     rigs.push({
       id: i,
       dp: BigInt(m.dp),
@@ -205,6 +213,7 @@ export function useGameState(
     const pending = ok<bigint>(r[calls.length + 2]);
     playerState = {
       ...(tank === undefined || pending === undefined ? { readFailed: true } : {}),
+      ...(rigsFailed ? { rigsReadFailed: true } : {}),
       registered: s?.registered ?? false,
       level: s?.level ?? 0,
       dp: s?.dp ?? 0n,

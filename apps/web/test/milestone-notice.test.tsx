@@ -99,9 +99,31 @@ describe('the milestone notice', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('keeps no snapshot of a failed read', () => {
+  it('keeps no snapshot of a failed read, of the tank or of the rigs', () => {
     render(<MilestoneNotice address={A} state={site(3, [1, 0, 0], { readFailed: true })} />);
+    render(<MilestoneNotice address={A} state={site(3, [1, 0, 0], { rigsReadFailed: true })} />);
     expect(window.localStorage.getItem(`mohonaut.milestones.${A.toLowerCase()}`)).toBeNull();
+  });
+
+  it('names every rig unlocked since the level last seen, not only at the newest one', () => {
+    window.localStorage.setItem(
+      `mohonaut.milestones.${A.toLowerCase()}`,
+      JSON.stringify({ level: 2, types: [0, 1, 2] }),
+    );
+    // Level 2 to 4 between visits: the Top Drive came with level 3.
+    render(<MilestoneNotice address={A} state={site(4, [1, 0, 1])} />);
+    expect(screen.getByText('Level 4')).toBeTruthy();
+    expect(screen.getByText(/New in the Market: Top Drive/)).toBeTruthy();
+  });
+
+  it('shows no portrait for a rig type outside the catalogue', () => {
+    window.localStorage.setItem(
+      `mohonaut.milestones.${A.toLowerCase()}`,
+      JSON.stringify({ level: 1, types: [0] }),
+    );
+    render(<MilestoneNotice address={A} state={site(1, [1, 0, 0, 0, 0, 0, 0, 0, 0, 1])} />);
+    expect(screen.getByRole('dialog', { name: 'New rig on the pads' })).toBeTruthy();
+    expect(screen.queryByRole('img')).toBeNull();
   });
 
   it('treats a stored value of the wrong shape as a first visit', () => {

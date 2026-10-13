@@ -130,7 +130,7 @@ export function shack(
   hover: boolean,
   /** The player's crew tag: the flag becomes the crew's, with the tag on it (docs/01 4.7). */
   crewTag?: string,
-  /** Season plaques (their ranks), screwed to the wall under the core trays; three at most. */
+  /** Season plaques (their ranks), screwed to the wall under the core trays: the best three. */
   plaques: readonly number[] = [],
 ): void {
   box(c, x, y + 4, 56, 22, P.graphite, P.boneDark, P.concrete);
@@ -145,19 +145,22 @@ export function shack(
   // Core trays on the left face.
   for (let i = 0; i < 3; i++)
     rect(c, x - 22, y + 6 + i * 4, 14, 2, i === 1 ? P.cyan : P.steelLight);
-  plaques.slice(0, 3).forEach((rank, i) => {
-    const tier = plaqueTier(rank);
-    const [face, shine] =
-      tier === 'gold'
-        ? [P.amber, P.flareHot]
-        : tier === 'silver'
-          ? [P.boneDark, P.bone]
-          : [P.orangeDark, P.orange];
-    const px = x - 23 + i * 6;
-    rect(c, px, y + 19, 5, 4, P.graphite);
-    rect(c, px + 1, y + 20, 3, 2, face);
-    rect(c, px + 1, y + 20, 1, 1, shine);
-  });
+  [...plaques]
+    .sort((a, b) => a - b)
+    .slice(0, 3)
+    .forEach((rank, i) => {
+      const tier = plaqueTier(rank);
+      const [face, shine] =
+        tier === 'gold'
+          ? [P.amber, P.flareHot]
+          : tier === 'silver'
+            ? [P.boneDark, P.bone]
+            : [P.orangeDark, P.orange];
+      const left = x - 23 + i * 6;
+      rect(c, left, y + 19, 5, 4, P.graphite);
+      rect(c, left + 1, y + 20, 3, 2, face);
+      rect(c, left + 1, y + 20, 1, 1, shine);
+    });
   // Chimney with steam.
   rect(c, x - 10, y - 28, 4, 8, P.steel);
   if (motion) puff(c, x - 8, y - 32, t, 0);
