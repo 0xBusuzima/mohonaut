@@ -54,8 +54,18 @@ function noise(ctx: AudioContext): AudioBuffer {
   return buf;
 }
 
+/**
+ * The bore's drone for each stratum (docs/01 4.6, 7: a new theme at every crossing): a step
+ * down a minor scale per stratum, from G2 at the surface to G1 an octave below.
+ */
+export function droneHz(stratum: number): number {
+  const steps = [0, 2, 3, 5, 7, 8, 10, 12];
+  const down = steps[Math.max(0, Math.min(steps.length - 1, stratum))] ?? 0;
+  return Math.round(98 * 2 ** (-down / 12) * 100) / 100;
+}
+
 /** Starts the ambience; gives back a function that fades it out and closes the context. */
-function startAmbience(): () => void {
+function startAmbience(stratum: number): () => void {
   const Ctor =
     window.AudioContext ??
     (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -104,6 +114,21 @@ function startAmbience(): () => void {
   throb.connect(throbDepth).connect(hum.gain);
   throb.start();
 
+  // The bore's drone: a low sine for the stratum being cored, breathing slowly.
+  const drone = ctx.createOscillator();
+  drone.type = 'sine';
+  drone.frequency.value = droneHz(stratum);
+  const droneGain = ctx.createGain();
+  droneGain.gain.value = 0.03;
+  drone.connect(droneGain).connect(master);
+  drone.start();
+  const breath = ctx.createOscillator();
+  breath.frequency.value = 0.08;
+  const breathDepth = ctx.createGain();
+  breathDepth.gain.value = 0.015;
+  breath.connect(breathDepth).connect(droneGain.gain);
+  breath.start();
+
   // A pipe clank every 7 to 16 seconds: a short band-passed burst with a ringing tail.
   let timer = 0;
   const clank = () => {
@@ -132,19 +157,22 @@ function startAmbience(): () => void {
     master.gain.setValueAtTime(master.gain.value, t);
     master.gain.linearRampToValueAtTime(0, t + 0.4);
     window.setTimeout(() => {
-      for (const o of [...engines, throb]) o.stop();
+      for (const o of [...engines, throb, drone, breath]) o.stop();
       rain.stop();
       void ctx.close();
     }, 500);
   };
 }
 
-/** Plays the ambience while `on` (the toggle is a click, so browsers allow the audio). */
-export function useAmbience(on: boolean): void {
+/**
+ * Plays the ambience while `on` (the toggle is a click, so browsers allow the audio), with the
+ * drone of `stratum` (its index); a crossing fades the old theme out and the new one in.
+ */
+export function useAmbience(on: boolean, stratum = 0): void {
   useEffect(() => {
     if (!on) return undefined;
-    return startAmbience();
-  }, [on]);
+    return startAmbience(stratum);
+  }, [on, stratum]);
 }
 
 /** One-shot sounds for what the player just did. */

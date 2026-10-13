@@ -1,6 +1,6 @@
 'use client';
 
-import { formatDepth, millimetres, stratumAt } from '@mohonaut/sdk';
+import { STRATA, formatDepth, millimetres, stratumAt } from '@mohonaut/sdk';
 import { Counter } from '../../components/Counter';
 import { perHourEstimate, shareOfNetwork } from '../../game/derive';
 import type { GameState } from '../../game/state';
@@ -40,13 +40,17 @@ export function Hud({
 }) {
   const lowPower = useLowPower();
   const sound = useSound();
-  useAmbience(sound);
   const p = state.player;
   const n = state.network;
-  if (p === null) return null;
-  const perHour = perHourEstimate(p.dp, n.activeDp, n.hourEmission);
   const depth = millimetres(n.emitted);
   const { current } = stratumAt(depth);
+  // The ambience's drone follows the stratum being cored.
+  useAmbience(
+    sound,
+    STRATA.findIndex((s) => s.numeral === current.numeral),
+  );
+  if (p === null) return null;
+  const perHour = perHourEstimate(p.dp, n.activeDp, n.hourEmission);
   const side = 'flex items-center gap-2 !px-2 !py-1 !text-base';
   const main =
     'flex flex-col items-center gap-1 whitespace-nowrap !px-2 !py-2 !text-base md:flex-row md:gap-2 md:!px-5 md:!py-3 md:!text-xl';

@@ -84,3 +84,15 @@ describe('stratum shades', () => {
     expect(shade('#D8C8A0', 1.5)).toBe('#fffff0');
   });
 });
+
+describe("the bore's drone", () => {
+  it('steps down a minor scale, one stratum at a time, an octave in all', async () => {
+    const { droneHz } = await import('../src/game/audio');
+    const { STRATA } = await import('@mohonaut/sdk');
+    const hz = STRATA.map((_, i) => droneHz(i));
+    expect(hz[0]).toBe(98);
+    expect(hz.at(-1)).toBe(49);
+    for (let i = 1; i < hz.length; i++) expect(hz[i]).toBeLessThan(hz[i - 1] ?? 0);
+    expect(droneHz(99)).toBe(49);
+  });
+});
