@@ -170,6 +170,41 @@ export function siteDiorama(): Model {
   m.box(32, 30, 0, 39, 37, 0, v('#3a2a1e'));
   m.box(31, 29, 1, 40, 29, 1, v(P.woodDark));
   m.box(31, 38, 1, 40, 38, 1, v(P.woodDark));
+  // A fence along the two near edges: posts every six voxels with hazard tape between.
+  for (let i = 0; i < N; i++) {
+    for (const [x, y] of [
+      [N - 1, i],
+      [i, N - 1],
+    ] as const) {
+      if (i % 6 === 0) m.box(x, y, 1, x, y, 3, v(P.fenceDark));
+      else m.set(x, y, 2, Math.floor(i / 2) % 2 === 0 ? HAZARD : v(P.bone));
+    }
+  }
+  // The diesel tanker at the gate.
+  m.box(18, 36, 1, 27, 39, 1, v(P.graphite));
+  for (const x of [19, 22, 26]) {
+    m.set(x, 36, 1, v(P.night));
+    m.set(x, 39, 1, v(P.night));
+  }
+  for (let x = 18; x <= 24; x++)
+    for (let y = 36; y <= 39; y++)
+      for (let z = 2; z <= 5; z++)
+        if (Math.hypot(y - 37.5, z - 3.5) <= 2.2) m.set(x, y, z, v(z === 4 ? P.orange : P.bone));
+  m.box(25, 36, 2, 27, 39, 5, v(P.orangeDark));
+  m.box(27, 37, 4, 27, 38, 4, v(P.glassShine));
+  m.set(27, 36, 2, LAMP);
+  m.set(27, 39, 2, LAMP);
+  // Crew on their rounds: hard hat, vest, dark trousers.
+  for (const [x, y, vest] of [
+    [12, 24, P.amber],
+    [31, 17, P.orange],
+    [28, 26, P.amber],
+  ] as const) {
+    m.box(x, y, 1, x, y, 2, v(P.graphite));
+    m.box(x, y, 3, x, y, 4, v(vest));
+    m.set(x, y, 5, v('#c9a27a'));
+    m.set(x, y, 6, v(P.orange));
+  }
   // Work lamps on posts at the corners of the yard.
   for (const [x, y] of [
     [13, 2],
