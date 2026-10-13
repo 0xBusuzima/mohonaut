@@ -87,7 +87,8 @@ export interface Config {
 }
 
 export function loadConfig(env: Record<string, string | undefined>): Config {
-  const e = envSchema.parse(env);
+  // An empty value (a blank line left from .env.example) means the variable is not set.
+  const e = envSchema.parse(Object.fromEntries(Object.entries(env).filter(([, v]) => v !== '')));
   const production = e.NODE_ENV === 'production';
   if (production && e.TURNSTILE_SECRET === undefined) {
     throw new Error('TURNSTILE_SECRET is required in production');

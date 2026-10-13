@@ -33,6 +33,18 @@ describe('keeper config', () => {
     });
   });
 
+  it('reads an empty value (a blank line copied from .env.example) as not set', () => {
+    expect(loadConfig({ ...base, DRY_RUN: 'true', KEEPER_KEYSTORE: '' }).key).toEqual({
+      address: '0xbA27372EaE81EE53d7D434deD7D3299A383C2a6c',
+    });
+    expect(loadConfig({ ...base, KEEPER_KEYSTORE: 'ks.json', KEEPER_PRIVATE_KEY: '' }).key).toEqual(
+      {
+        keystore: 'ks.json',
+        passwordFile: null,
+      },
+    );
+  });
+
   it('parses the job list and defaults', () => {
     const cfg = loadConfig({ ...base, KEEPER_PRIVATE_KEY: KEY, JOBS: 'poke, finalize' });
     expect(cfg.jobs).toEqual(['poke', 'finalize']);

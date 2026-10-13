@@ -91,7 +91,8 @@ export interface Config {
 }
 
 export function loadConfig(env: Record<string, string | undefined>): Config {
-  const e = envSchema.parse(env);
+  // An empty value (a blank line left from .env.example) means the variable is not set.
+  const e = envSchema.parse(Object.fromEntries(Object.entries(env).filter(([, v]) => v !== '')));
   const deployment = loadDeployment(e.DEPLOYMENT_FILE);
   let key: KeySource;
   if (e.DRY_RUN) {
