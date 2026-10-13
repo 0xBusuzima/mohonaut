@@ -59,6 +59,25 @@ describe('the public profile Pages Function', () => {
     expect(html).toBe('');
   });
 
+  it('falls back to the static page when the rewrite fails', async () => {
+    const asked: string[] = [];
+    const res = await onRequest({
+      request: new Request(`https://mohonaut.com/s/${ADDRESS}`),
+      env: {
+        ASSETS: {
+          fetch: (input) => {
+            const u = input instanceof Request ? input.url : String(input);
+            asked.push(u);
+            if (u.endsWith('/s/')) return Promise.reject(new Error('asset store down'));
+            return Promise.resolve(new Response('static'));
+          },
+        },
+      },
+    });
+    expect(await res.text()).toBe('static');
+    expect(asked).toEqual(['https://mohonaut.com/s/', `https://mohonaut.com/s/${ADDRESS}`]);
+  });
+
   it('passes files under /s/ straight to the static assets', async () => {
     const { fetched } = await get('/s/index.txt');
     expect(fetched).toEqual(['https://mohonaut.com/s/index.txt']);

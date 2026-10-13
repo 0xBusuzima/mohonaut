@@ -61,6 +61,20 @@ export async function onRequest({
   // straight to the static assets.
   if ((request.method !== 'GET' && request.method !== 'HEAD') || segment.includes('.'))
     return env.ASSETS.fetch(request);
+  try {
+    return await withShareImage(request, env, url, segment);
+  } catch {
+    // Anything unexpected: the page as the static site serves it, without the player's card.
+    return env.ASSETS.fetch(request);
+  }
+}
+
+async function withShareImage(
+  request: Request,
+  env: Env,
+  url: URL,
+  segment: string,
+): Promise<Response> {
   const page = await env.ASSETS.fetch(new URL('/s/', url));
   const html = await page.text();
   const headers = new Headers(page.headers);
