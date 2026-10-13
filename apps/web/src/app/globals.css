@@ -254,6 +254,14 @@ html {
   }
 }
 
+/* Phones: Foreman Mo at 2x (48 px, still whole art pixels) so his tips leave the site in view. */
+@media (max-width: 767px) {
+  .guide .guide-mo canvas {
+    width: 48px !important;
+    height: 48px !important;
+  }
+}
+
 /* Short screens (phones held sideways): Foreman Mo's tip box shrinks to a strip at the bottom
    right, clear of the HUD's left column, so the site and the HUD stay visible. */
 @media (max-height: 520px) {

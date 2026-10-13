@@ -59,13 +59,13 @@ export function Guide({
       </span>
       <div className="flex min-w-0 flex-col gap-2">
         <p className="text-xs tracking-widest text-amber uppercase">Foreman Mo</p>
-        <p role="status" className="text-base">
+        <p role="status" className="text-sm md:text-base">
           {tip.text}
         </p>
         <div className="flex flex-wrap gap-2">
           {tip.action !== null && (
             <PxButton
-              className="!px-3 !py-1 !text-base"
+              className="!px-3 !py-1 !text-sm md:!text-base"
               onClick={() => {
                 if (tip.action !== null) open(tip.action.target);
                 dismiss();
@@ -74,7 +74,11 @@ export function Guide({
               {tip.action.label}
             </PxButton>
           )}
-          <PxButton variant="light" className="!px-3 !py-1 !text-base" onClick={dismiss}>
+          <PxButton
+            variant="light"
+            className="!px-3 !py-1 !text-sm md:!text-base"
+            onClick={dismiss}
+          >
             Got it
           </PxButton>
         </div>
