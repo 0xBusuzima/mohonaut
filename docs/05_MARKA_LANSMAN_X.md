@@ -900,7 +900,7 @@ Köşeli parantezler doldurulacak alanlardır. **Tüm taslaklar yayından önce 
 
 **Stealth devlog**
 
-- **F-01 (T−42):** `I've been quiet because I've been building. It's an idle game where everyone drills the same hole. No name yet, no token talk. Just one rig, at night, in the rain. I'll post the devlog here as I go.` [WIP klip: gece sondaj sahası]
+- **F-01 (T−42):** `I've been quiet because I've been building. It's an idle game where everyone drills the same hole. No name yet, no token talk. Just one rig, at night, in the rain. I'll post the devlog here as I go.` [WIP klip: `brand/devlog/f01-night-site.mp4`, 10 sn, arayüz ve isim yok]
 - **F-02 (T−41, thread):**
   1. `Before writing any game code, I wrote down rules I'm not allowed to break. Posting them so you can hold me to them.`
   2. `The game never owes more than a fixed emission schedule. No daily percentages, no per-rig promises.`
@@ -908,7 +908,7 @@ Köşeli parantezler doldurulacak alanlardır. **Tüm taslaklar yayından önce 
   4. `Nothing random costs money. Free daily stuff can be random. Anything you pay for is deterministic.`
   5. `Nothing gets nerfed after you've paid for it. New rigs can come later. Old ones stay exactly as sold.`
   6. `Every adjustable number gets hard limits in code and a public 96-hour delay before it changes. Contract upgrades wait 7 days. More soon.`
-- **F-03 (T−39):** `Rig test: a Turbodrill spinning up under sodium lights. The rain is placeholder. The orange is not.` [klip]
+- **F-03 (T−39):** `Rig test: a Turbodrill under sodium lights, every voxel placed in code. The rain is placeholder. The orange is not.` [görsel: `brand/devlog/f03-turbodrill.png`]
 - **F-04 (T−37):** `If you've played an on-chain mining game that died, what killed it for you? Not looking for names. Looking for failure modes. I'm reading every reply.`
 - **F-04b (T−36):** `Tomorrow it gets a name.`
 
