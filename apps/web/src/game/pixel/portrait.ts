@@ -10,7 +10,7 @@ const PAD_Y = 58; // the pad's top corner; the rig stands on its centre, 16 px l
 
 /**
  * One rig on its pad at night, as on the site: the market and rig cards draw it live, and
- * scripts/gen-rig-art.mjs draws it once into the PNGs the site pages show.
+ * scripts/gen-pixel-art.mjs draws it once into the PNGs the site pages show.
  */
 export function drawPortrait(
   c: Ctx,

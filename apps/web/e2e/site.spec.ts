@@ -76,6 +76,8 @@ test('SEO and PWA files are served', async ({ request }) => {
     '/robots.txt',
     '/manifest.webmanifest',
     '/og.png',
+    '/og-train.png',
+    '/rigs/rig-5.png',
     '/.well-known/security.txt',
   ]) {
     expect((await request.get(path)).status(), path).toBe(200);
@@ -192,6 +194,11 @@ test('the training site runs the game without a wallet', async ({ page }) => {
   // No chain access: the training site never needs one.
   await page.route(/rpc\./, (route) => route.abort());
   await page.goto('/train/');
+  // Shared links show the training site's own card.
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    'content',
+    /\/og-train\.png$/,
+  );
   await expect(page.getByRole('img', { name: /^Training site, level 1/ })).toBeVisible({
     timeout: 15_000,
   });

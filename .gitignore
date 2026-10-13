@@ -46,8 +46,9 @@ services/keeper/data/
 # Next.js and Playwright output
 apps/*/.next/
 apps/*/out/
-# Rig portraits drawn at build time (apps/web/scripts/gen-rig-art.mjs)
+# Pixel art drawn at build time (apps/web/scripts/gen-pixel-art.mjs)
 apps/web/public/rigs/
+apps/web/public/og-train.png
 apps/*/test-results/
 apps/*/playwright-report/
 apps/*/lighthouse.json

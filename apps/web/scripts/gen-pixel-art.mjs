@@ -1,11 +1,14 @@
 /* global URL, console, Buffer */
 // Draws each rig portrait (src/game/pixel/portrait.ts, the code the game itself draws with) once,
-// into public/rigs/rig-<id>.png at 3x, for the site pages: pictures, no game code shipped.
+// into public/rigs/rig-<id>.png at 3x, for the site pages: pictures, no game code shipped. Then
+// the training site's share card (public/og-train.png, docs/05 2.9) from those portraits.
 // Runs before `next build`; the PNGs are build output (gitignored), so they never go stale.
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { crc32, deflateSync } from 'node:zlib';
+import { Resvg } from '@resvg/resvg-js';
 import { runnerImport } from 'vite';
 
 const web = fileURLToPath(new URL('..', import.meta.url));
@@ -13,6 +16,7 @@ const SCALE = 3;
 const RIGS = 6;
 
 const { module: art } = await runnerImport(join(web, 'src/game/pixel/portrait.ts'));
+const { module: mo } = await runnerImport(join(web, '../../packages/sdk/src/art.ts'));
 const W = art.PORTRAIT_W;
 const H = art.PORTRAIT_H;
 
@@ -27,7 +31,7 @@ function parse(color) {
     const [r, g, b, a = '1'] = rgba[1].split(',').map((s) => s.trim());
     return [Number(r), Number(g), Number(b), Number(a)];
   }
-  throw new Error(`gen-rig-art: unknown colour ${color}`);
+  throw new Error(`gen-pixel-art: unknown colour ${color}`);
 }
 
 /** The few canvas calls the pixel art uses (fillStyle, globalAlpha, fillRect), on a buffer. */
@@ -89,9 +93,57 @@ function png(rgb) {
 
 const out = join(web, 'public/rigs');
 mkdirSync(out, { recursive: true });
+const portraits = [];
 for (let id = 0; id < RIGS; id++) {
   const c = canvas();
   art.drawPortrait(c, id, true, 0, false);
-  writeFileSync(join(out, `rig-${id}.png`), png(c.rgb));
+  portraits.push(png(c.rgb));
+  writeFileSync(join(out, `rig-${id}.png`), portraits[id]);
 }
-console.log(`gen-rig-art: ${RIGS} portraits in public/rigs`);
+
+// The share card: four rigs along the bottom, the title above (fonts from the repo, OFL).
+const require = createRequire(import.meta.url);
+const fontDir = (pkg) => dirname(require.resolve(`${pkg}/package.json`));
+const display = join(
+  fontDir('@expo-google-fonts/big-shoulders-display'),
+  'BigShouldersDisplay_900Black.ttf',
+);
+const body = join(fontDir('@expo-google-fonts/barlow'), '600SemiBold', 'Barlow_600SemiBold.ttf');
+const PW = W * SCALE;
+const PH = H * SCALE;
+const rigs = [1, 2, 3, 4]
+  .map(
+    (id, i) =>
+      `<image x="${i * PW}" y="${630 - PH}" width="${PW}" height="${PH}" image-rendering="optimizeSpeed" href="data:image/png;base64,${portraits[id].toString('base64')}"/>`,
+  )
+  .join('');
+const stripes = Array.from(
+  { length: 40 },
+  (_, i) =>
+    `<polygon points="${i * 40},0 ${i * 40 + 20},0 ${i * 40 + 4},16 ${i * 40 - 16},16" fill="#ffb31a"/>`,
+).join('');
+// Foreman Mo, top right, 7 px per art pixel.
+const foreman = mo.MO_ART.flatMap((row, y) =>
+  [...row].map((ch, x) =>
+    ch === '.'
+      ? ''
+      : `<rect x="${960 + x * 7}" y="${60 + y * 7}" width="7" height="7" fill="${mo.MO_COLORS[ch]}"/>`,
+  ),
+).join('');
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<rect width="1200" height="630" fill="#0d1220"/>
+${rigs}
+<rect width="1200" height="16" fill="#16191d"/>${stripes}
+${foreman}
+<text x="60" y="96" font-family="Big Shoulders Display" font-weight="900" font-size="40" letter-spacing="3" fill="#ff6b1a">MOHONAUT</text>
+<text x="56" y="204" font-family="Big Shoulders Display" font-weight="900" font-size="124" letter-spacing="2" fill="#ece7dc">TRAINING SITE</text>
+<text x="60" y="262" font-family="Barlow" font-weight="600" font-size="32" fill="#ece7dc">Try the rig in your browser: no wallet, practice diesel, nothing of value.</text>
+<text x="60" y="310" font-family="Barlow" font-weight="600" font-size="30" fill="#2ee6d6">mohonaut.com/train</text>
+</svg>`;
+const card = new Resvg(svg, {
+  font: { fontFiles: [display, body], loadSystemFonts: false, defaultFontFamily: 'Barlow' },
+})
+  .render()
+  .asPng();
+writeFileSync(join(web, 'public/og-train.png'), card);
+console.log(`gen-pixel-art: ${RIGS} rig portraits in public/rigs, public/og-train.png`);

@@ -136,7 +136,7 @@ export default function Home() {
                 key={r.id}
                 className="overflow-hidden rounded-lg border border-line bg-surface-raised"
               >
-                {/* Drawn by the game's own pixel code at build time (scripts/gen-rig-art.mjs). */}
+                {/* Drawn by the game's own pixel code at build time (scripts/gen-pixel-art.mjs). */}
                 <img
                   src={`/rigs/rig-${r.id}.png`}
                   alt={`${r.name} on its pad at night`}
