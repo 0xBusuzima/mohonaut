@@ -5,6 +5,7 @@
  *   node dist/main.js sync      migrate, index up to the current head, then exit (backfills)
  *   node dist/main.js rebuild   migrate, then rebuild the derived tables from the raw events
  */
+import { existsSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { loadConfig } from './config.js';
@@ -56,6 +57,8 @@ async function connect(
 }
 
 async function main(): Promise<void> {
+  // Local runs read this service's .env (README); deployments pass the environment, which wins.
+  if (existsSync('.env')) process.loadEnvFile('.env');
   const cfg = loadConfig(process.env);
   const metrics = new Metrics();
   const source = new RpcSource(cfg.rpcUrl, metrics);

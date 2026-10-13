@@ -4,6 +4,7 @@
  *   node dist/main.js        run the jobs every TICK_INTERVAL_MS (metrics on METRICS_PORT)
  *   node dist/main.js once   one tick, print the outcomes, exit
  */
+import { existsSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { liquidityManagerAbi } from '@mohonaut/sdk';
@@ -22,6 +23,8 @@ function log(level: 'info' | 'error', msg: string, fields: Record<string, unknow
 }
 
 async function main(): Promise<void> {
+  // Local runs read this service's .env (README); deployments pass the environment, which wins.
+  if (existsSync('.env')) process.loadEnvFile('.env');
   const cfg = loadConfig(process.env);
   const { deployment } = cfg;
   const clients = makeClients(cfg.rpcUrl, deployment.chainId, await resolveKey(cfg.key));

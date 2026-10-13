@@ -46,3 +46,17 @@ describe('schema', () => {
     },
   );
 });
+
+describe('a local PGlite database', () => {
+  it('creates its data directory on a fresh checkout', async () => {
+    const { mkdtempSync, existsSync, rmSync } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const root = mkdtempSync(join(tmpdir(), 'mohonaut-'));
+    const dir = join(root, 'data', 'indexer');
+    const db = await openDatabase(`pglite://${dir}`);
+    expect(existsSync(dir)).toBe(true);
+    await db.close();
+    rmSync(root, { recursive: true, force: true });
+  });
+});

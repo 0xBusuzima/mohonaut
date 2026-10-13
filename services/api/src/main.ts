@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** API process: migrate the API tables, then serve on HOST:PORT (behind Cloudflare in production). */
+import { existsSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { serve } from '@hono/node-server';
@@ -17,6 +18,8 @@ import { MemoryStore, RedisStore } from './store.js';
 const MIGRATIONS = fileURLToPath(new URL('../migrations/', import.meta.url));
 
 async function main(): Promise<void> {
+  // Local runs read this service's .env (README); deployments pass the environment, which wins.
+  if (existsSync('.env')) process.loadEnvFile('.env');
   const cfg = loadConfig(process.env);
   const database = await openDatabase(cfg.databaseUrl);
   await migrate(database, MIGRATIONS);

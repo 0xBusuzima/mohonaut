@@ -1,3 +1,4 @@
+import { mkdirSync } from 'node:fs';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,7 +36,10 @@ export async function openDatabase(url: string): Promise<Database> {
     };
   }
   if (url === 'memory://' || url.startsWith('pglite://')) {
-    const client = url === 'memory://' ? new PGlite() : new PGlite(url.slice('pglite://'.length));
+    const dir = url.slice('pglite://'.length);
+    // A fresh checkout has no data directory yet: PGlite does not create its parents.
+    if (url !== 'memory://') mkdirSync(dir, { recursive: true });
+    const client = url === 'memory://' ? new PGlite() : new PGlite(dir);
     await client.waitReady;
     return {
       db: drizzlePglite(client, { schema }) as unknown as Db,
