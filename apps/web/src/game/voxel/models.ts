@@ -398,3 +398,25 @@ export function containerModel(): Model {
   m.set(8, 9, 12, v(P.orange, true));
   return m;
 }
+
+/**
+ * The diesel tank on a 14 x 14 footprint: a steel cylinder with rims, an orange stencil band,
+ * a ladder on the left (+y) side and a domed cap. The gauge and the low-fuel lamp are drawn over
+ * it in the scene (they show the player's tank).
+ */
+export function tankModel(): Model {
+  const m = new Model();
+  for (let x = 0; x < 14; x++)
+    for (let y = 0; y < 14; y++) {
+      const d = Math.hypot(x - 6.5, y - 6.5);
+      if (d > 6.4) continue;
+      for (let z = 0; z <= 15; z++) {
+        const rim = z === 5 || z === 11;
+        m.set(x, y, z, z === 13 ? v(P.orange) : rim ? v(P.graphite) : v(P.steel));
+      }
+      if (d <= 4.6) m.set(x, y, 16, v(P.steelLight));
+      if (d <= 2.2) m.set(x, y, 17, v(P.steelLight));
+    }
+  for (let z = 1; z <= 15; z += 2) m.box(4, 13, z, 5, 13, z, v(P.concrete));
+  return m;
+}

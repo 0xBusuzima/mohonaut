@@ -9,6 +9,7 @@ import {
   rotaryRig,
   shackModel,
   siteDiorama,
+  tankModel,
   topDrive,
   turbodrill,
 } from '../src/game/voxel/models';
@@ -157,5 +158,12 @@ describe('the voxel models', () => {
     const box = containerModel();
     expect(box.get(15, 8, 3)?.colour).toEqual(hex('#0e1013')); // dark inside the open doors
     expect(span(box)).toBeLessThanOrEqual(30);
+  });
+
+  it('builds the diesel tank as a round steel cylinder with an orange band and a domed cap', () => {
+    const tank = tankModel();
+    expect(tank.get(6, 6, 13)?.colour).toEqual(hex('#ff6b1a'));
+    expect(tank.get(6, 6, 17)).toBeDefined();
+    expect(tank.get(0, 0, 5)).toBeUndefined(); // round: the footprint's corners stay empty
   });
 });

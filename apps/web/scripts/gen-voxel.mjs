@@ -91,6 +91,13 @@ for (const [name, model] of [
   writeFileSync(join(out, `site-${name}.png`), png(image));
   manifest[name] = { w: image.width, h: image.height, ax: image.origin[0], ay: image.origin[1] };
 }
+// The tank stands on its centre: anchored at its footprint's middle on the ground.
+{
+  const image = voxel.render(models.tankModel(), { scale: 2, bloom: 4, light: LIGHT });
+  const [ax, ay] = voxel.anchorOf(image, 7, 7, 0, 2);
+  writeFileSync(join(out, 'site-tank.png'), png(image));
+  manifest.tank = { w: image.width, h: image.height, ax: Math.round(ax), ay: Math.round(ay) };
+}
 writeFileSync(join(out, 'manifest.json'), JSON.stringify(manifest));
 console.log(
   `gen-voxel: ${rigs.length} rigs, the site diorama and ${Object.keys(manifest).length} in-game sprites`,

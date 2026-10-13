@@ -113,23 +113,37 @@ export function tank(
     ],
     P.steelLight,
   );
+  // Ladder and stencil band.
+  for (let i = 0; i < h - 6; i += 3) rect(c, x - 9, top + 5 + i, 3, 1, P.concrete);
+  rect(c, x - w / 2, top + 28, w, 3, P.orange);
+  // Hose to the ground.
+  polyline(c, [x + w / 2 - 1, top + 26, x + w / 2 + 4, top + 30, x + w / 2 + 6, y], P.graphite);
+  tankDressing(c, x, y, fill, low, t, motion);
+  if (hover) rect(c, x - w / 2 - 1, top - 1, w + 2, 1, P.amber);
+}
+
+/** The tank's live parts, drawn over either tank (pixel or voxel): the gauge and the low lamp. */
+export function tankDressing(
+  c: Ctx,
+  x: number,
+  y: number,
+  fill: number,
+  low: boolean,
+  t: number,
+  motion: boolean,
+): void {
+  const top = y - 34;
   // Gauge: a window showing the fill level.
   const gh = 16;
   rect(c, x + 2, top + 9, 5, gh + 2, P.night);
   const f = Math.max(0, Math.min(1, fill));
   const filled = Math.round(gh * f);
   rect(c, x + 3, top + 10 + gh - filled, 3, filled, f < 0.15 ? P.orange : P.amber);
-  // Ladder and stencil band.
-  for (let i = 0; i < h - 6; i += 3) rect(c, x - 9, top + 5 + i, 3, 1, P.concrete);
-  rect(c, x - w / 2, top + 28, w, 3, P.orange);
-  // Hose to the ground.
-  polyline(c, [x + w / 2 - 1, top + 26, x + w / 2 + 4, top + 30, x + w / 2 + 6, y], P.graphite);
   // A warning lamp on top that blinks red when the diesel runs low.
   if (low) {
     const on = !motion || Math.sin(t * 6) > 0;
     rect(c, x - 2, top - 3, 4, 3, on ? P.beacon : '#6b1d18');
   }
-  if (hover) rect(c, x - w / 2 - 1, top - 1, w + 2, 1, P.amber);
 }
 
 export function shack(

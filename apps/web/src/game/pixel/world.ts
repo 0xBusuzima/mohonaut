@@ -31,6 +31,7 @@ import {
   rigTop,
   shack,
   shackDressing,
+  tankDressing,
   tank,
   truck,
   truckLights,
@@ -273,7 +274,13 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   }
   at(6, 2, () => {
     const p = iso(5, 1);
-    tank(c, p.x, p.y + 16, m.tankFill, m.tankLow === true, m.hover === 'tank', t, m.motion);
+    const built = m.voxel === true ? voxelSprite('tank') : null;
+    if (built === null)
+      tank(c, p.x, p.y + 16, m.tankFill, m.tankLow === true, m.hover === 'tank', t, m.motion);
+    else {
+      c.drawImage(built.img, p.x - built.ax, p.y + 16 - built.ay);
+      tankDressing(c, p.x, p.y + 16, m.tankFill, m.tankLow === true, t, m.motion);
+    }
     hits.push({ id: 'tank', x: p.x - 16, y: p.y - 26, w: 32, h: 50 });
   });
   at(10, 2, () => {
