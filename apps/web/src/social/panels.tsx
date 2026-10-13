@@ -1,5 +1,6 @@
 'use client';
 
+import { PLAQUE_ART, PLAQUE_PALETTES, plaqueTier } from '@mohonaut/sdk';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
@@ -400,6 +401,7 @@ export function SeasonsPanel({ address }: { address: Address | undefined }) {
             rows={board.data.rows}
             caption={`${season?.name ?? 'Season'} leaderboard`}
             address={address}
+            plaques
           />
         )}
       </PxSection>
@@ -422,10 +424,13 @@ function Board({
   rows,
   caption,
   address,
+  plaques = false,
 }: {
   rows: ContributionRow[];
   caption: string;
   address: Address | undefined;
+  /** A season board: the top ten places carry a plaque when the season ends. */
+  plaques?: boolean;
 }) {
   const mine = address?.toLowerCase();
   return (
@@ -434,7 +439,25 @@ function Board({
       rows={rows}
       rowKey={(r) => r.address}
       columns={[
-        { key: 'rank', header: 'Rank', numeric: true, render: (r) => r.rank },
+        {
+          key: 'rank',
+          header: 'Rank',
+          numeric: true,
+          render: (r) =>
+            plaques && r.rank <= 10 ? (
+              <span className="inline-flex items-center gap-1">
+                <PixelSvg
+                  rows={PLAQUE_ART}
+                  palette={PLAQUE_PALETTES[plaqueTier(r.rank)]}
+                  size={16}
+                />
+                {r.rank}
+                <span className="sr-only">, plaque place</span>
+              </span>
+            ) : (
+              r.rank
+            ),
+        },
         {
           key: 'who',
           header: 'Driller',
