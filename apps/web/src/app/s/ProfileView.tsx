@@ -95,7 +95,7 @@ function Site({ profile: p }: { profile: Profile }) {
       <p className="text-lg">
         {p.registered ? (
           <>
-            Has cored <span className="num">{p.contribution.text}</span> of the World Bore
+            Has cored <strong>{p.contribution.text}</strong> of the World Bore
             {p.crew !== null && (
               <>
                 {' '}
