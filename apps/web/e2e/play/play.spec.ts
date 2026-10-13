@@ -58,9 +58,12 @@ test('a new player opens a drill site, then stops and restarts the Pilot Rig', a
   await expect(rigs.getByText('1 / 1 on')).toBeVisible({ timeout: 30_000 });
   await rigs.getByRole('button', { name: 'Close' }).click();
 
-  // Before Market Open the refinery explains when it opens.
+  // Before Market Open the HUD says when refining opens, and so does the refinery.
+  await expect(page.getByText(/^Refining opens at Market Open: .* UTC, in /)).toBeVisible();
   await page.getByRole('button', { name: 'Refinery', exact: true }).click();
-  await expect(page.getByText(/Refining opens at Market Open/)).toBeVisible();
+  await expect(
+    page.getByRole('dialog', { name: 'Refinery' }).getByText(/Refining opens at Market Open/),
+  ).toBeVisible();
   await shot(page, '3-refinery');
   await page
     .getByRole('dialog', { name: 'Refinery' })
