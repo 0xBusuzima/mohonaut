@@ -12,7 +12,8 @@ import { PlaqueList } from '../game/PlaqueList';
 import { FIND_PALETTE, FIND_SETS } from '../game/finds';
 import { PixelSvg } from '../game/pixel/PixelSvg';
 import { useSignIn } from '../game/signin';
-import { formatUtc } from '../lib/format';
+import { useNow } from '../lib/clock';
+import { formatDuration, formatUtc } from '../lib/format';
 import { NOTIFY_EVENTS, api, apiMessage } from './api';
 import type { Collection, ContributionRow, Me, NotifyEvent, Prefs } from './api';
 import { ME_KEY, useMe } from './session';
@@ -408,7 +409,15 @@ function CollectionBoard({ collection }: { collection: Collection }) {
 
 // ------------------------------------------------------------------ seasons
 
+/** Where a season stands at `nowS` (Unix seconds), in words for its tag. */
+export function seasonPhase(season: { startsAt: number; endsAt: number }, nowS: number): string {
+  if (nowS < season.startsAt) return `Starts in ${formatDuration(season.startsAt - nowS)}`;
+  if (nowS < season.endsAt) return `Ends in ${formatDuration(season.endsAt - nowS)}`;
+  return 'Ended: plaques are up';
+}
+
 export function SeasonsPanel({ address }: { address: Address | undefined }) {
+  const now = useNow(60_000);
   const seasons = useQuery({ queryKey: ['seasons'], queryFn: api.seasons });
   const season = seasons.data?.seasons[0];
   const board = useQuery({
@@ -419,7 +428,15 @@ export function SeasonsPanel({ address }: { address: Address | undefined }) {
   const overall = useQuery({ queryKey: ['contribution'], queryFn: api.contributionBoard });
   return (
     <div className="flex flex-col gap-4">
-      <PxSection label="Season" title={season?.name ?? 'No season yet'}>
+      <PxSection
+        label="Season"
+        title={season?.name ?? 'No season yet'}
+        actions={
+          season !== undefined && now !== null ? (
+            <PxTag>{seasonPhase(season, Math.floor(now / 1000))}</PxTag>
+          ) : undefined
+        }
+      >
         {season !== undefined && (
           <p className={HINT}>
             {formatUtc(season.startsAt)} to {formatUtc(season.endsAt)}. Ranked by World Bore

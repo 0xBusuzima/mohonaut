@@ -40,4 +40,12 @@ describe('the season board', () => {
     const overall = await screen.findByRole('table', { name: 'All-time contribution leaderboard' });
     expect(within(overall).queryByText(/plaque place/)).toBeNull();
   });
+
+  it('says where the season stands', async () => {
+    const { seasonPhase } = await import('../src/social/panels');
+    const season = { startsAt: 1_000_000, endsAt: 1_000_000 + 56 * 86_400 };
+    expect(seasonPhase(season, 1_000_000 - 7_200)).toBe('Starts in 2 h 0 min');
+    expect(seasonPhase(season, 1_000_000 + 86_400)).toBe('Ends in 55 d 0 h');
+    expect(seasonPhase(season, season.endsAt)).toBe('Ended: plaques are up');
+  });
 });
