@@ -1,10 +1,12 @@
-/* global console, URL, TextEncoder */
+/* global console, URL, TextEncoder, Buffer */
 // Bakes the voxel models (src/game/voxel/models.ts) into isometric PNG sprites in public/voxel,
 // with the build-time renderer (src/game/voxel/render.ts): docs/01 7, the voxel diorama look.
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { crc32, deflateSync } from 'node:zlib';
+import { Resvg } from '@resvg/resvg-js';
 import { runnerImport } from 'vite';
 
 const web = fileURLToPath(new URL('..', import.meta.url));
@@ -152,6 +154,141 @@ for (const [set, centre] of [
 ])
   bake(`decor-${set}`, models.decorModel(set), 2, [centre[0], centre[1], 0], 1.5);
 writeFileSync(join(out, 'manifest.json'), JSON.stringify(manifest));
+
+// ---- Rig portraits for the site and the game's cards (public/rigs): each rig on a soft night
+// scene, running (lights on) and stopped, at twice the cards' 300 x 276 CSS size.
+const PW = 600;
+const PH = 552;
+/** A night backdrop: sky gradient, the plain, and a warm pool of light where the rig stands. */
+function backdrop() {
+  const data = new Uint8ClampedArray(PW * PH * 4);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const sky = [hex('#0a1022'), hex('#1a2445'), hex('#2c2c50')];
+  const land = [hex('#2a2622'), hex('#1f1b18')];
+  const horizon = Math.round(PH * 0.52);
+  for (let y = 0; y < PH; y++) {
+    for (let x = 0; x < PW; x++) {
+      let c;
+      if (y < horizon) {
+        const t = y / horizon;
+        c =
+          t < 0.6
+            ? sky[0].map((v, i) => lerp(v, sky[1][i], t / 0.6))
+            : sky[1].map((v, i) => lerp(v, sky[2][i], (t - 0.6) / 0.4));
+      } else {
+        const t = (y - horizon) / (PH - horizon);
+        c = land[0].map((v, i) => lerp(v, land[1][i], t));
+        // The lamp pool: an iso ellipse round the rig's foot, warm and soft.
+        const dx = (x - PW / 2) / (PW * 0.42);
+        const dy = (y - PH * 0.84) / (PH * 0.14);
+        const d = Math.hypot(dx, dy);
+        const glow = Math.max(0, 1 - d) ** 2 * 0.55;
+        c = c.map((v, i) => v + ([255, 200, 120][i] - v) * glow * 0.6);
+      }
+      const k = (y * PW + x) * 4;
+      data[k] = c[0];
+      data[k + 1] = c[1];
+      data[k + 2] = c[2];
+      data[k + 3] = 255;
+    }
+  }
+  // A few stars.
+  for (let i = 0; i < 70; i++) {
+    const sx = Math.floor(((((Math.sin(i * 12.9898) * 43758.5453) % 1) + 1) % 1) * PW);
+    const sy = Math.floor(((((Math.sin(i * 78.233) * 12345.678) % 1) + 1) % 1) * horizon * 0.8);
+    const k = (sy * PW + sx) * 4;
+    data[k] = data[k + 1] = data[k + 2] = 200;
+  }
+  return data;
+}
+/** Lays `img` (RGBA) over `dst` with its point (ax, ay) at (x, y). */
+function over(dst, img, x, y, ax, ay) {
+  for (let j = 0; j < img.height; j++)
+    for (let i = 0; i < img.width; i++) {
+      const tx = Math.round(x - ax + i);
+      const ty = Math.round(y - ay + j);
+      if (tx < 0 || ty < 0 || tx >= PW || ty >= PH) continue;
+      const s = (j * img.width + i) * 4;
+      const a = img.data[s + 3] / 255;
+      if (a === 0) continue;
+      const d = (ty * PW + tx) * 4;
+      for (let c = 0; c < 3; c++) dst[d + c] = img.data[s + c] * a + dst[d + c] * (1 - a);
+    }
+}
+const rigsOut = join(web, 'public/rigs');
+mkdirSync(rigsOut, { recursive: true });
+const portraits = [];
+for (const [i, model] of rigs.entries()) {
+  const n = models.PAD_SIZES[i];
+  const top = Math.max(...model.entries().map(([, , z]) => z));
+  // As large as fits: the pad at most 440 px across, the rig at most 470 px tall.
+  const scale = Math.min(440 / (2 * n), 470 / (top + n / 2 + 2));
+  for (const [suffix, m] of [
+    ['', model],
+    ['-off', models.switchedOff(model)],
+  ]) {
+    const image = voxel.render(m, { scale, bloom: 10, light: LIGHT });
+    const [ax, ay] = voxel.anchorOf(image, n / 2, n / 2, 1, scale);
+    const data = backdrop();
+    over(data, image, PW / 2, PH * 0.84, ax, ay);
+    const file = png({ width: PW, height: PH, data });
+    writeFileSync(join(rigsOut, `rig-${i}${suffix}.png`), file);
+    if (suffix === '') portraits[i] = file;
+  }
+}
+console.log(`gen-voxel: ${rigs.length} rig portraits in public/rigs`);
+
+// ---- The training site's share card (public/og-train.png, docs/05 2.9): four rigs along the
+// bottom, the title above, Foreman Mo top right (fonts from the repo, OFL).
+{
+  const require = createRequire(import.meta.url);
+  const fontDir = (pkg) => dirname(require.resolve(`${pkg}/package.json`));
+  const display = join(
+    fontDir('@expo-google-fonts/big-shoulders-display'),
+    'BigShouldersDisplay_900Black.ttf',
+  );
+  const body = join(fontDir('@expo-google-fonts/barlow'), '600SemiBold', 'Barlow_600SemiBold.ttf');
+  const { module: mo } = await runnerImport(join(web, '../../packages/sdk/src/art.ts'));
+  const W4 = 300;
+  const H4 = 276;
+  const cards = [1, 2, 3, 4]
+    .map(
+      (id, i) =>
+        `<image x="${i * W4}" y="${630 - H4}" width="${W4}" height="${H4}" href="data:image/png;base64,${Buffer.from(portraits[id]).toString('base64')}"/>`,
+    )
+    .join('');
+  const stripes = Array.from(
+    { length: 40 },
+    (_, i) =>
+      `<polygon points="${i * 40},0 ${i * 40 + 20},0 ${i * 40 + 4},16 ${i * 40 - 16},16" fill="#ffb31a"/>`,
+  ).join('');
+  const foreman = mo.MO_ART.flatMap((row, y) =>
+    [...row].map((ch, x) =>
+      ch === '.'
+        ? ''
+        : `<rect x="${960 + x * 7}" y="${60 + y * 7}" width="7" height="7" fill="${mo.MO_COLORS[ch]}"/>`,
+    ),
+  ).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<rect width="1200" height="630" fill="#0d1220"/>
+${cards}
+<rect width="1200" height="16" fill="#16191d"/>${stripes}
+${foreman}
+<text x="60" y="96" font-family="Big Shoulders Display" font-weight="900" font-size="40" letter-spacing="3" fill="#ff6b1a">MOHONAUT</text>
+<text x="56" y="204" font-family="Big Shoulders Display" font-weight="900" font-size="124" letter-spacing="2" fill="#ece7dc">TRAINING SITE</text>
+<text x="60" y="262" font-family="Barlow" font-weight="600" font-size="32" fill="#ece7dc">Try the rig in your browser: no wallet, practice diesel, nothing of value.</text>
+<text x="60" y="310" font-family="Barlow" font-weight="600" font-size="30" fill="#2ee6d6">mohonaut.com/train</text>
+</svg>`;
+  const card = new Resvg(svg, {
+    font: { fontFiles: [display, body], loadSystemFonts: false, defaultFontFamily: 'Barlow' },
+  })
+    .render()
+    .asPng();
+  writeFileSync(join(web, 'public/og-train.png'), card);
+  console.log('gen-voxel: public/og-train.png');
+}
+
 console.log(
   `gen-voxel: ${rigs.length} rigs, the site diorama and ${Object.keys(manifest).length} in-game sprites`,
 );

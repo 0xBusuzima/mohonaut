@@ -246,14 +246,6 @@ html {
   background: #262c33;
 }
 
-/* Rig cards on phones: the portrait at 2x (it is drawn for 3x) so a card fits the screen. */
-@media (max-width: 639px) {
-  .rig-portrait canvas {
-    width: 200px !important;
-    height: 184px !important;
-  }
-}
-
 /* Phones: Foreman Mo at 2x (48 px, still whole art pixels) so his tips leave the site in view. */
 @media (max-width: 767px) {
   .guide .guide-mo canvas {

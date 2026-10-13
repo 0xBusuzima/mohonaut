@@ -45,7 +45,6 @@ import { land, landSmooth, sky, skyLife, skySmooth, skyStill } from './terrain';
 
 import { DECOR_SPOTS, drawDecor } from './decor';
 import type { DecorSet } from './decor';
-export { drawRig, padTile } from './props';
 
 export type Hit = 'tank' | 'shack' | 'market' | 'bore' | `pad:${number}`;
 export interface HitBox {
