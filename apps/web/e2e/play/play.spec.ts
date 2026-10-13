@@ -138,7 +138,16 @@ test('after genesis, a returning driller reads the shift report and buys two Rot
   await page.getByRole('button', { name: 'My rigs' }).click();
   const rigs = page.getByRole('dialog', { name: 'My rigs' });
   await expect(rigs.getByText('2 / 2 on')).toBeVisible({ timeout: 30_000 });
-  await rigs.getByRole('button', { name: 'Close' }).click();
+  // Expanding the site from the rigs window: Foreman Mo marks the new level once.
+  await rigs.getByRole('button', { name: 'Expand the site' }).click();
+  const site = page.getByRole('dialog', { name: 'Expand your site' });
+  await site.getByRole('button', { name: /^Upgrade for/ }).click({ timeout: 30_000 });
+  await expect(page.getByText('Site upgraded to L2')).toBeVisible({ timeout: 30_000 });
+  await site.getByRole('button', { name: 'Close' }).click();
+  const levelUp = page.getByRole('dialog', { name: 'Site level up' });
+  await expect(levelUp.getByText('Level 2')).toBeVisible({ timeout: 30_000 });
+  await shot(page, '7c-level-up');
+  await levelUp.getByRole('button', { name: 'Back to work' }).click();
   // The sale reaches the market's price chart through the indexer and the API.
   await page.getByRole('button', { name: 'Market', exact: true }).click();
   await expect(page.getByRole('img', { name: /^Average paid per DP, last 7 days/ })).toBeVisible({
