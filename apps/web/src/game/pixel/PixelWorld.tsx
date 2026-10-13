@@ -16,6 +16,8 @@ const DRAG_PX = 6;
 /** Device pixels per canvas for the voxel scene: on a phone, and on a larger screen. */
 const PIXELS_PHONE = 600_000;
 const PIXELS_LARGE = 2_500_000;
+/** A still scene behind a window (dimmed, mostly covered) needs far fewer. */
+const PIXELS_STILL = 250_000;
 /** The longest the voxel scene waits for its sprites before it shows anyway. */
 const SHOW_AFTER_MS = 2500;
 /** How long after the scene shows its animation waits, then for the page to be idle. */
@@ -137,7 +139,7 @@ export function PixelWorld({
       : 1;
   // Within a pixel budget: each frame the browser lays the five canvases together, which a phone
   // without GPU compositing (and Lighthouse's mobile run) pays for per pixel.
-  const budget = size.w * size.scale < 768 ? PIXELS_PHONE : PIXELS_LARGE;
+  const budget = still ? PIXELS_STILL : size.w * size.scale < 768 ? PIXELS_PHONE : PIXELS_LARGE;
   const res = Math.max(1, Math.min(6, ratio, Math.sqrt(budget / Math.max(1, size.w * size.h))));
 
   // Sprites arrive after the first frame; a still scene draws again once per animation frame.
