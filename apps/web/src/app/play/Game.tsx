@@ -13,7 +13,7 @@ import { ForemanMo } from '../../game/pixel/ForemanMo';
 import { PixelWorld } from '../../game/pixel/PixelWorld';
 import type { Hit } from '../../game/pixel/world';
 import { describeHit, scenePads } from '../../game/play';
-import { useGameAction } from '../../game/actions';
+import { useGameAction, useResumeTx } from '../../game/actions';
 import { useSignIn } from '../../game/signin';
 import { perHourEstimate } from '../../game/derive';
 import type { Action } from '../../game/actions';
@@ -55,6 +55,7 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
   const { state, refetch, offline } = useGameState(address, lowPower);
   const ethBalance = useBalance({ address, query: { refetchInterval: 12_000 } }).data?.value;
   const action = useGameAction(refetch);
+  useResumeTx(refetch);
   useE2EConnect();
   usePixelGame();
 

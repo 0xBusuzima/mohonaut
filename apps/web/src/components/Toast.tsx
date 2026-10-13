@@ -9,12 +9,15 @@ export interface ToastInput {
   tone?: ToastTone;
   title: string;
   body?: string;
+  /** A link under the text (opens in a new tab), e.g. a transaction on the explorer. */
+  link?: { href: string; label: string };
 }
 
 interface ToastItem extends Required<Pick<ToastInput, 'title'>> {
   id: number;
   tone: ToastTone;
   body: string | undefined;
+  link: ToastInput['link'];
 }
 
 const ToastContext = createContext<((t: ToastInput) => void) | null>(null);
@@ -45,7 +48,7 @@ export function ToastProvider({
       const id = nextId.current++;
       setItems((all) => [
         ...all.slice(-3),
-        { id, tone: t.tone ?? 'info', title: t.title, body: t.body },
+        { id, tone: t.tone ?? 'info', title: t.title, body: t.body, link: t.link },
       ]);
       if (t.tone !== 'alarm') setTimeout(() => dismiss(id), timeoutMs); // alarms stay until closed
     },
@@ -84,6 +87,16 @@ function Toast({ item, onClose }: { item: ToastItem; onClose: () => void }) {
         <div>
           <p className="font-semibold">{item.title}</p>
           {item.body !== undefined && <p className="mt-1 text-fg-muted">{item.body}</p>}
+          {item.link !== undefined && (
+            <a
+              href={item.link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-block text-data underline"
+            >
+              {item.link.label}
+            </a>
+          )}
         </div>
         <button
           type="button"

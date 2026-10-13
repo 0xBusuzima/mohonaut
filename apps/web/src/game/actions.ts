@@ -1,13 +1,15 @@
 'use client';
 
 import { miningCoreAbi } from '@mohonaut/sdk';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { Hash } from 'viem';
 import { useAccount, usePublicClient, useWriteContract } from 'wagmi';
 import { useToast } from '../components/Toast';
 import { cue } from './audio';
 import type { Cue } from './audio';
 import { explain } from './errors';
 import { GAME, txUrl } from './network';
+import { forgetTx, pendingTx, rememberTx } from './pending';
 
 const GAS_MARGIN_PCT = 125n;
 
@@ -65,18 +67,24 @@ export function useGameAction(onDone: () => void) {
       // The estimate doubles as the simulation. Wallet estimates miss refund-heavy paths
       // (e.g. restarting a rig), so the gas limit carries the keeper's 25% margin.
       const gas = await client.estimateContractGas(call as never);
-      const hash = await writeContractAsync({
+      const hash = (await writeContractAsync({
         ...call,
         gas: (gas * GAS_MARGIN_PCT) / 100n,
-      } as never);
-      const receipt = await client.waitForTransactionReceipt({ hash });
+      } as never)) as Hash;
+      // From here the transaction exists: it is kept on the device until its receipt is seen,
+      // so a reload or a lost connection never loses track of it (docs/09 7).
+      rememberTx(address, { hash, done });
+      const link = explorerLink(hash);
+      let receipt;
+      try {
+        receipt = await client.waitForTransactionReceipt({ hash, timeout: RECEIPT_WAIT_MS });
+      } catch {
+        toast({ tone: 'info', title: 'Still waiting for the chain', ...link });
+        return false;
+      }
+      forgetTx(address);
       if (receipt.status !== 'success') throw new Error('transaction reverted');
-      const link = txUrl(hash);
-      toast({
-        tone: 'success',
-        title: done,
-        ...(link === null ? {} : { body: `Confirmed: ${link}` }),
-      });
+      toast({ tone: 'success', title: done, ...link });
       cue(CUES[fn]);
       onDone();
       return true;
@@ -93,3 +101,51 @@ export function useGameAction(onDone: () => void) {
 }
 
 export type Action = ReturnType<typeof useGameAction>;
+
+/** How long an action waits for its receipt before saying it is still waiting. */
+const RECEIPT_WAIT_MS = 120_000;
+
+function explorerLink(hash: Hash): { link?: { href: string; label: string } } {
+  const href = txUrl(hash);
+  return href === null ? {} : { link: { href, label: 'View on the explorer' } };
+}
+
+/**
+ * A transaction this device sent and never saw the receipt of (a reload, a lost connection):
+ * waits for it once and says how it went.
+ */
+export function useResumeTx(onDone: () => void): void {
+  const { address } = useAccount();
+  const client = usePublicClient();
+  const toast = useToast();
+  useEffect(() => {
+    if (address === undefined || client === undefined) return;
+    const sent = pendingTx(address);
+    if (sent === null) return;
+    let live = true;
+    client
+      .waitForTransactionReceipt({ hash: sent.hash, timeout: RECEIPT_WAIT_MS })
+      .then((receipt) => {
+        forgetTx(address);
+        if (!live) return;
+        toast(
+          receipt.status === 'success'
+            ? { tone: 'success', title: sent.done, ...explorerLink(sent.hash) }
+            : {
+                tone: 'warning',
+                title: 'Not done',
+                body: 'The transaction reverted.',
+                ...explorerLink(sent.hash),
+              },
+        );
+        onDone();
+      })
+      .catch(() => {
+        // Not mined yet or the RPC is down: try again on the next visit.
+      });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per wallet and client
+  }, [address, client]);
+}

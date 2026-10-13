@@ -13,12 +13,15 @@ async function shot(page: Page, name: string): Promise<void> {
 // which the later specs do not mind).
 test.describe.configure({ mode: 'serial' });
 
+const PLAYER = '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC'; // anvil account 2 (start.mjs)
+const PLAYER_KEY = PLAYER.toLowerCase();
 const RPC = `http://127.0.0.1:${process.env['PLAY_ANVIL_PORT'] ?? '18546'}`; // e2e/play/start.mjs
 
-async function rpc(page: Page, method: string, params: unknown[]): Promise<void> {
+async function rpc(page: Page, method: string, params: unknown[]): Promise<unknown> {
   const res = await page.request.post(RPC, { data: { jsonrpc: '2.0', id: 1, method, params } });
-  const body = (await res.json()) as { error?: { message: string } };
+  const body = (await res.json()) as { result?: unknown; error?: { message: string } };
   if (body.error !== undefined) throw new Error(`${method}: ${body.error.message}`);
+  return body.result;
 }
 
 test('a new player opens a drill site, then stops and restarts the Pilot Rig', async ({ page }) => {
@@ -92,14 +95,26 @@ test('after genesis, a returning driller reads the shift report and buys two Rot
   // This device last saw the site four hours ago (wall clock, as the game's reads are stamped),
   // empty: Foreman Mo has a shift report.
   const then = Math.floor(Date.now() / 1000) - 4 * 3600;
-  await page.addInitScript((at) => {
-    window.localStorage.setItem(
-      'mohonaut.shift.0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc', // anvil account 2
-      JSON.stringify({ at, pending: '0', tank: (10n ** 24n).toString(), emitted: '0' }),
-    );
-  }, then);
+  // A transaction sent before a reload, receipt never seen: the game looks it up on return.
+  const hash = (await rpc(page, 'eth_sendTransaction', [
+    { from: PLAYER, to: PLAYER, value: '0x0' },
+  ])) as string;
+  await page.addInitScript(
+    ({ at, tx, who }) => {
+      window.localStorage.setItem(
+        `mohonaut.shift.${who}`,
+        JSON.stringify({ at, pending: '0', tank: (10n ** 24n).toString(), emitted: '0' }),
+      );
+      window.localStorage.setItem(
+        `mohonaut.tx.${who}`,
+        JSON.stringify({ hash: tx, done: 'Earlier transaction landed' }),
+      );
+    },
+    { at: then, tx: hash, who: PLAYER_KEY },
+  );
   await page.goto('/play/');
   await page.getByRole('button', { name: 'Sign in' }).click({ timeout: 30_000 });
+  await expect(page.getByText('Earlier transaction landed')).toBeVisible({ timeout: 30_000 });
   const report = page.getByRole('dialog', { name: 'Shift report' });
   await expect(report.getByText('Cored, unrefined')).toBeVisible({ timeout: 30_000 });
   await shot(page, '6-shift-report');

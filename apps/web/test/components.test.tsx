@@ -154,6 +154,18 @@ function ToastHarness() {
       <button type="button" onClick={() => toast({ tone: 'alarm', title: 'Game paused' })}>
         Alarm
       </button>
+      <button
+        type="button"
+        onClick={() =>
+          toast({
+            tone: 'success',
+            title: 'Diesel delivered',
+            link: { href: 'https://explorer.example/tx/0x1', label: 'View on the explorer' },
+          })
+        }
+      >
+        Linked
+      </button>
     </>
   );
 }
@@ -178,5 +190,18 @@ describe('Toast', () => {
     expect(screen.getByRole('alert')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('carries a link that opens in a new tab', () => {
+    render(
+      <ToastProvider>
+        <ToastHarness />
+      </ToastProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Linked' }));
+    const link = screen.getByRole('link', { name: 'View on the explorer' });
+    expect(link.getAttribute('href')).toBe('https://explorer.example/tx/0x1');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toContain('noopener');
   });
 });
