@@ -284,7 +284,16 @@ export function landSmooth(
       const fade = Math.min(1, Math.max(0, (p.y - horizon) / 60));
       if (road) c.globalAlpha = 0.8 * fade;
       else c.globalAlpha = (patch < 0.3 ? 0.35 : patch > 0.8 ? 0.4 : 0.18) * fade;
-      diamond(c, p.x, p.y, TW, road ? P.road : patch > 0.8 ? P.earthDark : P.earthAlt);
+      // One path per tile (top corner at p, TW wide, TW / 2 tall): the pixel diamond is a
+      // rectangle per row, thousands of them over the land at screen resolution.
+      c.fillStyle = road ? P.road : patch > 0.8 ? P.earthDark : P.earthAlt;
+      c.beginPath();
+      c.moveTo(p.x, p.y);
+      c.lineTo(p.x + TW / 2, p.y + TW / 4);
+      c.lineTo(p.x, p.y + TW / 2);
+      c.lineTo(p.x - TW / 2, p.y + TW / 4);
+      c.closePath();
+      c.fill();
     }
   }
   c.globalAlpha = 1;
