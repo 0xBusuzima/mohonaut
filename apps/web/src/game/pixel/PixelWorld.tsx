@@ -71,17 +71,30 @@ export function PixelWorld({
       const scale = Math.max(vw < 768 ? 2 : 1, fitScale);
       const w = Math.ceil(vw / scale);
       const h = Math.ceil(vh / scale);
-      setSize({
+      const next = {
         w,
         h,
         scale,
         maxX: Math.max(0, Math.ceil((world.w - w) / 2)),
         maxY: Math.max(0, Math.ceil((world.h - h) / 2)),
-      });
+      };
+      // The same size again (a resize event that changed nothing) keeps the drawing loop going.
+      setSize((was) =>
+        (Object.keys(next) as (keyof typeof next)[]).every((k) => was[k] === next[k]) ? was : next,
+      );
     };
     fit();
     window.addEventListener('resize', fit);
-    return () => window.removeEventListener('resize', fit);
+    // A contained box can change size on its own (shown after being hidden, a layout change).
+    const watch =
+      box !== null && box !== undefined && typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(fit)
+        : null;
+    if (box !== null && box !== undefined) watch?.observe(box);
+    return () => {
+      window.removeEventListener('resize', fit);
+      watch?.disconnect();
+    };
   }, [rows, contained]);
 
   // The camera stays inside the site, also when the screen or the site changes size.

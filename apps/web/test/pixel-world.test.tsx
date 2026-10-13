@@ -49,4 +49,29 @@ describe('the pixel world', () => {
     expect(reported.count).toBe(1);
     expect(screen.getByText('HUD')).toBeTruthy();
   });
+
+  it('follows its own box in contained mode, and lets go of it on unmount', async () => {
+    const watched: Element[] = [];
+    let disconnected = 0;
+    class Watcher {
+      observe(el: Element) {
+        watched.push(el);
+      }
+      disconnect() {
+        disconnected += 1;
+      }
+    }
+    vi.stubGlobal('ResizeObserver', Watcher);
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+    const { PixelWorld } = await import('../src/game/pixel/PixelWorld');
+    const { container, unmount } = render(
+      <div data-testid="box">
+        <PixelWorld contained model={{ pads: [], tankFill: 0 }} label="A drill site" />
+      </div>,
+    );
+    expect(watched).toEqual([container.firstChild]);
+    unmount();
+    expect(disconnected).toBe(1);
+    vi.unstubAllGlobals();
+  });
 });
