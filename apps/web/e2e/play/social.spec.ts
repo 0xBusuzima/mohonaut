@@ -99,3 +99,17 @@ test('sign in, start a crew, survey, name the site, set alerts and see the publi
   expect(await cspViolations()).toEqual([]);
   expect(errors).toEqual([]);
 });
+
+test('the economy page reads the chain through the indexer: rig sales by day', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/economy/');
+  // The Rotary Rigs bought in play.spec.ts: a day with a price per DP (the chain runs hours
+  // ahead of this clock after the time travel there, and the API follows the chain).
+  const sales = page.getByRole('table', { name: 'Rig sales, last 7 days' });
+  await expect(sales).toBeVisible({ timeout: 30_000 });
+  await expect(sales.getByRole('row').filter({ hasText: /MOHN/ })).toHaveCount(1);
+  await shot(page, 's6-economy');
+  expect(await axe(page)).toEqual([]);
+  expect(errors).toEqual([]);
+});
