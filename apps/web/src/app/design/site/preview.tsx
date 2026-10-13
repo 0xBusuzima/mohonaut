@@ -110,7 +110,7 @@ export function SitePreview() {
         : [...PADS, ...DEMO_ADDS.slice(0, step % 3)],
     [step, big],
   );
-  // ?decor=1 adds the yard decor of all four completed Core Collection sets.
+  // ?decor=1 adds the yard decor of all four completed Core Collection sets and a crew flag.
   const decor = useSyncExternalStore(
     noSubscribe,
     () => new URLSearchParams(window.location.search).has('decor'),
@@ -123,6 +123,7 @@ export function SitePreview() {
       tankFill: 0.4 + (step % 3) * 0.2,
       yieldPerDp: 0.375,
       decor: decor ? DECOR_SETS : [],
+      ...(decor ? { crewTag: 'NIGHT' } : {}),
     }),
     [pads, step, decor],
   );

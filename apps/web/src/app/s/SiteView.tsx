@@ -24,6 +24,7 @@ export function SiteView({ profile }: { profile: Profile }) {
       ),
       tankFill: fuelled ? 0.6 : 0,
       decor: decorFor(profile.collection.completedSets),
+      ...(profile.crew === null ? {} : { crewTag: profile.crew.tag }),
     }),
     [profile, fuelled],
   );

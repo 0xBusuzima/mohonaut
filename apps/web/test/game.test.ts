@@ -190,7 +190,20 @@ describe('pixel world helpers', () => {
   it('measures text in the 3x5 font, one pixel between glyphs', () => {
     expect(textWidth('8')).toBe(3);
     expect(textWidth('+0.08')).toBe(17);
+    // Crew tags: capitals, with M, N and W wider (4 + 3 + 3 + 3 + 3 + 4 gaps).
+    expect(textWidth('NIGHT')).toBe(20);
+    expect(textWidth('MOHO9')).toBe(5 + 3 + 3 + 3 + 3 + 4);
     expect(textWidth('')).toBe(0);
+  });
+
+  it('has a glyph for every character a crew tag may use', async () => {
+    const { drawText } = await import('../src/game/pixel/font');
+    for (const ch of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') {
+      let painted = 0;
+      const ctx = { fillStyle: '', fillRect: () => (painted += 1) };
+      drawText(ctx as unknown as CanvasRenderingContext2D, 0, 0, ch, '#fff', '#000');
+      expect(painted, ch).toBeGreaterThan(0);
+    }
   });
 });
 

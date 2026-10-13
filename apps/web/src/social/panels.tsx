@@ -142,6 +142,7 @@ function MyCrew({ id }: { id: number }) {
         onClick={async () => {
           if (await write('leave', api.leaveCrew, `You left ${c.name}`))
             await client.invalidateQueries({ queryKey: ME_KEY });
+          await client.invalidateQueries({ queryKey: ['profile'] }); // the crew flag
         }}
       >
         Leave crew
@@ -161,6 +162,7 @@ function FindCrew() {
     e.preventDefault();
     if (await write('create', () => api.createCrew(name, tag), `Crew ${name} created`)) {
       await client.invalidateQueries({ queryKey: ME_KEY });
+      await client.invalidateQueries({ queryKey: ['profile'] }); // the crew flag
     }
   }
 
@@ -238,6 +240,7 @@ function FindCrew() {
                         )
                       ) {
                         await client.invalidateQueries({ queryKey: ME_KEY });
+                        await client.invalidateQueries({ queryKey: ['profile'] }); // the crew flag
                       }
                     }}
                   >

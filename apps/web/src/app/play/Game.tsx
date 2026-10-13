@@ -78,15 +78,17 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
       : Number(perHourEstimate(p.dp, state.network.activeDp, state.network.hourEmission)) / 1e18;
   const yieldPerDp =
     p === null || p.dp === 0n ? 0 : Number((perHour / Number(p.dp)).toPrecision(3));
-  // Completed Core Collection sets put their decor on the site (from the public profile).
-  const completed = useQuery({
+  // From the public profile: completed Core Collection sets put their decor on the site,
+  // and the crew's tag flies on the shack's flagpole.
+  const profile = useQuery({
     queryKey: ['profile', address],
     queryFn: () => api.profile(address as Address),
     enabled: apiEnabled && address !== undefined,
     staleTime: 300_000,
     retry: false,
-  }).data?.collection.completedSets;
-  const decorKey = (completed ?? []).join(',');
+  }).data;
+  const decorKey = (profile?.collection.completedSets ?? []).join(',');
+  const crewTag = profile?.crew?.tag;
   const model = useMemo(
     () => ({
       pads: state === null ? [] : scenePads(level, state.rigs, running ? 1n : 0n),
@@ -94,9 +96,10 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
       tankLow,
       yieldPerDp,
       decor: decorFor(decorKey === '' ? [] : decorKey.split(',')),
+      ...(crewTag === undefined ? {} : { crewTag }),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rigsKey stands for state.rigs
-    [level, running, rigsKey, fill, yieldPerDp, tankLow, decorKey],
+    [level, running, rigsKey, fill, yieldPerDp, tankLow, decorKey, crewTag],
   );
   const [panel, setPanel] = useState<Panel | null>(null);
   const [named, setNamed] = useState(false);

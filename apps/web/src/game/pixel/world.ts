@@ -73,6 +73,8 @@ export interface WorldModel {
   fx?: WorldFx[];
   /** Decor in the yard for the player's completed Core Collection sets. */
   decor?: readonly DecorSet[];
+  /** The player's crew tag, flown on the shack's flagpole. */
+  crewTag?: string;
 }
 
 export interface WorldFx {
@@ -245,7 +247,7 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
 
   at(3, 2, () => {
     const p = iso(1, 1);
-    shack(c, p.x, p.y, t, m.motion, m.hover === 'shack');
+    shack(c, p.x, p.y, t, m.motion, m.hover === 'shack', m.crewTag);
     hits.push({ id: 'shack', x: p.x - 34, y: p.y - 40, w: 68, h: 66 });
   });
   {

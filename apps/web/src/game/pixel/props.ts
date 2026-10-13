@@ -6,6 +6,7 @@
 import { rigShape } from '../rigs';
 import { box, diamond, diamondEdge, ellipse, line, polygon, polyline, px, rect } from './draw';
 import type { Ctx } from './draw';
+import { drawText, textWidth } from './font';
 import { P } from './palette';
 
 const TW = 32;
@@ -126,6 +127,8 @@ export function shack(
   t: number,
   motion: boolean,
   hover: boolean,
+  /** The player's crew tag: the flag becomes the crew's, with the tag on it (docs/01 4.7). */
+  crewTag?: string,
 ): void {
   box(c, x, y + 4, 56, 22, P.graphite, P.boneDark, P.concrete);
   // Pitched roof.
@@ -142,11 +145,23 @@ export function shack(
   // Chimney with steam.
   rect(c, x - 10, y - 28, 4, 8, P.steel);
   if (motion) puff(c, x - 8, y - 32, t, 0);
-  // Flag on the roof ridge: the casing mark colours, waving.
-  rect(c, x + 14, y - 40, 1, 22, P.steelLight);
-  for (let k = 0; k < 8; k++) {
-    const wave = motion ? Math.round(Math.sin(t * 4 - k * 0.8)) : 0;
-    rect(c, x + 15 + k, y - 40 + wave, 1, 5, k < 3 ? P.bone : P.orange);
+  if (crewTag === undefined) {
+    // Flag on the roof ridge: the casing mark colours, waving.
+    rect(c, x + 14, y - 40, 1, 22, P.steelLight);
+    for (let k = 0; k < 8; k++) {
+      const wave = motion ? Math.round(Math.sin(t * 4 - k * 0.8)) : 0;
+      rect(c, x + 15 + k, y - 40 + wave, 1, 5, k < 3 ? P.bone : P.orange);
+    }
+  } else {
+    // The crew flag: a taller pole and the tag on orange cloth; only the free edge flutters.
+    const text = crewTag.toUpperCase();
+    const w = textWidth(text) + 6;
+    rect(c, x + 14, y - 46, 1, 28, P.steelLight);
+    for (let k = 0; k < w; k++) {
+      const wave = motion && k >= w - 2 ? Math.round(Math.sin(t * 4 - k * 0.8)) : 0;
+      rect(c, x + 15 + k, y - 46 + wave, 1, 9, k < 2 ? P.bone : P.orange);
+    }
+    drawText(c, x + 19, y - 44, text, P.bone, P.orangeDark);
   }
   if (hover) diamondEdge(c, x, y - 18, 56, P.amber);
 }
