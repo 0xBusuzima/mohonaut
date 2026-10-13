@@ -62,6 +62,10 @@ export function PixelWorld({
       }
     }
     if (model.tankFill > was.tankFill + 0.005) fx.current.push({ kind: 'fuel', pad: -1, at: now });
+    // A bigger site: the new pads (listed last, empty) get their own effect.
+    for (let i = was.pads.length; i < model.pads.length && was.pads.length > 0; i++) {
+      fx.current.push({ kind: 'pad', pad: i, at: now });
+    }
     fx.current = fx.current.filter((f) => now - f.at < 3);
   }, [model]);
 

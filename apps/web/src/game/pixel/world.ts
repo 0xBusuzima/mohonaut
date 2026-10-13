@@ -8,7 +8,7 @@
  */
 import { GEN1_RIGS } from '../../lib/catalog';
 import type { ScenePad } from '../play';
-import { diamond, hash, line, px } from './draw';
+import { diamond, diamondEdge, hash, line, px } from './draw';
 import type { Ctx } from './draw';
 import { drawText, textWidth } from './font';
 import { cached, night } from './light';
@@ -72,8 +72,8 @@ export interface WorldModel {
 }
 
 export interface WorldFx {
-  kind: 'rig' | 'fuel';
-  /** Pad index for 'rig'. */
+  kind: 'rig' | 'fuel' | 'pad';
+  /** Pad index for 'rig' and 'pad' (a pad the site just gained). */
   pad: number;
   /** Start, in the same seconds as the draw clock (performance.now() / 1000). */
   at: number;
@@ -305,6 +305,13 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
       if (i >= m.pads.length) {
         lockSign(c, cx, cy);
         return;
+      }
+      // A pad the site just gained: dust settles and its rim flashes amber.
+      const opened = m.fx?.find((f) => f.kind === 'pad' && f.pad === i);
+      const fresh = opened === undefined ? Infinity : t - opened.at;
+      if (fresh < 1.6) {
+        dust(c, cx, cy, fresh / 1.6);
+        if (Math.floor(fresh * 6) % 2 === 0) diamondEdge(c, cx, p.y, TW * 2, P.amber);
       }
       if (pad === undefined || pad.typeId === null) return;
       const drop = m.fx?.find((f) => f.kind === 'rig' && f.pad === i);
