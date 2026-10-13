@@ -47,7 +47,7 @@ describe('the voxel renderer', () => {
     });
     const roofed = render(
       new Model().box(0, 0, 0, 5, 5, 0, GREY).box(0, 0, 4, 5, 5, 4, { colour: [10, 10, 10] }),
-      // The moon straight overhead: the roof shades all the floor under it.
+      // The light straight overhead: the roof shades all the floor under it.
       { scale: 4, light: [0, 0, 1] },
     );
     const floor = (img: Image) => {

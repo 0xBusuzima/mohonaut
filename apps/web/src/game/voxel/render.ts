@@ -1,6 +1,6 @@
 /**
  * A small voxel renderer for build-time sprites (docs/01 7, the "voxel diorama" look): voxels
- * seen from the game's isometric angle, lit by a moon from the upper left, with per-corner
+ * seen from the game's isometric angle, lit by a night sky light from the upper left, with per-corner
  * ambient occlusion, cast shadows and glowing (emissive) voxels. Pure: no DOM, no canvas, so it
  * runs in Node at build time and in tests. Each model is ours, defined in code.
  */
@@ -37,11 +37,11 @@ export class Model {
     return this.cells.has(`${x},${y},${z}`);
   }
 
-  *entries(): Generator<[number, number, number, Voxel]> {
-    for (const [k, v] of this.cells) {
+  entries(): [number, number, number, Voxel][] {
+    return [...this.cells].map(([k, v]) => {
       const [x = 0, y = 0, z = 0] = k.split(',').map(Number);
-      yield [x, y, z, v];
-    }
+      return [x, y, z, v];
+    });
   }
 
   get size(): number {
@@ -59,7 +59,7 @@ export interface Image {
 export interface RenderOptions {
   /** Screen pixels per voxel edge (the top face is a 2s x s diamond). */
   scale: number;
-  /** Direction towards the moon, in voxel space (z up). */
+  /** Direction towards the light, in voxel space (z up). */
   light?: readonly [number, number, number];
   /** How dark a face in shadow gets (0..1 of its lit value). */
   shadow?: number;
