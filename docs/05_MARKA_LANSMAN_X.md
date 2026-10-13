@@ -919,6 +919,8 @@ Köşeli parantezler doldurulacak alanlardır. **Tüm taslaklar yayından önce 
 - **D-03:** `Your crew's tag now flies on the flagpole of your core shack. I had to draw a 3x5 pixel alphabet for it. M and W didn't fit in three pixels. They get five.` [ekran görüntüsü]
 - **D-04:** `Transparency detail nobody asked for: the equipment market shows what Drill Power cost on each of the last 7 days, read from the chain. Prices come from a public formula. Nobody sets them by hand.` [ekran görüntüsü]
 - **D-05:** `If your transaction is slow, the game keeps its hash, tells you it is still on its way, and won't let you pay twice. Reload the page and it picks it up again. Boring. Important.` [ekran görüntüsü]
+- **D-06:** `Season reward design, settled: the top ten in World Bore contribution get a plaque screwed to the wall of their core shack. Gold, silver, bronze, 5x4 pixels each. Cosmetic. It also shows on your share card.` [ekran görüntüsü: kulübe duvarı + kart]
+- **D-07:** `Small one: when your site levels up or your first rig of a new type lands on its pad, the foreman says so once. You can share it. Level 1 and the free starter rig don't count, because everyone gets those.` [ekran görüntüsü]
 
 **Reveal**
 
