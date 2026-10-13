@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { hex, rotaryRig, siteDiorama } from '../src/game/voxel/models';
+import {
+  diamondCoreDrill,
+  hex,
+  pilotRig,
+  plasmaBore,
+  rotaryRig,
+  siteDiorama,
+  topDrive,
+  turbodrill,
+} from '../src/game/voxel/models';
 import { Model, render } from '../src/game/voxel/render';
 import type { Image } from '../src/game/voxel/render';
 
@@ -98,5 +107,25 @@ describe('the voxel models', () => {
     expect([...site.entries()].filter(([, , , v]) => v.emissive === true).length).toBeGreaterThan(
       4,
     );
+  });
+
+  it('builds all six rigs on hazard-striped pads, each with something lit, taller up the tiers', () => {
+    const rigs = [
+      pilotRig(),
+      rotaryRig(),
+      topDrive(),
+      diamondCoreDrill(),
+      turbodrill(),
+      plasmaBore(),
+    ];
+    const height = (m: ReturnType<typeof pilotRig>) => Math.max(...m.entries().map(([, , z]) => z));
+    for (const rig of rigs) {
+      expect(rig.get(0, 0, 0)?.colour).toEqual(hex('#ff6b1a'));
+      expect(rig.entries().some(([, , , vox]) => vox.emissive === true)).toBe(true);
+    }
+    // The derrick rigs grow with their tier.
+    expect(height(rigs[0] ?? pilotRig())).toBeLessThan(height(rigs[1] ?? pilotRig()));
+    expect(height(rigs[1] ?? pilotRig())).toBeLessThan(height(rigs[2] ?? pilotRig()));
+    expect(height(rigs[2] ?? pilotRig())).toBeLessThan(height(rigs[4] ?? pilotRig()));
   });
 });

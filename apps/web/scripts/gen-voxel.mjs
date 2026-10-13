@@ -50,7 +50,15 @@ function png({ width, height, data }) {
 
 const out = join(web, 'public/voxel');
 mkdirSync(out, { recursive: true });
-const sprites = { 'rig-rotary': models.rotaryRig(), 'site-diorama': models.siteDiorama() };
+const sprites = {
+  'rig-0': models.pilotRig(),
+  'rig-1': models.rotaryRig(),
+  'rig-2': models.topDrive(),
+  'rig-3': models.diamondCoreDrill(),
+  'rig-4': models.turbodrill(),
+  'rig-5': models.plasmaBore(),
+  'site-diorama': models.siteDiorama(),
+};
 for (const [name, model] of Object.entries(sprites)) {
   const image = voxel.render(model, { scale: 3, bloom: 8, light: [-0.6, -0.4, 0.75] });
   writeFileSync(join(out, `${name}.png`), png(image));

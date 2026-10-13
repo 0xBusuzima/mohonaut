@@ -46,6 +46,164 @@ function pad(m: Model, n: number): Model {
 }
 
 /**
+ * A lattice derrick: four legs from (lo, lo) to (hi, hi) at z0 leaning in by one voxel every
+ * ten, girts every six voxels and a diagonal brace in each bay (alternating bay by bay).
+ */
+function derrick(
+  m: Model,
+  lo0: number,
+  hi0: number,
+  z0: number,
+  top: number,
+  paint = ORANGE,
+): void {
+  const dark = paint === ORANGE ? ORANGE_DARK : paint;
+  for (let z = z0; z <= top; z++) {
+    const inset = Math.floor((z - z0) / 10);
+    const lo = lo0 + inset;
+    const hi = hi0 - inset;
+    for (const [x, y] of [
+      [lo, lo],
+      [hi, lo],
+      [lo, hi],
+      [hi, hi],
+    ] as const)
+      m.set(x, y, z, paint);
+    const k = (z - z0) % 6;
+    const span = hi - lo;
+    if (k === 0) {
+      for (let i = lo; i <= hi; i++) {
+        m.set(i, lo, z, dark);
+        m.set(i, hi, z, dark);
+        m.set(lo, i, z, dark);
+        m.set(hi, i, z, dark);
+      }
+    } else {
+      const bay = Math.floor((z - z0) / 6);
+      const t = Math.round((k / 6) * span);
+      const i = bay % 2 === 0 ? lo + t : hi - t;
+      m.set(i, hi, z, dark);
+      m.set(hi, i, z, dark);
+      m.set(i, lo, z, dark);
+      m.set(lo, i, z, dark);
+    }
+  }
+}
+
+/** The Pilot Rig: a small skid with an engine box and a short A-frame mast, free with a site. */
+export function pilotRig(): Model {
+  const m = pad(new Model(), 12);
+  m.box(3, 3, 1, 8, 8, 1, v(P.graphite));
+  m.box(6, 4, 2, 8, 7, 4, STEEL);
+  m.set(8, 5, 3, LAMP);
+  for (let z = 2; z <= 13; z++) {
+    const lean = Math.floor((z - 2) / 5);
+    m.set(3 + lean, 4, z, ORANGE);
+    m.set(3 + lean, 7, z, ORANGE);
+    if (z % 4 === 0) m.box(3 + lean, 4, z, 3 + lean, 7, z, ORANGE_DARK);
+  }
+  m.box(4, 4, 14, 6, 7, 14, STEEL_LIGHT);
+  m.set(5, 5, 15, BEACON);
+  for (let z = 5; z <= 13; z++) m.set(5, 6, z, CABLE);
+  return m;
+}
+
+/** The Top Drive: a taller derrick with the top drive on its rails, pipe set back on the floor. */
+export function topDrive(): Model {
+  const m = pad(new Model(), 18);
+  m.box(4, 4, 1, 13, 13, 4, STEEL);
+  m.box(5, 5, 1, 12, 12, 3, v(P.graphite));
+  m.box(3, 3, 5, 14, 14, 5, STEEL_LIGHT);
+  const top = 40;
+  derrick(m, 4, 13, 6, top);
+  m.box(7, 7, top + 1, 10, 10, top + 2, STEEL_LIGHT);
+  m.set(8, 8, top + 3, BEACON);
+  // Guide rails and the top drive itself, painted amber.
+  for (let z = 8; z <= top; z++) m.set(10, 9, z, STEEL_LIGHT);
+  m.box(8, 8, 18, 10, 10, 21, v(P.amber));
+  for (let z = 6; z <= 17; z++) m.set(9, 9, z, STEEL_LIGHT);
+  // Pipe stands set back on the floor, and the doghouse.
+  for (let y = 5; y <= 12; y += 2) for (let z = 6; z <= 16; z++) m.set(5, y, z, v(P.concrete));
+  m.box(14, 5, 6, 16, 10, 8, v(P.boneDark));
+  m.box(14, 5, 9, 16, 10, 9, ORANGE_DARK);
+  m.set(16, 8, 7, LAMP);
+  return m;
+}
+
+/** The Diamond Core Drill: a crawler with a raked mast and trays of glowing core. */
+export function diamondCoreDrill(): Model {
+  const m = pad(new Model(), 16);
+  // Tracks and body.
+  m.box(3, 3, 1, 12, 4, 2, v(P.night));
+  m.box(3, 10, 1, 12, 11, 2, v(P.night));
+  m.box(4, 5, 2, 11, 9, 4, v(P.boneDark));
+  m.box(9, 5, 5, 11, 9, 7, v(P.steel));
+  m.box(11, 6, 6, 11, 8, 6, v(P.glassShine));
+  // The raked mast: leaning back over the hole.
+  for (let z = 5; z <= 26; z++) {
+    const back = Math.floor((z - 5) / 4);
+    m.set(6 - back, 6, z, ORANGE);
+    m.set(6 - back, 8, z, ORANGE);
+    if (z % 3 === 0) m.box(6 - back, 6, z, 6 - back, 8, z, ORANGE_DARK);
+  }
+  m.box(0, 6, 27, 2, 8, 28, STEEL_LIGHT);
+  m.set(1, 7, 29, BEACON);
+  // Core trays beside the drill: the samples glow cyan under the lamps.
+  for (const y of [12, 13, 14]) {
+    m.box(2, y, 1, 7, y, 1, v(P.woodDark));
+    for (let x = 2; x <= 7; x += 2) m.set(x, y, 2, v(P.cyan, true));
+  }
+  return m;
+}
+
+/** The Turbodrill: a heavy derrick, two mud units and a power pack with exhaust stacks. */
+export function turbodrill(): Model {
+  const m = pad(new Model(), 22);
+  m.box(5, 5, 1, 16, 16, 5, STEEL);
+  m.box(6, 6, 1, 15, 15, 4, v(P.graphite));
+  m.box(4, 4, 6, 17, 17, 6, STEEL_LIGHT);
+  const top = 46;
+  derrick(m, 5, 16, 7, top);
+  m.box(8, 8, top + 1, 13, 13, top + 3, STEEL_LIGHT);
+  m.set(10, 10, top + 4, BEACON);
+  m.set(11, 11, top + 4, BEACON);
+  for (let z = 12; z <= top; z++) m.set(10, 11, z, CABLE);
+  m.box(9, 10, 9, 11, 12, 12, v(P.amber));
+  // Two mud units on the pad and the power pack with its stacks.
+  m.box(1, 15, 1, 4, 20, 4, ORANGE_DARK);
+  m.box(6, 18, 1, 9, 21, 4, ORANGE_DARK);
+  m.box(15, 1, 1, 20, 4, 5, v(P.steel));
+  for (const x of [16, 19]) for (let z = 6; z <= 11; z++) m.set(x, 2, z, v(P.steelLight));
+  m.set(19, 3, 3, LAMP);
+  return m;
+}
+
+/** The Plasma Bore: no lattice; a sealed tower ringed with glowing coils over a coolant skid. */
+export function plasmaBore(): Model {
+  const m = pad(new Model(), 20);
+  m.box(4, 4, 1, 15, 15, 3, v(P.graphite));
+  // Coolant tanks at the corners.
+  for (const [x, y] of [
+    [2, 2],
+    [15, 2],
+    [2, 15],
+  ] as const)
+    m.box(x, y, 1, x + 2, y + 2, 6, v(P.steelLight));
+  // The tower: a round column with a cyan coil every five voxels.
+  for (let z = 4; z <= 44; z++) {
+    const r = z > 38 ? 2.4 : 3.6;
+    for (let x = 5; x <= 14; x++)
+      for (let y = 5; y <= 14; y++) {
+        const d = Math.hypot(x - 9.5, y - 9.5);
+        if (d > r || d < r - 1.2) continue;
+        m.set(x, y, z, z % 5 === 0 ? v(P.cyan, true) : v(z > 38 ? P.steelLight : P.steel));
+      }
+  }
+  m.box(9, 9, 45, 10, 10, 46, v(P.cyan, true));
+  return m;
+}
+
+/**
  * The Rotary Rig on its pad: a lattice derrick on a steel substructure, crown block with an
  * aircraft beacon, the drill line and travelling block, a drawworks house with a lit window, a
  * mud tank and a work lamp on the pad's corner.
@@ -56,40 +214,8 @@ export function rotaryRig(): Model {
   m.box(4, 4, 1, 11, 11, 3, STEEL);
   m.box(5, 5, 1, 10, 10, 2, v(P.graphite));
   m.box(3, 3, 4, 12, 12, 4, STEEL_LIGHT);
-  // Derrick: four legs leaning in, girts every six voxels and a diagonal brace in each bay.
   const top = 32;
-  const insetAt = (z: number) => Math.floor((z - 5) / 10);
-  for (let z = 5; z <= top; z++) {
-    const lo = 4 + insetAt(z);
-    const hi = 11 - insetAt(z);
-    for (const [x, y] of [
-      [lo, lo],
-      [hi, lo],
-      [lo, hi],
-      [hi, hi],
-    ] as const)
-      m.set(x, y, z, ORANGE);
-    const k = (z - 5) % 6;
-    const span = hi - lo;
-    if (k === 0) {
-      // A girt round all four faces.
-      for (let i = lo; i <= hi; i++) {
-        m.set(i, lo, z, ORANGE_DARK);
-        m.set(i, hi, z, ORANGE_DARK);
-        m.set(lo, i, z, ORANGE_DARK);
-        m.set(hi, i, z, ORANGE_DARK);
-      }
-    } else {
-      // One diagonal brace per face of the bay, alternating direction bay by bay.
-      const bay = Math.floor((z - 5) / 6);
-      const t = Math.round((k / 6) * span);
-      const i = bay % 2 === 0 ? lo + t : hi - t;
-      m.set(i, hi, z, ORANGE_DARK);
-      m.set(hi, i, z, ORANGE_DARK);
-      m.set(i, lo, z, ORANGE_DARK);
-      m.set(lo, i, z, ORANGE_DARK);
-    }
-  }
+  derrick(m, 4, 11, 5, top);
   // Crown block and its beacon.
   m.box(6, 6, top + 1, 9, 9, top + 2, STEEL_LIGHT);
   m.set(7, 7, top + 3, BEACON);
