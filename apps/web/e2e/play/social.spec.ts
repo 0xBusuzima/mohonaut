@@ -48,6 +48,16 @@ test('sign in, start a crew, survey, name the site, set alerts and see the publi
   expect(await axe(page)).toEqual([]);
   await win.getByRole('button', { name: 'Close' }).click();
 
+  // Joining a crew is a badge: Foreman Mo hands it over once, with a post to share.
+  const badge = page.getByRole('dialog', { name: 'New badge' });
+  await expect(badge.getByText('Crew Hand')).toBeVisible({ timeout: 30_000 });
+  await expect(badge.getByRole('link', { name: 'Share on X' })).toHaveAttribute(
+    'href',
+    /utm_campaign%3Dbadge/,
+  );
+  await shot(page, 's1b-badge');
+  await badge.getByRole('button', { name: 'Back to work' }).click();
+
   // Survey: one find a day.
   await page.getByRole('button', { name: 'Survey', exact: true }).click();
   await win.getByRole('button', { name: 'Survey', exact: true }).click();

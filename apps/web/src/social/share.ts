@@ -74,6 +74,14 @@ export function trainingPost(input: { level: number; rigs: number }): string {
   );
 }
 
+/** A badge moment (docs/05 §3.4): what it marks, never a value. */
+export function badgePost(input: { name: string; description: string; address: Address }): string {
+  return (
+    `Got the ${input.name} badge at my Mohonaut drill site: ${input.description} ` +
+    `Badges are cosmetic. Race to the Moho. ${profileUrl(input.address, 'badge')} (my invite link)`
+  );
+}
+
 /** X web intent; the player reviews and sends it themselves (docs/05 §3.4). */
 export function xIntentUrl(text: string): string {
   return `https://x.com/intent/post?text=${encodeURIComponent(text)}`;

@@ -24,6 +24,7 @@ import { useLowPower } from '../../lib/power';
 import { api, apiEnabled, apiMessage } from '../../social/api';
 import { ME_KEY, useMe } from '../../social/session';
 import { CrewPanel, ProfilePanel, SeasonsPanel, SignedIn, SurveyPanel } from '../../social/panels';
+import { BadgeNotice } from './BadgeNotice';
 import { BoreWindow } from './BoreWindow';
 import { Guide } from './Guide';
 import { HelpWindow } from './HelpWindow';
@@ -176,7 +177,9 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
       )}
       {state !== null && onboarding === null && panel === null && address !== undefined && (
         <ShiftReportNotice state={state} address={address} open={setPanel}>
-          <StratumNotice depthMm={millimetres(state.network.emitted)} address={address} />
+          <BadgeNotice address={address} held={profile?.badges.map((b) => b.id)}>
+            <StratumNotice depthMm={millimetres(state.network.emitted)} address={address} />
+          </BadgeNotice>
         </ShiftReportNotice>
       )}
       {onboarding}
