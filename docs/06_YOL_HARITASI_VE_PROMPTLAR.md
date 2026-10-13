@@ -331,7 +331,7 @@ Testnet betası için: deployments/testnet.json'u güncel sürüme getir, web'de
 
 ### 8.1 Marka varlıkları — 🟡 taslaklar 2026-10-12 (`brand/`, `docs/legal/ASSET_LISANSLARI.md`)
 
-> Yön A ("Casing Wordmark") vektör taslak olarak hazır: wordmark, kuyu ağzı işareti, monogram, kilit, tek renk varyantları (`tools/brand/gen_brand.py`; harfler Big Shoulders Display'den yola çevrildi). Sitenin ikonları, OG görseli, X avatarı ve banner'ı da bu taslaktan üretildi. Altı Gen-1 kulenin çalışıyor/kapalı çizimleri oyun sahnesinde ve `brand/sprites/rig-sheet` stil sayfasında. Yapay zekâ görsel aracı ve ücretli araç kullanılmadı. Kalanlar: kurucunun taslağı Inkscape'te elle yeniden çizmesi (§2.8), maskot, saha katmanları (dizel tankı, boru rafı, lambalar), dinamik paylaşım kartları.
+> Yön A ("Casing Wordmark") vektör taslak olarak hazır: wordmark, kuyu ağzı işareti, monogram, kilit, tek renk varyantları (`tools/brand/gen_brand.py`; harfler Big Shoulders Display'den yola çevrildi). Sitenin ikonları, OG görseli, X avatarı ve banner'ı da bu taslaktan üretildi. Altı Gen-1 kulenin çalışıyor/kapalı çizimleri oyun sahnesinde ve `brand/sprites/rig-sheet` stil sayfasında. Yapay zekâ görsel aracı ve ücretli araç kullanılmadı. Kalanlar: kurucunun taslağı Inkscape'te elle yeniden çizmesi (§2.8), dinamik paylaşım kartları. 2026-10-13: maskot Foreman Mo (`packages/sdk/src/art.ts`) ve saha katmanları oyunda; ana sayfadaki kule portreleri ve Training Site paylaşım kartı derlemede oyunun piksel kodundan üretiliyor (`apps/web/scripts/gen-pixel-art.mjs`).
 
 
 ```text
