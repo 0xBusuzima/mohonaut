@@ -537,3 +537,26 @@ export function fenceFrontModel(gw: number, gh: number): Model {
   fenceRun(m, [0, 4], [0, gh]);
   return m;
 }
+
+/**
+ * The diesel tanker at the gate, nose along +x: a round tank with an orange band, the orange cab
+ * with its windscreen and lit headlights, on a dark chassis with wheels.
+ */
+export function tankerModel(): Model {
+  const m = new Model();
+  m.box(0, 0, 0, 15, 4, 0, v(P.graphite));
+  for (const x of [1, 5, 13]) {
+    m.set(x, 0, 0, v(P.night));
+    m.set(x, 4, 0, v(P.night));
+  }
+  for (let x = 0; x <= 9; x++)
+    for (let y = 0; y <= 4; y++)
+      for (let z = 1; z <= 6; z++)
+        if ((y - 2) ** 2 + (z - 3.5) ** 2 <= 6.5) m.set(x, y, z, v(x === 4 ? P.orange : P.bone));
+  m.box(11, 0, 1, 15, 4, 5, v(P.orangeDark));
+  m.box(11, 0, 6, 14, 4, 6, v(P.orange));
+  m.box(15, 1, 4, 15, 3, 5, v(P.glassShine));
+  m.set(15, 0, 2, LAMP);
+  m.set(15, 4, 2, LAMP);
+  return m;
+}

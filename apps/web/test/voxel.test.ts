@@ -17,6 +17,7 @@ import {
   rotaryRig,
   shackModel,
   siteGround,
+  tankerModel,
   siteDiorama,
   tankModel,
   topDrive,
@@ -218,5 +219,13 @@ describe('the voxel models', () => {
       expect(front.has(0, y, 1)).toBe(false);
     }
     expect(front.has(GW * k, siteDepth(3) * k, 4)).toBe(true); // the near corner post
+  });
+
+  it('builds the tanker nose first along x, with lit headlights and a round tank', () => {
+    const tanker = tankerModel();
+    expect(tanker.get(15, 0, 2)?.emissive).toBe(true);
+    expect(tanker.get(15, 4, 2)?.emissive).toBe(true);
+    expect(tanker.has(2, 0, 6)).toBe(false); // the tank's top corners are rounded off
+    expect(tanker.get(4, 2, 3)?.colour).toEqual(hex('#ff6b1a'));
   });
 });

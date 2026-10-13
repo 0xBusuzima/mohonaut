@@ -141,6 +141,7 @@ for (const [name, model, at] of [
   ['generator', models.generatorModel(), [0, 0, 0]],
   ['lamp', models.lampModel(), [0.5, 0.5, 0]],
   ['pipes', models.pipeRackModel(), [6, 2, 0]],
+  ['tanker', models.tankerModel(), [0, 0, 0]],
 ]) {
   const image = voxel.render(model, { scale: 2, bloom: 4, light: LIGHT });
   const [ax, ay] = voxel.anchorOf(image, at[0], at[1], at[2], 2);

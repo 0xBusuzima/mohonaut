@@ -196,7 +196,8 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   const ground = m.voxel === true ? voxelSprite(`ground-${rows}`) : null;
   const padSprite = m.voxel === true ? voxelSprite('pad') : null;
   const backFence = m.voxel === true ? voxelSprite('fence-back') : null;
-  const key = `${W}x${H}:${ox},${oy}:${gh}:${m.pads.length}:${m.hover ?? ''}:${ground === null ? 'px' : 'vx'}:${padSprite === null ? 'px' : 'vx'}:${backFence === null ? 'px' : 'vx'}`;
+  const tanker = m.voxel === true ? voxelSprite('tanker') : null;
+  const key = `${W}x${H}:${ox},${oy}:${gh}:${m.pads.length}:${m.hover ?? ''}:${ground === null ? 'px' : 'vx'}:${padSprite === null ? 'px' : 'vx'}:${backFence === null ? 'px' : 'vx'}:${tanker === null ? 'px' : 'vx'}`;
   cached(c, W, H, key, (g) => {
     sky(g, W, horizon);
     land(g, W, H, horizon, ox, oy, iso, GW, gh);
@@ -213,7 +214,8 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
       if (prev !== null) wire(g, prev, top);
       prev = top;
     }
-    truck(g, truckAt.x, truckAt.y);
+    if (tanker === null) truck(g, truckAt.x, truckAt.y);
+    else g.drawImage(tanker.img, truckAt.x - tanker.ax, truckAt.y - tanker.ay);
     // Site ground: the baked voxel yard, or the pixel one.
     if (ground !== null) g.drawImage(ground.img, ox - ground.ax, oy - ground.ay);
     else drawPixelGround(g, iso, gh);
