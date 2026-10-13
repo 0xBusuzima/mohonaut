@@ -53,6 +53,11 @@ test('sign in, start a crew, survey, name the site, set alerts and see the publi
   await win.getByRole('button', { name: 'Survey', exact: true }).click();
   await expect(win.getByText(/You found: /)).toBeVisible({ timeout: 15_000 });
   await expect(win.getByRole('button', { name: 'Surveyed today' })).toBeDisabled();
+  // The find can be shared, with the invite link.
+  await expect(win.getByRole('link', { name: 'Share on X' })).toHaveAttribute(
+    'href',
+    /utm_campaign%3Dsurvey/,
+  );
   await shot(page, 's2-survey');
   await win.getByRole('button', { name: 'Close' }).click();
 
