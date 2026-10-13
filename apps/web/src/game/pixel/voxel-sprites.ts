@@ -54,6 +54,11 @@ export function voxelSettled(): boolean {
   return manifest !== null && [...images.values()].every((e) => e.state !== 'loading');
 }
 
+/** How many sprites have been asked for so far. */
+export function voxelRequested(): number {
+  return images.size;
+}
+
 /** A baked sprite by name ("rig-1", "shack", "container"), or null until it has loaded. */
 export function voxelSprite(name: string): (Meta & { img: HTMLImageElement }) | null {
   if (typeof document === 'undefined' || typeof fetch === 'undefined') return null;

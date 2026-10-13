@@ -7,7 +7,7 @@ import { useLowPower } from '../../lib/power';
 import { SINK } from './draw';
 import type { Ctx } from './draw';
 import { siteEffects } from './fx';
-import { onVoxelArrive, voxelSettled } from './voxel-sprites';
+import { onVoxelArrive, voxelRequested, voxelSettled } from './voxel-sprites';
 import { drawWorld, siteRows, worldSize } from './world';
 import type { Hit, HitBox, WorldFx, WorldModel } from './world';
 
@@ -156,7 +156,7 @@ export function PixelWorld({
   // scene is drawn once, and again when something changes.
   const [awake, setAwake] = useState(false);
   useEffect(() => {
-    if (!shown || awake) return undefined;
+    if (!motion || !shown || awake) return undefined;
     let idle = 0;
     const id = window.setTimeout(() => {
       if (typeof window.requestIdleCallback === 'function')
@@ -167,11 +167,18 @@ export function PixelWorld({
       window.clearTimeout(id);
       if (idle !== 0) window.cancelIdleCallback(idle);
     };
-  }, [shown, awake]);
+  }, [motion, shown, awake]);
+  // While the scene is hidden it is drawn (into SINK) only to ask for its sprites: again when the
+  // manifest lands (that asks for them all), then not until they are all in.
+  const shownNow = useRef(shown);
+  useEffect(() => {
+    shownNow.current = shown;
+  }, [shown]);
   useEffect(() => {
     if (!voxel) return undefined;
     let queued = 0;
     const off = onVoxelArrive(() => {
+      if (!shownNow.current && voxelRequested() > 0 && !voxelSettled()) return;
       if (queued === 0)
         queued = requestAnimationFrame(() => {
           queued = 0;
