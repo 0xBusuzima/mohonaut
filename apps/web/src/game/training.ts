@@ -27,10 +27,12 @@ const REFINE_QUEUE_S = 72 * HOUR;
 const FAST_REFINE_FEE_BPS = 800n;
 const SCRAP_BPS = 2_000n;
 /** Practice $MOHN per DP for rig prices, before each tier's premium. */
-const PRICE_PER_DP = 8n * WAD;
+const PRICE_PER_DP = 10n * WAD;
 /** Other drillers' DP at the start, and how much it grows per simulated day. */
 const OTHERS_START = 2_000n;
-const OTHERS_GROWTH_BPS_PER_DAY = 300n;
+const OTHERS_GROWTH_PER_DAY = 1.03;
+/** MiningCore: one refine request takes at most 100,000 $MOHN. */
+const MAX_REFINE = 100_000n * WAD;
 
 export interface TrainingState {
   /** Simulated seconds since the training started. */
@@ -77,6 +79,11 @@ const burnWad = (i: number) =>
 const dpOf = (i: number) => BigInt(GEN1_RIGS[i]?.dp ?? 0);
 const minLevel = (i: number) => [0, 1, 3, 6, 10, 15][i] ?? 99;
 
+/** Other drillers' DP after `t` simulated seconds: 3% more each day, as players join. */
+function othersAt(t: number): bigint {
+  return BigInt(Math.round(Number(OTHERS_START) * OTHERS_GROWTH_PER_DAY ** (t / DAY)));
+}
+
 export function trainingDp(s: TrainingState): bigint {
   return s.rigs.reduce((sum, r, i) => sum + BigInt(r.active) * dpOf(i), 0n);
 }
@@ -112,8 +119,6 @@ export function tick(s: TrainingState, seconds: number): TrainingState {
     const dp = fuelled ? trainingDp(next) : 0n;
     const share =
       dp === 0n ? 0n : (hourly * BigInt(dt) * dp) / (BigInt(HOUR) * (dp + next.othersDp));
-    const growth =
-      (next.othersDp * OTHERS_GROWTH_BPS_PER_DAY * BigInt(dt)) / (10_000n * BigInt(DAY));
     next = {
       ...next,
       t: next.t + dt,
@@ -121,7 +126,7 @@ export function tick(s: TrainingState, seconds: number): TrainingState {
       pending: next.pending + share,
       emitted: next.emitted + emitted,
       reserve: next.reserve - emitted,
-      othersDp: next.othersDp + (growth > 0n ? growth : 0n),
+      othersDp: othersAt(next.t + dt),
     };
   }
   return next;
@@ -182,7 +187,9 @@ export function applyCall(s: TrainingState, call: TrainingCall): TrainingResult 
     const qty = Number(call.args[1]);
     const r = s.rigs[typeId];
     if (r === undefined || qty <= 0 || qty > r.owned) return fail(s, 'No such rig.');
-    const credit = typeId === 0 ? 0n : (trainingRigCost(typeId, qty) * SCRAP_BPS) / 10_000n;
+    // 20% of the base price per DP, without the tier premium (MiningCore.scrapMachines).
+    const credit =
+      typeId === 0 ? 0n : (PRICE_PER_DP * dpOf(typeId) * BigInt(qty) * SCRAP_BPS) / 10_000n;
     const owned = r.owned - qty;
     const rigs = s.rigs.map((x, i) =>
       i === typeId ? { owned, active: Math.min(x.active, owned) } : x,
@@ -200,8 +207,10 @@ export function applyCall(s: TrainingState, call: TrainingCall): TrainingResult 
     const amount = BigInt(call.args[0] as bigint);
     const fast = call.args[1] === true;
     if (amount <= 0n || amount > s.pending) return fail(s, 'Not enough unrefined $MOHN.');
+    if (amount > MAX_REFINE) return fail(s, 'At most 100,000 $MOHN per refine.');
     if (fast) {
-      const fee = (amount * FAST_REFINE_FEE_BPS) / 10_000n;
+      // Rounded up, in the protocol's favour, as the contract does.
+      const fee = (amount * FAST_REFINE_FEE_BPS + 9_999n) / 10_000n;
       return {
         state: { ...s, pending: s.pending - amount, wallet: s.wallet + amount - fee },
         error: null,

@@ -32,7 +32,7 @@ export function nextTip(state: GameState, seen: ReadonlySet<string>, social: boo
           action: { label: 'Diesel tank', target: 'fuel' },
         }
       : null,
-    hoursLeft < 12
+    p.tank > 0n && hoursLeft < 12
       ? {
           id: `low-tank-${day}`,
           text: `Diesel for about ${Math.max(1, Math.floor(hoursLeft))} more hours. Rigs stop when the tank runs dry.`,

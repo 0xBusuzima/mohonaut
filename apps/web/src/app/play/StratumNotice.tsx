@@ -1,7 +1,7 @@
 'use client';
 
 import { STRATA, stratumAt } from '@mohonaut/sdk';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ForemanMo } from '../../game/pixel/ForemanMo';
 import { PxButton, PxModal } from './px';
 
@@ -31,11 +31,14 @@ function remember(index: number): void {
 export function StratumNotice({ depthMm }: { depthMm: bigint }) {
   const { current } = stratumAt(depthMm);
   const index = STRATA.findIndex((s) => s.numeral === current.numeral);
-  const [seen, setSeen] = useState(seenIndex);
-  useEffect(() => {
-    if (seen === null) remember(index);
-  }, [seen, index]);
-  if (seen === null || index <= seen) return null;
+  // A first visit only notes where the bore is: crossings from here on are announced.
+  const [seen, setSeen] = useState(() => {
+    const stored = seenIndex();
+    if (stored !== null) return stored;
+    remember(index);
+    return index;
+  });
+  if (index <= seen) return null;
   const close = () => {
     remember(index);
     setSeen(index);

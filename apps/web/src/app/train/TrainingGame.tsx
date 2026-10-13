@@ -1,7 +1,7 @@
 'use client';
 
 import { fuelLineWad, millimetres } from '@mohonaut/sdk';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useToast } from '../../components/Toast';
 import type { Action, ActionInput } from '../../game/actions';
@@ -54,9 +54,12 @@ function load(): Saved {
   try {
     const raw = window.localStorage.getItem(KEY);
     if (raw !== null) {
-      return JSON.parse(raw, (_, x: unknown) =>
+      const saved = JSON.parse(raw, (_, x: unknown) =>
         typeof x === 'string' && /^-?\d+n$/.test(x) ? BigInt(x.slice(0, -1)) : x,
       ) as Saved;
+      // Resume where the clock stopped: the simulated time carries on from now, so nothing
+      // accrues for the time the page was closed (and the HUD counter does not jump ahead).
+      return { base: Math.floor(Date.now() / 1000) - saved.state.t, state: saved.state };
     }
   } catch {
     // Unreadable: start over.
@@ -103,6 +106,11 @@ export function TrainingGame() {
     return () => window.clearInterval(id);
   }, [lowPower]);
   useEffect(() => save(saved), [saved]);
+  // The latest state for actions: a click must not undo a clock tick that just landed.
+  const latest = useRef(saved.state);
+  useEffect(() => {
+    latest.current = saved.state;
+  }, [saved]);
 
   const game = useMemo(() => trainingGameState(sim, base), [sim, base]);
   const p = game.player;
@@ -137,13 +145,16 @@ export function TrainingGame() {
   const action: Action = {
     busy: null,
     run: (input: ActionInput) => {
-      const result = applyCall(sim, input);
+      const result = applyCall(latest.current, input);
       if (result.error !== null) {
         toast({ tone: 'warning', title: 'Not done', body: result.error });
         cue('error');
         return Promise.resolve(false);
       }
-      setSaved((v) => ({ ...v, state: result.state }));
+      setSaved((v) => {
+        const next = applyCall(v.state, input);
+        return next.error === null ? { ...v, state: next.state } : v;
+      });
       toast({ tone: 'success', title: input.done });
       return Promise.resolve(true);
     },
@@ -185,12 +196,12 @@ export function TrainingGame() {
         <button
           type="button"
           aria-expanded={about}
-          className="text-left text-amber uppercase md:pointer-events-none"
+          className="text-left text-amber uppercase md:hidden"
           onClick={() => setAbout(!about)}
         >
-          <span className="md:hidden">Simulation {about ? '▴' : '▾'}</span>
-          <span className="hidden md:inline">Training site · simulation</span>
+          Simulation {about ? '▴' : '▾'}
         </button>
+        <p className="hidden text-amber uppercase md:block">Training site · simulation</p>
         <div className={`${about ? 'flex' : 'hidden'} flex-col gap-2 md:flex`}>
           <p className="text-concrete">
             60× speed, practice ETH and practice $MOHN with no value, illustrative prices. Nothing

@@ -69,6 +69,34 @@ describe('the training site', () => {
     expect(done.state.wallet).toBe(100n * WAD);
   });
 
+  it('credits scrap at 20% of the base price, without the tier premium', () => {
+    const s = newTraining();
+    const site = {
+      ...s,
+      level: 3,
+      rigs: s.rigs.map((r, i) => (i === 2 ? { owned: 1, active: 0 } : r)),
+    };
+    const scrapped = applyCall(site, { fn: 'scrapMachines', args: [2n, 1] }).state;
+    // Top Drive: 150 DP at 10 practice $MOHN per DP; the 8% premium is not paid back.
+    expect(scrapped.scrapCredit).toBe(300n * WAD);
+    expect(trainingRigCost(2, 1)).toBe(1_620n * WAD);
+  });
+
+  it('caps a refine at 100,000 and rounds the fast fee up', () => {
+    const rich = { ...newTraining(), pending: 200_000n * WAD };
+    expect(applyCall(rich, { fn: 'refine', args: [100_001n * WAD, true] }).error).toMatch(
+      /100,000/,
+    );
+    const odd = applyCall(rich, { fn: 'refine', args: [1n, true] }).state;
+    expect(odd.wallet).toBe(0n);
+  });
+
+  it('lets other drillers grow about 3% a day', () => {
+    const s = newTraining();
+    expect(tick(s, 24 * 3600).othersDp).toBe(2_060n);
+    expect(tick(s, 10 * 24 * 3600).othersDp).toBe(2_688n);
+  });
+
   it('buys diesel with practice ETH, up to the tank', () => {
     const s = newTraining();
     const fuel = applyCall(s, { fn: 'buyFuel', args: [], value: WAD / 100n });

@@ -80,7 +80,7 @@ export function useGameState(
 ): {
   state: GameState | null;
   refetch: () => void;
-  /** The last read failed (no RPC): `state`, if any, is the previous reading. */
+  /** The last read failed (no RPC, or the network's own numbers missing): `state` is null. */
   offline: boolean;
 } {
   const types = Array.from({ length: MAX_TYPES }, (_, i) => i);

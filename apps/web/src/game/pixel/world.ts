@@ -308,14 +308,15 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
       }
       // A pad the site just gained: dust settles and its rim flashes amber.
       const opened = m.fx?.find((f) => f.kind === 'pad' && f.pad === i);
-      const fresh = opened === undefined ? Infinity : t - opened.at;
+      const fresh = opened === undefined || t < opened.at ? Infinity : t - opened.at;
       if (fresh < 1.6) {
         dust(c, cx, cy, fresh / 1.6);
         if (Math.floor(fresh * 6) % 2 === 0) diamondEdge(c, cx, p.y, TW * 2, P.amber);
       }
       if (pad === undefined || pad.typeId === null) return;
       const drop = m.fx?.find((f) => f.kind === 'rig' && f.pad === i);
-      const age = drop === undefined ? Infinity : t - drop.at;
+      // A still scene (reduced motion) is drawn at t = 0: effects stamped later never play.
+      const age = drop === undefined || t < drop.at ? Infinity : t - drop.at;
       const fall = age < DROP ? -((1 - age / DROP) ** 2) * 56 : 0;
       drawRig(c, cx, cy + fall, pad.typeId, pad.running, t, m.motion, gx * 3 + gy);
       if (age >= DROP * 0.8 && age < DROP + DUST) dust(c, cx, cy, (age - DROP * 0.8) / DUST);

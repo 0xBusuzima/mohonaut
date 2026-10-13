@@ -184,7 +184,7 @@ function BuyRig({
       )}
       <PxButton
         className="w-full"
-        disabled={blocked !== null}
+        disabled={blocked !== null || !exact}
         busy={action.busy === 'buyMachines'}
         aria-label={qty === 1 ? `Buy one ${name}` : `Buy ${qty} ${name}s`}
         onClick={() =>

@@ -47,13 +47,16 @@ export function PixelWorld({
   const before = useRef<Omit<WorldModel, 'hover' | 'motion' | 'pan' | 'fx'> | null>(null);
 
   // One-off effects when the site changes (fx.ts): a rig drops in, diesel arrives, pads open.
+  // An empty site (not opened yet, or no chain reading) is not remembered, so the rigs do not
+  // drop in again when the chain answers after an outage. A still scene plays no effects.
   useEffect(() => {
+    if (model.pads.length === 0) return;
     const was = before.current;
     before.current = model;
-    if (was === null) return;
+    if (was === null || !motion) return;
     const now = performance.now() / 1000;
     fx.current = [...fx.current.filter((f) => now - f.at < 3), ...siteEffects(was, model, now)];
-  }, [model]);
+  }, [model, motion]);
 
   useEffect(() => {
     const box = contained ? canvas.current?.parentElement : null;
