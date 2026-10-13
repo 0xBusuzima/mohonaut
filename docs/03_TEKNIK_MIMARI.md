@@ -229,6 +229,8 @@ Ayrıca: `setRecipients` (kurucu/hazine alıcıları, sıfır olamaz, 30 günde 
 - Canlı sayaç istemcide formülden türetilir (zincir işlemi gerektirmez).
 - Dil: İngilizce birincil. Türkçe arayüz hukuki görüşe bağlı (bkz. 07).
 - PWA, mobil öncelikli, WalletConnect zorunlu.
+- **Gönderilen işlemler (2026-10-13):** cüzdan hash'i döndürünce hash cihazda saklanır (`src/game/pending.ts`) ve makbuz gelene dek izlenir (bir saatte vazgeçilir); sayfa yenilense de `useResumeTx` aynı hash'i bir kez izler, sonuç bir kez ve explorer linkiyle bildirilir; izlenen işlem varken yeni işlem gönderilmez (çift ödeme yok).
+- **Herkese açık profil paylaşım görseli (2026-10-13):** site statik (Cloudflare Pages); tek dinamik parça `apps/web/functions/s/[[path]].ts` (Pages Function, ücretsiz kademe): `/s/<adres>` sayfasını sunar, `og:image`/`twitter:image` etiketlerini API'nin `/cards/<adres>` kartına çevirir. `_headers` Function yanıtlarına uygulanmadığı için güvenlik başlıkları fonksiyonda (testle `_headers`'a eşit tutulur). Pages ortam değişkeni: `API_URL`.
 
 ### 4.2 Giriş katmanı
 
@@ -254,6 +256,8 @@ Ayrıca: `setRecipients` (kurucu/hazine alıcıları, sıfır olamaz, 30 günde 
 - Uç noktalar: oturum (SIWE; opsiyonel e-posta sağlayıcısı JWT doğrulaması adaptörle), profil, crew, survey (günlük ücretsiz; sunucu rastgeleliği — ekonomik değeri yok), başarımlar, sezon, paylaşım kartı (Satori + resvg ile PNG), bildirimler (e-posta: Resend/Postmark; Telegram bot), admin API (RBAC).
 - Anti-bot (yalnızca zincir dışı ödüller ve referans gösterimi için): Cloudflare Turnstile (sunucu doğrulamalı), IP/ASN/cüzdan rate limit, kümeleme (ortak fonlama adresi, referans ağacı şekli, senkron davranış).
 - **Uygulama (Faz 3.2, 2026-10-12):** `services/api` — Hono + `@hono/zod-openapi` (OpenAPI 3.1 `/openapi.json`), indeksleyicinin Postgres'inde kendi tabloları (`migrations/1001_api_init.sql`), Redis (veya tek süreçte bellek) ile hız sınırı ve SIWE nonce'ları. SIWE: EOA imzası yerelde, akıllı cüzdan (EIP-1271/6492) RPC ile; oturum çerezi rastgele token (yalnızca SHA-256'sı saklanır), HttpOnly + SameSite=Lax + Secure; yazma istekleri `WEB_ORIGIN` ve JSON şartı (CSRF). E-posta girişi: sağlayıcıdan bağımsız JWKS/JWT adaptörü (Dynamic veya Privy). Survey: sunucu sırrı + oyuncu + gün HMAC'i (belirlenimci, tahmin edilemez, ekonomik değeri yok). Paylaşım kartı: elle SVG + resvg, Inter (OFL) fontu; Satori, düzeltilmemiş bir bağımlılık uyarısı yüzünden kullanılmadı. Admin: 4 rol, her yazma işlemi ve denetim satırı tek işlemde; `audit_log` veritabanı tetikleyicisiyle yalnızca eklemeli. Üretimde `TURNSTILE_SECRET` ve `REDIS_URL` olmadan başlamaz. X hesabı bağlama Faz 4.4'te.
+
+- **2026-10-13 eklemeleri:** `GET /market/prices` (indeksleyicinin `vrgda_sales` tablosundan gün gün DP başına ödenen ortalama, kademe primi hariç; zincir saati API saatinin önündeyse "bugün" zincirden alınır); `/cards/<adres>` sahası olmayan oyuncuyu sitenin paylaşım görseline yönlendirir (302) ve kartta kazanılan rozet plakaları çizilir (rozet çizimleri `packages/sdk`'da).
 
 ### 4.5 Keeper (`services/keeper`)
 - Saatlik `poke()`, olgun rafine kuyruklarını `finalizeRefine`, 3 saatte bir parça halinde `executeBuyback` ve `addLiquidity` (bütçeli, çapalı, slippage hesabı zincir dışında), sağlık kontrolleri.
