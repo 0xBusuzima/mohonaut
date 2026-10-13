@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { watchCsp } from './csp';
@@ -91,9 +92,18 @@ test('after genesis, a returning driller reads the shift report and buys two Rot
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  // Genesis is at most three hours ahead (start.mjs): four hours on, the lone driller holds
-  // a whole slice of the emission in unrefined $MOHN.
-  await rpc(page, 'evm_increaseTime', [4 * 3600]);
+  // Four hours past genesis (start.mjs puts it two to three hours ahead, by the clock): the lone
+  // driller holds the same slice of the emission in unrefined $MOHN on every run. Moving four
+  // hours from "now" left one to two hours of drilling, by the minute the run started, and
+  // sometimes too little for the site upgrade below.
+  const deployment = JSON.parse(
+    readFileSync(new URL('../../../../deployments/31337-play-e2e.json', import.meta.url), 'utf8'),
+  ) as { genesisTime: number };
+  const latest = (await rpc(page, 'eth_getBlockByNumber', ['latest', false])) as {
+    timestamp: string;
+  };
+  const target = deployment.genesisTime + 4 * 3600;
+  await rpc(page, 'evm_increaseTime', [Math.max(0, target - Number(latest.timestamp))]);
   await rpc(page, 'evm_mine', []);
   // This device last saw the site four hours ago (wall clock, as the game's reads are stamped),
   // empty: Foreman Mo has a shift report.
