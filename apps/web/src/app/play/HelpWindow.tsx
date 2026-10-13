@@ -30,7 +30,7 @@ const STEPS: { icon: Parameters<typeof PxIcon>[0]['name']; title: string; text: 
   {
     icon: 'trophy',
     title: 'Race to the Moho',
-    text: 'Everyone cores the same World Bore. Crews, Seasons and the daily Survey are for the board and the collection, never for the economy.',
+    text: 'Everyone cores the same World Bore. Crews, Seasons and the daily Survey are for the board and the collection, never for the economy. A finished Survey set stands its piece on your site; your crew flies its flag on the shack.',
   },
 ];
 
