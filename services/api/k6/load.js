@@ -24,6 +24,7 @@ export default function () {
   const pages = [
     '/world',
     '/economy/daily?days=30',
+    '/market/prices',
     '/leaderboards/contribution?limit=50',
     '/leaderboards/crews',
     `/profiles/${PLAYER}`,
