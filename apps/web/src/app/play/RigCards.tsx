@@ -61,6 +61,7 @@ export function MarketWindow({
   action,
   useQuote,
   openSite,
+  history,
 }: {
   state: GameState;
   action: Action;
@@ -69,6 +70,8 @@ export function MarketWindow({
   useQuote: QuoteHook;
   /** Opens the site window (more pads and fuel line); without it no button shows. */
   openSite?: () => void;
+  /** Shown under the introduction: the live game's price chart (the training site has none). */
+  history?: ReactNode;
 }) {
   const p = state.player;
   if (p === null) return null;
@@ -89,6 +92,7 @@ export function MarketWindow({
           </>
         )}
       </p>
+      {history}
       <p className="mb-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-lg">
         <PxIcon name="rig" /> {freePads > 0 ? freePads : 'No'} free pad
         {freePads === 1 ? '' : 's'} · Site level {p.level}

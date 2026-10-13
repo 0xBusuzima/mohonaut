@@ -279,3 +279,40 @@ describe('timelock queue', () => {
     });
   });
 });
+
+describe('DP price by day', () => {
+  it('averages what was paid per DP each day, weighted by DP sold, oldest first', async () => {
+    const h = await harness();
+    const today = Math.floor(T0 / 1000 / 86_400);
+    const at = (daysAgo: number, hour: number) => BigInt((today - daysAgo) * 86_400 + hour * 3600);
+    const WAD = 10n ** 18n;
+    const sale = (n: number, time: bigint, units: bigint, perDp: bigint) => ({
+      blockNumber: BigInt(n),
+      logIndex: 0,
+      time,
+      account: '0x0000000000000000000000000000000000000001',
+      typeId: 1,
+      qty: 1n,
+      units,
+      cost: perDp * units,
+      // The indexer keeps the price per DP scaled by WAD.
+      avgUnitPriceWad: perDp * WAD,
+    });
+    await h.database.db.insert(idx.vrgdaSales).values([
+      sale(1, at(8, 1), 50n, 9n * WAD), // before the window
+      sale(2, at(2, 3), 50n, 10n * WAD),
+      sale(3, at(2, 9), 150n, 8n * WAD),
+      sale(4, at(0, 1), 50n, 12n * WAD),
+    ]);
+    const res = await call(h, 'GET', '/market/prices');
+    expect(res.status).toBe(200);
+    const days = res.json['days'] as { day: number; perDp: string | null; sales: number }[];
+    expect(days).toHaveLength(7);
+    expect(days[0]?.day).toBe(today - 6);
+    expect(days.map((d) => d.sales)).toEqual([0, 0, 0, 0, 2, 0, 1]);
+    // (50 x 10 + 150 x 8) / 200 = 8.5 MOHN per DP.
+    expect(days[4]?.perDp).toBe(((85n * WAD) / 10n).toString());
+    expect(days[6]?.perDp).toBe((12n * WAD).toString());
+    expect(days[0]?.perDp).toBeNull();
+  });
+});

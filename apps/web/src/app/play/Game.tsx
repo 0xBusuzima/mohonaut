@@ -28,6 +28,7 @@ import { BoreWindow } from './BoreWindow';
 import { Guide } from './Guide';
 import { HelpWindow } from './HelpWindow';
 import { Hud } from './Hud';
+import { PriceHistory } from './PriceHistory';
 import { ShiftReportNotice } from './ShiftReport';
 import { StratumNotice } from './StratumNotice';
 import type { Panel } from './Hud';
@@ -381,6 +382,7 @@ function PanelWindow({
         action={action}
         useQuote={useRigQuote}
         openSite={() => go('site')}
+        history={<PriceHistory />}
       />
     );
   else if (panel === 'rigs')

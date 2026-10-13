@@ -87,6 +87,7 @@ describe('OpenAPI', () => {
         '/governance/timelock',
         '/leaderboards/contribution',
         '/leaderboards/crews',
+        '/market/prices',
         '/me',
         '/me/collection',
         '/me/notifications',

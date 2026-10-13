@@ -133,6 +133,13 @@ test('after genesis, a returning driller reads the shift report and buys two Rot
   await page.getByRole('button', { name: 'My rigs' }).click();
   const rigs = page.getByRole('dialog', { name: 'My rigs' });
   await expect(rigs.getByText('2 / 2 on')).toBeVisible({ timeout: 30_000 });
+  await rigs.getByRole('button', { name: 'Close' }).click();
+  // The sale reaches the market's price chart through the indexer and the API.
+  await page.getByRole('button', { name: 'Market', exact: true }).click();
+  await expect(page.getByRole('img', { name: /^Average paid per DP, last 7 days/ })).toBeVisible({
+    timeout: 75_000, // the chart refreshes every 30 s
+  });
+  await shot(page, '8-market-prices');
   expect(errors).toEqual([]);
 });
 

@@ -179,6 +179,18 @@ export async function seasonRanking(database: Database, from: number, to: number
   return rows.map((r) => ({ address: getAddress(r.address), accrued: BigInt(r.accrued) }));
 }
 
+/** Rig sales since `fromTime` (Unix seconds): DP sold and the average price per DP (WAD). */
+export async function dpSales(database: Database, fromTime: number) {
+  return database.db
+    .select({
+      time: schema.vrgdaSales.time,
+      units: schema.vrgdaSales.units,
+      avgUnitPriceWad: schema.vrgdaSales.avgUnitPriceWad,
+    })
+    .from(schema.vrgdaSales)
+    .where(gte(schema.vrgdaSales.time, BigInt(fromTime)));
+}
+
 export async function economyDays(database: Database, days: number) {
   return database.db
     .select()
