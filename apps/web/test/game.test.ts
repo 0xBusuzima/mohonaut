@@ -14,7 +14,14 @@ import {
   withHeadroom,
 } from '../src/game/derive';
 import { explain } from '../src/game/errors';
-import { describeHit, parseAmount, referrerFromUrl, rigName, scenePads } from '../src/game/play';
+import {
+  describeHit,
+  parseAmount,
+  referrerFromUrl,
+  rigName,
+  scenePads,
+  yardWords,
+} from '../src/game/play';
 import { textWidth } from '../src/game/pixel/font';
 import { siteRows } from '../src/game/pixel/world';
 import { formatEthInput } from '../src/lib/format';
@@ -323,5 +330,15 @@ describe('site decor for completed sets', () => {
     const { decorFor } = await import('../src/game/pixel/decor');
     expect(decorFor(['relics', 'nope', 'fossils'])).toEqual(['fossils', 'relics']);
     expect(decorFor([])).toEqual([]);
+  });
+});
+
+describe('the yard in words', () => {
+  it('names the crew flag, the plaques and the decor, and nothing that is not there', () => {
+    expect(yardWords({})).toBe('');
+    expect(yardWords({ crewTag: 'NIGHT', plaques: [1, 4], decor: ['fossils'] })).toBe(
+      'The shack flies the NIGHT crew flag. 2 season plaques on its wall. ' +
+        '1 Core Collection piece on show by the fence.',
+    );
   });
 });

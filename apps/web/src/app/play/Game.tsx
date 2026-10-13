@@ -12,7 +12,7 @@ import { decorFor } from '../../game/pixel/decor';
 import { ForemanMo } from '../../game/pixel/ForemanMo';
 import { PixelWorld } from '../../game/pixel/PixelWorld';
 import type { Hit } from '../../game/pixel/world';
-import { describeHit, scenePads } from '../../game/play';
+import { describeHit, scenePads, yardWords } from '../../game/play';
 import { useGameAction, useResumeTx } from '../../game/actions';
 import { useSignIn } from '../../game/signin';
 import { perHourEstimate } from '../../game/derive';
@@ -171,7 +171,7 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
         model={model}
         onSelect={onboarding === null ? onSelect : undefined}
         describe={(hit) => describeHit(hit, model.pads)}
-        label={siteSummary(level, model.pads)}
+        label={`${siteSummary(level, model.pads)} ${yardWords(model)}`.trim()}
       />
       <Brand />
       {state !== null && onboarding === null && p !== null && <Hud state={state} open={setPanel} />}

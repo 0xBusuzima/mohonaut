@@ -13,6 +13,22 @@ export interface ScenePad {
 
 export const rigName = (id: number) => GEN1_RIGS[id]?.name ?? `Rig type ${id}`;
 
+/** What the yard shows besides rigs, in words (the canvas is a picture): flag, plaques, decor. */
+export function yardWords(m: {
+  crewTag?: string;
+  plaques?: readonly number[];
+  decor?: readonly unknown[];
+}): string {
+  const parts: string[] = [];
+  if (m.crewTag !== undefined) parts.push(`The shack flies the ${m.crewTag} crew flag.`);
+  const plaques = m.plaques?.length ?? 0;
+  if (plaques > 0) parts.push(`${plaques} season plaque${plaques === 1 ? '' : 's'} on its wall.`);
+  const decor = m.decor?.length ?? 0;
+  if (decor > 0)
+    parts.push(`${decor} Core Collection piece${decor === 1 ? '' : 's'} on show by the fence.`);
+  return parts.join(' ');
+}
+
 /** Parses a decimal input ("0,5" or "0.5") into wei; 0 for anything invalid. */
 export function parseAmount(text: string): bigint {
   try {

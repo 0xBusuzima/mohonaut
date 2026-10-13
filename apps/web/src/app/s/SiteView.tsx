@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { decorFor } from '../../game/pixel/decor';
 import { PixelWorld } from '../../game/pixel/PixelWorld';
-import { scenePads } from '../../game/play';
+import { scenePads, yardWords } from '../../game/play';
 import { useNow } from '../../lib/clock';
 import type { Profile } from '../../social/api';
 
@@ -34,7 +34,7 @@ export function SiteView({ profile }: { profile: Profile }) {
       <PixelWorld
         contained
         model={model}
-        label={`Drill site level ${profile.siteLevel} at night, ${fuelled ? 'drilling' : 'idle, the tank is empty'}.`}
+        label={`Drill site level ${profile.siteLevel} at night, ${fuelled ? 'drilling' : 'idle, the tank is empty'}. ${yardWords(model)}`.trim()}
       />
     </div>
   );
