@@ -32,7 +32,7 @@ Sorumlular: **K** kurucu (anahtarlar, Safe'ler, X), **Ke** keeper servisi (otoma
 
 ### Prova 1: testnet 46630, Genesis 2026-10-11 22:00 UTC
 
-İlk testnet dağıtımı. Deploy adımları önceden yapılmıştı. Keeper ilk iki gün sürekli çalışmadı; bu provadan çıkan ders bu oldu.
+İlk testnet dağıtımı. Deploy adımları önceden yapılmıştı. **Kontratlar iç denetim düzeltmelerinden ve ekonomi v1.1'den (fiyat çapalı hook) önceki sürüm; keeper ise güncel kod.** Market Open sonrası buyback ve POL adımlarında bu fark görülebilir, kayda o gözle bakılır. Keeper ilk iki gün sürekli çalışmadı; bu provadan çıkan ders bu oldu.
 
 | # | Adım | Saat (UTC) | Not |
 |---|---|---|---|
