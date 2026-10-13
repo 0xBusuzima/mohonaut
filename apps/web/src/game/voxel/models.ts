@@ -345,3 +345,56 @@ export function siteDiorama(): Model {
   }
   return m;
 }
+
+/**
+ * The core shack (the refinery) on a 14 x 14 footprint: board walls, a door and a lit window
+ * on the right (+x) face, core trays on the left (+y) face, a pitched roof and a chimney. The
+ * flag and plaques are drawn over it in the scene (they change with the player).
+ */
+export function shackModel(): Model {
+  const m = new Model();
+  const wall = v(P.boneDark);
+  m.box(1, 1, 0, 12, 12, 9, wall);
+  // Plank seams on both faces the camera sees.
+  for (let z = 2; z <= 9; z += 3) {
+    m.box(12, 1, z, 12, 12, z, v(P.concrete));
+    m.box(1, 12, z, 12, 12, z, v(P.concrete));
+  }
+  // Door with a step, and the lit window.
+  m.box(12, 3, 0, 12, 5, 5, v(P.graphite));
+  m.box(13, 3, 0, 13, 5, 0, v(P.concrete));
+  m.box(12, 8, 4, 12, 10, 6, LAMP);
+  // Core trays under the eaves on the left face, the middle one glowing cyan.
+  for (const [z, colour] of [
+    [7, P.steelLight],
+    [5, P.cyan],
+    [3, P.steelLight],
+  ] as const)
+    m.box(3, 13, z, 8, 13, z, colour === P.cyan ? v(colour, true) : v(colour));
+  // Pitched roof, ridge along x, overhanging one voxel.
+  for (let k = 0; k <= 6; k++)
+    m.box(0, k, 10 + k, 13, 13 - k, 10 + k, v(k === 6 ? P.orangeDark : P.orange));
+  // Chimney.
+  m.box(3, 3, 10, 4, 4, 17, v(P.steel));
+  return m;
+}
+
+/** The Market container on a 16 x 16 footprint: corrugated sides, doors open on crates. */
+export function containerModel(): Model {
+  const m = new Model();
+  m.box(0, 4, 0, 15, 12, 7, v(P.orangeDark));
+  // Corrugation ribs on the left (+y) face.
+  for (let x = 1; x <= 14; x += 2) m.box(x, 13, 1, x, 13, 6, v(P.orange));
+  // Open doors on the right (+x) face, crates inside.
+  m.box(15, 5, 0, 15, 11, 6, v(P.night));
+  m.box(14, 6, 0, 15, 7, 1, v(P.boneDark));
+  m.box(14, 9, 0, 15, 9, 2, v(P.concrete));
+  m.box(16, 4, 0, 16, 4, 6, v(P.orange));
+  m.box(16, 12, 0, 16, 12, 6, v(P.orange));
+  // Top rail and a lit sign: a little rig.
+  m.box(0, 4, 8, 15, 12, 8, v(P.orange));
+  m.box(6, 7, 9, 9, 9, 11, v(P.charcoal));
+  m.set(7, 9, 12, v(P.orange, true));
+  m.set(8, 9, 12, v(P.orange, true));
+  return m;
+}

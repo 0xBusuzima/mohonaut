@@ -75,7 +75,23 @@ for (const [i, model] of rigs.entries()) {
   const image = voxel.render(model, { scale, bloom: 4, light: LIGHT });
   const [ax, ay] = voxel.anchorOf(image, n / 2, n / 2, 1, scale);
   writeFileSync(join(out, `site-rig-${i}.png`), png(image));
-  manifest[i] = { w: image.width, h: image.height, ax: Math.round(ax), ay: Math.round(ay) };
+  manifest[`rig-${i}`] = {
+    w: image.width,
+    h: image.height,
+    ax: Math.round(ax),
+    ay: Math.round(ay),
+  };
+}
+// Site buildings at 2 px a voxel, anchored at their footprint's back corner (the scene's box()).
+for (const [name, model] of [
+  ['shack', models.shackModel()],
+  ['container', models.containerModel()],
+]) {
+  const image = voxel.render(model, { scale: 2, bloom: 4, light: LIGHT });
+  writeFileSync(join(out, `site-${name}.png`), png(image));
+  manifest[name] = { w: image.width, h: image.height, ax: image.origin[0], ay: image.origin[1] };
 }
 writeFileSync(join(out, 'manifest.json'), JSON.stringify(manifest));
-console.log(`gen-voxel: ${rigs.length} rigs, the site diorama and ${rigs.length} in-game sprites`);
+console.log(
+  `gen-voxel: ${rigs.length} rigs, the site diorama and ${Object.keys(manifest).length} in-game sprites`,
+);

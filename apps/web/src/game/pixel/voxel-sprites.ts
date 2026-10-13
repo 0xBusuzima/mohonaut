@@ -1,6 +1,6 @@
 /**
- * The baked voxel rig sprites (scripts/gen-voxel.mjs) for the scene, loaded on first use. Until
- * an image has loaded (or without a DOM) it gives null, and the scene draws the pixel rig.
+ * The baked voxel sprites (scripts/gen-voxel.mjs) for the scene, loaded on first use. Until an
+ * image has loaded (or without a DOM) it gives null, and the scene draws the pixel drawing.
  */
 interface Meta {
   w: number;
@@ -12,9 +12,10 @@ interface Meta {
 
 let manifest: Record<string, Meta> | null = null;
 let asked = false;
-const images = new Map<number, HTMLImageElement>();
+const images = new Map<string, HTMLImageElement>();
 
-export function voxelRig(typeId: number): (Meta & { img: HTMLImageElement }) | null {
+/** A baked sprite by name ("rig-1", "shack", "container"), or null until it has loaded. */
+export function voxelSprite(name: string): (Meta & { img: HTMLImageElement }) | null {
   if (typeof document === 'undefined' || typeof fetch === 'undefined') return null;
   if (manifest === null) {
     if (!asked) {
@@ -25,18 +26,18 @@ export function voxelRig(typeId: number): (Meta & { img: HTMLImageElement }) | n
           manifest = m;
         })
         .catch(() => {
-          // No sprites: the pixel rigs stay.
+          // No sprites: the pixel drawings stay.
         });
     }
     return null;
   }
-  const meta = manifest[String(typeId)];
+  const meta = manifest[name];
   if (meta === undefined) return null;
-  let img = images.get(typeId);
+  let img = images.get(name);
   if (img === undefined) {
     img = new Image();
-    img.src = `/voxel/site-rig-${typeId}.png`;
-    images.set(typeId, img);
+    img.src = `/voxel/site-${name}.png`;
+    images.set(name, img);
   }
   return img.complete && img.naturalWidth > 0 ? { ...meta, img } : null;
 }

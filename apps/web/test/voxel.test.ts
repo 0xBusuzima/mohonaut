@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   PAD_SIZES,
+  containerModel,
   diamondCoreDrill,
   hex,
   pilotRig,
   plasmaBore,
   rotaryRig,
+  shackModel,
   siteDiorama,
   topDrive,
   turbodrill,
@@ -141,5 +143,19 @@ describe('the voxel models', () => {
     expect(ax).toBe(32);
     // The pad's near corner (n, n, 1) sits 16 pixels below its top centre.
     expect(anchorOf(img, n, n, 1, scale)[1] - ay).toBe(16);
+  });
+
+  it('builds the shack with its lit window and glowing core tray, and the open Market container', () => {
+    const shack = shackModel();
+    expect(shack.get(12, 9, 5)?.emissive).toBe(true); // the window on the right face
+    expect(shack.get(5, 13, 5)?.emissive).toBe(true); // the cyan core tray on the left face
+    // Both fit their footprints in the scene: 14 and 17 voxels across at most.
+    const span = (m: ReturnType<typeof shackModel>) =>
+      Math.max(...m.entries().map(([x, y]) => x + y)) -
+      Math.min(...m.entries().map(([x, y]) => x + y));
+    expect(span(shack)).toBeLessThanOrEqual(26);
+    const box = containerModel();
+    expect(box.get(15, 8, 3)?.colour).toEqual(hex('#0e1013')); // dark inside the open doors
+    expect(span(box)).toBeLessThanOrEqual(30);
   });
 });

@@ -12,7 +12,7 @@ import { diamond, diamondEdge, hash, line, px } from './draw';
 import type { Ctx } from './draw';
 import { drawText, textWidth } from './font';
 import { cached, night } from './light';
-import { voxelRig } from './voxel-sprites';
+import { voxelSprite } from './voxel-sprites';
 import type { Light } from './light';
 import { P } from './palette';
 import {
@@ -30,6 +30,7 @@ import {
   rain,
   rigTop,
   shack,
+  shackDressing,
   tank,
   truck,
   truckLights,
@@ -256,7 +257,12 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
 
   at(3, 2, () => {
     const p = iso(1, 1);
-    shack(c, p.x, p.y, t, m.motion, m.hover === 'shack', m.crewTag, m.plaques);
+    const built = m.voxel === true ? voxelSprite('shack') : null;
+    if (built === null) shack(c, p.x, p.y, t, m.motion, m.hover === 'shack', m.crewTag, m.plaques);
+    else {
+      c.drawImage(built.img, p.x - built.ax, p.y + 4 - built.ay);
+      shackDressing(c, p.x, p.y, t, m.motion, m.crewTag, m.plaques);
+    }
     // A crew flag reaches past the roof to the right: it is part of the shack too.
     const flag = m.crewTag === undefined ? 0 : Math.max(0, 15 + textWidth(m.crewTag) + 6 - 34);
     hits.push({ id: 'shack', x: p.x - 34, y: p.y - 48, w: 68 + flag, h: 74 });
@@ -272,7 +278,9 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   });
   at(10, 2, () => {
     const p = iso(9, 1);
-    container(c, p.x, p.y, m.hover === 'market');
+    const built = m.voxel === true ? voxelSprite('container') : null;
+    if (built === null) container(c, p.x, p.y, m.hover === 'market');
+    else c.drawImage(built.img, p.x - built.ax, p.y + 8 - built.ay);
     hits.push({ id: 'market', x: p.x - 40, y: p.y - 30, w: 80, h: 56 });
   });
   {
@@ -345,7 +353,7 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
       // A still scene (reduced motion) is drawn at t = 0: effects stamped later never play.
       const age = drop === undefined || t < drop.at ? Infinity : t - drop.at;
       const fall = age < DROP ? -((1 - age / DROP) ** 2) * 56 : 0;
-      const sprite = m.voxel === true ? voxelRig(pad.typeId) : null;
+      const sprite = m.voxel === true ? voxelSprite(`rig-${pad.typeId}`) : null;
       if (sprite !== null) c.drawImage(sprite.img, cx - sprite.ax, cy + fall - sprite.ay + 1);
       else drawRig(c, cx, cy + fall, pad.typeId, pad.running, t, m.motion, gx * 3 + gy);
       if (age >= DROP * 0.8 && age < DROP + DUST) dust(c, cx, cy, (age - DROP * 0.8) / DUST);

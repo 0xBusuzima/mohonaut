@@ -156,6 +156,25 @@ export function shack(
   // Core trays on the left face.
   for (let i = 0; i < 3; i++)
     rect(c, x - 22, y + 6 + i * 4, 14, 2, i === 1 ? P.cyan : P.steelLight);
+  // Chimney with steam.
+  rect(c, x - 10, y - 28, 4, 8, P.steel);
+  shackDressing(c, x, y, t, motion, crewTag, plaques);
+  if (hover) diamondEdge(c, x, y - 18, 56, P.amber);
+}
+
+/**
+ * What the player's progress puts on the shack, drawn over either shack (pixel or voxel): the
+ * season plaques on its wall, the chimney's steam and the flag (the crew's, with its tag).
+ */
+export function shackDressing(
+  c: Ctx,
+  x: number,
+  y: number,
+  t: number,
+  motion: boolean,
+  crewTag?: string,
+  plaques: readonly number[] = [],
+): void {
   [...plaques]
     .sort((a, b) => a - b)
     .slice(0, 3)
@@ -172,8 +191,6 @@ export function shack(
       rect(c, left + 1, y + 20, 3, 2, face);
       rect(c, left + 1, y + 20, 1, 1, shine);
     });
-  // Chimney with steam.
-  rect(c, x - 10, y - 28, 4, 8, P.steel);
   if (motion) puff(c, x - 8, y - 32, t, 0);
   if (crewTag === undefined) {
     // Flag on the roof ridge: the casing mark colours, waving.
@@ -193,7 +210,6 @@ export function shack(
     }
     drawText(c, x + 19, y - 44, text, P.bone, P.orangeDark);
   }
-  if (hover) diamondEdge(c, x, y - 18, 56, P.amber);
 }
 
 export function container(c: Ctx, x: number, y: number, hover: boolean): void {
