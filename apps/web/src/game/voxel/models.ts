@@ -420,3 +420,47 @@ export function tankModel(): Model {
   for (let z = 1; z <= 15; z += 2) m.box(4, 13, z, 5, 13, z, v(P.concrete));
   return m;
 }
+
+/** Voxels per site grid cell for the ground (one cell is the scene's 32 x 16 diamond). */
+export const GROUND_VOXELS = 4;
+
+/**
+ * The site's ground, `gw` x `gh` grid cells, set into the land (not a floating block): a gravel
+ * yard one voxel above the land with a concrete kerb on its two near edges, puddles, tyre ruts
+ * behind the pads and the gravel track from the gate down the left edge. The surface's top is
+ * at z = 0 so the image origin is the scene's iso(0, 0).
+ */
+export function siteGround(gw: number, gh: number): Model {
+  const m = new Model();
+  const W = gw * GROUND_VOXELS;
+  const D = gh * GROUND_VOXELS;
+  for (let x = 0; x < W; x++)
+    for (let y = 0; y < D; y++) {
+      const n = noise(x, y, 1);
+      const track = x < GROUND_VOXELS && y >= 2 * GROUND_VOXELS;
+      const rut = y < 4 * GROUND_VOXELS && (x + 2 * y) % 13 === 0 && n > 0.3;
+      const puddle = noise(Math.floor(x / 5), Math.floor(y / 4), 9) > 0.97;
+      const colour = puddle
+        ? P.puddle
+        : track
+          ? n > 0.6
+            ? P.gravel
+            : P.groundSpeck
+          : rut
+            ? P.groundWet
+            : n > 0.9
+              ? P.gravel
+              : n > 0.7
+                ? P.groundSpeck
+                : P.ground;
+      m.set(x, y, -1, v(colour));
+      m.set(x, y, -2, v(P.earthDark));
+    }
+  // The kerb on the near edges, so the yard reads as built ground.
+  for (let i = 0; i < Math.max(W, D); i++) {
+    if (i < D) m.set(W, i, -1, v(P.concrete));
+    if (i < W) m.set(i, D, -1, v(P.concrete));
+  }
+  m.set(W, D, -1, v(P.concrete));
+  return m;
+}

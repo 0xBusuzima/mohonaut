@@ -10,6 +10,7 @@ import { runnerImport } from 'vite';
 const web = fileURLToPath(new URL('..', import.meta.url));
 const { module: voxel } = await runnerImport(join(web, 'src/game/voxel/render.ts'));
 const { module: models } = await runnerImport(join(web, 'src/game/voxel/models.ts'));
+const { module: world } = await runnerImport(join(web, 'src/game/pixel/world.ts'));
 
 function chunk(type, data) {
   const out = new Uint8Array(12 + data.length);
@@ -90,6 +91,23 @@ for (const [name, model] of [
   const image = voxel.render(model, { scale: 2, bloom: 4, light: LIGHT });
   writeFileSync(join(out, `site-${name}.png`), png(image));
   manifest[name] = { w: image.width, h: image.height, ax: image.origin[0], ay: image.origin[1] };
+}
+// The site's ground for each number of pad rows (3 to 9), at the scene's grid: one cell is
+// GROUND_VOXELS voxels of 16 / GROUND_VOXELS pixels; anchored at iso(0, 0) on the surface.
+for (let rows = 3; rows <= 9; rows++) {
+  const scale = 16 / models.GROUND_VOXELS;
+  const image = voxel.render(models.siteGround(world.GW, world.siteDepth(rows)), {
+    scale,
+    light: LIGHT,
+    occlusion: 0.3,
+  });
+  writeFileSync(join(out, `site-ground-${rows}.png`), png(image));
+  manifest[`ground-${rows}`] = {
+    w: image.width,
+    h: image.height,
+    ax: image.origin[0],
+    ay: image.origin[1],
+  };
 }
 // The tank stands on its centre: anchored at its footprint's middle on the ground.
 {

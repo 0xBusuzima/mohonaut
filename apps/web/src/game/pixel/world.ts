@@ -101,7 +101,8 @@ const DUST = 1.2; // seconds the dust takes to settle
 const FLOAT_EVERY = 6;
 
 const TW = 32; // tile width (2:1 diamonds)
-const GW = 14; // site size in tiles
+/** Site width in tiles. */
+export const GW = 14;
 const MAX_ROWS = 9; // 36 pad slots: enough for the 33 pads of site level 30 and one locked
 
 /**
@@ -113,7 +114,7 @@ export function siteRows(padCount: number): number {
 }
 
 /** Site depth in tiles: the yard behind the pads, three tiles per row, and a margin. */
-const siteDepth = (rows: number) => 3 * rows + 4;
+export const siteDepth = (rows: number) => 3 * rows + 4;
 
 /** Pad slots, four to a row, front rows added as the site grows. */
 function padSlots(rows: number): [number, number][] {
@@ -191,7 +192,8 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   const truckAt = iso(-3.6, 2.3);
 
   // ---- Still layer: sky, land, site ground, pads, back fence, the road's furniture.
-  const key = `${W}x${H}:${ox},${oy}:${gh}:${m.pads.length}:${m.hover ?? ''}`;
+  const ground = m.voxel === true ? voxelSprite(`ground-${rows}`) : null;
+  const key = `${W}x${H}:${ox},${oy}:${gh}:${m.pads.length}:${m.hover ?? ''}:${ground === null ? 'px' : 'vx'}`;
   cached(c, W, H, key, (g) => {
     sky(g, W, horizon);
     land(g, W, H, horizon, ox, oy, iso, GW, gh);
@@ -209,34 +211,9 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
       prev = top;
     }
     truck(g, truckAt.x, truckAt.y);
-    // Site ground.
-    for (let gy = 0; gy < gh; gy++) {
-      for (let gx = 0; gx < GW; gx++) {
-        const p = iso(gx, gy);
-        const n = hash(gx, gy, 7);
-        diamond(g, p.x, p.y, TW, n < 0.25 ? P.groundWet : P.ground);
-        for (let k = 0; k < 4; k++) {
-          const sx = p.x - 8 + Math.floor(hash(gx, gy, 10 + k) * 16);
-          const sy = p.y + 3 + Math.floor(hash(gx, gy, 20 + k) * 10);
-          px(g, sx, sy, P.groundSpeck);
-        }
-        // Tyre marks on the yard behind the pads.
-        if (gy < 4 && n > 0.6) line(g, p.x - 6, p.y + 5, p.x + 6, p.y + 11, P.groundWet);
-      }
-    }
-    // Gravel track from the gate down the left edge.
-    for (let gy = 2; gy < gh; gy++) {
-      const p = iso(0, gy);
-      diamond(g, p.x, p.y, TW, P.gravel);
-      for (let k = 0; k < 6; k++) {
-        px(
-          g,
-          p.x - 9 + Math.floor(hash(0, gy, 30 + k) * 18),
-          p.y + 2 + Math.floor(hash(0, gy, 40 + k) * 12),
-          P.groundSpeck,
-        );
-      }
-    }
+    // Site ground: the baked voxel yard, or the pixel one.
+    if (ground !== null) g.drawImage(ground.img, ox - ground.ax, oy - ground.ay);
+    else drawPixelGround(g, iso, gh);
     fenceBack(g, iso);
     slots.forEach(([gx, gy], i) => {
       const p = iso(gx, gy);
@@ -502,4 +479,39 @@ function dust(c: Ctx, x: number, y: number, k: number): void {
     );
   }
   c.globalAlpha = 1;
+}
+
+/** The site's ground in pixel art: soil diamonds with specks, tyre marks and the gravel track. */
+function drawPixelGround(
+  g: Ctx,
+  iso: (gx: number, gy: number) => { x: number; y: number },
+  gh: number,
+): void {
+  for (let gy = 0; gy < gh; gy++) {
+    for (let gx = 0; gx < GW; gx++) {
+      const p = iso(gx, gy);
+      const n = hash(gx, gy, 7);
+      diamond(g, p.x, p.y, TW, n < 0.25 ? P.groundWet : P.ground);
+      for (let k = 0; k < 4; k++) {
+        const sx = p.x - 8 + Math.floor(hash(gx, gy, 10 + k) * 16);
+        const sy = p.y + 3 + Math.floor(hash(gx, gy, 20 + k) * 10);
+        px(g, sx, sy, P.groundSpeck);
+      }
+      // Tyre marks on the yard behind the pads.
+      if (gy < 4 && n > 0.6) line(g, p.x - 6, p.y + 5, p.x + 6, p.y + 11, P.groundWet);
+    }
+  }
+  // Gravel track from the gate down the left edge.
+  for (let gy = 2; gy < gh; gy++) {
+    const p = iso(0, gy);
+    diamond(g, p.x, p.y, TW, P.gravel);
+    for (let k = 0; k < 6; k++) {
+      px(
+        g,
+        p.x - 9 + Math.floor(hash(0, gy, 30 + k) * 18),
+        p.y + 2 + Math.floor(hash(0, gy, 40 + k) * 12),
+        P.groundSpeck,
+      );
+    }
+  }
 }

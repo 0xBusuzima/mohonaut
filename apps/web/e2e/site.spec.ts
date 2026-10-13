@@ -121,6 +121,8 @@ test('/s/<address> shows a public drill site page with a way in', async ({ page 
 });
 
 test('every page carries a hash-based CSP and breaks none of it', async ({ page }) => {
+  // About twenty pages, each to network idle: alone ~26 s, more beside the other workers.
+  test.setTimeout(90_000);
   await page.addInitScript(() => {
     const w = window as unknown as { __csp: string[] };
     w.__csp = [];

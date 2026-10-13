@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  GROUND_VOXELS,
   PAD_SIZES,
   containerModel,
   diamondCoreDrill,
@@ -8,11 +9,13 @@ import {
   plasmaBore,
   rotaryRig,
   shackModel,
+  siteGround,
   siteDiorama,
   tankModel,
   topDrive,
   turbodrill,
 } from '../src/game/voxel/models';
+import { GW, siteDepth } from '../src/game/pixel/world';
 import { Model, anchorOf, render } from '../src/game/voxel/render';
 import type { Image } from '../src/game/voxel/render';
 
@@ -165,5 +168,19 @@ describe('the voxel models', () => {
     expect(tank.get(6, 6, 13)?.colour).toEqual(hex('#ff6b1a'));
     expect(tank.get(6, 6, 17)).toBeDefined();
     expect(tank.get(0, 0, 5)).toBeUndefined(); // round: the footprint's corners stay empty
+  });
+
+  it('lays the site ground into the land at the scene grid: its surface top is z = 0, kerbed on the near edges', () => {
+    // The scene's own site size (three pad rows), as gen-voxel bakes it.
+    const ground = siteGround(GW, siteDepth(3));
+    const W = GW * GROUND_VOXELS;
+    const D = siteDepth(3) * GROUND_VOXELS;
+    expect(ground.has(0, 0, -1)).toBe(true);
+    expect(ground.has(0, 0, 0)).toBe(false);
+    expect(ground.get(W, 5, -1)?.colour).toEqual(hex('#8b939c'));
+    expect(ground.get(5, D, -1)?.colour).toEqual(hex('#8b939c'));
+    // One grid cell is GROUND_VOXELS voxels of 16 / GROUND_VOXELS pixels: the scene's 32 x 16.
+    const img = render(ground, { scale: 16 / GROUND_VOXELS });
+    expect(anchorOf(img, GROUND_VOXELS, 0, 0, 16 / GROUND_VOXELS)[0] - img.origin[0]).toBe(16);
   });
 });
