@@ -112,7 +112,8 @@ export function PixelWorld({
     }
     draw(performance.now());
     const loop = (now: number) => {
-      if (now - last > 80) {
+      // 10 frames a second: plenty for pixel art, and kind to phone batteries.
+      if (now - last > 100) {
         last = now;
         draw(now);
       }

@@ -89,7 +89,22 @@ export function cached(c: Ctx, W: number, H: number, key: string, paint: (g: Ctx
 /** Lays the night over everything below `horizon`, with the lights cut out of it. */
 export function night(c: Ctx, W: number, H: number, horizon: number, lights: Light[]): void {
   const g = layerFor(nights, c, W, H);
-  if (g === null) return;
+  const layer = nights.get(c);
+  if (g === null || layer === undefined) return;
+  // Rebuilt only when a light moves or its strength visibly changes (eight steps): the layer
+  // was the costliest part of every frame.
+  const key = `${horizon}|${lights
+    .map((l) => `${Math.round(l.x)},${Math.round(l.y)},${l.r},${Math.round((l.power ?? 1) * 8)}`)
+    .join(';')}`;
+  if (layer.key !== key) {
+    layer.key = key;
+    paintNight(g, W, H, horizon, lights);
+  }
+  c.drawImage(layer.canvas, 0, 0);
+  tint(c, lights);
+}
+
+function paintNight(g: Ctx, W: number, H: number, horizon: number, lights: Light[]): void {
   g.globalCompositeOperation = 'source-over';
   g.clearRect(0, 0, W, H);
   const top = Math.max(0, horizon - 24);
@@ -117,7 +132,9 @@ export function night(c: Ctx, W: number, H: number, horizon: number, lights: Lig
   }
   g.globalAlpha = 1;
   g.globalCompositeOperation = 'source-over';
-  c.drawImage(g.canvas, 0, 0);
+}
+
+function tint(c: Ctx, lights: Light[]): void {
   // Warm (or cold) tint on the inner bands.
   c.globalCompositeOperation = 'lighter';
   for (const l of lights) {
