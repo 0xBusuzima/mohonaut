@@ -7,6 +7,7 @@ import {
   fenceFrontModel,
   generatorModel,
   landPropModel,
+  poleModel,
   neighbourModel,
   lampModel,
   pipeRackModel,
@@ -289,6 +290,9 @@ describe('the voxel models', () => {
 
   it('builds scrub bushes and rocks for the open land', () => {
     for (let kind = 0; kind <= 4; kind++) expect(landPropModel(kind).size).toBeGreaterThan(3);
+    // The power pole: 13 voxels of timber, a crossarm and two insulators on top.
+    expect(poleModel().has(0, 0, 12)).toBe(true);
+    expect(poleModel().has(2, 0, 13)).toBe(true);
     expect(landPropModel(4).get(1, 1, 0)?.colour).toEqual(hex('#46403b'));
   });
 });

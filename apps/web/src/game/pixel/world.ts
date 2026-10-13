@@ -223,11 +223,12 @@ export function drawWorld(
   const padSprite = m.voxel === true ? voxelSprite('pad') : null;
   const backFence = m.voxel === true ? voxelSprite('fence-back') : null;
   const tanker = m.voxel === true ? voxelSprite('tanker') : null;
+  const poleSprite = m.voxel === true ? voxelSprite('pole') : null;
   const neighbourSprites = neighbours.map(([, , seed]) =>
     m.voxel === true ? voxelSprite(`neighbour-${seed}`) : null,
   );
   const voxelNeighbours = neighbourSprites.filter((n) => n !== null).length;
-  const key = `${m.voxel === true ? 'v' : 'p'}:${W}x${H}:${ox},${oy}:${gh}:${m.pads.length}:${m.hover ?? ''}:${ground === null ? 'px' : 'vx'}:${padSprite === null ? 'px' : 'vx'}:${backFence === null ? 'px' : 'vx'}:${tanker === null ? 'px' : 'vx'}:${voxelNeighbours}`;
+  const key = `${m.voxel === true ? 'v' : 'p'}:${W}x${H}:${ox},${oy}:${gh}:${m.pads.length}:${m.hover ?? ''}:${ground === null ? 'px' : 'vx'}:${padSprite === null ? 'px' : 'vx'}:${backFence === null ? 'px' : 'vx'}:${tanker === null ? 'px' : 'vx'}:${voxelNeighbours}:${poleSprite === null ? 'px' : 'vx'}`;
   if (stack !== undefined) c.clearRect(0, 0, W, H);
   cached(c, W, H, key, stack?.base, (g) => {
     // The voxel scene's sky and land are smooth; the pixel scene's are banded and dithered.
@@ -249,7 +250,12 @@ export function drawWorld(
     for (let gx = -20; gx <= -1; gx += 3) {
       const p = iso(gx, 1.3);
       if (p.y < horizon + 14) continue;
-      const top = pole(g, p.x, p.y);
+      let top: { x: number; y: number };
+      if (poleSprite === null) top = pole(g, p.x, p.y);
+      else {
+        blit(g, poleSprite, p.x, p.y);
+        top = { x: p.x + 1, y: p.y - 26 };
+      }
       if (prev !== null) wire(g, prev, top);
       prev = top;
     }

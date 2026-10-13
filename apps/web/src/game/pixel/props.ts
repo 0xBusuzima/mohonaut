@@ -483,6 +483,16 @@ export function pole(c: Ctx, x: number, y: number): { x: number; y: number } {
 
 /** A sagging wire between two pole tops. */
 export function wire(c: Ctx, a: { x: number; y: number }, b: { x: number; y: number }): void {
+  // On a high-resolution canvas (the voxel scene) it is one thin smooth curve.
+  if (resolutionOf(c) > 1 && typeof c.quadraticCurveTo === 'function') {
+    c.beginPath();
+    c.moveTo(a.x, a.y);
+    c.quadraticCurveTo((a.x + b.x) / 2, (a.y + b.y) / 2 + 8, b.x, b.y);
+    c.strokeStyle = P.wire;
+    c.lineWidth = 0.7;
+    c.stroke();
+    return;
+  }
   const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 + 4 };
   polyline(
     c,

@@ -155,6 +155,8 @@ for (const [kind, centre] of [
 // Scrub and rocks for the open land, standing on their footprint's centre.
 for (let kind = 0; kind <= 4; kind++)
   bake(`land-${kind}`, models.landPropModel(kind), 2, [2.5, 2.5, 0], 0);
+// Power poles along the road, standing on their foot.
+bake('pole', models.poleModel(), 2, [0.5, 0.5, 0], 1);
 // The other drillers' sites far off, anchored on their pad's back corner (neighbours.ts).
 for (let seed = 1; seed <= 6; seed++)
   bake(

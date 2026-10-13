@@ -784,6 +784,16 @@ export function neighbourModel(seed: number): Model {
   return m;
 }
 
+/** A timber power pole by the road: a crossarm with two insulators, 13 voxels up. */
+export function poleModel(): Model {
+  const m = new Model();
+  m.box(0, 0, 0, 0, 0, 12, v(P.pole));
+  m.box(-2, 0, 12, 2, 0, 12, v(P.woodDark));
+  m.set(-2, 0, 13, v(P.concrete));
+  m.set(2, 0, 13, v(P.concrete));
+  return m;
+}
+
 /** Steppe scrub and rocks for the open land round the site: `kind` 0-2 bushes, 3-4 rocks. */
 export function landPropModel(kind: number): Model {
   const m = new Model();
