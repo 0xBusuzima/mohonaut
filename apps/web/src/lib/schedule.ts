@@ -13,8 +13,10 @@ export function hoursToDepth(metres: number): number {
   return Math.log(1 - mined / CAP_MOHN) / Math.log(1 - DELTA_H);
 }
 
-/** "40 days" under a year, "2.4 years" after. */
+/** "5 hours" under a day, "40 days" under a year, "2.4 years" after. */
 export function formatSpan(hours: number): string {
+  if (hours < 24)
+    return `${Math.max(1, Math.round(hours))} hour${Math.round(hours) > 1 ? 's' : ''}`;
   const days = hours / 24;
   if (days < 365) return `${Math.round(days)} days`;
   return `${(days / 365.25).toFixed(1)} years`;

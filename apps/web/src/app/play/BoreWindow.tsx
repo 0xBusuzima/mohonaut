@@ -4,6 +4,7 @@ import { KOLA_LINE_M, MOHO_LINE_M, STRATA, formatDepth, stratumAt } from '@mohon
 import { useEffect, useRef } from 'react';
 import { depthFraction } from '../../components/BoreLog';
 import { hash } from '../../game/pixel/draw';
+import { formatSpan, hoursToDepth } from '../../lib/schedule';
 
 const BAND = 18; // art pixels per stratum
 const W = 34;
@@ -97,7 +98,9 @@ export function BoreWindow({ depthMm }: { depthMm: bigint }) {
         {next !== null && (
           <p className="text-sm text-concrete">
             {next.name} from {next.fromM.toLocaleString('en-US')} m (
-            {(next.fromM - metres).toLocaleString('en-US')} m to go)
+            {(next.fromM - metres).toLocaleString('en-US')} m to go, about{' '}
+            {formatSpan(hoursToDepth(next.fromM) - hoursToDepth(Number(depthMm) / 1000))} of
+            drilling on the emission schedule)
           </p>
         )}
       </div>

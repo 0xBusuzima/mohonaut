@@ -13,7 +13,9 @@ describe('the World Bore timeline', () => {
     expect(hoursToDepth(83_900) / (24 * 365.25)).toBeCloseTo(10, 0);
   });
 
-  it('names spans in days, then years', () => {
+  it('names spans in hours, days, then years', () => {
+    expect(formatSpan(0.2)).toBe('1 hour');
+    expect(formatSpan(5)).toBe('5 hours');
     expect(formatSpan(hoursToDepth(2_000))).toBe('40 days');
     expect(formatSpan(hoursToDepth(KOLA_LINE_M))).toBe('262 days');
     expect(formatSpan(hoursToDepth(85_000))).toBe('10.4 years');
