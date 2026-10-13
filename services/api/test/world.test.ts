@@ -211,7 +211,7 @@ describe('contribution card', () => {
       name: 'Bea',
       badges: ['spud-in', 'no-such-badge'],
     });
-    expect(svg).toMatch(/I've cored <tspan[^>]*>1,240 m<\/tspan>/);
+    expect(svg).toMatch(/I've cored <tspan[^>]*>1,240<\/tspan> m/);
     expect(svg).toContain('#FF6B1A'); // Safety Orange logo (docs/05 §2.4)
     expect(svg).toContain('Night &lt;Shift&gt;');
     // One plate (unknown ids are skipped), in the badge row at 4x.

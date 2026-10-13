@@ -106,6 +106,12 @@ export function cardSvg(input: CardInput): string {
     .join('');
   const mono = (text: string) =>
     `<tspan font-family="JetBrains Mono" font-weight="500">${escapeXml(text)}</tspan>`;
+  // The number in the gauge font, the unit in the body font (a mono space before "m" gapes).
+  const depth = (mm: bigint) => {
+    const text = formatDepth(mm);
+    const cut = text.lastIndexOf(' ');
+    return `${mono(text.slice(0, cut))} ${escapeXml(text.slice(cut + 1))}`;
+  };
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <rect width="1200" height="630" fill="${C.charcoal}"/>
   ${bands}
@@ -114,9 +120,9 @@ export function cardSvg(input: CardInput): string {
   ${plates}
   ${hazard(1040, 606, 24)}
   <text x="64" y="116" font-family="Big Shoulders Display" font-weight="900" font-size="56" fill="${C.orange}">MOHONAUT</text>
-  <text x="64" y="250" font-family="Barlow" font-weight="700" font-size="64" fill="${C.bone}">I've cored ${mono(formatDepth(input.contributionMm))}</text>
+  <text x="64" y="250" font-family="Barlow" font-weight="700" font-size="64" fill="${C.bone}">I've cored ${depth(input.contributionMm)}</text>
   <text x="64" y="320" font-family="Barlow" font-weight="400" font-size="40" fill="${C.bone}">of the World Bore${crewLine}</text>
-  <text x="64" y="430" font-family="Barlow" font-weight="400" font-size="32" fill="${C.concrete}">World depth ${mono(formatDepth(input.worldDepthMm))} · Stratum ${current.numeral} — ${escapeXml(current.name)}</text>
+  <text x="64" y="430" font-family="Barlow" font-weight="400" font-size="32" fill="${C.concrete}">World depth ${depth(input.worldDepthMm)} · Stratum ${current.numeral} — ${escapeXml(current.name)}</text>
   <text x="64" y="560" font-family="Barlow" font-weight="700" font-size="32" fill="${C.bone}">Race to the Moho</text>
   <text x="64" y="590" font-family="Barlow" font-weight="400" font-size="24" fill="${C.concrete}">${escapeXml(input.name)}</text>
 </svg>`;
