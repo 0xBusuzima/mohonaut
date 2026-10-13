@@ -47,7 +47,7 @@ const MAX_FINALIZE_PER_TICK = 20;
 const GAS_MARGIN_PCT = 125n;
 
 /** Simulates first (no gas is spent on a call that would revert), then sends and waits. */
-async function send(
+export async function send(
   ctx: JobContext,
   job: JobName,
   call: { address: Address; abi: Abi; functionName: string; args?: readonly unknown[] },
@@ -66,8 +66,12 @@ async function send(
     ...call,
     account: ctx.clients.address,
   } as never);
+  // The simulation's request names the keeper by address only; sent like that, viem would ask
+  // the RPC to sign (eth_sendTransaction), which a public RPC refuses. The wallet's own local
+  // account signs it here (anvil's unlocked dev accounts hid this in the E2E run).
   const hash = await ctx.clients.walletClient.writeContract({
     ...(request as object),
+    account: ctx.clients.walletClient.account,
     gas: (gas * GAS_MARGIN_PCT) / 100n,
   } as never);
   const receipt = await ctx.clients.publicClient.waitForTransactionReceipt({
