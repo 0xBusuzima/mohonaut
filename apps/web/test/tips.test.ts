@@ -104,6 +104,15 @@ describe("Foreman Mo's tips", () => {
     expect(tip?.text).toContain('site level 2: 5 pads');
   });
 
+  it('says when a refine is out of the queue, once per refine', () => {
+    const queued = site({ refines: [{ id: 7, amount: 10n * E18, readyAt: AT + 3600 }] }, [1, 1]);
+    expect(nextTip(queued, new Set(), true)?.id).not.toBe('refine-ready-7');
+    const ready = site({ refines: [{ id: 7, amount: 10n * E18, readyAt: AT - 60 }] }, [1, 1]);
+    const tip = nextTip(ready, new Set(), true);
+    expect(tip?.id).toBe('refine-ready-7');
+    expect(tip?.action?.target).toBe('refinery');
+  });
+
   it('suggests a bigger site when every pad is taken', () => {
     expect(nextTip(site({ padsUsed: 4 }, [1, 3]), new Set(), true)?.id).toBe('site-full-1');
   });

@@ -24,6 +24,7 @@ export function nextTip(state: GameState, seen: ReadonlySet<string>, social: boo
   const hoursLeft = p.burn > 0n ? Number((p.tank * 10n) / p.burn) / 10 : Infinity;
   const extraRigs = state.rigs.filter((r) => r.id !== 0).reduce((n, r) => n + r.owned, 0);
   const freePads = sitePads(p.level) - p.padsUsed;
+  const ready = p.refines.find((r) => r.readyAt <= state.at);
   const candidates: (Tip | null)[] = [
     p.tank === 0n
       ? {
@@ -37,6 +38,14 @@ export function nextTip(state: GameState, seen: ReadonlySet<string>, social: boo
           id: `low-tank-${day}`,
           text: `Diesel for about ${Math.max(1, Math.floor(hoursLeft))} more hours. Rigs stop when the tank runs dry.`,
           action: { label: 'Diesel tank', target: 'fuel' },
+        }
+      : null,
+    // A refine out of the queue: collected with one click at the shack (or by the keeper).
+    ready !== undefined
+      ? {
+          id: `refine-ready-${ready.id}`,
+          text: 'A refine has come out of the queue. Collect it at the shack and it goes to your wallet.',
+          action: { label: 'Refinery', target: 'refinery' },
         }
       : null,
     extraRigs === 0
