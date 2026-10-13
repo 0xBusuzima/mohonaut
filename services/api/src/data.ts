@@ -4,7 +4,7 @@ import type { Database } from '@mohonaut/indexer';
 import { and, asc, count, desc, eq, gte, inArray, isNotNull, lte, sql } from 'drizzle-orm';
 import { getAddress } from 'viem';
 import type { Address } from 'viem';
-import { crewMembers, crews, surveyFinds, users } from './db/schema.js';
+import { crewMembers, crews, seasons, surveyFinds, users } from './db/schema.js';
 import { KOLA_LINE_M } from '@mohonaut/sdk';
 
 const { accounts, events, hours, machineTypes, rigs } = schema;
@@ -158,7 +158,13 @@ export async function crewMembersWithAccrual(database: Database, crewId: number)
 }
 
 /** Accrual inside [from, to) per wallet, from the indexer's raw Accrued events. */
-export async function seasonRanking(database: Database, from: number, to: number, limit: number) {
+export async function seasonRanking(
+  database: Database,
+  from: number,
+  to: number,
+  limit: number,
+  opts: { skipFlagged?: boolean } = {},
+) {
   const rows = await database.db
     .select({
       address: sql<string>`${events.args}->>'account'`,
@@ -171,12 +177,39 @@ export async function seasonRanking(database: Database, from: number, to: number
         eq(events.event, 'Accrued'),
         gte(events.blockTime, BigInt(from)),
         sql`${events.blockTime} < ${BigInt(to)}`,
+        opts.skipFlagged === true
+          ? sql`NOT EXISTS (SELECT 1 FROM ${users} WHERE ${users.wallet} = ${events.args}->>'account' AND ${users.flagged})`
+          : undefined,
       ),
     )
     .groupBy(sql`${events.args}->>'account'`)
     .orderBy(desc(sql`sum((${events.args}->>'amount')::numeric)`))
     .limit(limit);
   return rows.map((r) => ({ address: getAddress(r.address), accrued: BigInt(r.accrued) }));
+}
+
+/** Ranks in a season's World Bore contribution that carry a site plaque (docs/05 P-34). */
+const PLAQUE_RANKS = 10;
+
+/**
+ * The player's season plaques: a top-10 World Bore contribution in a season that has ended
+ * (`now` in Unix seconds), oldest season first. Flagged accounts get none and take no place.
+ */
+export async function seasonPlaques(database: Database, address: Address, now: number) {
+  const ended = await database.db
+    .select()
+    .from(seasons)
+    .where(lte(seasons.endsAt, now))
+    .orderBy(asc(seasons.startsAt));
+  const plaques: { season: number; name: string; rank: number }[] = [];
+  for (const s of ended) {
+    const top = await seasonRanking(database, s.startsAt, s.endsAt, PLAQUE_RANKS, {
+      skipFlagged: true,
+    });
+    const at = top.findIndex((r) => r.address === address);
+    if (at >= 0) plaques.push({ season: s.id, name: s.name, rank: at + 1 });
+  }
+  return plaques;
 }
 
 /** Rig sales since `fromTime` (Unix seconds): DP sold and the average price per DP (WAD). */

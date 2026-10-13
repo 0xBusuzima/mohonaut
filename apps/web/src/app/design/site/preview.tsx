@@ -123,7 +123,7 @@ export function SitePreview() {
       tankFill: 0.4 + (step % 3) * 0.2,
       yieldPerDp: 0.375,
       decor: decor ? DECOR_SETS : [],
-      ...(decor ? { crewTag: 'NIGHT' } : {}),
+      ...(decor ? { crewTag: 'NIGHT', plaques: [1, 3, 7] } : {}),
     }),
     [pads, step, decor],
   );

@@ -12,6 +12,7 @@ import {
   fleet,
   hasRefined,
   kolaCrossingHour,
+  seasonPlaques,
   userByWallet,
   worldEmitted,
 } from '../data.js';
@@ -72,6 +73,8 @@ export function registerProfile(app: OpenAPIHono<AppEnv>): void {
             contribution: DepthSchema,
             crew: z.object({ id: z.number(), name: z.string(), tag: z.string() }).nullable(),
             badges: z.array(BadgeSchema),
+            /** Top-10 places in seasons that have ended: cosmetic plaques on the site. */
+            plaques: z.array(z.object({ season: z.number(), name: z.string(), rank: z.number() })),
             collection: z.object({ finds: z.number(), completedSets: z.array(z.string()) }),
           }),
           'Profile',
@@ -103,6 +106,11 @@ export function registerProfile(app: OpenAPIHono<AppEnv>): void {
           contribution: { mm: mm.toString(), text: formatDepth(mm) },
           crew: p.crew === null ? null : { id: p.crew.id, name: p.crew.name, tag: p.crew.tag },
           badges: ACHIEVEMENTS.filter((a) => p.earned.includes(a.id)).map((a) => ({ ...a })),
+          plaques: await seasonPlaques(
+            c.var.deps.database,
+            address,
+            Math.floor(c.var.deps.now() / 1000),
+          ),
           collection: { finds: p.finds.length, completedSets: p.sets },
         },
         200,

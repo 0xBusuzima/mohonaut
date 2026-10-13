@@ -6,6 +6,7 @@ import { isAddress } from 'viem';
 import type { Address } from 'viem';
 import { Card } from '../../components/Card';
 import { BadgeShelf } from '../../game/BadgeShelf';
+import { PlaqueList } from '../../game/PlaqueList';
 import { GEN1_RIGS } from '../../lib/catalog';
 import { api, apiEnabled, apiMessage } from '../../social/api';
 import type { Profile } from '../../social/api';
@@ -124,6 +125,11 @@ function Site({ profile: p }: { profile: Profile }) {
       {p.badges.length > 0 && (
         <Card label="Badges" title="Badges">
           <BadgeShelf awarded={p.badges.map((b) => b.id)} />
+        </Card>
+      )}
+      {(p.plaques ?? []).length > 0 && (
+        <Card label="Seasons" title="Season plaques">
+          <PlaqueList plaques={p.plaques ?? []} />
         </Card>
       )}
       <Card label="Core Collection" title="Collection">

@@ -93,6 +93,7 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
   }).data;
   const decorKey = (profile?.collection.completedSets ?? []).join(',');
   const crewTag = profile?.crew?.tag;
+  const plaqueKey = (profile?.plaques ?? []).map((p) => p.rank).join(',');
   const model = useMemo(
     () => ({
       pads: state === null ? [] : scenePads(level, state.rigs, running ? 1n : 0n),
@@ -101,9 +102,10 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
       yieldPerDp,
       decor: decorFor(decorKey === '' ? [] : decorKey.split(',')),
       ...(crewTag === undefined ? {} : { crewTag }),
+      ...(plaqueKey === '' ? {} : { plaques: plaqueKey.split(',').map(Number) }),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rigsKey stands for state.rigs
-    [level, running, rigsKey, fill, yieldPerDp, tankLow, decorKey, crewTag],
+    [level, running, rigsKey, fill, yieldPerDp, tankLow, decorKey, crewTag, plaqueKey],
   );
   const [panel, setPanel] = useState<Panel | null>(null);
   const [named, setNamed] = useState(false);

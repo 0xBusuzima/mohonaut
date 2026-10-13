@@ -7,6 +7,7 @@ import type { Address } from 'viem';
 import { PxButton, PxSection, PxTable, PxTag } from '../app/play/px';
 import { useToast } from '../components/Toast';
 import { BadgeShelf } from '../game/BadgeShelf';
+import { PlaqueList } from '../game/PlaqueList';
 import { FIND_PALETTE, FIND_SETS } from '../game/finds';
 import { PixelSvg } from '../game/pixel/PixelSvg';
 import { useSignIn } from '../game/signin';
@@ -505,7 +506,15 @@ function BadgesCard({ address }: { address: Address }) {
       {profile.data === undefined ? (
         <Status>{profile.isError ? apiMessage(profile.error) : 'Loading…'}</Status>
       ) : (
-        <BadgeShelf awarded={profile.data.badges.map((b) => b.id)} all />
+        <>
+          <BadgeShelf awarded={profile.data.badges.map((b) => b.id)} all />
+          {(profile.data.plaques ?? []).length > 0 && (
+            <>
+              <h3 className="mt-4 text-amber">Season plaques</h3>
+              <PlaqueList plaques={profile.data.plaques ?? []} />
+            </>
+          )}
+        </>
       )}
     </PxSection>
   );

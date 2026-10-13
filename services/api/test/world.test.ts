@@ -2,6 +2,7 @@ import { schema as idx } from '@mohonaut/indexer';
 import { getAddress } from 'viem';
 import { describe, expect, it } from 'vitest';
 import { cardSvg } from '../src/game/card.js';
+import * as socialSchema from '../src/db/schema.js';
 import { fleetEfficiency } from '../src/game/achievements.js';
 import { formatDepth, stratumAt } from '@mohonaut/sdk';
 import { T0, call, harness, mohn, newWallet, seedAccount, signIn } from './helpers.js';
@@ -178,6 +179,46 @@ describe('profiles and badges', () => {
     expect(badges).toEqual(['spud-in', 'rig-up', 'fuel-saver', 'kola-witness']);
     expect((await call(h, 'GET', `/profiles/${newWallet().address}`)).status).toBe(404);
     expect((await call(h, 'GET', '/profiles/0x123')).status).toBe(400);
+  });
+
+  it('gives a plaque for a top-10 place in a season that has ended, never to a flagged account', async () => {
+    const h = await harness();
+    const now = Math.floor(T0 / 1000);
+    await h.database.db.insert(socialSchema.seasons).values([
+      { name: 'Season 0', startsAt: now - 30 * 86_400, endsAt: now - 86_400 },
+      { name: 'Season 1', startsAt: now - 86_400, endsAt: now + 50 * 86_400 },
+    ]);
+    // Twelve drillers in season 0; the most accrued first. The top one is flagged.
+    const drillers = Array.from({ length: 12 }, () => newWallet().address);
+    const d = (i: number): string => drillers[i] ?? '';
+    await h.database.db.insert(idx.events).values(
+      drillers.map((account, i) => ({
+        blockNumber: BigInt(10 + i),
+        logIndex: 0,
+        txHash: `0x${(10 + i).toString(16)}`,
+        blockTime: BigInt(now - 10 * 86_400),
+        address: '0x1000000000000000000000000000000000000002',
+        contract: 'MiningCore',
+        event: 'Accrued',
+        topics: [],
+        data: '0x',
+        args: { account, amount: mohn(1_000 - i).toString() },
+      })),
+    );
+    await h.database.db.insert(socialSchema.users).values({
+      authProvider: 'siwe',
+      providerUserId: d(0),
+      wallet: d(0),
+      flagged: true,
+    });
+    for (const a of drillers) await seedAccount(h.database, a, {});
+    const plaques = async (a: string) =>
+      (await call(h, 'GET', `/profiles/${a}`)).json['plaques'] as unknown[];
+    expect(await plaques(d(0))).toEqual([]);
+    // The flagged account takes no place: the second becomes first, the eleventh tenth.
+    expect(await plaques(d(1))).toEqual([{ season: 1, name: 'Season 0', rank: 1 }]);
+    expect(await plaques(d(10))).toEqual([{ season: 1, name: 'Season 0', rank: 10 }]);
+    expect(await plaques(d(11))).toEqual([]);
   });
 
   it('computes fleet efficiency over active rigs only', () => {

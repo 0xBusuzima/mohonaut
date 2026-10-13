@@ -1,4 +1,5 @@
 import type { Address } from 'viem';
+import type { Plaque } from '../game/plaques';
 import { API_URL } from '../lib/site';
 import { turnstileToken } from './turnstile';
 
@@ -87,6 +88,8 @@ export interface Profile {
   contribution: Depth;
   crew: { id: number; name: string; tag: string } | null;
   badges: { id: string; name: string; description: string }[];
+  /** Season plaques; absent from an API older than them. */
+  plaques?: Plaque[];
   collection: { finds: number; completedSets: string[] };
 }
 /** One day of rig sales: the average paid per DP (wei), null without sales. */
