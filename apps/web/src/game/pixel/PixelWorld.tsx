@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { reportError } from '../../lib/errors';
 import { useReducedMotion } from '../../lib/motion';
 import { useLowPower } from '../../lib/power';
 import { siteEffects } from './fx';
@@ -97,14 +98,22 @@ export function PixelWorld({
     c.imageSmoothingEnabled = false;
     let frame = 0;
     let last = 0;
+    let broken = false;
     const draw = (now: number) => {
-      hits.current = drawWorld(c, size.w, size.h, now / 1000, {
-        ...model,
-        hover,
-        motion,
-        pan: { x: vx, y: vy },
-        fx: fx.current,
-      });
+      if (broken) return;
+      try {
+        hits.current = drawWorld(c, size.w, size.h, now / 1000, {
+          ...model,
+          hover,
+          motion,
+          pan: { x: vx, y: vy },
+          fx: fx.current,
+        });
+      } catch (err) {
+        // A drawing bug stops the scene (once, reported), not the game around it.
+        broken = true;
+        reportError(err);
+      }
     };
     if (!motion) {
       draw(0);
@@ -117,7 +126,7 @@ export function PixelWorld({
         last = now;
         draw(now);
       }
-      frame = requestAnimationFrame(loop);
+      if (!broken) frame = requestAnimationFrame(loop);
     };
     frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
