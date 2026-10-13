@@ -710,3 +710,31 @@ export function switchedOff(m: Model): Model {
     off.set(x, y, z, vox.emissive === true ? { colour: hex(shade(P.steel, 1.1)) } : vox);
   return off;
 }
+
+/**
+ * A crew member on their rounds, `facing` +x ('r') or +y ('l'), mid-stride (`step` 0 or 1):
+ * dark trousers, the hi-vis vest with its reflective band, and the hard hat with a lit lamp.
+ */
+export function workerModel(facing: 'r' | 'l', step: 0 | 1): Model {
+  const m = new Model();
+  // Built facing +x; the left-facing one swaps the axes.
+  const put = (x: number, y: number, z: number, vox: Voxel) =>
+    facing === 'r' ? m.set(x, y, z, vox) : m.set(y, x, z, vox);
+  const stride = step === 0 ? 1 : -1;
+  put(1 + stride, 0, 0, v(P.trousers));
+  put(1 - stride, 1, 0, v(P.trousers));
+  put(1, 0, 1, v(P.trousers));
+  put(1, 1, 1, v(P.trousers));
+  for (let y = 0; y <= 1; y++) {
+    put(1, y, 2, v(P.vest));
+    put(1, y, 3, v(P.hardHat)); // the reflective band
+    put(1, y, 4, v(P.vest));
+  }
+  put(1, -1, 3, v(P.vest)); // arms
+  put(1, 2, 3, v(P.vest));
+  put(1, 0, 5, v(P.skin));
+  put(1, 1, 5, v(P.skin));
+  for (let y = 0; y <= 1; y++) for (let x = 0; x <= 2; x++) put(x, y, 6, v(P.hardHat));
+  put(2, 0, 5, v(P.flareHot, true)); // the head lamp
+  return m;
+}

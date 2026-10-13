@@ -414,7 +414,11 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
     const w = walk(path, m.motion ? t : 0, i);
     at(w.gx, w.gy, () => {
       const p = iso(w.gx, w.gy);
-      worker(c, Math.round(p.x), Math.round(p.y), w.facing, m.motion ? Math.floor(t * 4) % 2 : 0);
+      const step = m.motion ? Math.floor(t * 4) % 2 : 0;
+      const built =
+        m.voxel === true ? voxelSprite(`worker-${w.facing > 0 ? 'r' : 'l'}-${step}`) : null;
+      if (built === null) worker(c, Math.round(p.x), Math.round(p.y), w.facing, step);
+      else blit(c, built, p.x, p.y);
     });
     const p = iso(w.gx, w.gy);
     lights.push({ x: p.x + w.facing * 5, y: p.y, r: 6, tint: null, power: 0.4 });

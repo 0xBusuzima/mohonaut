@@ -133,6 +133,10 @@ for (const [kind, centre] of [
   ['extinguisher', [0.5, 0.5]],
 ])
   bake(`clutter-${kind}`, models.clutterModel(kind), 2, [centre[0], centre[1], 0], 1);
+// The crew: two facings and two strides, at 1 art px a voxel, standing on their feet.
+for (const facing of ['r', 'l'])
+  for (const step of [0, 1])
+    bake(`worker-${facing}-${step}`, models.workerModel(facing, step), 1, [1, 1, 0], 1);
 // The wellhead with the cuttings of each stratum.
 const { module: sdk } = await runnerImport(join(web, '../../packages/sdk/src/depth.ts'));
 for (const [i, s] of sdk.STRATA.entries()) bake(`wellhead-${i}`, models.wellheadModel(s.colour), 2);

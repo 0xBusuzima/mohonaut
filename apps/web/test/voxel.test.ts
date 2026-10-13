@@ -22,6 +22,7 @@ import {
   switchedOff,
   tankerModel,
   wellheadModel,
+  workerModel,
   siteDiorama,
   tankModel,
   topDrive,
@@ -269,5 +270,17 @@ describe('the voxel models', () => {
     expect(off.size).toBe(on.size);
     expect(off.entries().some(([, , , vox]) => vox.emissive === true)).toBe(false);
     expect(off.get(0, 0, 0)).toEqual(on.get(0, 0, 0));
+  });
+
+  it('builds a crew member: hard hat with a lit lamp, two strides, both facings', () => {
+    for (const facing of ['r', 'l'] as const)
+      for (const step of [0, 1] as const) {
+        const w = workerModel(facing, step);
+        expect(Math.max(...w.entries().map(([, , z]) => z))).toBe(6);
+        expect(w.entries().filter(([, , , vox]) => vox.emissive === true)).toHaveLength(1);
+      }
+    expect(workerModel('r', 0).has(2, 0, 0)).toBe(true);
+    expect(workerModel('r', 1).has(0, 0, 0)).toBe(true);
+    expect(workerModel('l', 0).has(0, 2, 0)).toBe(true);
   });
 });

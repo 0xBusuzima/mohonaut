@@ -377,13 +377,20 @@ export function rigTop(typeId: number, x: number, y: number): { x: number; y: nu
 
 /** Steam: three pixel puffs rising and fading. */
 function puff(c: Ctx, x: number, y: number, t: number, seed: number): void {
+  // On a high-resolution canvas (the voxel scene) the steam is soft round puffs.
+  const smooth = typeof c.getTransform === 'function' && c.getTransform().a > 1;
   for (let k = 0; k < 3; k++) {
     const phase = (t * 0.6 + seed * 0.37 + k / 3) % 1;
     const yy = y - phase * 18;
     const xx = x + Math.sin(phase * 6 + seed) * 3;
     const r = 1 + Math.floor(phase * 3);
     c.globalAlpha = 0.45 * (1 - phase);
-    rect(c, xx - r, yy - r, r * 2, r * 2, P.bone);
+    if (smooth) {
+      c.fillStyle = P.bone;
+      c.beginPath();
+      c.arc(xx, yy, r * 1.4 + phase * 2, 0, Math.PI * 2);
+      c.fill();
+    } else rect(c, xx - r, yy - r, r * 2, r * 2, P.bone);
   }
   c.globalAlpha = 1;
 }
