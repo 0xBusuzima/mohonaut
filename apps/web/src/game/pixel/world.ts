@@ -529,7 +529,9 @@ export function drawWorld(
       over.globalAlpha = 1;
     });
   }
-  if (m.motion) rain(over, W, H, t);
+  // Rain: in the voxel scene on the glow, a small art-size canvas laid on with plus-lighter, so
+  // the screen-sized top canvas does not change every frame.
+  if (m.motion) rain(m.voxel === true && stack !== undefined ? stack.glow : over, W, H, t);
   return hits;
 }
 

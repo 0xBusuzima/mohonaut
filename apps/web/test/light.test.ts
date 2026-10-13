@@ -113,7 +113,7 @@ describe('the stacked canvases (PixelWorld)', () => {
     };
   }
 
-  it('paints the night and the glow into their own canvases only when they change', () => {
+  it('paints the night into its own canvas only when it changes, the small glow every frame', () => {
     const stack = {
       base: stackCanvas(),
       night: stackCanvas(),
@@ -134,9 +134,9 @@ describe('the stacked canvases (PixelWorld)', () => {
       );
     frame(lamps);
     frame(lamps);
-    expect([stack.night.calls.clearRect, stack.glow.calls.clearRect]).toEqual([1, 1]);
+    expect([stack.night.calls.clearRect, stack.glow.calls.clearRect]).toEqual([1, 2]);
     frame([{ ...lamps[0], x: 44 } as Light]);
-    expect([stack.night.calls.clearRect, stack.glow.calls.clearRect]).toEqual([2, 2]);
+    expect([stack.night.calls.clearRect, stack.glow.calls.clearRect]).toEqual([2, 3]);
     // A resized canvas has lost its drawing: painted again with the same lights.
     stack.night.canvas.width = 640;
     frame([{ ...lamps[0], x: 44 } as Light]);

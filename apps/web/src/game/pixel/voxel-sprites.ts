@@ -25,7 +25,11 @@ export function blit(
 
 let manifest: Record<string, Meta> | null = null;
 let asked = false;
-const images = new Map<string, HTMLImageElement>();
+/**
+ * Each sprite asked for: its image, and whether it is decoded (ready to draw without a decode on
+ * the main thread, which for a whole site at once took seconds on a slow phone) or failed.
+ */
+const images = new Map<string, { img: HTMLImageElement; state: 'loading' | 'ready' | 'failed' }>();
 const listeners = new Set<() => void>();
 const arrived = () => {
   for (const f of listeners) f();
@@ -47,7 +51,7 @@ export function onVoxelArrive(onArrive: () => void): () => void {
  * scene can show without its pixel stand-ins.
  */
 export function voxelSettled(): boolean {
-  return manifest !== null && [...images.values()].every((img) => img.complete);
+  return manifest !== null && [...images.values()].every((e) => e.state !== 'loading');
 }
 
 /** A baked sprite by name ("rig-1", "shack", "container"), or null until it has loaded. */
@@ -70,12 +74,23 @@ export function voxelSprite(name: string): (Meta & { img: HTMLImageElement }) | 
   }
   const meta = manifest[name];
   if (meta === undefined) return null;
-  let img = images.get(name);
-  if (img === undefined) {
-    img = new Image();
-    img.onload = arrived;
+  let entry = images.get(name);
+  if (entry === undefined) {
+    const img = new Image();
     img.src = `/voxel/site-${name}.webp`;
-    images.set(name, img);
+    const e = { img, state: 'loading' as 'loading' | 'ready' | 'failed' };
+    entry = e;
+    images.set(name, e);
+    // decode() decodes off the main thread; an image drawn undecoded is decoded in the frame.
+    img
+      .decode()
+      .then(() => {
+        e.state = 'ready';
+      })
+      .catch(() => {
+        e.state = 'failed'; // the pixel drawing stays
+      })
+      .finally(arrived);
   }
-  return img.complete && img.naturalWidth > 0 ? { ...meta, img } : null;
+  return entry.state === 'ready' ? { ...meta, img: entry.img } : null;
 }

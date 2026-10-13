@@ -5,22 +5,25 @@ afterEach(() => {
   vi.resetModules();
 });
 
+const tick = () => new Promise((r) => setTimeout(r, 0));
+
 describe('the voxel rig sprites in the scene', () => {
-  it('give nothing until the manifest and the image have loaded, then where to anchor it', async () => {
+  it('give nothing until the manifest is in and the image decoded, then where to anchor it', async () => {
     const manifest = { 'rig-1': { w: 72, h: 98, ax: 36, ay: 76 } };
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({ ok: true, json: async () => manifest })),
     );
-    class LoadedImage {
+    class DecodedImage {
       src = '';
-      complete = true;
-      naturalWidth = 72;
+      decode = () => Promise.resolve();
     }
-    vi.stubGlobal('Image', LoadedImage);
+    vi.stubGlobal('Image', DecodedImage);
     const { voxelSprite } = await import('../src/game/pixel/voxel-sprites');
     expect(voxelSprite('rig-1')).toBeNull(); // asks for the manifest
-    await new Promise((r) => setTimeout(r, 0));
+    await tick();
+    expect(voxelSprite('rig-1')).toBeNull(); // asks for the image
+    await tick();
     const sprite = voxelSprite('rig-1');
     expect(sprite).toMatchObject({ ax: 36, ay: 76 });
     expect(sprite?.img.src).toBe('/voxel/site-rig-1.webp');
@@ -43,18 +46,19 @@ describe('the voxel rig sprites in the scene', () => {
       'fetch',
       vi.fn(async () => ({
         ok: true,
-        json: async () => ({ shack: { w: 4, h: 4, ax: 2, ay: 4 } }),
+        json: async () => ({
+          shack: { w: 4, h: 4, ax: 2, ay: 4 },
+          tank: { w: 4, h: 4, ax: 2, ay: 4 },
+        }),
       })),
     );
-    const made: { onload: (() => void) | null; complete: boolean }[] = [];
+    const decoding: { resolve: () => void; reject: () => void }[] = [];
     class PendingImage {
       src = '';
-      complete = false;
-      naturalWidth = 0;
-      onload: (() => void) | null = null;
-      constructor() {
-        made.push(this);
-      }
+      decode = () =>
+        new Promise<void>((resolve, reject) => {
+          decoding.push({ resolve, reject });
+        });
     }
     vi.stubGlobal('Image', PendingImage);
     const { onVoxelArrive, voxelSettled, voxelSprite } =
@@ -64,18 +68,23 @@ describe('the voxel rig sprites in the scene', () => {
       calls += 1;
     });
     voxelSprite('shack');
-    await new Promise((r) => setTimeout(r, 0));
+    await tick();
     expect(calls).toBe(1); // the manifest
-    expect(voxelSprite('shack')).toBeNull(); // the image is still on its way
+    expect(voxelSprite('shack')).toBeNull(); // the image is still decoding
     expect(voxelSettled()).toBe(false);
-    if (made[0] !== undefined) made[0].complete = true;
-    made[0]?.onload?.();
+    decoding[0]?.resolve();
+    await tick();
     expect(calls).toBe(2);
     expect(voxelSettled()).toBe(true);
+    expect(voxelSprite('shack')).not.toBeNull();
+    // A sprite that fails to decode settles too, and the pixel drawing stays.
     off();
-    if (made[0] !== undefined) made[0].complete = true;
-    made[0]?.onload?.();
+    voxelSprite('tank');
+    expect(voxelSettled()).toBe(false);
+    decoding[1]?.reject();
+    await tick();
     expect(calls).toBe(2);
     expect(voxelSettled()).toBe(true);
+    expect(voxelSprite('tank')).toBeNull();
   });
 });

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { reportError } from '../../lib/errors';
 import { useReducedMotion } from '../../lib/motion';
 import { useLowPower } from '../../lib/power';
+import { SINK } from './draw';
 import type { Ctx } from './draw';
 import { siteEffects } from './fx';
 import { onVoxelArrive, voxelSettled } from './voxel-sprites';
@@ -174,19 +175,23 @@ export function PixelWorld({
     const draw = (now: number) => {
       if (broken.current) return;
       try {
-        // Art pixels to device pixels (1 for the pixel scene); smooth only when scaled.
-        for (const g of contexts) {
+        // Art pixels to device pixels (1 for the pixel scene); smooth only when scaled. The
+        // night and the glow are soft gradients: drawn at art size and smoothed up by the
+        // browser they look the same, at a fraction of the pixels to lay together each frame.
+        for (const g of [top, base, c]) {
           g.setTransform(res, 0, 0, res, 0, 0);
           g.imageSmoothingEnabled = res !== 1;
           if (res !== 1) g.imageSmoothingQuality = 'high';
         }
+        for (const g of [night, glow]) g.setTransform(1, 0, 0, 1, 0, 0);
+        // Until the voxel scene is shown it only asks for its sprites (SINK paints nothing).
         hits.current = drawWorld(
-          c,
+          shown ? c : SINK,
           size.w,
           size.h,
           now / 1000,
           { ...model, voxel, hover, motion, pan: { x: vx, y: vy }, fx: fx.current },
-          { base, night, glow, top },
+          shown ? { base, night, glow, top } : { base: SINK, night: SINK, glow: SINK, top: SINK },
         );
         if (voxel && voxelSettled()) setSettled(true);
       } catch (err) {
@@ -211,7 +216,7 @@ export function PixelWorld({
     };
     frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
-  }, [size, model, voxel, hover, motion, vx, vy, res, arrivals]);
+  }, [size, model, voxel, hover, motion, vx, vy, res, arrivals, shown]);
 
   const hitAt = (clientX: number, clientY: number): HitBox | null => {
     const at = canvas.current?.getBoundingClientRect();
@@ -242,11 +247,11 @@ export function PixelWorld({
     opacity: shown ? 1 : 0,
     transition: 'opacity 0.4s',
   };
-  const layer = (ref: typeof canvas, blend?: 'plus-lighter') => (
+  const layer = (ref: typeof canvas, r: number, blend?: 'plus-lighter') => (
     <canvas
       ref={ref}
-      width={width}
-      height={height}
+      width={Math.round(size.w * r)}
+      height={Math.round(size.h * r)}
       aria-hidden="true"
       className={`${place} pointer-events-none`}
       style={blend === undefined ? box : { ...box, mixBlendMode: blend }}
@@ -255,10 +260,10 @@ export function PixelWorld({
 
   return (
     <>
-      {layer(baseCanvas)}
-      {layer(sceneCanvas)}
-      {layer(nightCanvas)}
-      {layer(glowCanvas, 'plus-lighter')}
+      {layer(baseCanvas, res)}
+      {layer(sceneCanvas, res)}
+      {layer(nightCanvas, 1)}
+      {layer(glowCanvas, 1, 'plus-lighter')}
       <canvas
         ref={canvas}
         width={width}

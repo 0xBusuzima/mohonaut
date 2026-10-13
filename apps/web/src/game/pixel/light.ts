@@ -152,13 +152,14 @@ export function night(
     .join(';')}`;
   if (stack !== undefined) {
     if (W <= 0 || H <= 0) return;
+    // The glow is small (art size) and repainted every frame: the scene's rain falls on it too.
+    stack.glow.clearRect(0, 0, W, H);
+    if (smooth) tintSmooth(stack.glow, lights);
+    else tint(stack.glow, lights);
     const full = stale(stack.night, `${smooth ? 's' : 'p'}${key}`);
     if (full === null) return;
     if (smooth) paintNightSmooth(stack.night, W, H, horizon, lights);
     else paintNight(stack.night, W, H, horizon, lights);
-    stack.glow.clearRect(0, 0, W, H);
-    if (smooth) tintSmooth(stack.glow, lights);
-    else tint(stack.glow, lights);
     painted.set(stack.night, full); // after the paint: a paint that throws is not kept
     return;
   }

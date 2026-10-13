@@ -16,6 +16,18 @@ export function px(c: Ctx, x: number, y: number, color: string): void {
   rect(c, x, y, 1, 1, color);
 }
 
+/**
+ * A context that draws nothing: every call and property is a no-op that gives itself back (and 0
+ * where a number is wanted). The voxel scene draws into it until its sprites are in, so it asks
+ * for them without painting their pixel stand-ins, which on a slow phone took whole seconds.
+ */
+const sinkFn: unknown = new Proxy(() => undefined, {
+  get: (_, key) => (key === Symbol.toPrimitive ? () => 0 : sinkFn),
+  apply: () => sinkFn,
+  set: () => true,
+});
+export const SINK = sinkFn as Ctx;
+
 /** Device pixels per art pixel of `c` (its transform's scale; 1 for a plain or fake context). */
 export function resolutionOf(c: Ctx): number {
   const t = typeof c.getTransform === 'function' ? c.getTransform() : null;
