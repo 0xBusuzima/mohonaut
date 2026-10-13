@@ -81,6 +81,7 @@ export function SiteFooter() {
     { href: '/security/', label: 'Security' },
     { href: '/contracts/', label: 'Contracts' },
     { href: '/brand/', label: 'Brand' },
+    { href: '/collab/', label: 'Collaborations' },
   ];
   return (
     <footer className="mt-24 border-t border-line bg-surface-sunken">

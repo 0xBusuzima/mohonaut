@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import type { FormEvent } from 'react';
 import { isAddress } from 'viem';
 import type { Address } from 'viem';
@@ -13,12 +13,22 @@ const TOPIC_LABELS: Record<SupportTopic, string> = {
   transaction: 'A transaction or refine',
   bug: 'Something looks broken',
   safety: 'A fake site, scam or security issue',
+  collab: 'A collaboration (see /collab)',
   other: 'Something else',
 };
+const noSubscribe = () => () => {};
 const field = 'mt-1 block w-full rounded border border-line bg-surface-sunken px-3 py-2';
 
 export function SupportForm() {
-  const [topic, setTopic] = useState<SupportTopic>('account');
+  // /support/?topic=collab (from /collab) opens on that topic; the page is static, so the URL
+  // is read in the browser only.
+  const asked = useSyncExternalStore(
+    noSubscribe,
+    () => new URLSearchParams(window.location.search).get('topic'),
+    () => null,
+  );
+  const [chosen, setTopic] = useState<SupportTopic | null>(null);
+  const topic = chosen ?? SUPPORT_TOPICS.find((t) => t === asked) ?? 'account';
   const [body, setBody] = useState('');
   const [contact, setContact] = useState('');
   const [wallet, setWallet] = useState('');

@@ -102,7 +102,14 @@ export interface Notice {
   startsAt: number;
   endsAt: number | null;
 }
-export const SUPPORT_TOPICS = ['account', 'transaction', 'bug', 'safety', 'other'] as const;
+export const SUPPORT_TOPICS = [
+  'account',
+  'transaction',
+  'bug',
+  'safety',
+  'collab',
+  'other',
+] as const;
 export type SupportTopic = (typeof SUPPORT_TOPICS)[number];
 
 export interface FaucetInfo {

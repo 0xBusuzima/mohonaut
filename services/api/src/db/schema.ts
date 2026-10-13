@@ -109,7 +109,14 @@ export const announcements = pgTable('announcements', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const SUPPORT_TOPICS = ['account', 'transaction', 'bug', 'safety', 'other'] as const;
+export const SUPPORT_TOPICS = [
+  'account',
+  'transaction',
+  'bug',
+  'safety',
+  'collab',
+  'other',
+] as const;
 export const SUPPORT_STATUSES = ['open', 'answered', 'closed'] as const;
 export type SupportStatus = (typeof SUPPORT_STATUSES)[number];
 

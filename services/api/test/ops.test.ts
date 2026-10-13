@@ -138,6 +138,23 @@ describe('support inbox', () => {
     });
     expect(bot.status).toBe(403);
   });
+
+  it('takes collaboration requests (migration 1003) and refuses unknown topics', async () => {
+    const { h } = await adminHarness();
+    const ok = await call(h, 'POST', '/support', {
+      body: {
+        topic: 'collab',
+        body: 'A crew banner for our community, unpaid.',
+        contact: '@someone',
+        wallet: null,
+      },
+    });
+    expect(ok.status).toBe(201);
+    const bad = await call(h, 'POST', '/support', {
+      body: { topic: 'promo', body: 'Pay me to post about you.', contact: null, wallet: null },
+    });
+    expect(bad.status).toBe(400);
+  });
 });
 
 describe('player file and health', () => {
