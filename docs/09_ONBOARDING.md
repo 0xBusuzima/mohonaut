@@ -176,7 +176,7 @@ T−42 … T−7         T−28 … T−7            T−7           T−24s …
 
 - [ ] WalletConnect + mobil cüzdanlar (Robinhood Wallet dahil) testnet'te uçtan uca test edildi
 - [ ] iOS Safari, Android Chrome, cüzdan içi tarayıcılar, X uygulama içi tarayıcı ("open in browser" yönlendirmesi)
-- [ ] **Takılmayan ödeme durumu:** işlem hash'i saklanır, sayfa yenilense de makbuz yoklanır, her durumda Blockscout linki gösterilir
+- [ ] **Takılmayan ödeme durumu:** işlem hash'i saklanır, sayfa yenilense de makbuz yoklanır, her durumda Blockscout linki gösterilir — kod tarafı 2026-10-13 (`apps/web/src/game/pending.ts`, `useResumeTx`; anvil E2E). Testnet'te mobil cüzdanla elle doğrulanınca işaretlenir.
 - [ ] İade veya iç işlem olursa (olmaması hedef) explorer'da "internal transactions" sekmesine giden link
 - [ ] Oracle bayat → net mesaj: "Fuel purchases paused: price feed update pending. Your rigs keep drilling."
 - [ ] Pause → durum sayfası + banner (05 §7 şablonları)
