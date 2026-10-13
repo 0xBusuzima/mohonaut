@@ -193,6 +193,8 @@ export function PixelWorld({
 
   // Set by a drawing error: the scene stays stopped (and reported once) for this mount.
   const broken = useRef(false);
+  // Whether the voxel scene's still layer has had its first paint (split from the rest).
+  const warmed = useRef(false);
   useEffect(() => {
     const contexts = [canvas, baseCanvas, sceneCanvas, nightCanvas, glowCanvas]
       .map((r) => r.current?.getContext('2d') ?? null)
@@ -201,7 +203,7 @@ export function PixelWorld({
     const [top, base, c, night, glow] = contexts as [Ctx, Ctx, Ctx, Ctx, Ctx];
     let frame = 0;
     let last = 0;
-    const draw = (now: number) => {
+    const draw = (now: number, stillLayerOnly = false) => {
       if (broken.current) return;
       try {
         // Art pixels to device pixels (1 for the pixel scene); smooth only when scaled. The
@@ -215,12 +217,14 @@ export function PixelWorld({
         for (const g of [night, glow]) g.setTransform(1, 0, 0, 1, 0, 0);
         // Until the voxel scene is shown it only asks for its sprites (SINK paints nothing).
         hits.current = drawWorld(
-          shown ? c : SINK,
+          shown && !stillLayerOnly ? c : SINK,
           size.w,
           size.h,
           now / 1000,
           { ...model, voxel, hover, motion, pan: { x: vx, y: vy }, fx: fx.current },
-          shown ? { base, night, glow, top } : { base: SINK, night: SINK, glow: SINK, top: SINK },
+          shown && !stillLayerOnly
+            ? { base, night, glow, top }
+            : { base: shown ? base : SINK, night: SINK, glow: SINK, top: SINK },
         );
         if (voxel && voxelSettled()) setSettled(true);
       } catch (err) {
@@ -229,12 +233,21 @@ export function PixelWorld({
         reportError(err);
       }
     };
-    if (!motion) {
+    // The first time the voxel scene shows, its still layer is painted in a task of its own and
+    // the rest in the next, so neither is one long task while the page is still loading.
+    let split = 0;
+    if (voxel && shown && !warmed.current) {
+      warmed.current = true;
+      draw(motion ? performance.now() : 0, true);
+      split = window.setTimeout(() => {
+        split = 0;
+        draw(motion ? performance.now() : 0);
+      }, 0);
+    } else if (!motion) {
       draw(0);
       return undefined;
-    }
-    draw(performance.now());
-    if (!awake) return undefined;
+    } else draw(performance.now());
+    if (!motion || !awake) return () => window.clearTimeout(split);
     const loop = (now: number) => {
       // 10 frames a second: plenty for pixel art, and kind to phone batteries (the margin lets
       // a 60 Hz display hit every sixth frame).
@@ -245,7 +258,10 @@ export function PixelWorld({
       if (!broken.current) frame = requestAnimationFrame(loop);
     };
     frame = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      window.clearTimeout(split);
+      cancelAnimationFrame(frame);
+    };
   }, [size, model, voxel, hover, motion, vx, vy, res, arrivals, shown, awake]);
 
   const hitAt = (clientX: number, clientY: number): HitBox | null => {
