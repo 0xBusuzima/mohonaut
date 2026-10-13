@@ -5,7 +5,7 @@ import { PixelWorld } from '../../game/pixel/PixelWorld';
 import { ForemanMo } from '../../game/pixel/ForemanMo';
 import type { ScenePad } from '../../game/play';
 import { inAppBrowser } from '../../game/inapp';
-import { isTestnet } from '../../game/network';
+import { isTestnet } from '../../game/chain-id';
 import { PxButton, PxModal, Steps } from './px';
 
 /** A site at work behind the welcome window, before any wallet is known. */

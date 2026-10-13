@@ -72,8 +72,6 @@ export const gameChain = defineChain({
   testnet: GAME.chainId !== 4663,
 });
 
-export const isTestnet = GAME.chainId !== 4663;
-
 export function txUrl(hash: string): string | null {
   const base = EXPLORER[GAME.chainId];
   return base === undefined ? null : `${base}/tx/${hash}`;
