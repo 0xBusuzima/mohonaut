@@ -1,0 +1,100 @@
+# Unit tests of the alert rules: synthetic series in, expected alerts out.
+#   promtool test rules infra/monitoring/prometheus/tests/mohonaut_test.yml   (CI: monitoring job)
+rule_files:
+  - ../rules/mohonaut.yml
+
+evaluation_interval: 1m
+
+tests:
+  - name: indexer down, stuck alerts and lag
+    interval: 1m
+    input_series:
+      - series: 'up{job="indexer",instance="i"}'
+        values: '0x30'
+      - series: 'indexer_alerts_pending{job="indexer",instance="i"}'
+        values: '2x30'
+      - series: 'indexer_head_block{job="indexer",instance="i"}'
+        values: '20000x30'
+      - series: 'indexer_block{job="indexer",instance="i",stream="core"}'
+        values: '1000x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: IndexerDown
+        exp_alerts:
+          - exp_labels: { severity: critical, job: indexer, instance: i }
+            exp_annotations:
+              summary: Indexer metrics unreachable for 5 minutes (no on-chain alerts are raised while it is down).
+      - eval_time: 20m
+        alertname: IndexerAlertsUndelivered
+        exp_alerts:
+          - exp_labels: { severity: critical, job: indexer, instance: i }
+            exp_annotations:
+              summary: On-chain alerts have been waiting for delivery for 15 minutes (Telegram down or misconfigured?).
+      - eval_time: 12m
+        alertname: IndexerLagging
+        exp_alerts:
+          - exp_labels: { severity: warning, job: indexer, instance: i }
+            exp_annotations:
+              summary: The core stream is more than ~10 minutes behind the chain head.
+      - eval_time: 9m
+        alertname: IndexerLagging
+        exp_alerts: [] # not yet: the lag must last 10 minutes
+
+  - name: keeper balance, stale poke and price guard
+    interval: 1m
+    input_series:
+      - series: 'keeper_balance_wei{job="keeper",instance="k"}'
+        values: '1e15x300'
+      - series: 'keeper_last_success_timestamp_seconds{job="keeper",instance="k",task="poke"}'
+        values: '0x300'
+      - series: 'keeper_guard_trips_total{job="keeper",instance="k",task="buyback"}'
+        values: '0 0 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: KeeperBalanceLow
+        exp_alerts:
+          - exp_labels: { severity: warning, job: keeper, instance: k }
+            exp_annotations:
+              summary: Keeper balance below 0.002 ETH; top it up from the ops Safe.
+      - eval_time: 4h
+        alertname: KeeperPokeStale
+        exp_alerts:
+          - exp_labels: { severity: critical, job: keeper, instance: k, task: poke }
+            exp_annotations:
+              summary: The poke job has not succeeded for 3 hours.
+      - eval_time: 5m
+        alertname: KeeperPriceGuard
+        exp_alerts:
+          - exp_labels: { severity: warning, job: keeper, instance: k, task: buyback }
+            exp_annotations:
+              summary: 'Keeper skipped buyback: the pool price was far from its reference (possible manipulation).'
+
+  - name: healthy keeper raises nothing
+    interval: 1m
+    input_series:
+      - series: 'keeper_balance_wei{job="keeper",instance="k"}'
+        values: '1e18x30'
+      - series: 'keeper_lock_held{job="keeper",instance="k"}'
+        values: '1x30'
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: KeeperBalanceLow
+        exp_alerts: []
+      - eval_time: 25m
+        alertname: KeeperNoActiveInstance
+        exp_alerts: []
+
+  - name: API error ratio
+    interval: 1m
+    input_series:
+      - series: 'api_requests_total{job="api",instance="a",route="/world",method="GET",status="200"}'
+        values: '0+100x30'
+      - series: 'api_requests_total{job="api",instance="a",route="/world",method="GET",status="500"}'
+        values: '0+10x30'
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: ApiErrorRate
+        exp_alerts:
+          - exp_labels: { severity: warning }
+            exp_annotations:
+              summary: More than 2 % of API requests fail with 5xx.

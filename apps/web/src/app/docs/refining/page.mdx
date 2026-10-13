@@ -1,0 +1,27 @@
+export const metadata = {
+  title: 'Refining',
+  description:
+    'How mined $MOHN reaches your wallet: standard and fast refining, limits and timing.',
+};
+
+# Refining
+
+Mined $MOHN stays on your drill site as unrefined credit. You can spend it in the game directly,
+with no fee. To move it to your wallet, refine it.
+
+| Route           | Fee | Time          | Where the fee goes                             |
+| --------------- | --- | ------------- | ---------------------------------------------- |
+| Standard refine | 0%  | 72-hour queue | —                                              |
+| Fast refine     | 8%  | immediately   | half burned for good, half back to the reserve |
+| Spend in game   | 0%  | immediately   | —                                              |
+
+- A queued refine can be finalised by anyone once its 72 hours have passed; the game's keeper
+  does it for you. The $MOHN is then minted to your wallet.
+- One request refines at most 100,000 $MOHN.
+- At most 150,000 $MOHN can be minted in any 60 minutes, for all players together. A refine that
+  would pass that limit is refused and can be retried a little later; nothing is lost.
+- Refining is closed during the 72 hours of the Genesis Dig. There is no pool before Market Open.
+- There is no minimum, no KYC and no lock-up beyond the queue.
+
+The fee and the queue length are adjustable within hard limits (0 – 12%, 24 – 168 hours), and any
+change waits 96 hours in a public queue first.

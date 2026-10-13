@@ -6,7 +6,7 @@
 
 | # | Dosya | İçerik |
 |---|---|---|
-| R | [reports/Robinhood Chain mining oyunu araştırması.md](reports/Robinhood%20Chain%20mining%20oyunu%20ara%C5%9Ft%C4%B1rmas%C4%B1.md) | Derin araştırma raporu: [a competitor], geçmiş oyunlar, tokenomi, altyapı, güvenlik, giriş/admin, lansman, hukuk + yap/yapma listeleri |
+| R | [reports/Robinhood Chain mining oyunu araştırması.md](reports/Robinhood%20Chain%20mining%20oyunu%20ara%C5%9Ft%C4%B1rmas%C4%B1.md) | Derin araştırma raporu (iç kullanım): rakip oyunlar, geçmiş oyunlar, tokenomi, altyapı, güvenlik, giriş/admin, lansman, hukuk + yap/yapma listeleri |
 | 01 | [docs/01_OYUN_TASARIMI.md](docs/01_OYUN_TASARIMI.md) | Konsept, çekirdek döngü, sistemler, ekranlar, sanat yönü |
 | 02 | [docs/02_TOKENOMI_VE_OYUN_MATEMATIGI.md](docs/02_TOKENOMI_VE_OYUN_MATEMATIGI.md) | Ekonominin kanonik şartnamesi: emisyon, VRGDA, enerji, sink'ler, gelir, genesis |
 | 03 | [docs/03_TEKNIK_MIMARI.md](docs/03_TEKNIK_MIMARI.md) | Kontratlar, muhasebe algoritması, servisler, giriş, admin paneli, altyapı, ADR'ler |

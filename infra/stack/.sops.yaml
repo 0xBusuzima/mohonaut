@@ -1,0 +1,8 @@
+# SOPS + age (free, no server): who can decrypt the env files (infra/RUNBOOK.md §Secrets).
+# Recipients are public keys: the founder's laptop key and each server's key.
+creation_rules:
+  - path_regex: secrets\.(testnet|mainnet)\.enc\.env$
+    # Replace with the real public keys (age1...) before the first encryption.
+    age: >-
+      age1replacewithfounderpublickeyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,
+      age1replacewithserverpublickeyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

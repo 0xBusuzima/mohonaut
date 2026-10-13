@@ -1,0 +1,21 @@
+# Docker build context (infra/docker/Dockerfile): sources only.
+.git
+**/node_modules
+**/dist
+**/.turbo
+**/coverage
+apps
+contracts
+sim
+reports
+research_notes
+docs
+infra
+tools
+deployments
+.github
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
+**/data

@@ -248,6 +248,11 @@ class Study:
         parts = {name: self.load(name) for name in (*VARIANT_PARTS, "sweeps", "calib")}
         spec, _nogov, _notank, sweeps, calib = (parts[n] for n in ("spec", "nogov", "notank", "sweeps", "calib"))
         referral = load_params(self.base).spec.referral_rate
+        # The 5/25/50/75/95 % bands by day, for beta_report.py: keys <part>__<scenario>__<series>.
+        np.savez_compressed(self.out / "fans.npz", **{
+            f"{name}__{n}__{key}": band
+            for name, part in parts.items() if part is not None and name in VARIANT_PARTS
+            for n, fan in part["fans"].items() for key, band in fan.items()})
         agg = {name: {n: stats(r) for n, r in part["runs"].items()} for name, part in parts.items()
                if part is not None and name in VARIANT_PARTS}
         criteria = {name: evaluate_criteria(part["runs"], referral) for name, part in parts.items()

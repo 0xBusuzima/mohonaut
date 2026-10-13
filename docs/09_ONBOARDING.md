@@ -1,34 +1,14 @@
 # 09 — Onboarding: İlk Temastan Cüzdandaki İlk Tokene (v0.1)
 
-> **Durum:** v0.1 — 2026-10-10. Dayanak: `research_notes/.../09_[a competitor]_onboarding_funding.md`, araştırma raporu, Bigcoin / Sunflower Land / Gigaverse ek raporları (bu oturumda), `docs/ZINCIR_DOGRULAMA.md`. Ekonomi kuralları için `02`, ekranlar için `01`.
+> **Durum:** v0.1 — 2026-10-10. Dayanak: `research_notes/` (iç notlar), araştırma raporu, Bigcoin / Sunflower Land / Gigaverse ek raporları (bu oturumda), `docs/ZINCIR_DOGRULAMA.md`. Ekonomi kuralları için `02`, ekranlar için `01`.
 >
 > **İç kullanım:** §1'deki rakip analizi yalnızca iç kullanım içindir. Herkese açık hiçbir metinde rakip adı geçmez (05 §6.4b).
 
 ---
 
-## 1. Rakiplerde gördüğümüz (iç kullanım)
+## 1. Diğer oyunlarda gördüğümüz
 
-| Oyun | Giriş | Başlamak için para | Ücretsiz başlangıç | Cüzdana ilk token | Token ile oyunun zamanlaması | En büyük şikâyet |
-|---|---|---|---|---|---|---|
-| [a competitor] (RH Chain) | Beğen/yanıt/alıntı formu → EVM cüzdan imzası; yalnızca masaüstü MetaMask | ETH → [a competitor] takası (oyun içi swap) | Hayır; $2 giriş ücreti 75 dk sonra kaldırılıp 973 cüzdana iade edildi, $1/$5 başlangıç PC'leri sonradan eklendi | $25 harcama sonrası; 3. gün 0/5/10 claim vergisi eklendi | **Aynı dakika**; zirve halka açılıştan 6 saat önce, 2. günde −%80 | "Oyun bedava değil", habersiz nerf, claim vergisi |
-| Hood Siege (RH Chain) | Tek imza, gas yok | Yok (F2P) | Evet; vSIEGE çekilemez | ≈$2 mint + ≈$5 paket + 150. dalga + %10 ücret → 8 günde oyuncuların ~%5'i çekebildi | **Token 30 dk önce** | Merdiven uzun |
-| Hollowfall (RH Chain) | EVM cüzdan | ORE (oyun tokeni) | Ücretsiz antrenman koşusu; yalnızca ücretli koşu kazandırır | Günlük ödeme; bot şüphesinde çekim beklemeye alınır | Token önce vardı | Küçük ölçek |
-| [a competitor] (RH Chain, lansman öncesi) | X görevleri + XP sıralaması + cüzdan adresi yapıştırma | Koşu başı token ücreti | Kasabada dolaşmak ücretsiz | Henüz yok | Duyurulmadı | (henüz yok) |
-| Bigcoin (Abstract) | Gömülü cüzdan (e-posta/sosyal) veya EVM | ≈$15 ETH oda | Oda alındıktan sonra ücretsiz "patates" madenci | **Dakikalar içinde**, sınırsız claim | Aynı gün | Oda fiyatı 5 günde 5 kez değişti, balinalar, %83 düşüş |
-| Sunflower Land | Google girişi, cüzdan opsiyonel | Yok | Evet, ücretsiz çiftlik | Yüz doğrulama + 1,000 itibar (fiilen ücretli VIP) + %10–30 ücret | Oyun yıllarca önce, token sonra | Çekim engelleri |
-| Gigaverse (Abstract) | Gömülü cüzdan (e-posta/sosyal) | ≈$20 ETH veya kartla | Hayır | Token yok; %20 farkla çıkış | NFT → oyun, token yok | Ücretli giriş |
-| RollerCoin (2018'den beri) | Şifresiz e-posta kodu + CAPTCHA; cüzdan yalnızca çekimde | Yok | Evet (mini oyunlardan 24 saatlik geçici güç; elektrik her gün yenilenir) | Coin başı yüksek minimumlar (BTC 0.00085 ≈ $75), e-posta kodu, 10 iş gününe kadar işlem → ücretsiz oyuncu için aylar/yıllar | Oyun önce; kendi tokenleri (RLT/RST) hiç çekilemez | Yüksek ve zamanla yükselen minimumlar, ilk çekim talebinden hemen sonra ban'lar |
-| Pixels (Ronin) | Ronin Wallet veya e-posta/SMS kodu | Yok | Evet (ücretsiz arazi) | 1.5–2K itibar + yeni cüzdana 7 gün kilit + düşük itibarda %29–49 çıkış ücreti → haftalar/aylar (pratikte ~$10/ay VIP) | Oyun yıllarca önce, token 2024 | İtibar kapısı, açıklanmayan itibar düşüşleri, ban'lar |
-
-### Çıkan beş ders
-
-1. **İlk deneyim ücretsiz olmalı ve token gerektirmemeli.** "Önce ETH al, sonra tokene çevir" en çok terk ettiren adım.
-2. **İlk çekilebilir tokenın kuralı lansmandan önce yayımlanmalı ve asla değişmemeli.** Kapı kendisi sorun değil; sonradan değiştirilmesi sorun (claim vergisi, oda fiyatı).
-3. **Oyuna giriş anı ile token fiyatı anı ayrılmalı.** Aynı anda olunca ilk günü sniper'lar ve fiyat yönetir.
-4. **Beğen/RT görevli bekleme listesi yerine kanıtlanmış oyun.** Etkileşim kapıları bot ve spam üretir, X erişimi de düşer.
-5. **Lansman günü cüzdan deneyimi kalıcılığı belirler.** WalletConnect, mobil, takılmayan ödeme durumu, her işlem için explorer linki ve cüzdan uyarısı ön temizliği şart.
-
----
+_İç karşılaştırma `research_notes/rakip-karsilastirma.md` dosyasına taşındı (iç notlarla birlikte özel repoda tutulur; CLAUDE.md rakip adı kuralı)._
 
 ## 2. Bizim akışımız: altı aşama
 
@@ -196,7 +176,7 @@ T−42 … T−7         T−28 … T−7            T−7           T−24s …
 
 - [ ] WalletConnect + mobil cüzdanlar (Robinhood Wallet dahil) testnet'te uçtan uca test edildi
 - [ ] iOS Safari, Android Chrome, cüzdan içi tarayıcılar, X uygulama içi tarayıcı ("open in browser" yönlendirmesi)
-- [ ] **Takılmayan ödeme durumu:** işlem hash'i saklanır, sayfa yenilense de makbuz yoklanır, her durumda Blockscout linki gösterilir
+- [ ] **Takılmayan ödeme durumu:** işlem hash'i saklanır, sayfa yenilense de makbuz yoklanır, her durumda Blockscout linki gösterilir — kod tarafı 2026-10-13 (`apps/web/src/game/pending.ts`, `useResumeTx`; anvil E2E). Testnet'te mobil cüzdanla elle doğrulanınca işaretlenir.
 - [ ] İade veya iç işlem olursa (olmaması hedef) explorer'da "internal transactions" sekmesine giden link
 - [ ] Oracle bayat → net mesaj: "Fuel purchases paused: price feed update pending. Your rigs keep drilling."
 - [ ] Pause → durum sayfası + banner (05 §7 şablonları)

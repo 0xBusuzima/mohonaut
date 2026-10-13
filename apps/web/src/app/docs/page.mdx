@@ -1,0 +1,89 @@
+export const metadata = {
+  title: 'Player guide',
+  description:
+    'How Mohonaut works: drill sites, rigs, diesel, the World Bore, the Refinery, Crews and the Survey.',
+};
+
+# Player guide
+
+Mohonaut is an idle drilling game on Robinhood Chain. You run a drill site, fuel its rigs with
+diesel and core one shared hole with every other player: the **World Bore**. Every $MOHN comes out
+of the ground; there is no presale, no team buy and no premine.
+
+## Your drill site
+
+Every site starts at level 1 with a free **Pilot Rig** (10 DP, 0.25 ℓ/h). A site has **pads**
+(one rig each) and a **fuel line** that limits how much diesel its rigs can burn per hour.
+
+| Site level | Pads | Fuel line (ℓ/h) |
+| ---------- | ---- | --------------- |
+| 1          | 4    | 6.0             |
+| 5          | 8    | 13.3            |
+| 10         | 13   | 35.9            |
+| 15         | 18   | 97.1            |
+| 20         | 23   | 262             |
+
+Pads grow as `3 + level`; the fuel line as `6 × 1.22^(level − 1)` ℓ/h. Levelling up costs $MOHN.
+
+## Rigs and Drill Power
+
+Rigs add **Drill Power (DP)** and burn diesel. Bigger rigs buy fuel efficiency (DP per ℓ/h), not
+cheaper Drill Power: the price per DP rises with each tier. Rigs are bought in the **Equipment
+Market**, whose prices follow a public auction formula: they rise when rigs sell faster than the
+target and fall when they sell slower. Nobody sets them by hand.
+
+You can switch rigs on and off. A rig that isn't worth its fuel can be shut down, or scrapped for
+a 20% **scrap credit** that only buys new rigs and site levels.
+
+## Diesel
+
+Your tank is filled with ETH and measured in litres. A litre costs $0.10 at the ETH/USD price of
+the Chainlink feed. Active rigs burn their litres per hour; when the tank is empty, they stop and
+your Drill Power no longer counts.
+
+ETH from diesel is routed: 55% to buyback & burn, 30% to protocol liquidity that can never be
+withdrawn, 15% to operations. Published weekly on the [economy page](/economy/).
+
+## Your share of each hour
+
+Every hour the network cores a fixed slice of what is left in the reserve. 90% of that slice goes
+to players, split by Drill Power:
+
+```
+your share of hour h = E_h × 0.90 × your active DP ÷ network active DP
+```
+
+That is all. More players means a smaller share each; nobody is promised a number. The details,
+with every parameter and limit, are in the [economy paper](/docs/economy/).
+
+## The World Bore
+
+The bore's depth is all $MOHN mined so far ÷ 1,000, in metres. It crosses eight strata: Regolith,
+Sediment Cover, Granite Basement, Archean Gneiss, Granulite Floor, Peridotite Zone, Asthenosphere
+and The Core. The **Kola Line** (12,262 m) and the **Moho Line** (35,000 m) are milestones. New rig
+generations unlock when the bore crosses a stratum, not on a calendar date.
+
+Your **contribution** is your mined $MOHN ÷ 1,000 in metres: "You've cored 1,240 m of the World Bore".
+
+## The Refinery
+
+Mined $MOHN can be spent in the game directly. To take it to your wallet, refine it: a free
+standard refine waits 72 hours, a fast refine costs 8% (half burned, half back to the reserve).
+See [Refining](/docs/refining/).
+
+## Crews, Seasons and the Survey
+
+- **Crews** gather 5 to 25 players. They are social and cosmetic; emission is never split by crew.
+  A crew talks in set signals ("Nice coring, crew."), never free chat, and flies its tag on each
+  member's shack.
+- **Seasons** last about eight weeks and rank World Bore contribution, fuel efficiency and crew
+  play. Rewards are badges, titles and site plaques: when a season ends, the top ten in World
+  Bore contribution get a plaque on their shack wall (gold, silver or bronze). All cosmetic.
+- The **Survey** is a free daily find for your Core Collection: a core sample, a fossil or a piece
+  of drilling history. It has no value in the economy, and nothing in Mohonaut is a paid roll.
+
+## Invites
+
+You can invite one level of players. Once someone you invited has bought at least 0.003 ETH of
+diesel, and while your own rigs are fuelled, you receive 3% of their mined share. It is paid from
+the treasury's 5%: never taken from them, and no new emission is created.

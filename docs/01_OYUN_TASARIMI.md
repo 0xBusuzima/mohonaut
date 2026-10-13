@@ -2,7 +2,7 @@
 
 > **Durum:** v0.2 — 2026-10-10. Ekonomi sayıları `02_TOKENOMI_VE_OYUN_MATEMATIGI.md` dosyasında; oyuncu girişi ve ilk oturum `09_ONBOARDING.md` dosyasında. Oyun **Mohonaut** ("Moho kâşifi"; kurucu onayı 2026-10-11, bkz. `ISIM_SPRINTI.md`), token **$MOHN**, hashpower **DP** (Drill Power).
 >
-> **v0.2 değişikliği (kurucu kararı: "[a competitor]'ye ve [a competitor]'a benzemesin"):** Dikey yeraltı şaftı ve el aleti başlangıcı kaldırıldı. Yeni konsept, gece aydınlatmalı bir **yüzey sondaj sahası** ve bütün oyuncuların birlikte açtığı **tek bir ortak kuyu (World Bore)**. Enerji dili (kWh/kW) yerine **dizel yakıt** (litre, ℓ/h) kullanılıyor. Katman isimleri gerçek kabuk jeolojisinden alındı. Matematik değişmedi.
+> **v0.2 değişikliği (kurucu kararı: Robinhood Chain'deki diğer madencilik oyunlarına benzemesin):** Dikey yeraltı şaftı ve el aleti başlangıcı kaldırıldı. Yeni konsept, gece aydınlatmalı bir **yüzey sondaj sahası** ve bütün oyuncuların birlikte açtığı **tek bir ortak kuyu (World Bore)**. Enerji dili (kWh/kW) yerine **dizel yakıt** (litre, ℓ/h) kullanılıyor. Katman isimleri gerçek kabuk jeolojisinden alındı. Matematik değişmedi.
 
 ---
 
@@ -25,17 +25,7 @@ Ekonomi Bitcoin gibi işler: sabit ve yavaşça azalan emisyon, payına göre ö
 | Topluluk hedefi | Tek ortak kuyu, gerçek jeolojik kilometre taşları | Galaksi haritası | Şebeke kapasitesi |
 | Üretim zorluğu (tek kişi + AI) | Orta (2.5D izometrik) | Orta-yüksek | Orta |
 
-**Rakiplere karşı konumlanma — İÇ KULLANIM, hiçbir herkese açık içerikte rakip adı geçmez (05 §6.4b):**
-
-| Konu | [a competitor] | [a competitor] | Mohonaut |
-|---|---|---|---|
-| Tür | PC kurma, hashrate payı | Beceri tabanlı aksiyon maden RPG'si (kahraman, boss, koşu başı ücret) | **Idle sondaj, savaş yok** |
-| Mekân | Yüzen pastel ada | Yeraltı madenleri, asansör, kasaba | **Yüzey sondaj sahası + tek ortak kuyu** |
-| Başlangıç | $1'lık hazır PC | Paslı kazma | **Pilot Rig** (küçük motorlu kule) |
-| Enerji | Elektrik $/kWh, transformatör | Stamina | **Dizel ℓ, ETH ile** |
-| Token dağıtımı | %60 dev buy (Pons) | 1B sabit arz, %80 piyasa, satış vergisi | **Premine yok, dev buy yok, vergi yok**; her token kazılarak basılır |
-| Değişiklikler | 2. gün habersiz nerf, gacha | "72 saat önceden duyuru" sözü | **Zincir üstü 96 saat timelock** + canlı kuyruk linki; geriye dönük nerf kodda imkânsız |
-| Bekleme listesi | Beğen/yanıtla/alıntıla formu | X görevleri + XP sıralaması | **Oynanabilir testnet Sezon 0** (kanıtlanmış oyun) |
+_İç karşılaştırma `research_notes/rakip-karsilastirma.md` dosyasına taşındı (iç notlarla birlikte özel repoda tutulur; CLAUDE.md rakip adı kuralı)._
 
 ---
 
@@ -170,13 +160,14 @@ Ekonomi Bitcoin gibi işler: sabit ve yavaşça azalan emisyon, payına göre ö
 
 ## 7. Sanat ve ses yönü
 
+- **Kurucu kararı (2026-10-13): oyun tam sayfa bir pixel-art oyunudur.** `/play` açılınca ekranın tamamı izometrik pixel sahadır (yükleme ekranı → karşılama penceresi → cüzdan → imza → saha adı → saha); her ekran sahanın üstünde açılan bir pencere (Market'te "rig seç" kartları, dizel deposu, rafineri, rig'lerim), HUD sahanın kenarlarında. Saha pixel art olarak kodla çizilir (`apps/web/src/game/pixel/`), oyun içi yazı pixel fontuyla (**Pixelify Sans**, SIL OFL). Sahaya tıklamak ilgili pencereyi açar (tank → dizel, konteyner → market, kulübe → rafineri, ped → rig'ler); telefonda saha sürüklenerek gezilir. Saha seviyeyle büyür: her dört pedlik sıra açıldıkça çit genişler.
 - **Görünüm:** 2.5D izometrik **yüzey sondaj sahası, gece**. Grafit zemin, emniyet turuncusu ekipman, sodyum lamba ışığı, buhar; camgöbeği yalnızca enstrüman HUD'unda ve karot ışımasında.
 - **İmza öğe:** kuyu logu / karot sütunu. Gerçek litolojiye göre renkli bantlar: Regolith ten rengi, Sediment bej, Granite pembe-gri, Gneiss bantlı gri, Granulite koyu, Peridotite zeytin yeşili, Asthenosphere turuncu-kırmızı.
-- **Kaçınılanlar:** pixel font, alet sallayan karakterler, yeraltı tünel/asansör görselleri, pastel ada estetiği, lacivert-siyah zemin.
+- **Kaçınılanlar:** alet sallayan karakterler, yeraltı tünel/asansör görselleri, pastel ada estetiği, ada/ev/bilgisayar odası temaları. (Pixel font ve gece göğü 2026-10-13 kurucu kararıyla oyunda serbest; site ve marka yazıları Big Shoulders/Barlow'da kalır.)
 - **Maskot:** tek maskot, **Foreman Mo**. Baretli, kafa lambalı köstebek ustabaşı (sezon kostümleri, meme yüzeyi). Yan karakter kadrosu yok.
 - **Ses:** industrial ambient + kule ritmi (dizel motor, çamur pompası, boru sesi); her katman geçişinde yeni tema.
-- **Teknoloji:** PixiJS (WebGL 2D) + izometrik sprite atlasları; mobil öncelikli; düşük güçlü cihazda animasyon azaltma.
-- **Ücretsiz varlık başlangıcı:** Kenney.nl CC0 izometrik paketleri + AI taslak + tutarlı stil rehberi (08).
+- **Teknoloji:** Canvas 2D, düşük çözünürlüklü tuval (~470×300 sanat pikseli) tam sayı katıyla büyütülür (`image-rendering: pixelated`); yalnızca tam sayı dikdörtgenler (kenar yumuşatma yok). Mobil öncelikli (telefonda en az 2x + sürükleme); düşük güç modunda tek kare. PixiJS kaldırıldı.
+- **Varlıklar:** hepsi bizim tasarımımız ve özgün; dış görsel/sprite paketi kullanılmaz (docs/05 §2.6 özgünlük kuralı). Kuleler kodla çizilir (`apps/web/src/game/rigs.ts`).
 
 ---
 

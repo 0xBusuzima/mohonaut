@@ -1,0 +1,4 @@
+# Aderyn configuration (format: https://github.com/Cyfrin/aderyn/blob/dev/aderyn/templates/aderyn.toml)
+version = 1
+root = "."
+src = "src/"

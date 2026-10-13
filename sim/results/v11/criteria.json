@@ -1,0 +1,528 @@
+{
+ "spec": [
+  {
+   "criterion": "price_m24_gt_30pct_m2",
+   "scenario": "base",
+   "value": 1.0,
+   "target": "P ≥ 0.5",
+   "passed": true,
+   "detail": "median m24/m2 = 5.03; v0.1 definition (m1): P = 1.00"
+  },
+  {
+   "criterion": "cohort_payback_lt_365",
+   "scenario": "base",
+   "value": 1.0,
+   "target": "≥ 0.70 of weekly cohorts",
+   "passed": true,
+   "detail": "median entry payback = 51 d"
+  },
+  {
+   "criterion": "sr_m12",
+   "scenario": "base",
+   "value": 0.7061040894513614,
+   "target": "≥ 0.6",
+   "passed": true,
+   "detail": "P5–P95 0.61–1.06"
+  },
+  {
+   "criterion": "sr_m12",
+   "scenario": "bear",
+   "value": 0.8160017570973631,
+   "target": "≥ 0.3",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "criterion": "sr_m12",
+   "scenario": "deep_bear",
+   "value": 0.8120422705311646,
+   "target": "≥ 0.3",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "base",
+   "value": 0.585045054317852,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.55, m36 0.52; Nakamoto m36 693"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "bear",
+   "value": 0.7442463273466837,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.50, m36 0.62; Nakamoto m36 67"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "deep_bear",
+   "value": 0.7882674884577167,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.52, m36 0.72; Nakamoto m36 7"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "whale",
+   "value": 0.5736867576689252,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.53, m36 0.52; Nakamoto m36 690"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "churn",
+   "value": 0.7530991546480451,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.52, m36 0.68; Nakamoto m36 20"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "sybil",
+   "value": 0.6124712818674473,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.57, m36 0.56; Nakamoto m36 692"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "hype",
+   "value": 0.5668123689683756,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.53, m36 0.52; Nakamoto m36 699"
+  },
+  {
+   "criterion": "sybil_same_day_vs_auger",
+   "scenario": "sybil",
+   "value": 1.027500858199337,
+   "target": "≤ 1.03 (1 + referral)",
+   "passed": true,
+   "detail": "P95 1.028; lifetime share ratio 0.98 (not a criterion)"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "base",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $108,409/mo, m36 $46,041/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "bear",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $59,038/mo, m36 $17,582/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "deep_bear",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $36,723/mo, m36 $6,260/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "whale",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $108,051/mo, m36 $49,622/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "churn",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $43,340/mo, m36 $11,906/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "sybil",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $110,618/mo, m36 $46,953/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "hype",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $115,309/mo, m36 $49,795/mo"
+  },
+  {
+   "criterion": "daily_mint_cap_never_binds",
+   "scenario": "all",
+   "value": 0.0,
+   "target": "0 days with a deferred mint",
+   "passed": true,
+   "detail": "max daily mint 134,346"
+  },
+  {
+   "criterion": "rcr_m12 (health metric)",
+   "scenario": "base",
+   "value": 0.1828527733717465,
+   "target": "monitored",
+   "passed": null,
+   "detail": "s = 0.41"
+  }
+ ],
+ "nogov": [
+  {
+   "criterion": "price_m24_gt_30pct_m2",
+   "scenario": "base",
+   "value": 1.0,
+   "target": "P ≥ 0.5",
+   "passed": true,
+   "detail": "median m24/m2 = 5.11; v0.1 definition (m1): P = 1.00"
+  },
+  {
+   "criterion": "cohort_payback_lt_365",
+   "scenario": "base",
+   "value": 1.0,
+   "target": "≥ 0.70 of weekly cohorts",
+   "passed": true,
+   "detail": "median entry payback = 50 d"
+  },
+  {
+   "criterion": "sr_m12",
+   "scenario": "base",
+   "value": 0.7052184191607853,
+   "target": "≥ 0.6",
+   "passed": true,
+   "detail": "P5–P95 0.60–1.12"
+  },
+  {
+   "criterion": "sr_m12",
+   "scenario": "bear",
+   "value": 0.815567395126402,
+   "target": "≥ 0.3",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "criterion": "sr_m12",
+   "scenario": "deep_bear",
+   "value": 0.8029551305490522,
+   "target": "≥ 0.3",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "base",
+   "value": 0.5855656966440197,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.55, m36 0.52; Nakamoto m36 667"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "bear",
+   "value": 0.7477523484691323,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.50, m36 0.60; Nakamoto m36 67"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "deep_bear",
+   "value": 0.736649424718895,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.53, m36 0.49; Nakamoto m36 5"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "whale",
+   "value": 0.5749963693972127,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.53, m36 0.52; Nakamoto m36 689"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "churn",
+   "value": 0.795279076625683,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.52, m36 0.72; Nakamoto m36 12"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "sybil",
+   "value": 0.6106193802775148,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.57, m36 0.57; Nakamoto m36 692"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "hype",
+   "value": 0.565792134542664,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.54, m36 0.52; Nakamoto m36 702"
+  },
+  {
+   "criterion": "sybil_same_day_vs_auger",
+   "scenario": "sybil",
+   "value": 1.027483046470152,
+   "target": "≤ 1.03 (1 + referral)",
+   "passed": true,
+   "detail": "P95 1.028; lifetime share ratio 0.98 (not a criterion)"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "base",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $114,191/mo, m36 $47,945/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "bear",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $59,437/mo, m36 $20,539/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "deep_bear",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $36,723/mo, m36 $6,706/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "whale",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $108,051/mo, m36 $55,032/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "churn",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $41,936/mo, m36 $11,914/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "sybil",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $114,937/mo, m36 $49,376/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "hype",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $115,562/mo, m36 $53,456/mo"
+  },
+  {
+   "criterion": "daily_mint_cap_never_binds",
+   "scenario": "all",
+   "value": 0.0,
+   "target": "0 days with a deferred mint",
+   "passed": true,
+   "detail": "max daily mint 133,310"
+  },
+  {
+   "criterion": "rcr_m12 (health metric)",
+   "scenario": "base",
+   "value": 0.18194402378370894,
+   "target": "monitored",
+   "passed": null,
+   "detail": "s = 0.41"
+  }
+ ],
+ "v01": [
+  {
+   "criterion": "price_m24_gt_30pct_m2",
+   "scenario": "base",
+   "value": 0.935,
+   "target": "P ≥ 0.5",
+   "passed": true,
+   "detail": "median m24/m2 = 1.20; v0.1 definition (m1): P = 0.95"
+  },
+  {
+   "criterion": "cohort_payback_lt_365",
+   "scenario": "base",
+   "value": 0.15053763440860216,
+   "target": "≥ 0.70 of weekly cohorts",
+   "passed": false,
+   "detail": "median entry payback = inf d"
+  },
+  {
+   "criterion": "sr_m12",
+   "scenario": "base",
+   "value": 0.703553850940525,
+   "target": "≥ 0.6",
+   "passed": true,
+   "detail": "P5–P95 0.48–1.08"
+  },
+  {
+   "criterion": "sr_m12",
+   "scenario": "bear",
+   "value": 0.5552702331810513,
+   "target": "≥ 0.3",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "criterion": "sr_m12",
+   "scenario": "deep_bear",
+   "value": 0.5000775122044544,
+   "target": "≥ 0.3",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "base",
+   "value": 0.7952008417155505,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.20, m36 0.47; Nakamoto m36 104"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "bear",
+   "value": 0.8721225518170366,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": false,
+   "detail": "m12 0.32, m36 0.32; Nakamoto m36 2"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "deep_bear",
+   "value": 0.6971136967540006,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.28, m36 0.10; Nakamoto m36 2"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "whale",
+   "value": 0.7674629844052767,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.59, m36 0.47; Nakamoto m36 118"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "churn",
+   "value": 0.8179415496076312,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": false,
+   "detail": "m12 0.18, m36 0.15; Nakamoto m36 2"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "sybil",
+   "value": 0.769142479818391,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.61, m36 0.45; Nakamoto m36 120"
+  },
+  {
+   "criterion": "gini_lt_0.8",
+   "scenario": "hype",
+   "value": 0.7699934156024155,
+   "target": "< 0.8 (wallet, active DP, max of months 3–36)",
+   "passed": true,
+   "detail": "m12 0.25, m36 0.44; Nakamoto m36 129"
+  },
+  {
+   "criterion": "sybil_same_day_vs_auger",
+   "scenario": "sybil",
+   "value": 1.0064513839585842,
+   "target": "≤ 1.03 (1 + referral)",
+   "passed": true,
+   "detail": "P95 1.014; lifetime share ratio 2.29 (not a criterion)"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "base",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $148,811/mo, m36 $51,133/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "bear",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $66,601/mo, m36 $13,952/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "deep_bear",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $29,765/mo, m36 $5,208/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "whale",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $144,039/mo, m36 $52,656/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "churn",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $45,989/mo, m36 $9,451/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "sybil",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $144,671/mo, m36 $50,563/mo"
+  },
+  {
+   "criterion": "ops_runway_m12",
+   "scenario": "hype",
+   "value": "inf",
+   "target": "> 12 months (P5 across seeds)",
+   "passed": true,
+   "detail": "ops income P5: m12 $137,821/mo, m36 $52,154/mo"
+  },
+  {
+   "criterion": "rcr_m12 (health metric)",
+   "scenario": "base",
+   "value": 0.3635309276248428,
+   "target": "monitored",
+   "passed": null,
+   "detail": "s = 0.80"
+  }
+ ]
+}

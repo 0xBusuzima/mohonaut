@@ -1,0 +1,32 @@
+{
+  "name": "@mohonaut/keeper",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Low-privilege keeper jobs: poke, finalize, capped buyback/POL (Phase 3).",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@mohonaut/config": "*",
+    "@types/pg": "^8.23.1"
+  },
+  "dependencies": {
+    "@mohonaut/indexer": "^0.0.0",
+    "@mohonaut/sdk": "^0.0.0",
+    "drizzle-orm": "^0.45.4",
+    "pg": "^8.23.1",
+    "prom-client": "^15.1.3",
+    "viem": "^2.57.4",
+    "zod": "^4.6.6"
+  }
+}

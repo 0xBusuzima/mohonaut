@@ -1,0 +1,66 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignore": ["contracts/**"],
+  "workspaces": {
+    ".": {
+      "entry": [],
+      "project": []
+    },
+    "packages/config": {},
+    "packages/sdk": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts", "test/**/*.ts"]
+    },
+    "apps/*": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts", "test/**/*.ts"]
+    },
+    "services/*": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts", "test/**/*.ts"]
+    },
+    "services/indexer": {
+      "entry": ["src/index.ts", "src/main.ts"],
+      "project": ["src/**/*.ts", "test/**/*.ts"]
+    },
+    "services/keeper": {
+      "entry": ["src/index.ts", "src/main.ts"],
+      "project": ["src/**/*.ts", "test/**/*.ts"]
+    },
+    "services/api": {
+      "entry": ["src/index.ts", "src/main.ts"],
+      "project": ["src/**/*.ts", "test/**/*.ts"],
+      "ignoreDependencies": [
+        "@expo-google-fonts/barlow",
+        "@expo-google-fonts/big-shoulders-display",
+        "@expo-google-fonts/jetbrains-mono"
+      ]
+    },
+    "apps/web": {
+      "entry": [
+        "src/app/**/{page,layout}.tsx",
+        "e2e/**/*.{ts,mjs}",
+        "scripts/**/*.mjs",
+        "functions/**/*.ts"
+      ],
+      "project": [
+        "src/**/*.{ts,tsx}",
+        "test/**/*.{ts,tsx}",
+        "e2e/**/*.{ts,mjs}",
+        "scripts/**/*.mjs",
+        "functions/**/*.ts"
+      ],
+      "ignoreDependencies": [
+        "tailwindcss",
+        "@expo-google-fonts/barlow",
+        "@expo-google-fonts/big-shoulders-display",
+        "@fontsource/barlow",
+        "@fontsource/pixelify-sans",
+        "@fontsource/barlow-condensed",
+        "@fontsource/big-shoulders-display",
+        "@fontsource/jetbrains-mono",
+        "@fontsource/saira-stencil-one"
+      ]
+    }
+  }
+}

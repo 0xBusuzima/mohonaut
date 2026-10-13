@@ -73,7 +73,7 @@ Araçlar: **npm workspaces + Turborepo** (pnpm 12 Windows'ta takıldığı için
 - `ERC20("…","MOHN")`, `ERC20Permit`, `ERC20Burnable`; `CAP = 100_000_000e18`.
 - `minter` **constructor'da immutable** olarak MiningCore proxy adresine ayarlanır (adres deploy script'inde önceden hesaplanır ve doğrulanır). Setter yok, owner yok.
 - `mint(to, amount)`: `msg.sender == minter`, `totalSupply + amount ≤ CAP` ve **o UTC gününde basılan + amount ≤ `DAILY_MINT_CAP` (500K, immutable)**.
-- MiningCore ayrıca saatlik mint devre kesicisi taşır (`hourlyMintBreaker` = 150K / kayan 60 dk): eşik aşılırsa mint yolları otomatik durur, yalnızca Timelock açar (04 §5.2).
+- MiningCore ayrıca saatlik mint sınırı taşır (`MINT_BREAKER_LIMIT` = 150K / kayan 60 dk, 04 §5.2). Uygulama: 5 dakikalık 13 kovalık halka; pencere 60–65 dakikayı kapsar (güvenli tarafta fazla sayar). Sınırı aşacak mint `MintWindowFull` ile geri çevrilir; global bir "durdurma" durumu yoktur (iç denetim: eski tasarımda bakiyesi olmayan biri bile kesiciyi atıp tüm mint'leri dondurabiliyordu). Rafine isteği başına en çok 100K. Market Open LP'si pencerede kalan yere kırpılır. Acil durdurma Guardian pause'u.
 
 ### 3.3 MiningCore (UUPS proxy, ERC-7201 depolama)
 
@@ -86,30 +86,33 @@ Araçlar: **npm workspaces + Turborepo** (pnpm 12 Windows'ta takıldığı için
 **Durum (özet):**
 
 ```
-Global:  acc, lastUpdate, currentHour, H, R, E_h, burnedForever, devPending, treasuryPending,
-         dpEndingAt[hour], accAtHour[hour], vrgdaSold, genesis{fuelUsd, minerDig}, params{...}
-Hesap:   dp, burn, tankKWh, lastSettle, expiryHour, debt, unrefined, level, owned[type], active[type],
-         referrer, fuelSpentWei, refineQueue[]
-Katalog: machineType{dp, burn, premiumBps, minLevel, generation, enabled} — eklenir, asla değiştirilmez
+Global:  acc, lastUpdate, currentHour, H, R, E_h, emitted, burnedForever, unrefinedSpent, devPending,
+         treasuryPending, dpEndingAt[hour], accAtHour[hour], vrgda{lnP0, decay, r, sold},
+         generations, lastGenerationTime, bestEfficiency, genesis{fuelUsd, minerDig}, params{...}
+Hesap:   dp, burn, tank, lastFuelSettle, expiryHour, debt, unrefined, level, rigs, scrapCredit,
+         rigs[type]{owned, active}, referrer, fuelSpentWei, refineQueue[]
+Katalog: machineType{dp, burn, premiumBps, minLevel, generation} — eklenir, asla değiştirilmez
 ```
 
 **Dış fonksiyonlar:**
 
 | Fonksiyon | Kim | Açıklama |
 |---|---|---|
-| `register(referrer)` | herkes | Saha L1 + Pilot Rig; referrer bir kez ayarlanır. `buyFuel` kayıtlı olmayan hesabı otomatik kaydeder → **ilk giriş tek işlem** |
+| (kayıt) | herkes | Ayrı bir `register` fonksiyonu yok: ilk `buyFuel(referrer)` sahayı (L1 + Pilot Rig) açar ve referrer'ı bir kez ayarlar → **ilk giriş tek işlem** |
 | `buyFuel()` payable | oyuncu | ETH → ℓ (Chainlink, 26s bayatlık kontrolü; sequencer feed adresi tanımlıysa onu da kontrol eder); gerekirse önce kayıt; ETH Router'a |
-| `buyMachines(type, qty, maxCost, payFromWallet)` | oyuncu | VRGDA kapalı form maliyet; önce rafine edilmemiş bakiye; %80 yak/%20 rezerv |
-| `setActive(type, count)` | oyuncu | Makineleri aç/kapa (kapasite kontrolü) |
-| `upgradeOutpost(maxCost, payFromWallet)` | oyuncu | `150·L^2.2·idx` |
-| `scrap(type, qty)` | oyuncu | %20 hurda kredisi |
-| `refine(amount, fast)` | oyuncu | Hızlı: %8 ücret, anında mint · Standart: 72s kuyruk |
-| `finalizeRefine(user, id)` | herkes | Süresi dolan kuyruğu mint eder |
+| `buyMachines(typeId, qty, maxCost, payFromWallet)` | oyuncu | VRGDA kapalı form maliyet × (1 + prim), yuvarlama yukarı; işlem başı ≤ 10.000 DP birimi; ped, yakıt hattı ve saha seviyesi kontrolü; alınan makineler hemen çalışır. Ödeme sırası: hurda kredisi → rafine edilmemiş bakiye → (isteğe bağlı) cüzdan (`burnFrom`, onay/permit gerekir). MOHN kısmı %80 kalıcı yakım / %20 rezerv |
+| `setActiveRigs(typeId, active)` | oyuncu | Bir türden tam olarak `active` adet makine çalışır (yakıt hattı kontrolü); Pilot Rig de kapatılabilir |
+| `upgradeSite(maxCost, payFromWallet)` | oyuncu | `150·L^2.2·idx`, idx = clamp(p/p0, 0.25, 4), yuvarlama yukarı; L30 sonrası revert |
+| `scrapMachines(typeId, qty)` | oyuncu | Önce boştaki makineler sökülür; kredi = DP × güncel p(t,n) × %20 (aşağı yuvarlanır). Ücretsiz Pilot Rig kredi vermez, yalnızca pedi boşaltır. Söküm `vrgdaSold`'u azaltmaz |
+| `refine(amount, fast)` | oyuncu | Hızlı: %8 ücret (yukarı yuvarlanır; yarısı kalıcı yakım, yarısı rezerv), anında mint · Standart: ücretsiz, 72s kuyruk. Genesis boyunca kapalı (`RefineClosed`) |
+| `finalizeRefine(account, id)` | herkes | Süresi dolan isteği sahibine mint eder; çift finalize `AlreadyFinalized` |
 | `poke()` | herkes | Global checkpoint (en fazla 168 saat/çağrı) |
 | `openMarket()` | herkes | Genesis bitince formülle POL oluşturur (LiquidityManager) |
-| `claimDev()` / `claimTreasury()` | ilgili alıcı | Payları **yalnızca 72s standart kuyruğa** alır (hızlı seçenek yok); kuyruk herkese açık |
+| `withdrawDevShare(amount)` / `withdrawTreasuryShare(amount)` | ilgili alıcı (`initialize`'da verilir; Faz 2.7'de Timelock ile değişir) | Payları **yalnızca 72s standart kuyruğa** alır (hızlı seçenek yok); talep ve UTC günü başına ≤ 100K; kuyruk herkese açık |
+| `resetMintBreaker()` | admin → Faz 2.7'de Timelock | Atmış mint devre kesicisini sıfırlar ve pencereyi temizler |
+| Referans kredisi (iç kanca) | — | Davet edilenin her tahakkukunda (`_settle` → `_onAccrued`) %3, hazine payından davet edenin rafine edilmemiş bakiyesine; hazine payında yeterli yoksa olan kadarı ödenir |
 | `set*` parametreler | Timelock | Kodlanmış sınır + hız limiti kontrolü |
-| `addMachineType(...)` | Timelock | Stratum eşiği + verim ≤ en iyi +%15 + ≥45 gün aralık |
+| `addMachineGeneration(types[])` | `CATALOG_ROLE` → Faz 2.7'de Timelock | Bir seferde bir nesil (1–8 tür): Dünya Derinliği nesnin stratum eşiğine ulaşmış olmalı (Gen-2: 2.000 m … Gen-8+: 85.000 m), son nesilden ≥ 45 gün, her türün verimi ≤ en iyi × 1,15, DP ≤ 10.000, prim ≤ %100, minLevel 1–30. Mevcut türler asla değişmez (M2) |
 | `pause()` / `unpause()` | Guardian / Timelock | Pause en fazla 72s, sonra otomatik biter; uzatma yalnızca Timelock |
 
 ### 3.4 Ödül muhasebesi algoritması
@@ -166,19 +169,24 @@ if (expiryHour > currentHour) { dpEndingAt[expiryHour] += dp; H += dp; debt = ac
 - `deposit()` (yalnızca MiningCore) → kovalar: `buyback`, `pol`, `ops` (bps; sınırlar 02 §10).
 - `withdrawOps()` → Ops Safe (pull). `pullBuyback(amount)` / `pullPol(amount)` yalnızca ilgili kontratlar.
 - ETH muhasebesi invariant'ı: `balance == buyback + pol + ops` (toz hariç).
+- Uygulama (Faz 2.6): roller `DEPOSITOR_ROLE` (MiningCore), `FEE_DEPOSITOR_ROLE` ve `POL_ROLE` (LiquidityManager), `BUYBACK_ROLE` (BuybackBurner), `OPS_ROLE` (ops Safe). Bölüşüm yuvarlama tozu ops kovasına gider. Oran ayarı (sınır + hız limiti + Timelock) Faz 2.7'de.
 
 ### 3.6 BuybackBurner
 
-- `executeBuyback(ethIn, minMohnOut)`: yalnızca KEEPER; `ethIn ≤ dailyCap`, günlük toplam tavanı; Uniswap v4 swap; alınan MOHN'un **%100'ü yakılır**.
-- Keeper anahtarı ele geçirilirse en kötü durum: günlük tavan dahilinde kötü fiyatla alım (sınırlı kayıp). Keeper başka hiçbir yetkiye sahip değil.
+- `executeBuyback(ethIn, minMohnOut)`: yalnızca KEEPER; günlük bütçe tavanı; fiyat çapası sınırı; Uniswap v4 swap; alınan MOHN'un **%100'ü yakılır**.
+- Keeper anahtarı ele geçirilirse en kötü durum: günlük bütçe dahilinde, çapanın en çok %3 üstüne kadar kötü fiyatla alım (sınırlı kayıp). Keeper başka hiçbir yetkiye sahip değil.
 - Mint/ödül miktarı **asla** AMM fiyatından hesaplanmaz.
+- Uygulama (v1.1, ADR-017): günlük bütçe = buyback kovasının, günün ilk buyback'indeki bakiyesinin `dailyBps`'i (varsayılan 500 = 1/20; Timelock %5–25, 7 günde bir). Swap'ın fiyat sınırı, hook'un tuttuğu fiyat çapasının 296 tick (≈ %3) altıdır; fiyat zaten oradaysa işlem geri çevrilir (`PriceOffAnchor`). Sınıra takılan swap kısmen dolar, harcanmayan ETH kovaya döner. Faz 2.6'daki "havuz ETH'sinin %2'si" tavanı kaldırıldı: anlık aktif likiditeyi okuyordu ve aynı blokta eklenip çekilen dar aralıklı likidite onu 30–60 kat şişirebiliyordu (AI denetimi AI-2). Genesis'te biriken kova günde 1/20 oranında harcanır.
 
 ### 3.7 LiquidityManager (POL)
 
 - `openMarket(...)` (MiningCore üzerinden, genesis sonrası, bir kez): v4 havuzunu başlatır, `sqrtPriceX96` = formül fiyatı, tam aralık pozisyon.
-- `addLiquidity(ethIn, minDig)`: KEEPER, tavanlı; yarım-swap + ekleme.
+- `addLiquidity(ethIn, minMohnOut)`: KEEPER, günlük bütçe ve fiyat çapası sınırlı; yarım-swap + ekleme.
 - `collectFees()`: herkes; MOHN ücretleri yakılır, ETH ücretleri buyback kovasına.
 - **Likidite çekme fonksiyonu yok.** Pozisyon NFT'si kontratta kalıcı kilitli.
+- Uygulama (Faz 2.6, ADR-012/013): PositionManager/NFT kullanılmaz; pozisyon doğrudan PoolManager'da LiquidityManager adına tutulur ve kontratta likidite azaltan hiçbir yol yoktur. Havuz: ETH (currency0) / MOHN, ücret %0,3 (`sim/params.json` amm.fee), tick aralığı 60, tam aralık. LiquidityManager aynı zamanda havuzun hook'udur: `beforeInitialize` (havuzu başkası Market Open'dan önce kendi fiyatıyla başlatamaz) ve `beforeSwap` (fiyat çapası, aşağıda). Adresinin düşük 14 biti `0x2080` olmalıdır (deploy'da CREATE2 salt'ı aranır). `addLiquidity` günlük bütçesi POL kovasının, günün ilk eklemesindeki bakiyesinin 1/7'sidir (sabit); ekleme yalnızca fiyat çapanın ±%3'ü içindeyken yapılır ve yarım-swap çapanın %3 altından öteye gidemez.
+- **Fiyat çapası (v1.1, `lib/PriceAnchor.sol`, ADR-017):** her swap'tan önce hook, son swap'tan bu yana geçerli olan tick'i geçen süre ağırlığıyla ortalamaya katar: `ema += (tick − ema) · dt / (dt + 1 saat)`. Aynı bloktaki swap'lar ortalamayı değiştirmez; fiyatı 1 saat tutmak ortalamayı yarı yola taşır. Uniswap v4 hook'un kendi swap'ları için hook'u çağırmadığından `addLiquidity` güncellemeyi kendisi yapar; `openMarket` çapayı açılış fiyatında başlatır. `anchorTick()` herkese açık okuma. Çapa yalnızca keeper swap'larının sınırıdır; mint ve ödül hiçbir yerde AMM fiyatından hesaplanmaz. MiningCore, LiquidityManager'ı `wireLiquidityManager` ile **bir kez** bağlar.
+- `MiningCore.openMarket()`: Market Open'dan sonra herkes, bir kez çağırır. P0 = genesis yakıt USD'si / genesis madenci tahakkuku (Market Open saat sınırında muhasebede kaydedilir); LP MOHN'u rezervden basılır (≤ 1M, devre kesiciden geçer); fiyat Chainlink ETH/USD ile `sqrtPriceX96`'ya çevrilir. AMM fiyatı hiçbir yerde okunmaz.
 
 ### 3.8 Roller ve anahtarlar
 
@@ -190,6 +198,25 @@ if (expiryHour > currentHour) { dpEndingAt[expiryHour] += dp; H += dp; debt = ac
 | Keeper | Sunucudaki sıcak anahtar, az ETH | poke, finalize, tavanlı buyback/POL | Her şey dışında |
 | Deployer | Tek kullanımlık | Deploy + rolleri devretme | Devirden sonra hiçbir şey (script doğrular) |
 
+**Kontrattaki karşılıkları (Faz 2.7):** `DEFAULT_ADMIN_ROLE` ve `CATALOG_ROLE` → 96 saatlik Timelock; `UPGRADER_ROLE` → 7 günlük ayrı Timelock (UUPS `_authorizeUpgrade`); `GUARDIAN_ROLE` → Guardian Safe; router/LM/BB'de `KEEPER_ROLE` ve kova rolleri. Devir ve "deployer'da rol kalmadı" kontrolü Faz 2.8 `Handover.s.sol`'da.
+
+**Parametreler (`setParam`, tek fonksiyon, tablo tabanlı; invariant P1):**
+
+| Parametre | Sınır | Adım | Bekleme |
+|---|---|---|---|
+| Yakıt fiyatı π_ℓ | $0,03–0,50 | ±%25 | 7 gün |
+| VRGDA `r` | 1.000–100.000 DP/gün | ±%25 | 30 gün (değişimde yeniden çapalama) |
+| VRGDA `k` | 0,05–0,35 | ±%25 | 30 gün (yeniden çapalama) |
+| Hızlı rafine ücreti | %0–12 | serbest | 7 gün |
+| Rafine kuyruğu | 24–168 saat | serbest | 7 gün |
+| Tank üst sınırı | 168–2.160 saat | serbest | 7 gün |
+| Oracle bayatlık eşiği | 25–30 saat | serbest | 7 gün |
+| Saha maliyet ölçeği | 0,5×–2× | ±%25 | 30 gün |
+
+Ayrıca: `setRecipients` (kurucu/hazine alıcıları, sıfır olamaz, 30 günde bir), `setSequencerFeed` (30 günde bir), router `setSplit` (buyback %30–60, POL %20–50, ops %10–35, 30 günde bir), BuybackBurner `setDailyBps` (buyback kovasının %5–25'i, 7 günde bir; v1.1). Saha maliyet ölçeğinin 0,5×–2× mutlak sınırı docs/02'de yok; uygulama seçimidir (kurucu onayı bekliyor). Yeniden çapalama: `r` veya `k` değiştiğinde eğri o anki fiyattan, o anki zaman ve satıştan yeniden başlar (`sim/vectors/vrgda_reanchor.json`, fiyat sıçramaz). Bunların dışında hiçbir ekonomi değeri değiştirilemez; testler MiningCore'un durum değiştiren fonksiyon listesini derlenmiş ABI ile birebir karşılaştırır.
+
+**Pause (invariant P2):** Guardian `pause()` oyuncu işlemlerini (yakıt, makine, saha, rafine, finalize, pay çekimi, openMarket) **72 saat** durdurur ve kendiliğinden biter. Guardian pause'u kaldıramaz. İki Guardian pause'u arasında en az **7 gün** olmalıdır; kaybolan bir Guardian anahtarı oyuncuları kalıcı olarak kilitleyemez. Timelock `unpause()` ile bitirir, `extendPause` ile en çok 30 gün uzatabilir. Muhasebe (`poke`) ve görünümler pause sırasında da çalışır. Bilinen bedel: pause boyunca oyuncular yakıt alamaz; tanklar boşalmaya devam eder.
+
 > Dürüst not: Tek kurucu için 2/3 Safe hâlâ fiilen tek kişi kontrolüdür. Bu ilk günden açıkça yazılır; bağımsız imzacılar eklendikçe güncellenir.
 
 ---
@@ -197,11 +224,13 @@ if (expiryHour > currentHour) { dpEndingAt[expiryHour] += dp; H += dp; debt = ac
 ## 4. Zincir dışı servisler
 
 ### 4.1 Web istemcisi (`apps/web`)
-- Next.js (App Router), React, Tailwind, **wagmi + viem**, **RainbowKit + SIWE** (opsiyonel e-posta girişi için Dynamic/Privy adaptörü), **PixiJS** (izometrik sahne), Zustand.
+- Next.js (App Router), React, Tailwind, **wagmi + viem**, **RainbowKit + SIWE** (opsiyonel e-posta girişi için Dynamic/Privy adaptörü), **Canvas 2D pixel saha** (`src/game/pixel/`, kodla çizilir; PixiJS 2026-10-13'te kaldırıldı), Zustand.
 - Kritik oyun durumu **doğrudan zincirden** (viem multicall) okunur; indeksleyici yalnızca geçmiş/toplamlar için.
 - Canlı sayaç istemcide formülden türetilir (zincir işlemi gerektirmez).
 - Dil: İngilizce birincil. Türkçe arayüz hukuki görüşe bağlı (bkz. 07).
 - PWA, mobil öncelikli, WalletConnect zorunlu.
+- **Gönderilen işlemler (2026-10-13):** cüzdan hash'i döndürünce hash cihazda saklanır (`src/game/pending.ts`) ve makbuz gelene dek izlenir (bir saatte vazgeçilir); sayfa yenilense de `useResumeTx` aynı hash'i bir kez izler, sonuç bir kez ve explorer linkiyle bildirilir; izlenen işlem varken yeni işlem gönderilmez (çift ödeme yok).
+- **Herkese açık profil paylaşım görseli (2026-10-13):** site statik (Cloudflare Pages); tek dinamik parça `apps/web/functions/s/[[path]].ts` (Pages Function, ücretsiz kademe): `/s/<adres>` sayfasını sunar, `og:image`/`twitter:image` etiketlerini API'nin `/cards/<adres>` kartına çevirir. `_headers` Function yanıtlarına uygulanmadığı için güvenlik başlıkları fonksiyonda (testle `_headers`'a eşit tutulur). Pages ortam değişkeni: `API_URL`.
 
 ### 4.2 Giriş katmanı
 
@@ -220,26 +249,34 @@ if (expiryHour > currentHour) { dpEndingAt[expiryHour] += dp; H += dp; debt = ac
 - **Kendi log okuyucumuz** (TypeScript + viem `getLogs`, Postgres): ~10 saniyede bir yalnızca kendi kontratlarımızın olaylarını blok aralıklarıyla çeker, son işlenen bloğu saklar, idempotent upsert yapar. Alchemy ücretsiz kotasına (30M CU/ay) sığar. Ponder, canlı modda her bloğu çektiği için (~843K blok/gün) ücretsiz RPC ile çalışmaz. Olaylar: Register, FuelBought, MachinesBought, Activated, OutpostUpgraded, Scrapped, Refined, RefineQueued/Finalized, Checkpoint(hour), Burned, ReserveReturned, Buyback, PolAdded, ParamQueued/Executed, Paused.
 - Çıktılar: sıralamalar, ekonomi metrikleri (SR, NE, RCR, P\*, Gini, Nakamoto), kohort tabloları, herkese açık `/economy` API'si.
 - Ücretsiz alternatifler: Goldsky Starter (mainnet+testnet), Envio HyperSync (yalnızca mainnet, ücretsiz token).
+- **Uygulama (Faz 3.1, 2026-10-12):** `services/indexer` — iki akış: "core" (kendi 7 kontratımızın tüm logları) ve "pool" (PoolManager'ın yalnızca MOHN havuzuna ait `Swap` logları; başa yetişince 6 turda bir). Ham loglar `events` tablosunda saklanır, türetilmiş tablolar her parti ile aynı işlemde güncellenir ve `rebuild` ile RPC'siz yeniden kurulabilir. Saatlik emisyon `HourClosed` olaylarındaki rezervden kesin olarak türetilir (rezerv yalnızca emisyon, geri dönüşüm ve Market Open LP basımıyla değişir). Metrik formülleri `packages/sdk`'den. Veritabanı: üretimde Postgres, yerelde ve testte PGlite (gömülü, ücretsiz). Zincir notu: Robinhood Chain RPC'si loglarda `blockTimestamp: "0x0"` döndürüyor; blok zamanı log içeren her blok için bir kez `eth_getBlockByNumber` ile okunur. Tahmini RPC maliyeti ≈ 25–27M CU/ay (Alchemy ücretsiz kademe 30M); ayrıntı `services/indexer/README.md`.
 
 ### 4.4 API (`services/api`)
 - **Hono** (Node 22), Zod doğrulama, Drizzle ORM, Postgres, Redis (rate limit, sıralama önbelleği, pub/sub).
 - Uç noktalar: oturum (SIWE; opsiyonel e-posta sağlayıcısı JWT doğrulaması adaptörle), profil, crew, survey (günlük ücretsiz; sunucu rastgeleliği — ekonomik değeri yok), başarımlar, sezon, paylaşım kartı (Satori + resvg ile PNG), bildirimler (e-posta: Resend/Postmark; Telegram bot), admin API (RBAC).
 - Anti-bot (yalnızca zincir dışı ödüller ve referans gösterimi için): Cloudflare Turnstile (sunucu doğrulamalı), IP/ASN/cüzdan rate limit, kümeleme (ortak fonlama adresi, referans ağacı şekli, senkron davranış).
+- **Uygulama (Faz 3.2, 2026-10-12):** `services/api` — Hono + `@hono/zod-openapi` (OpenAPI 3.1 `/openapi.json`), indeksleyicinin Postgres'inde kendi tabloları (`migrations/1001_api_init.sql`), Redis (veya tek süreçte bellek) ile hız sınırı ve SIWE nonce'ları. SIWE: EOA imzası yerelde, akıllı cüzdan (EIP-1271/6492) RPC ile; oturum çerezi rastgele token (yalnızca SHA-256'sı saklanır), HttpOnly + SameSite=Lax + Secure; yazma istekleri `WEB_ORIGIN` ve JSON şartı (CSRF). E-posta girişi: sağlayıcıdan bağımsız JWKS/JWT adaptörü (Dynamic veya Privy). Survey: sunucu sırrı + oyuncu + gün HMAC'i (belirlenimci, tahmin edilemez, ekonomik değeri yok). Paylaşım kartı: elle SVG + resvg, Inter (OFL) fontu; Satori, düzeltilmemiş bir bağımlılık uyarısı yüzünden kullanılmadı. Admin: 4 rol, her yazma işlemi ve denetim satırı tek işlemde; `audit_log` veritabanı tetikleyicisiyle yalnızca eklemeli. Üretimde `TURNSTILE_SECRET` ve `REDIS_URL` olmadan başlamaz. X hesabı bağlama Faz 4.4'te.
+
+- **2026-10-13 eklemeleri:** `GET /market/prices` (indeksleyicinin `vrgda_sales` tablosundan gün gün DP başına ödenen ortalama, kademe primi hariç; zincir saati API saatinin önündeyse "bugün" zincirden alınır); `/cards/<adres>` sahası olmayan oyuncuyu sitenin paylaşım görseline yönlendirir (302) ve kartta kazanılan rozet plakaları çizilir (rozet çizimleri `packages/sdk`'da). `GET /profiles/<adres>` artık `titles` (tamamlanan Core Collection setlerinin unvanları) ve `plaques` döndürür: biten her sezonun World Bore katkısında ilk 10 (işaretli hesaplar sıra almaz, eşitlikte adres sırası; herkese açık sezon tablosu da aynı sıralamayı kullanır). Biten sezonun ilk 10'u süreç içinde 10 dakika önbellekte tutulur; plaketler karta da çizilir. `GET /leaderboards/contribution?address=<adres>` oyuncunun kendi sırasını da (`you`) döndürür; oyundaki tüm zamanlar tablosu ilk 50'de olmayan oyuncuya kendi sırasını gösterir. Yeni indeks: `events (contract, event, block_time)` (eski `(contract, event)` indeksinin yerine; `users.wallet` zaten `UNIQUE`). **Crew sinyalleri** (docs/01 §6.7, serbest sohbet yok): `POST /crews/signal` yalnızca SDK'daki altı hazır ifadeden birini kabul eder (`CREW_SIGNALS`; oturum, crew üyeliği, oyuncu başına saatte 12 deneme); `GET /crews/{id}` son 12 sinyali yalnızca o crew'un üyelerine döndürür (herkese açık sayfada sinyal ve zamanı yok; yanıt `private, no-store`); bir üye en çok 3 sinyal tutar, crew 12; eskileri ve crew'dan ayrılanın sinyalleri silinir (`crew_signals`, migration 1004).
 
 ### 4.5 Keeper (`services/keeper`)
-- Saatlik `poke()`, olgun rafine kuyruklarını `finalizeRefine`, günlük `executeBuyback` ve `addLiquidity` (tavanlı, slippage hesabı zincir dışında), sağlık kontrolleri.
+- Saatlik `poke()`, olgun rafine kuyruklarını `finalizeRefine`, 3 saatte bir parça halinde `executeBuyback` ve `addLiquidity` (bütçeli, çapalı, slippage hesabı zincir dışında), sağlık kontrolleri.
 - Anahtar: ayrı, düşük bakiyeli; yetkisi yalnızca KEEPER rolü. Bakiye alarmı.
+- **Uygulama (Faz 3.3, 2026-10-12):** `services/keeper` — işler sırayla: testnet fiyat beslemesini tazeleme, `poke`, `openMarket`, olgun kuyrukları `finalizeRefine` (adaylar indeksleyiciden, her biri zincirde ve saatlik mint penceresinde doğrulanır), `executeBuyback` ve `addLiquidity` (v1.1: günün bütçesi 8 adet 3 saatlik dilime eşit yayılır, her dilimde en çok fiyatı ≈ %2 oynatan bir parça — havuz ETH'sinin %0,99'u; ekleme iki parça; parça çapa bandında kalan alana göre küçültülür, alan yoksa atlanır; dilimde harcama yapıldığını indeksleyicideki olaylardan okur). Her işlem önce simüle edilir; gaz tahminine %25 pay eklenir (iç içe Uniswap çağrılarında tahmin sınırda kalıyor). `minOut`, `packages/sdk`'teki kesin v4 kotasından (Solidity `SwapMath` ile çapraz test) kayma payı düşülerek bulunur; havuz fiyatı referanstan (son 24 saatin swap medyanı + Market Open fiyatı) %10'dan fazla saparsa alım/ekleme atlanır. Aynı anda tek keeper: Postgres advisory lock (Redis gerekmez). Anahtar şifreli Foundry keystore'dan (önerilen) veya sır yöneticisinden; `DRY_RUN` anahtarsız simülasyon yapar. Tek makinede (PGlite) `RUN_INDEXER=true` ile indeksleyici aynı süreçte çalışır.
 
 ### 4.6 İzleme ve uyarı
 - **Zincir:** OpenZeppelin Monitor (açık kaynak, self-host) — emisyon eğrisine göre anormal mint, rol/yükseltme/pause olayları, timelock kuyruğu, büyük transferler, LP olayları, keeper bakiyesi. Bildirim: Telegram + e-posta + (kritikte) telefon.
 - **Altyapı:** Prometheus + Grafana + Loki, Uptime Kuma (veya BetterStack) + herkese açık `/status`.
 - **Uygulama:** Sentry.
+- **Uygulama (Faz 3.4, 2026-10-12, ADR-014):** Zincir uyarıları indeksleyicinin okuduğu olaylardan üretilir (`services/indexer/src/alerts`): rol, yükseltme, pause, timelock, parametre, alıcı/besleme/pay değişiklikleri kritik; Market Open, ≥ 50K MOHN mint/transfer uyarı; **emisyonu aşan mint** (basılan toplam > kapanmış saatlerin emisyonu + LP + açık saatin emisyonu) kritik. `alerts` tablosu outbox'tır; bildirimci Telegram (ücretsiz bot) ve isteğe bağlı webhook ile gönderir, başarısızları yeniden dener, 24 saatten eski olanları atlar. Servis sağlığı Prometheus kurallarıyla (`infra/monitoring`), Alertmanager → aynı Telegram sohbeti. Kuralların birim testleri `promtool test rules` ile CI'da.
 
 ---
 
 ## 5. Oyun yaratıcısı (operatör) paneli — `apps/admin`
 
 **Evet, olmalı; hazırı yok, biz kuruyoruz.** Refine (React) + shadcn/Ant Design; ayrı alan adı; **Cloudflare Access (Zero Trust)** + donanım anahtarı (WebAuthn) zorunlu; panelde **hiçbir özel anahtar yok**.
+
+- **Uygulama (Faz 5, 2026-10-12, ADR-015):** Panel ayrı bir Refine uygulaması değil, `apps/web` içinde `/ops/` (statik, noindex, robots dışı). Erişim üç katman: Cloudflare Access (yol kuralı `mohonaut.com/ops*`, donanım anahtarı), SIWE oturumu ve API rolleri (`services/api/src/rbac.ts`; panel aynı tabloyu yalnızca ekranları gizlemek için kopyalar, test eşitliği denetler). Her yazma işlemi gerekçe ister ve `audit_log`'a (yalnızca eklenebilir) düşer. Yeni API: `GET /announcements`, `POST /support` (Turnstile), `/admin/announcements`, `/admin/support`, `/admin/users/{id}` (oyuncu dosyası), `/admin/health`.
 
 | Modül | İçerik |
 |---|---|
@@ -278,7 +315,7 @@ if (expiryHour > currentHour) { dpEndingAt[expiryHour] += dp; H += dp; debt = ac
 
 | # | Karar | Gerekçe | Alternatif |
 |---|---|---|---|
-| ADR-001 | Adil madencilik lansmanı (premine/dev buy/ön satış yok) | Sniper ve "insider" riskini ortadan kaldırır; [a competitor]'den net ayrışma | Pons/Pools.trade lansmanı |
+| ADR-001 | Adil madencilik lansmanı (premine/dev buy/ön satış yok) | Sniper ve "insider" riskini ortadan kaldırır; dev-buy ve ön satışlı lansmanlardan net ayrışma | Pons/Pools.trade lansmanı |
 | ADR-002 | Yakıt ETH ile, USD sabit fiyat (Chainlink) | Dış gelir + fiyat duyarlı hashpower + sybil-nötr | Yakıt MOHN ile (yapışkan H, gelir yok) |
 | ADR-003 | Makineler hesaba bağlı, NFT değil (v1) | Pazar yeri = KVHS riski + transfer muhasebe hataları; daha küçük denetim kapsamı | ERC-1155 makineler |
 | ADR-004 | MiningCore UUPS + 7g timelock + kemikleşme taahhüdü; token immutable | Hata düzeltme yolu ile güven dengesi | Tam immutable + göç |
@@ -288,3 +325,12 @@ if (expiryHour > currentHour) { dpEndingAt[expiryHour] += dp; H += dp; debt = ac
 | ADR-008 | Cüzdan girişi (RainbowKit + SIWE) birincil; e-posta/Google ücretsiz kademeli Dynamic/Privy adaptörüyle; X yalnızca bağlı kimlik; v1'de sponsorlu gas yok | Sıfır bütçe; cüzdan girişi sınırsız ve ücretsiz | Baştan Privy ücretli kademe |
 | ADR-009 | Korumalı lansman: immutable günlük mint tavanı + saatlik devre kesicisi + "Unaudited" bandı; bağımsız denetim gelirle yapılır | Lansman öncesi denetim bütçesi yok; hata olasılığı sıfırlanamıyorsa zarar boyutu sınırlanır | Lansmanı denetime kadar ertelemek |
 | ADR-010 | İndeksleyici: kendi log okuyucumuz (getLogs, ~10 sn) | ~843K blok/gün; Ponder'in her bloğu çekmesi ücretsiz RPC kotasını aşar; az olaylı tek kontrat seti için basit okuyucu yeterli | Ponder + ücretli RPC, Goldsky, Envio |
+| ADR-012 | LiquidityManager havuzun `beforeInitialize` hook'u | MOHN adresi lansmandan önce yayımlanır; hook'suz havuz anahtarı tahmin edilebilir ve herkes havuzu Market Open'dan önce kendi fiyatıyla başlatabilirdi (openMarket ya kilitlenir ya da yanlış fiyattan açılırdı) | Hook'suz havuz + "önceden başlatılmışsa fiyatı swap ile taşı" (likidite eklenmişse güvenilmez) |
+| ADR-019 | Statik siteye tek dinamik parça: `/s/<adres>` için Cloudflare Pages Function (ücretsiz kademe, günde 100.000 istek); sayfayı değiştirmez, yalnızca paylaşım görseli etiketlerini oyuncunun API kartına çevirir | Davet linki X'te paylaşılınca kişinin kendi kartı görünmeli (paylaşım döngüsü, 05 §3.4); statik dışa aktarımda sayfa başına OG görseli mümkün değil. Fonksiyon sır taşımaz, API'ye istek atmaz (kart URL'si yalnızca etikete yazılır), hatada sayfa olduğu gibi döner | API'den HTML paylaşım sayfası (çirkin link, ayrı alan); her profil için derlemede sayfa (adresler önceden bilinmiyor) |
+| ADR-018 | Repo gizliyken CI, kurucunun bilgisayarında WSL içindeki self-hosted runner'larda koşar (`infra/ci-runner`); fork PR'ları her zaman GitHub runner'ında | Özel repoda ücretsiz Actions dakikası CI'a yetmiyor (koşu başı ~60 dk, ayda 2.000 dk; 2026-10-12'de bitti). Self-hosted runner ücretsiz, makine güçlü (20 çekirdek). Üretim sunucusu kullanılmaz: CI her PR'ın kodunu Docker ile çalıştırır ve keeper anahtarına uzanabilir | Ücretli Actions dakikası (ayda ~12–17 $); repoyu erken açmak; Hetzner üretim sunucusu |
+| ADR-017 | Keeper tavanları kovadan (günde buyback 1/20, POL 1/7) + hook'ta 1 saatlik zaman ağırlıklı fiyat çapası, keeper swap'ları çapadan en çok %3 (v1.1, kurucu kararı) | Havuzun anlık likiditesine bağlı tavan JIT likiditeyle şişirilebiliyordu; çalınmış keeper anahtarı tek blokta fiyatı itip alımı sandviçleyebiliyordu (AI-2, ölçülen: harcamanın %38–59'u). Kova yalnızca yakıt geliriyle büyür; çapa tek blokta hareket etmez. Ek oracle veya ücretli servis gerekmez | Havuzun kendi pozisyonuna bağlı tavan (çapa olmadan sandviç kalır); dış TWAP oracle (bu zincirde yok); keeper'ı Safe'e bağlamak (her gün imza) |
+| ADR-016 | Başlangıçta tek sunucu, girişi yalnızca Cloudflare Tunnel; Coolify/Dokploy yerine `compose` + `deploy.sh`; sırlar SOPS + age | Sıfır bütçe: açık port, yük dengeleyici, panel yazılımı ve ücretli sır yöneticisi gerekmez; tünel ve Access ücretsiz. Kurulum ve geri dönüş tek betik; CI aynı imajları ve yedek/geri yükleme yolunu her PR'da dener. Sunucu sağlayıcıdan bağımsız (Oracle Always Free arm64 dahil) | İki Hetzner sunucusu + Coolify/Dokploy (ücret ve bakım) |
+| ADR-015 | Operatör paneli `apps/web` içinde `/ops/` olarak (aynı Next.js, bileşenler, CSP ve testler); ayrı Refine uygulaması yok | Tek kişilik ekip için tek kod tabanı: tasarım sistemi, CSP hattı, Playwright ve axe testleri paylaşılıyor; Refine + Ant Design ~1 MB bağımlılık ve ayrı bakım getirirdi. Panel kodu herkese açık pakette olsa da sır içermez; yetki API'de, erişim Cloudflare Access'te | Ayrı `apps/admin` (Refine), ayrı alan adı |
+| ADR-014 | Zincir uyarıları kendi indeksleyicimizden (olay kuralları + outbox + Telegram); OpenZeppelin Monitor yok | OZ Monitor zinciri blok blok işler; ~864K blok/gün ücretsiz RPC kotasını aşar. İndeksleyici uyarılacak olayların hepsini zaten okuyor; ek RPC maliyeti sıfır, kurallar testli | OpenZeppelin Monitor + ücretli RPC |
+| ADR-013 | v4 PoolManager ile doğrudan çalışma (unlock callback); PositionManager/NFT yok | Daha az bağımlılık; pozisyon kontratın kendisinde, NFT transfer yüzeyi yok; L1 (likidite azaltılamaz) ABI'den doğrulanabilir | PositionManager + NFT'yi kontratta kilitlemek |
+| ADR-011 | MiningCore tek kontrat kalır; kod boyutu sınırı olarak zincirin doğrulanmış 96 KB sınırı kullanılır (`code_size_limit = 98304`) | Faz 2.4 sonunda MiningCore 23.7 KB; rafineri, market açılışı ve timelock eklenince 24 KB (EIP-170) aşılır. Robinhood Chain 98.304 bayta kadar kabul ediyor (mainnet + testnet, `ZINCIR_DOGRULAMA.md` §6). Bölmek delegatecall/kütüphane bağlama ve ek denetim yüzeyi getirir. Bedel: kod başka EVM zincirlerine olduğu gibi taşınamaz | Modül başına ayrı kontrat, harici kütüphaneler, diamond |

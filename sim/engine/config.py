@@ -55,7 +55,7 @@ class Outpost:
 class Governance:
     """Spec §12 intervention rule for VRGDA r, modelled as if the Safe always follows it."""
     enabled: bool
-    delay_days: int          # 72 h timelock between decision and effect
+    delay_days: int          # 96 h timelock between decision and effect (4 days)
     weeks: int               # consecutive weeks a condition must hold
     sr_low: float            # weekly SR below this ...
     price_ratio_low: float   # ... or weekly mean p(t,n)/p0 below this → r × (1 − step)
@@ -130,7 +130,12 @@ class Model:
     amm_rounds: int
     swap_haircut: float
     max_buy_pool_frac: float
-    buyback_max_pool_frac: float
+    # v1.1 (docs/02 §10.1): keeper spends at most a share of each bucket per day, in chunks
+    # that each move the price at most max_chunk_move (the on-chain price anchor allows 3 %).
+    buyback_bucket_frac: float
+    pol_bucket_frac: float
+    keeper_chunks: int
+    max_chunk_move: float
     ops_monthly_usd: float
     dev_sell_frac: float
     tank_days: float
@@ -200,7 +205,7 @@ def build_params(raw: dict[str, Any]) -> Params:
     machines = Machines(
         names=tuple(mach["names"]),
         dp=np.asarray(mach["dp"], dtype=float),
-        kw=np.asarray(mach["kw"], dtype=float),
+        kw=np.asarray(mach["litres_per_hour"], dtype=float),
         premium=np.asarray(mach["premium"], dtype=float),
         unlock_level=np.asarray(mach["unlock_level"], dtype=float),
     )
@@ -212,8 +217,8 @@ def build_params(raw: dict[str, Any]) -> Params:
         split_treasury=float(s["emission"]["split_treasury"]),
         referral_rate=float(s["referral"]["rate"]),
         referral_min_energy_eth=float(s["referral"]["min_invitee_energy_eth"]),
-        energy_usd_per_kwh=float(s["energy"]["price_usd_per_kwh"]),
-        tank_cap_hours=float(s["energy"]["tank_cap_hours"]),
+        energy_usd_per_kwh=float(s["fuel"]["price_usd_per_litre"]),
+        tank_cap_hours=float(s["fuel"]["tank_cap_hours"]),
         machines=machines,
         p0=float(s["vrgda"]["p0"]),
         k=float(s["vrgda"]["k"]),
@@ -247,7 +252,10 @@ def build_params(raw: dict[str, Any]) -> Params:
         amm_rounds=int(m["amm"]["rounds_per_day"]),
         swap_haircut=float(m["amm"]["swap_haircut"]),
         max_buy_pool_frac=float(m["amm"]["max_daily_buy_frac_of_pool_eth"]),
-        buyback_max_pool_frac=float(m["buyback_max_daily_frac_of_pool_eth"]),
+        buyback_bucket_frac=float(m["keeper"]["buyback_daily_frac_of_bucket"]),
+        pol_bucket_frac=float(m["keeper"]["pol_daily_frac_of_bucket"]),
+        keeper_chunks=int(m["keeper"]["chunks_per_day"]),
+        max_chunk_move=float(m["keeper"]["max_chunk_price_move"]),
         ops_monthly_usd=float(m["ops_monthly_cost_usd"]),
         dev_sell_frac=float(m["dev_sell_frac"]),
         tank_days=float(m["tank_days"]),

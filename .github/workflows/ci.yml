@@ -1,0 +1,466 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Runners: GitHub's (ubuntu-latest) unless the repository variable CI_RUNS_ON names others,
+# e.g. ["self-hosted","linux","x64","mohonaut"] for the founder's WSL runners (infra/ci-runner).
+# Pull requests from forks always use GitHub's runners: outside code never runs on that machine.
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    # Runs the heavy jobs only when their inputs changed: Actions minutes are limited while the
+    # repository is private. A change to this workflow runs everything.
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      contracts: ${{ steps.filter.outputs.contracts }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+      monitoring: ${{ steps.filter.outputs.monitoring }}
+      infra: ${{ steps.filter.outputs.infra }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            workflow: &workflow
+              - ".github/workflows/ci.yml"
+            contracts:
+              - *workflow
+              - "contracts/**"
+              - "packages/sdk/src/abi/**"
+              - "tools/gen_abis.mjs"
+              - "tools/gen_pool_manager_code.py"
+              - "tools/check_coverage.py"
+            e2e:
+              - *workflow
+              - "apps/**"
+              - "packages/**"
+              - "services/**"
+              - "contracts/src/**"
+              - "contracts/script/**"
+              - "contracts/test/fixtures/**"
+              - "deployments/**"
+              - "package-lock.json"
+            monitoring:
+              - *workflow
+              - "infra/monitoring/**"
+              - "tools/gen_dashboards.py"
+            infra:
+              - *workflow
+              - "infra/**"
+              - "services/**"
+              - "packages/**"
+              - "package-lock.json"
+
+  contracts:
+    needs: changes
+    if: needs.changes.outputs.contracts == 'true'
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Format
+        run: forge fmt --check
+      - name: Lint
+        run: forge lint
+      - name: Build (with sizes)
+        run: forge build --sizes
+      - name: SDK ABIs match the build (packages/sdk/src/abi)
+        run: node ../tools/gen_abis.mjs --check
+      - name: PoolManager code for the property fuzzers is current
+        run: python3 ../tools/gen_pool_manager_code.py --check
+      - name: Test (fuzz 10k, invariant 1k)
+        run: forge test -vv
+      - name: Coverage gate (src >= 95% lines and branches)
+        run: |
+          # Coverage builds are unoptimized and instrumented: test contracts that embed MiningCore's
+          # creation code outgrow the 96 KB chain limit there. Size checks happen in the build step.
+          # Lighter fuzzing than the test step (profile.coverage in foundry.toml).
+          FOUNDRY_PROFILE=coverage forge coverage --report lcov --report-file lcov.info \
+            --no-match-coverage "(test|script)/" --code-size-limit 300000
+          python3 ../tools/check_coverage.py lcov.info
+
+  formal:
+    # Halmos symbolic proofs (functions named prove_*); needs Linux (does not install on Windows).
+    needs: changes
+    if: needs.changes.outputs.contracts == 'true'
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install halmos
+      - name: Halmos
+        run: halmos --function prove_
+
+  slither:
+    needs: changes
+    if: needs.changes.outputs.contracts == 'true'
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      # Slither straight from PyPI, as run locally (CLAUDE.md): the container action's own setup
+      # failed intermittently on the self-hosted runner.
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Slither (fails on medium and above)
+        working-directory: contracts
+        run: |
+          pip install -q slither-analyzer==0.11.6
+          slither . --config-file slither.config.json --fail-medium
+
+  aderyn:
+    needs: changes
+    if: needs.changes.outputs.contracts == 'true'
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Aderyn
+        working-directory: contracts
+        run: |
+          npm install -g @cyfrin/aderyn
+          aderyn . --output aderyn-report.md
+          if grep -q "^## H-" aderyn-report.md; then echo "High severity findings"; cat aderyn-report.md; exit 1; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: aderyn-report
+          path: contracts/aderyn-report.md
+
+  sim:
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    defaults:
+      run:
+        working-directory: sim
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - name: Lint (ruff)
+        run: ruff check .
+      - name: Dead code (vulture)
+        run: vulture engine tests run_scenarios.py make_vectors.py beta_report.py --min-confidence 80
+      - name: Unit tests
+        run: python -m unittest discover -s tests -t .
+      - name: Vectors are reproducible
+        run: |
+          python make_vectors.py
+          git diff --exit-code -- vectors/
+
+  ts:
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build, typecheck, lint
+        run: npx turbo run build typecheck lint
+      - name: Test
+        # One package at a time, two test workers: the indexer and API suites run an embedded
+        # Postgres (PGlite) each, and on the self-hosted laptop runner more parallel suites
+        # starved the machine until the runner lost its connection to GitHub.
+        run: npx turbo run test --concurrency=1 -- --maxWorkers=2
+      - name: Dead code (knip)
+        run: npx knip
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Brand vectors match their generator (brand/)
+        run: |
+          pip install -q fonttools==4.66.1
+          python tools/brand/gen_brand.py --check
+      - name: Copy lint (docs/05 §6)
+        run: node tools/lint_copy.mjs --self-test && node tools/lint_copy.mjs
+      - name: Format
+        run: npx prettier --check .
+
+  keeper-e2e:
+    # Keeper on a local anvil chain with time travel: real deploy script, PoolManager bytecode,
+    # indexer and keeper on Postgres, plus the two-keeper lock (services/keeper/test/e2e).
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx turbo run build --filter=@mohonaut/keeper...
+      - name: End-to-end
+        working-directory: services/keeper
+        run: npx vitest run test/e2e
+        env:
+          KEEPER_E2E: "1"
+          KEEPER_E2E_PG_URL: postgres://postgres:postgres@localhost:5432/postgres
+
+  monitoring:
+    # Validates the monitoring stack and unit-tests the alert rules (infra/monitoring).
+    needs: changes
+    if: needs.changes.outputs.monitoring == 'true'
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prometheus config
+        run: docker run --rm -v "$PWD/infra/monitoring/prometheus:/etc/prometheus:ro" --entrypoint promtool prom/prometheus:v3.5.0 check config /etc/prometheus/prometheus.yml
+      - name: Alert rule unit tests
+        run: docker run --rm -v "$PWD/infra/monitoring/prometheus:/etc/prometheus:ro" --entrypoint promtool prom/prometheus:v3.5.0 test rules /etc/prometheus/tests/mohonaut_test.yml
+      - name: Alertmanager config
+        run: docker run --rm -v "$PWD/infra/monitoring/alertmanager:/etc/alertmanager:ro" --entrypoint amtool prom/alertmanager:v0.28.1 check-config /etc/alertmanager/alertmanager.yml
+      - name: Loki config
+        run: docker run --rm -v "$PWD/infra/monitoring/loki:/etc/loki:ro" grafana/loki:3.5.0 -config.file=/etc/loki/loki.yml -verify-config
+      - name: Alloy config
+        run: docker run --rm -v "$PWD/infra/monitoring/alloy:/etc/alloy:ro" grafana/alloy:v1.9.0 fmt /etc/alloy/config.alloy
+      - name: Compose file
+        run: docker compose -f infra/monitoring/docker-compose.yml config -q
+      - name: Dashboards are generated
+        run: python3 tools/gen_dashboards.py --check
+
+  web-e2e:
+    # Playwright in its official Linux image: behaviour, axe accessibility scan and visual
+    # snapshots of the static export. New screenshots are written (--update-snapshots=missing)
+    # and uploaded; commit them from the artifact to make them baselines.
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    container: mcr.microsoft.com/playwright:v1.64.0-noble
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx turbo run build --filter=@mohonaut/web...
+      - name: Playwright
+        working-directory: apps/web
+        env:
+          VISUAL: "1"
+          HOME: /root
+        run: npx playwright test --update-snapshots=missing
+      - name: Bundle budget
+        working-directory: apps/web
+        run: npm run budget
+      - name: Lighthouse (mobile; performance >= 85, accessibility >= 95)
+        working-directory: apps/web
+        env:
+          HOME: /root
+        run: npm run lighthouse -- --json lighthouse.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: web-e2e
+          path: |
+            apps/web/playwright-report
+            apps/web/e2e/__screenshots__
+            apps/web/lighthouse.json
+
+  web-play-e2e:
+    # The game client against a local anvil deployment (apps/web/e2e/play): the real deploy
+    # script, the indexer and the API, a build pointed at them and the wallet mock connector
+    # (diesel, rigs, SIWE, crew, Survey, profile, alerts).
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    container: mcr.microsoft.com/playwright:v1.64.0-noble
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx turbo run build --filter=@mohonaut/api...
+      - name: Playwright (local chain)
+        working-directory: apps/web
+        env:
+          HOME: /root
+        run: npm run e2e:play
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: web-play-e2e
+          path: apps/web/playwright-report
+
+  infra:
+    # Back-end infrastructure (infra/, docs/06 6.1): service images build and the API image
+    # serves; compose, cloud-init and scripts validate; an encrypted backup of a real schema
+    # restores with matching row counts (Kapı 6, restore half).
+    needs: changes
+    if: needs.changes.outputs.infra == 'true'
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build service images
+        run: |
+          for s in api indexer keeper; do
+            docker buildx build --load -f infra/docker/Dockerfile --build-arg SERVICE=$s \
+              --cache-from type=gha,scope=$s --cache-to type=gha,mode=max,scope=$s \
+              -t mohonaut-$s:ci .
+          done
+      - name: Images start
+        run: |
+          # Names and host ports per run: on a self-hosted runner the Docker daemon outlives the
+          # job and other jobs share it, so fixed names and ports collide.
+          N="ci-${{ github.run_id }}-${{ github.run_attempt }}"
+          echo "CI_NET=$N" >> "$GITHUB_ENV"
+          docker network create "$N"
+          docker run -d --name "$N-pg" --network "$N" -p 127.0.0.1::5432 -e POSTGRES_PASSWORD=ci \
+            -e POSTGRES_DB=mohonaut postgres:17-bookworm
+          echo "CI_PG=$(docker port "$N-pg" 5432/tcp | head -1)" >> "$GITHUB_ENV"
+          for i in $(seq 1 30); do docker exec "$N-pg" pg_isready -U postgres && break; sleep 2; done
+          DB="postgres://postgres:ci@$N-pg:5432/mohonaut"
+          # Same order as infra/stack/compose.yml: the indexer migrates, then the API starts.
+          # (No real RPC here: the indexer keeps retrying, which is what it does in an outage.)
+          docker run -d --name "$N-idx" --network "$N" -p 127.0.0.1::9464 --read-only --tmpfs /tmp \
+            -v "$PWD/deployments:/deployments:ro" -e METRICS_HOST=0.0.0.0 \
+            -e RPC_URL=http://127.0.0.1:9 -e DATABASE_URL="$DB" \
+            -e DEPLOYMENT_FILE=/deployments/46630.json mohonaut-indexer:ci
+          IDX=$(docker port "$N-idx" 9464/tcp | head -1)
+          for i in $(seq 1 30); do curl -fsS -o /dev/null "http://$IDX/metrics" && break; sleep 2; done
+          docker logs "$N-idx" 2>&1 | tail -5
+          curl -fsS "http://$IDX/metrics" | grep -q '^indexer_'
+          docker run -d --name "$N-api" --network "$N" -p 127.0.0.1::8787 --read-only --tmpfs /tmp \
+            -v "$PWD/deployments:/deployments:ro" \
+            -e NODE_ENV=development -e HOST=0.0.0.0 -e PORT=8787 \
+            -e DATABASE_URL="$DB" \
+            -e DEPLOYMENT_FILE=/deployments/46630.json -e WEB_ORIGIN=https://mohonaut.com \
+            -e SURVEY_SECRET=$(openssl rand -hex 32) mohonaut-api:ci
+          API=$(docker port "$N-api" 8787/tcp | head -1)
+          for i in $(seq 1 30); do curl -fsS "http://$API/healthz" && break; sleep 2; done
+          curl -fsS "http://$API/world" | jq -e '.depth.mm == "0"'
+          curl -fsS "http://$API/openapi.json" | jq -e '.info.title == "Mohonaut API"'
+          docker run --rm mohonaut-keeper:ci node --check dist/main.js
+          docker logs "$N-api" | tail -5
+      - name: Compose, image tags, cloud-init and shell scripts
+        run: |
+          mkdir -p "$RUNNER_TEMP/secrets"
+          # Absolute: newer Compose resolves a relative env_file against the compose file's folder.
+          ENV_FILE="$PWD/infra/stack/secrets.example.env" SECRETS_DIR="$RUNNER_TEMP/secrets" \
+            docker compose -f infra/stack/compose.yml config -q
+          docker pull -q cloudflare/cloudflared:2025.4.0
+          docker pull -q valkey/valkey:8-bookworm
+          # Preinstalled on the self-hosted runners (infra/ci-runner/setup-wsl.sh).
+          command -v cloud-init >/dev/null && command -v age >/dev/null \
+            || sudo apt-get install -y -qq cloud-init age >/dev/null
+          cloud-init schema --config-file infra/server/cloud-init.yaml
+          shellcheck infra/stack/deploy.sh infra/backup/*.sh infra/ci-runner/*.sh
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx turbo run build --filter=@mohonaut/api...
+      - name: Backup and restore test
+        run: |
+          # The runner's temp folder, not /tmp: a self-hosted runner keeps /tmp between jobs.
+          T="$RUNNER_TEMP/backup"
+          rm -rf "$T" && mkdir -p "$T/backups"
+          PG="$CI_NET-pg"
+          node infra/backup/ci-seed.mjs "postgres://postgres:ci@$CI_PG/mohonaut"
+          age-keygen -o "$T/age.key" 2>/dev/null
+          age-keygen -y "$T/age.key" > "$T/recipients.txt"
+          AGE_RECIPIENTS_FILE="$T/recipients.txt" BACKUP_DIR="$T/backups" \
+            PG_DUMP="docker exec -i $PG pg_dump" PGURL="postgresql:///mohonaut?user=postgres" \
+            infra/backup/backup.sh
+          backup=$(ls "$T"/backups/*.dump.age | head -1)
+          if grep -q "audit_log" "$backup"; then echo "backup is not encrypted"; exit 1; fi
+          PG_RESTORE="docker exec -i $PG pg_restore" PSQL="docker exec -i $PG psql" \
+            infra/backup/restore-test.sh "$backup" "$T/age.key" \
+            "postgresql:///scratch?user=postgres" "postgresql:///mohonaut?user=postgres"
+          # The append-only trigger came back with the data.
+          if docker exec "$PG" psql -U postgres -d scratch -c "DELETE FROM audit_log" 2>/dev/null; then
+            echo "audit_log accepted a DELETE after restore"; exit 1
+          fi
+      - name: Stop the images
+        if: always()
+        run: |
+          if [ -n "${CI_NET:-}" ]; then
+            docker rm -f "$CI_NET-pg" "$CI_NET-idx" "$CI_NET-api" || true
+            docker network rm "$CI_NET" || true
+          fi
+
+  security:
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Secret scan (gitleaks)
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 git /repo --config /repo/.gitleaks.toml --redact --verbose --exit-code 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Dependency audit
+        run: npm audit --audit-level=high

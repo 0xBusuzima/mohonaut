@@ -1,0 +1,386 @@
+/*
+ * Design tokens (docs/05 §2.4 palette, §2.5 type). Dark ("night shift") is the primary theme;
+ * the light theme serves long-form reading (docs, terms). Semantic tokens switch with the
+ * theme; brand tokens never change.
+ */
+@import 'tailwindcss';
+
+/* Wide and tall enough for side panels: not a phone held sideways (the game's HUD uses it). */
+@custom-variant tall (@media (min-width: 768px) and (min-height: 521px));
+
+@theme {
+  /* Brand palette */
+  --color-night: #0e1013;
+  --color-charcoal: #16191d;
+  --color-graphite: #22272d;
+  --color-steel: #39414a;
+  --color-concrete: #8b939c;
+  --color-bone: #ece7dc;
+  --color-orange: #ff6b1a;
+  --color-amber: #ffb31a;
+  --color-cyan: #2ee6d6;
+  --color-teal: #0d6e6a;
+  --color-alarm: #ff3d2e;
+  --color-ok: #8cff6a;
+
+  /* Lithology bands (bore log, strata badges) */
+  --color-stratum-1: #b08a5e;
+  --color-stratum-2: #d8c8a0;
+  --color-stratum-3: #b79a9a;
+  --color-stratum-4: #7e8288;
+  --color-stratum-5: #4a4444;
+  --color-stratum-6: #6e7d3c;
+  --color-stratum-7: #d2512b;
+  --color-stratum-8: #ffe27a;
+
+  /* The --face-* families come from next/font (src/app/fonts.ts) with size-adjusted fallbacks. */
+  --font-display: var(--face-display), sans-serif;
+  --font-stencil: var(--face-stencil), var(--face-display), sans-serif;
+  --font-ui: var(--face-ui), system-ui, sans-serif;
+  --font-condensed: var(--face-condensed), var(--face-ui), sans-serif;
+  --font-mono: var(--face-mono), ui-monospace, monospace;
+  --font-pixel: var(--face-pixel), ui-monospace, monospace;
+}
+
+/* Semantic tokens, used through the utilities below (bg-surface, text-fg, ...). */
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-line: var(--line);
+  --color-data: var(--data);
+  --color-focus: var(--focus);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+}
+
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+  --surface: var(--color-charcoal);
+  --surface-raised: var(--color-graphite);
+  --surface-sunken: var(--color-night);
+  --fg: var(--color-bone);
+  --fg-muted: var(--color-concrete);
+  --line: var(--color-steel);
+  --data: var(--color-cyan);
+  --focus: var(--color-amber);
+  --good: var(--color-ok);
+  --warn: var(--color-amber);
+  /* Alarm Red is 4.27:1 on graphite: text uses this lighter red; fills keep Alarm Red. */
+  --bad: #ff6455;
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  --surface: var(--color-bone);
+  --surface-raised: #f7f4ee;
+  --surface-sunken: #ddd6c8;
+  --fg: var(--color-charcoal);
+  --fg-muted: var(--color-steel);
+  --line: #b9b2a5;
+  /* Gauge cyan has too little contrast on bone: live data uses the teal on light. */
+  --data: var(--color-teal);
+  --focus: var(--color-teal);
+  /* Status Green and Sodium Amber vanish on bone: darker equivalents for text and meters. */
+  --good: #2f6b16;
+  --warn: #8a5300;
+  --bad: #b3261e;
+}
+
+html {
+  background: var(--surface);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: 16px; /* body text never below 16 px (docs/05 §2.5) */
+}
+
+/* Numbers never jitter (docs/05 §2.5). */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ------------------------------------------------------------------ the game (pixel art UI) */
+
+.pixel-canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.px-panel {
+  /* A steel control panel: riveted corners, a bevel line inside the frame. */
+  background:
+    linear-gradient(#59626c, #59626c) 9px 9px / 3px 3px no-repeat,
+    linear-gradient(#59626c, #59626c) calc(100% - 9px) 9px / 3px 3px no-repeat,
+    linear-gradient(#59626c, #59626c) 9px calc(100% - 9px) / 3px 3px no-repeat,
+    linear-gradient(#59626c, #59626c) calc(100% - 9px) calc(100% - 9px) / 3px 3px no-repeat,
+    #1b1f24;
+  color: #ece7dc;
+  border: 3px solid #0b0d10;
+  box-shadow:
+    inset 0 0 0 2px #3a424c,
+    inset 0 0 0 4px #1b1f24,
+    inset 0 0 0 5px #262c33,
+    0 6px 0 #0b0d10;
+}
+
+.px-hazard {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' shape-rendering='crispEdges'%3E%3Crect width='8' height='8' fill='%2316191d'/%3E%3Cg fill='%23ffb31a'%3E%3Crect x='0' y='0' width='1' height='1'/%3E%3Crect x='1' y='0' width='1' height='1'/%3E%3Crect x='2' y='0' width='1' height='1'/%3E%3Crect x='3' y='0' width='1' height='1'/%3E%3Crect x='1' y='1' width='1' height='1'/%3E%3Crect x='2' y='1' width='1' height='1'/%3E%3Crect x='3' y='1' width='1' height='1'/%3E%3Crect x='4' y='1' width='1' height='1'/%3E%3Crect x='2' y='2' width='1' height='1'/%3E%3Crect x='3' y='2' width='1' height='1'/%3E%3Crect x='4' y='2' width='1' height='1'/%3E%3Crect x='5' y='2' width='1' height='1'/%3E%3Crect x='3' y='3' width='1' height='1'/%3E%3Crect x='4' y='3' width='1' height='1'/%3E%3Crect x='5' y='3' width='1' height='1'/%3E%3Crect x='6' y='3' width='1' height='1'/%3E%3Crect x='4' y='4' width='1' height='1'/%3E%3Crect x='5' y='4' width='1' height='1'/%3E%3Crect x='6' y='4' width='1' height='1'/%3E%3Crect x='7' y='4' width='1' height='1'/%3E%3Crect x='0' y='5' width='1' height='1'/%3E%3Crect x='5' y='5' width='1' height='1'/%3E%3Crect x='6' y='5' width='1' height='1'/%3E%3Crect x='7' y='5' width='1' height='1'/%3E%3Crect x='0' y='6' width='1' height='1'/%3E%3Crect x='1' y='6' width='1' height='1'/%3E%3Crect x='6' y='6' width='1' height='1'/%3E%3Crect x='7' y='6' width='1' height='1'/%3E%3Crect x='0' y='7' width='1' height='1'/%3E%3Crect x='1' y='7' width='1' height='1'/%3E%3Crect x='2' y='7' width='1' height='1'/%3E%3Crect x='7' y='7' width='1' height='1'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 16px 16px;
+  image-rendering: pixelated;
+}
+
+/* Windows take focus when they open (for screen readers and Esc), without a focus frame. */
+[role='dialog'].px-panel:focus {
+  outline: none;
+}
+
+.px-dark {
+  background: #262c33;
+  color: #ece7dc;
+  border: 3px solid #0b0d10;
+  box-shadow:
+    inset -3px -3px 0 #1b1f24,
+    inset 3px 3px 0 #3a424c,
+    0 4px 0 #0b0d10;
+}
+
+/* A sunken instrument window: cyan read-outs live here. */
+.px-inset {
+  background: #0f1215;
+  color: #ece7dc;
+  border: 3px solid #0b0d10;
+  box-shadow:
+    inset 3px 3px 0 #050607,
+    inset -2px -2px 0 #262c33;
+}
+
+.px-input {
+  font-family: var(--font-pixel);
+  background: #0f1215;
+  color: #2ee6d6;
+  border: 3px solid #0b0d10;
+  box-shadow: inset 3px 3px 0 #050607;
+}
+.px-input::placeholder {
+  color: #8b939c;
+}
+.px-input:focus {
+  outline: 3px solid #ff6b1a;
+  outline-offset: 0;
+}
+
+.px-btn {
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 3px solid #0b0d10;
+  box-shadow:
+    inset -3px -3px 0 rgb(0 0 0 / 0.28),
+    inset 3px 3px 0 rgb(255 255 255 / 0.22),
+    0 4px 0 #0b0d10;
+  transition: transform 60ms steps(1);
+}
+.px-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow:
+    inset -3px -3px 0 rgb(0 0 0 / 0.28),
+    inset 3px 3px 0 rgb(255 255 255 / 0.22),
+    0 1px 0 #0b0d10;
+}
+.px-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.px-btn:focus-visible {
+  outline: 3px solid #2ee6d6;
+  outline-offset: 2px;
+}
+.px-btn-primary {
+  background: #ff6b1a;
+  color: #16191d;
+}
+.px-btn-primary:hover:not(:disabled) {
+  background: #ff8a45;
+}
+/* Steel: the ordinary button on the panels and the HUD. */
+.px-btn-light {
+  background: #3a424c;
+  color: #ece7dc;
+}
+.px-btn-light:hover:not(:disabled) {
+  background: #46505b;
+}
+/* A switch that is on: lit teal. */
+.px-btn-light[aria-pressed='true'] {
+  background: #0d6e6a;
+}
+.px-btn-light[aria-pressed='true']:hover:not(:disabled) {
+  background: #12827d;
+}
+.px-btn-dark {
+  background: #1b1f24;
+  color: #ece7dc;
+}
+.px-btn-dark:hover:not(:disabled) {
+  background: #262c33;
+}
+
+/* Rig cards on phones: the portrait at 2x (it is drawn for 3x) so a card fits the screen. */
+@media (max-width: 639px) {
+  .rig-portrait canvas {
+    width: 200px !important;
+    height: 184px !important;
+  }
+}
+
+/* Phones: Foreman Mo at 2x (48 px, still whole art pixels) so his tips leave the site in view. */
+@media (max-width: 767px) {
+  .guide .guide-mo canvas {
+    width: 48px !important;
+    height: 48px !important;
+  }
+}
+
+/* Phones upright, while Foreman Mo's tip is up: the HUD's left column wraps into a second column
+   before it reaches the tip box at the bottom (about 19.5rem with the bottom bar), so no button
+   hides under it (the 8rem floor keeps it to three columns on the shortest screens). Phones
+   held sideways have their own rule below. */
+@media (max-width: 767px) and (min-height: 521px) {
+  body:has(.guide) .hud-side {
+    flex-wrap: wrap;
+    align-content: flex-start;
+    max-height: max(8rem, calc(100dvh - 7.6rem - 19.5rem));
+  }
+  /* Before Market Open the refining note has the row under the gauges: the column starts below
+     it, so a wrapped second column never runs into it. */
+  .hud-side-low {
+    top: 9.6rem;
+  }
+  body:has(.guide) .hud-side-low {
+    max-height: max(8rem, calc(100dvh - 9.6rem - 19.5rem));
+  }
+}
+
+/* Short screens (phones held sideways): Foreman Mo's tip box shrinks to a wide, low strip at
+   the bottom right, clear of the HUD's left column and of the panels under the gauges, so the
+   site and the HUD stay visible. */
+@media (max-height: 520px) {
+  /* The HUD's left column wraps into a second column instead of running under the bottom bar. */
+  .hud-side {
+    flex-wrap: wrap;
+    align-content: flex-start;
+    max-height: calc(100dvh - 7.6rem - 5.5rem);
+  }
+  .guide {
+    right: 0.75rem;
+    left: auto;
+    bottom: 5.5rem;
+    max-width: min(30rem, calc(100vw - 17rem));
+    padding: 0.5rem;
+  }
+  .guide .guide-mo {
+    display: none;
+  }
+  .guide [role='status'] {
+    font-size: 0.8rem;
+  }
+  /* The guide has the bottom right here: toasts drop in at the top centre for a moment. */
+  body.pixel-game .toast-region {
+    top: 0.5rem;
+    right: auto;
+    bottom: auto;
+    left: 50%;
+    width: 20rem;
+    transform: translateX(-50%);
+  }
+}
+
+@media (min-width: 768px) and (max-height: 520px) {
+  .hud-side {
+    max-height: calc(100dvh - 4rem - 5.5rem);
+  }
+}
+
+/* The shortest phones held sideways (about 320 px tall): the name line goes (the box is
+   labelled "Foreman Mo" for screen readers), so the tip stays below the gauges. */
+@media (max-height: 360px) {
+  .guide .guide-name {
+    display: none;
+  }
+}
+
+/* Pixelify Sans draws "fi" as one ligature glyph that reads like an "A": spell it out. */
+.font-pixel,
+.px-btn,
+.px-input {
+  font-variant-ligatures: none;
+  font-feature-settings:
+    'liga' 0,
+    'clig' 0;
+}
+
+/* In the game the toasts sit under the read-outs on phones (Foreman Mo has the bottom), above
+   the main buttons on the right on tablets, clear of the windows' close buttons. */
+body.pixel-game .toast-region {
+  top: 7.6rem;
+  bottom: auto;
+}
+@media (min-width: 768px) {
+  body.pixel-game .toast-region {
+    top: auto;
+    right: 0.75rem;
+    bottom: 6.5rem;
+    left: auto;
+    width: 20rem;
+    align-items: stretch;
+    padding: 0;
+  }
+}
+/* Wide screens: down in the corner beside the main buttons, where an open window has the
+   least to cover. */
+@media (min-width: 1200px) {
+  body.pixel-game .toast-region {
+    bottom: 0.75rem;
+  }
+}
+body.pixel-game .toast-item {
+  font-family: var(--font-pixel);
+  border-radius: 0;
+  background: #1b1f24;
+  color: #ece7dc;
+  border-top: 3px solid #0b0d10;
+  border-right: 3px solid #0b0d10;
+  border-bottom: 3px solid #0b0d10;
+  border-left-width: 6px;
+  box-shadow: 0 4px 0 #0b0d10;
+}
+
+@keyframes loadbar {
+  from {
+    width: 8%;
+  }
+  to {
+    width: 100%;
+  }
+}

@@ -1,6 +1,6 @@
 # params.json — what every parameter means
 
-`spec.*` mirrors `docs/02_TOKENOMI_VE_OYUN_MATEMATIGI.md` **v0.2** (token MOHO; `DIG` is the simulator's
+`spec.*` mirrors `docs/02_TOKENOMI_VE_OYUN_MATEMATIGI.md` **v1.1** (token MOHN; `DIG` is the simulator's
 code name). The table gives the spec section for each value. `model.*` are **simulation assumptions** that the spec does not fix.
 
 Change a spec value only after the spec changes. Model values are the calibration levers; `RAPOR.md`
@@ -25,9 +25,9 @@ Parameter sets in `param_sets/` override values by dotted path (e.g. `"spec.vrgd
 | `emission.split_*` | 0.90 / 0.05 / 0.05 | §3.3 | Miners pro-rata to active DP / dev / treasury |
 | `referral.rate` | 0.03 | §9 | Referrer credit = 3 % of the invitee's miner accrual, paid from the treasury share |
 | `referral.min_invitee_energy_eth` | 0.003 | §9 | Invitee must have spent ≥ 0.003 ETH on energy |
-| `energy.price_usd_per_kwh` | 0.10 | §5.1 | π_kWh; paid in ETH at ETH/USD |
-| `energy.tank_cap_hours` | 720 | §5.1 | Tank upper bound = outpost capacity × 720 h |
-| `machines.*` | catalog | §6.1 | DP, kW, premium, unlock level for tiers 0–5 (tier 0 = free Hand Auger, 1 per account) |
+| `fuel.price_usd_per_litre` | 0.10 | §5.1 | π_ℓ; paid in ETH at ETH/USD |
+| `fuel.tank_cap_hours` | 720 | §5.1 | Tank upper bound = site fuel-line capacity × 720 h |
+| `machines.*` | catalog | §6.1 | DP, litres per hour, premium, unlock level for tiers 0–5 (tier 0 = free Pilot Rig, 1 per account) |
 | `vrgda.p0`, `k`, `r` | 10, 0.15, **2000** (v0.1: 8000) | §6.2 | p(t,n) = p0·(1−k)^(t − n/r) DIG per DP unit; r changes are re-anchored (see `governance`) |
 | `vrgda.max_units_per_tx` | 10,000 | §6.2 | Not binding in the daily model (purchases are aggregated) |
 | `vrgda.price_floor` | 0 | — | **Not in spec v0.1.** 0 = off. Optional floor on p(t,n), used only to test a recommendation |
@@ -60,7 +60,9 @@ Spec rules implemented without a parameter:
 | `amm.rounds_per_day` | 8 | The day's buys and sells are executed in 8 alternating tranches (≈ random order) |
 | `amm.swap_haircut` | 0.85 | Players assume 15 % slippage when planning ETH → DIG purchases |
 | `amm.max_daily_buy_frac_of_pool_eth` | 0.10 | Slippage-aware buyers: discretionary buys (capex, cosmetics, speculators) ≤ 10 % of pool ETH per day (≈ +21 % price impact) |
-| `buyback_max_daily_frac_of_pool_eth` | 0.02 | Keeper's daily buyback ceiling (§10 "günlük tavan, slippage sınırı"); unspent buyback ETH is a backlog |
+| `keeper.buyback_daily_frac_of_bucket` | 1/20 | v1.1 (docs/02 §10.1): share of the buyback bucket the keeper may spend per day (`BuybackBurner.INITIAL_DAILY_BPS` 500); unspent ETH stays in the bucket. 1/7 spent the genesis bucket too fast and failed the deep-bear Gini criterion (0.82) |
+| `keeper.pol_daily_frac_of_bucket` | 1/7 | v1.1: share of the POL bucket added per day (was: the whole bucket every day) |
+| `keeper.chunks_per_day`, `keeper.max_chunk_price_move` | 8, 0.02 | v1.1: one chunk every 3 hours, each moving the price at most 2 % (the on-chain anchor allows 3 %) |
 | `ops_monthly_cost_usd` | 15,000 | Assumed operations cost, only used for the runway metric (scale results yourself) |
 | `dev_sell_frac` | 0.5 | Share of each matured dev withdrawal sold (the spec says the founder publishes a sale policy) |
 | `tank_days` | 7 | Wallets keep 7 days of energy prepaid; refills are ETH revenue when bought |

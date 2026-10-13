@@ -1,0 +1,32 @@
+{
+ "parts": {
+  "spec": {
+   "seeds": 200,
+   "seconds": 1040.4569520950317,
+   "runs": 1400
+  },
+  "nogov": {
+   "seeds": 100,
+   "seconds": 725.2824866771698,
+   "runs": 700
+  },
+  "notank": {
+   "seeds": 200,
+   "seconds": 248.25339365005493,
+   "runs": 200
+  },
+  "sweeps": {
+   "seeds": 50,
+   "seconds": 373.2855384349823,
+   "runs": 350
+  },
+  "calib": {
+   "seeds": 50,
+   "seconds": 174.7275311946869,
+   "runs": 200
+  }
+ },
+ "total_runs": 2850,
+ "base_overrides": {},
+ "max_supply_invariant_error_dig": 8.642673492431641e-07
+}

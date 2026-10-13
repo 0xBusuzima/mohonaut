@@ -1,0 +1,116 @@
+export const metadata = {
+  title: 'Economy paper',
+  description:
+    'Every formula, parameter and limit of the Mohonaut economy, and what can never change.',
+};
+
+# Economy paper
+
+This is the public version of the game's economy specification (v1.0.1). Every number here is in
+the contracts; the [contracts page](/contracts/) lists them, and the [economy page](/economy/)
+shows the live values.
+
+## The token
+
+|                              |                                                                               |
+| ---------------------------- | ----------------------------------------------------------------------------- |
+| Name                         | Mohonaut ($MOHN), ERC-20, 18 decimals                                         |
+| Hard cap                     | 100,000,000                                                                   |
+| Supply at launch             | 0: no premine, no presale, no team buy                                        |
+| Minter                       | the game contract only; set once, never changeable                            |
+| Daily mint limit             | 500,000 $MOHN per UTC day, written into the token                             |
+| Hourly mint limit            | 150,000 $MOHN in any 60 minutes; a mint above it is refused and retried later |
+| Owner, tax, blacklist, pause | none                                                                          |
+
+## Emission
+
+All 100,000,000 $MOHN start in a reserve. Each hour a fixed fraction of what is left is mined:
+
+```
+δ_d = 0.0005                         (0.05% per day)
+δ_h = 1 − (1 − δ_d)^(1/24)           (per hour)
+E_h = R_h × δ_h                      (fixed at the start of the hour)
+```
+
+The slice is spread evenly over the hour and only while someone is drilling; unused emission
+stays in the reserve. Day 1 mines about 50,000 $MOHN; the slice halves roughly every 3.8 years.
+
+| Year | Mined that year | Total  |
+| ---- | --------------- | ------ |
+| 1    | 16.69M          | 16.69M |
+| 2    | 13.90M          | 30.59M |
+| 3    | 11.58M          | 42.17M |
+| 5    | 8.04M           | 59.86M |
+| 10   | 3.23M           | 83.9M  |
+
+The split is fixed in code: **90% players** (by active Drill Power), **5% team**, **5% treasury**.
+The team and treasury shares accrue hour by hour and leave only through the same public refine
+queue as everyone's, at most 100,000 $MOHN per day each, visible for 72 hours before they are
+minted.
+
+## Spending
+
+Every $MOHN spent on rigs and site levels: **80% is burned for good, 20% returns to the reserve**
+and is mined again over the years. Cosmetics bought with $MOHN are burned completely.
+
+## Rig prices
+
+Rigs are priced per unit of Drill Power by a variable-rate gradual Dutch auction:
+
+```
+p(t, n) = p0 × (1 − k)^(t − n / r)
+cost(q) = p(t, n) × (a^q − 1) / (a − 1),   a = (1 − k)^(−1 / r)
+tier cost = cost(DP of the rig) × (1 + tier premium)
+```
+
+`t` is days since Genesis, `n` the Drill Power sold so far. With `p0 = 10` $MOHN, `k = 0.15` and
+`r = 2,000` DP per day, prices rise when rigs sell faster than the target and fall when they sell
+slower. The formula never reads a market price.
+
+## Diesel
+
+```
+litres = ETH × ETH/USD ÷ litre price       (litre price $0.10; Chainlink ETH/USD)
+burn   = sum of the active rigs' ℓ/h        (at most the site's fuel line)
+```
+
+A tank holds at most 720 hours of the site's fuel line. If the price feed is stale (over 26
+hours), only diesel purchases pause; running rigs keep drilling.
+
+## Site levels
+
+```
+pads(L)        = 3 + L
+fuel line(L)   = 6 × 1.22^(L − 1) ℓ/h
+cost(L → L+1)  = 150 × L^2.2 × idx    $MOHN,   idx = clamp(p(t, n) ÷ p0, 0.25, 4)
+```
+
+## ETH routing
+
+| Destination        | Share | Notes                                                                                                                       |
+| ------------------ | ----- | --------------------------------------------------------------------------------------------------------------------------- |
+| Buyback & burn     | 55%   | At most 1/20 of the buyback share per day, in small chunks every 3 hours; never more than 3% above the 1-hour average price |
+| Protocol liquidity | 30%   | Full range, can never be withdrawn; at most 1/7 of the liquidity share added per day, only near the 1-hour average price    |
+| Operations         | 15%   | Servers, an independent audit first; reported monthly                                                                       |
+
+The split can move within 30–60 / 20–50 / 10–35%, at most once per 30 days, through the public queue.
+
+## What can never change
+
+The token and its limits, the 100,000,000 cap, the emission schedule, the 90/5/5 split, the 80/20
+spend split, existing rigs, and the absence of any way to remove protocol liquidity.
+
+## What can change, and how
+
+Adjustable settings have hard limits in code, a maximum rate of change, and wait **96 hours** in a
+public queue before anyone can execute them. Contract upgrades wait **7 days**. The Guardian can
+pause player actions for at most 72 hours; the pause ends on its own.
+
+| Setting              | Start        | Limits          | Rate             |
+| -------------------- | ------------ | --------------- | ---------------- |
+| Litre price          | $0.10        | $0.03 – $0.50   | ±25% per 7 days  |
+| Auction target `r`   | 2,000 DP/day | 1,000 – 100,000 | ±25% per 30 days |
+| Auction decay `k`    | 0.15         | 0.05 – 0.35     | ±25% per 30 days |
+| Fast refine fee      | 8%           | 0 – 12%         | once per 7 days  |
+| Standard refine wait | 72 h         | 24 – 168 h      | once per 7 days  |
+| Tank limit           | 720 h        | 168 – 2,160 h   | once per 7 days  |

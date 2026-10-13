@@ -1,0 +1,4 @@
+# Reviewed false positives (gitleaks fingerprints: commit:file:rule:line). Keep this list short
+# and say why each line is safe.
+# A fixed test-only Survey HMAC key in an API test helper (since replaced by a random key).
+6cf5515aaab5c06ee5c4a7ecf4b1035a1adb8250:services/api/test/helpers.ts:generic-api-key:59

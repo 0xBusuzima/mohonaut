@@ -1,0 +1,2 @@
+base: cosmetic share of month-12 sinks 0.009; SR28(m12) 0.775 -> without cosmetic burns 0.772
+bear: cosmetic share of month-12 sinks 0.003; SR28(m12) 0.805 -> without cosmetic burns 0.803

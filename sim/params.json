@@ -11,14 +11,14 @@
       "rate": 0.03,
       "min_invitee_energy_eth": 0.003
     },
-    "energy": {
-      "price_usd_per_kwh": 0.10,
+    "fuel": {
+      "price_usd_per_litre": 0.10,
       "tank_cap_hours": 720
     },
     "machines": {
-      "names": ["Hand Auger", "Rotary Drill", "Percussion Rig", "Diamond Core Drill", "Thermal Lance", "Plasma Bore"],
+      "names": ["Pilot Rig", "Rotary Rig", "Top Drive", "Diamond Core Drill", "Turbodrill", "Plasma Bore"],
       "dp": [10, 50, 150, 420, 1000, 2700],
-      "kw": [0.25, 1.0, 2.5, 6.0, 12.5, 30.0],
+      "litres_per_hour": [0.25, 1.0, 2.5, 6.0, 12.5, 30.0],
       "premium": [0.0, 0.0, 0.08, 0.17, 0.27, 0.40],
       "unlock_level": [1, 1, 3, 6, 10, 15]
     },
@@ -63,11 +63,11 @@
       "tank_until_hours_after_open": 24
     },
     "token": {
-      "daily_mint_cap": 2000000
+      "daily_mint_cap": 500000
     },
     "governance": {
       "enabled": true,
-      "delay_days": 3,
+      "delay_days": 4,
       "weeks": 4,
       "sr_low": 0.5,
       "price_ratio_low": 0.25,
@@ -90,7 +90,12 @@
       "swap_haircut": 0.85,
       "max_daily_buy_frac_of_pool_eth": 0.10
     },
-    "buyback_max_daily_frac_of_pool_eth": 0.02,
+    "keeper": {
+      "buyback_daily_frac_of_bucket": 0.05,
+      "pol_daily_frac_of_bucket": 0.142857,
+      "chunks_per_day": 8,
+      "max_chunk_price_move": 0.02
+    },
     "ops_monthly_cost_usd": 15000.0,
     "dev_sell_frac": 0.5,
     "tank_days": 7.0,

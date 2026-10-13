@@ -1,0 +1,22 @@
+package-lock.json
+contracts/lib/
+contracts/out/
+sim/
+docs/
+reports/
+research_notes/
+*.md
+contracts/
+tools/
+.github/
+packages/sdk/src/abi/
+deployments/
+infra/monitoring/grafana/dashboards/
+apps/*/.next/
+apps/*/out/
+apps/*/test-results/
+apps/*/playwright-report/
+apps/*/next-env.d.ts
+
+# The maintenance page on main (site/), served as is until launch day.
+site/

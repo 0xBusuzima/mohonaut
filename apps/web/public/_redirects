@@ -1,0 +1,5 @@
+# Cloudflare Pages: public profiles are one static page; the address stays in the URL.
+/s/*  /s/  200
+# The live timelock queue has a short address (docs/05 §3.1); it lives on the economy page.
+/timelock   /economy/#timelock  301
+/timelock/  /economy/#timelock  301

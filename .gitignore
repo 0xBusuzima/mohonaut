@@ -15,7 +15,9 @@ coverage/
 # foundry
 contracts/out/
 contracts/cache/
-contracts/broadcast/*/31337/
+contracts/broadcast/
+contracts/slither_results.json
+deployments/31337*.json
 contracts/broadcast/**/dry-run/
 contracts/crytic-export/
 contracts/medusa-corpus/
@@ -35,3 +37,23 @@ pnpm_debug.log
 .claude/settings.local.json
 .DS_Store
 Thumbs.db
+
+# python virtualenvs anywhere
+.venv/
+# Local embedded Postgres (PGlite) of the indexer
+services/indexer/data/
+services/keeper/data/
+# Next.js and Playwright output
+apps/*/.next/
+apps/*/out/
+# Pixel art drawn at build time (apps/web/scripts/gen-pixel-art.mjs)
+apps/web/public/rigs/
+apps/web/public/og-train.png
+apps/*/test-results/
+apps/*/playwright-report/
+apps/*/lighthouse.json
+.claude/launch.json
+
+# AI audit scratch builds (docs/06 7.1): each auditor builds into its own folders
+contracts/out-*/
+contracts/cache-*/

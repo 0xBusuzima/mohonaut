@@ -6,7 +6,7 @@
 >
 > **Hukuki uyarı:** Bu doküman hukuki tavsiye değildir. §6'daki dil rehberi, tüm tweet ve site metinleri, referans ve sezon ödülleri ile Türkçe iletişim kuralları yayımlanmadan önce hukuki gözden geçirmeden geçmelidir. Hedef: Türk sermaye piyasası + şans oyunları alanında **en az tek seferlik danışmanlık** (06 → 0.2; 08 §6). Danışmanlık yapılamazsa kurucu riski yazılı olarak üstlenir (04 §8) ve **[avukat]** işaretli taslaklar ya yayımlanmaz ya da en temkinli alternatifleriyle değiştirilir. Kurucu kimliği açık bir Türk vatandaşı olduğu için en yüksek risk kurucunun kişisel sorumluluğudur (araştırma raporu, "Hukuki çerçeve").
 >
-> **Bütçe (kurucu kararı, 2026-10-10):** Dış bütçe yok. Bu dokümandaki ücretli kalemler (X Ads, X Verified Organizations, X Premium, DexScreener ücretli profil, marka tescil ücretleri ve marka vekili, ücretli AI görsel planları ve Higgsfield kredisi, insan illüstratör, savunma domainleri) **opsiyoneldir** ve yalnızca oyunun ops geliriyle, `08` §3'teki ilan edilmiş sırayla açılır. Kredi harcayan bir araç kullanılmadan önce maliyet söylenir ve kurucu onayı alınır. Ücretsiz karşılıklar: TMview/USPTO'da kendi ön aramamız, Kenney.nl CC0 varlıklar, Recraft/Ideogram ücretsiz kademeleri (ticari kullanım koşulları kontrol edilerek), Inkscape/Krita, X'in kendi zamanlayıcısı.
+> **Bütçe (kurucu kararı, 2026-10-10):** Dış bütçe yok. Bu dokümandaki ücretli kalemler (X Ads, X Verified Organizations, X Premium, DexScreener ücretli profil, marka tescil ücretleri ve marka vekili, ücretli AI görsel planları ve Higgsfield kredisi, insan illüstratör, savunma domainleri) **opsiyoneldir** ve yalnızca oyunun ops geliriyle, `08` §3'teki ilan edilmiş sırayla açılır. Kredi harcayan bir araç kullanılmadan önce maliyet söylenir ve kurucu onayı alınır. Ücretsiz karşılıklar: TMview/USPTO'da kendi ön aramamız, kendi çizdiğimiz özgün görseller (dış görsel ya da paket yok, §2.6), Inkscape/Krita, X'in kendi zamanlayıcısı.
 >
 > **Gizlilik ve iç kullanım:** Bu doküman **iç kullanım** içindir; herkese açık dokümantasyon sitesine kopyalanmaz. Rakip adları yalnızca §1'de (tarihsel kanıt), §6.4b'de (yasak listesinin tanımı) ve §9'da (**İÇ KULLANIM** etiketli rakip analizi) geçer. §2–§8'deki her İngilizce taslak herkese açık metin olarak yazıldı ve rakip adı ya da imâsı içermez (§6.4b).
 >
@@ -30,7 +30,8 @@
 | Savunma hesapları | **@mohonauts**, **@mohonautgame**, **@mohonauthq** (gönderisiz, kilitli; §0.1) |
 | Kurucu hesabı | **@onderyazici** (bio ve içerik hijyeni, §4.2) |
 | Görsel yön | Gece aydınlatmalı 2.5D izometrik **yüzey sondaj sahası**; bütün oyuncular tek bir ortak kuyu açar: **World Bore**. İmza öğe: **kuyu logu / karot sütunu**, gerçek litoloji renk bantlarıyla. Grafit zemin, emniyet turuncusu ekipman, sodyum lamba ışığı, buhar ve yağmur; camgöbeği yalnızca enstrüman HUD'unda |
-| Kaçınılanlar | Yeraltı tüneli, şaft, asansör/kafes, alet sallayan karakter, mücevher/kristal/damar, pixel font, ay/roket/astronot görseli, pastel ve mor, lacivert-siyah zemin, "lofi" (yerine "industrial ambient") |
+| Oyun görünümü | **Tam sayfa pixel-art oyun** (kurucu kararı 2026-10-13, 01 §7): gece sondaj sahası pixel art, oyun içi yazı Pixelify Sans (OFL). Site, logo ve X görselleri bu tablodaki marka fontlarında kalır |
+| Kaçınılanlar | Yeraltı tüneli, şaft, asansör/kafes, alet sallayan karakter, mücevher/kristal/damar, ay/roket/astronot görseli, pastel ve mor, ada/ev/bilgisayar odası teması, "lofi" (yerine "industrial ambient") |
 | Paylaşım kartı | World Bore'a katkı: "I've cored 1,240 m of the World Bore · Crew X". Kişisel hashrate, sıralama, kazanç ve USD yok |
 | Lansman öncesi oyun | Bekleme listesi yok. Ücretsiz, cüzdansız **Training Site** (T−35'ten) + oynanabilir **Testnet Season 0** (T−28 → T−8) ve kozmetik, devredilemez **Pioneer** rozeti (09 §2). Beğen/RT/yanıt görevi, XP sıralaması ve cüzdan adresi yapıştırma yok |
 | Lansman mekaniği | Ön satış, dev buy, premine yok. Kontratlar T−7'de doğrulanmış olarak yayımlanır. Pre-fill T0−24 saat. **Genesis Dig 72 saat** (rafine kapalı). Havuz yalnızca **Market Open**'da (T0+72 saat) formülle kurulur → "snipe edilecek bir şey yok" |
@@ -372,16 +373,18 @@ Hex değerleri v0.1'le aynı (kontrastlar korunur), adlar yeni konsepte göre de
 | Arayüz | **Barlow** ve **Barlow Condensed** | DIN benzeri, mobilde okunaklı, çok ağırlık |
 | Sayılar / log / gösterge | **JetBrains Mono** (tabular) | Kuyu logundaki metre etiketleri, tank ve sayaçlar; sabit genişlikli rakamlar titremez |
 
-v0.1'deki VT323 (CRT/pixel fontu) **kaldırıldı**: 01 §7 pixel fontu yasaklıyor. CRT tarama çizgisi efekti de yok; gösterge dili "enstrüman paneli + kuyu logu kâğıdı" (ince ızgara, metre cetveli).
+v0.1'deki VT323 (CRT fontu) kaldırıldı. **Oyun içi** (`/play`) yazılar 2026-10-13 kurucu kararıyla **Pixelify Sans** (SIL OFL, `@fontsource/pixelify-sans`, yalnızca 500/700); site ve marka yüzeylerinde aşağıdaki fontlar kalır. CRT tarama çizgisi efekti yok; gösterge dili "enstrüman paneli + kuyu logu kâğıdı" (ince ızgara, metre cetveli).
 
 Kurallar: Rakamlarda `font-variant-numeric: tabular-nums`. Gövde metni 16 px altına inmez. Logo ve Big Shoulders yalnızca İngilizce büyük harfle; Türkçe karakter gerekirse Barlow.
 
 ### 2.6 Logo yönleri (3) ve hazır yapay zekâ prompt'ları
 
+**Özgünlük kuralı (kurucu kararı, 2026-10-12):** Bütün görseller (logo, maskot, kuleler, saha, ikonlar, paylaşım kartları) **bizim tarafımızdan tasarlanır ve özgündür**. Başkasının logosu, görseli, sprite'ı ya da ikon paketi (CC0 ve "ücretsiz" olanlar dahil, ör. Kenney.nl) kullanılmaz. Yapay zekâ görsel araçları en fazla kendi aramızda fikir keşfi için kullanılabilir; hiçbir AI çıktısı ürüne, siteye ya da marka dosyalarına girmez. Fontlar dışarıdan gelir (yalnızca SIL OFL lisanslı yazı tipleri) ve hangi yerde kullanıldıkları `docs/legal/ASSET_LISANSLARI.md`'ye yazılır. Aşağıdaki prompt'lar yalnızca fikir keşfi içindir.
+
 **Genel kurallar:**
 - Sıra: **keşif** (Ideogram ücretsiz kademe, metin doğruluğu için) → **vektör taslak** (Recraft ücretsiz kademe, SVG) → **final vektör** (kurucu, Inkscape'te elle; gelirle profesyonel tasarımcı, §2.8). Midjourney ücretlidir, opsiyoneldir; Higgsfield kredi harcar, her kullanımdan önce maliyet söylenir ve onay alınır.
 - Prompt'larda başka markaların, sanatçıların, rakip projelerin ya da "Robinhood"un adı geçmez. Robinhood işaretleri AI üretimi medyada kullanılamaz (ToS §5.7(i)).
-- **Standart negatif liste** (her prompt'a eklenir): `underground tunnel, mine shaft, cave, elevator, cage lift, pickaxe, shovel, character swinging a tool, gems, crystals, ore veins, pixel art, pixel font, moon, rocket, astronaut, space helmet, pastel colors, purple, navy blue background, extra text, watermark`.
+- **Standart negatif liste** (her prompt'a eklenir): `underground tunnel, mine shaft, cave, elevator, cage lift, pickaxe, shovel, character swinging a tool, gems, crystals, ore veins, moon, rocket, astronaut, space helmet, pastel colors, purple, navy blue background, extra text, watermark`.
 
 **Yön A — "Casing Wordmark" (wordmark + kuyu ağzı monogramı).** MOHONAUT yazısı dar, kalın endüstriyel büyük harflerle; ilk "O" yukarıdan görülen bir kuyu ağzıdır: iç içe üç çelik muhafaza (casing) halkası. Kelimenin altında ince bir metre cetveli. Monogram: üç halkalı kuyu ağzı + aşağı inen kısa bir çizgi ve derinlik çentikleri. Ölçeklenebilir; favicon ve avatar için en iyisi.
 
@@ -425,7 +428,7 @@ wide isometric 2.5D view of a surface drilling site at night, one tall drilling 
 Landing hero / key art (16:9 ve 9:16):
 isometric 2.5D night drill site on open ground, four drilling pads, one small engine-driven rig working on the first pad, a diesel tank with an analog gauge, pipe rack, core shack with a lit window, sodium lights, drifting steam, rain, clean stylized game art, charcoal palette with safety orange equipment, everything above ground, no cutaway view (+ standart negatif liste)
 
-Kule sprite'ı (tutarlı set; Kenney.nl CC0 izometrik paketleri temel alınabilir):
+Kule sprite'ı (yalnızca fikir keşfi; ürün çizimleri bizim, `apps/web/src/game/rigs.ts`):
 isometric 2.5D game sprite of a [Top Drive drilling rig], compact surface drilling rig on a steel skid with a diesel engine, safety orange paint with charcoal steel parts, small cyan status light on the control panel, clean outlines, consistent 30-degree isometric angle, transparent background, three states: idle, drilling with the drill string turning and exhaust puffs, shut down with lights off
 
 Stratum tema paketi — karot numunesi (Core Collection ve log için):
@@ -445,13 +448,13 @@ flat vector badge, small drilling rig silhouette above a short core sample, text
 
 | İş | Şimdi (ücretsiz) | Gelirle (08 §3) | Neden |
 |---|---|---|---|
-| Logo keşfi, moodboard | Ideogram/Recraft ücretsiz kademe | — | Hızlı yön bulma |
+| Logo keşfi, moodboard | Kendi eskizlerimiz; AI araçları yalnızca fikir için, çıktısı kullanılmaz | — | Hızlı yön bulma |
 | **Final logo vektörü** | Kurucu, AI taslağını referans alıp Inkscape'te **elle yeniden çizer** | Profesyonel tasarımcı (sıra 6) | Yalnızca yapay zekâyla üretilmiş görsel ABD'de genellikle telif korumasına girmez; marka tescili ve taklitle mücadele için insan katkılı, özgünlüğü kontrol edilmiş vektör gerekir |
 | **Maskot karakter sayfası** | AI keşfi + kurucunun vektör temizliği + tutarlılık rehberi | İnsan illüstratör (sıra 6) | Pozlar arası tutarlılık, özgünlük |
-| Kule sprite setleri (6 kule × 3 durum) | Kenney.nl CC0 izometrik temel + AI taslak + elle temizlik | İllüstratör | Tutarlı açı, ölçek ve palet; AI setleri kayar |
-| Stratum tema paketleri, log dokuları | AI + rötuş | — | Tekrarlanabilir |
+| Kule sprite setleri (6 kule × 3 durum) | Kodla çizilen özgün vektörler (`rigs.ts`, stil sayfası `brand/sprites`) | İllüstratör | Tutarlı açı, ölçek ve palet; dış paket yok |
+| Stratum tema paketleri, log dokuları | Kendi çizimimiz (kod ya da elle) | — | Özgünlük |
 | X banner, OG, paylaşım kartı şablonları | AI + Satori şablonları | — | Şablon işi |
-| Teaser / trailer | Oyun motorundan (PixiJS) ekran kaydı + ücretsiz kurgu aracı | Key art için illüstratör | "AI slop" eleştirisini önler: gerçek oyun görüntüsü |
+| Teaser / trailer | Oyunun kendisinden (pixel saha) ekran kaydı + ücretsiz kurgu aracı | Key art için illüstratör | "AI slop" eleştirisini önler: gerçek oyun görüntüsü |
 | Müzik ve SFX | CC0 / ticari kullanıma izin veren kütüphaneler; "industrial ambient" + dizel motor, çamur pompası, boru sesi | — | AI müzik araçlarının ücretsiz kademeleri genellikle ticari kullanıma izin vermez (08 §2) |
 
 Kural: Kullanılan her aracın ticari kullanım koşulları (ücretsiz kademeler dahil) ve her varlığın kaynağı `docs/legal/ASSET_LISANSLARI.md`'ye yazılır; final varlıkların kaynak dosyaları (SVG/PSD/Krita) saklanır. İleride illüstratörle sözleşmede telif devri ve "başka projede kullanmama" maddesi olur.
@@ -469,7 +472,7 @@ Kural: Kullanılan her aracın ticari kullanım koşulları (ücretsiz kademeler
 | Saha katmanları: zemin, pedler, yakıt hattı, dizel tankı, boru rafı, karot kulübesi, sodyum lambalar, buhar/yağmur | Sprite atlas | T−36 |
 | Kuyu logu bileşeni: 8 litoloji bandı dokusu, Kola/Moho çizgileri, "we are here" çizgisi, metre cetveli | SVG + doku | T−36 |
 | UI kit: kuyu logu, dizel tank göstergesi (ℓ, ℓ/h, bitiş zamanı), yakıt hattı göstergesi, DP payı, timelock kuyruğu bileşeni, "Unaudited" bandı, "SIMULATION" ve "TESTNET" şeritleri | Figma/Penpot + SVG | T−36 |
-| Training Site paylaşım kartı | 1200×630 | T−36 |
+| Training Site paylaşım kartı | 1200×630 | T−36 — ✅ 2026-10-13: `apps/web/scripts/gen-pixel-art.mjs` derlemede oyunun kendi piksel çiziminden üretiyor (`/og-train.png`) |
 | Teaser (15–20 sn) | MP4, 16:9 + 9:16 | T−36 |
 | Dinamik OG: katkı kartı, kilometre taşı, Survey bulgusu, Crew, Shift Report, Pioneer rozeti | 1200×630 + 1080×1350 | T−29 |
 | Paylaşım kartı şablonları (Satori) | JSX + font dosyaları | T−29 |
@@ -608,7 +611,7 @@ Oyuncu olayı ──► "Share" düğmesi ──► sunucu kartı üretir (/s/<i
 Kayıt + Pilot Rig ◄── /s/<id> (cüzdansız) ◄── X intent (önceden doldurulmuş metin + link + ref)
 ```
 
-- **Tetikleyiciler:** Training Site turu, Pioneer rozeti, Spud-In (ilk yakıt), yeni kule tipi, saha seviyesi, katkı eşikleri, Survey bulgusu ve Core Collection seti, Crew'a katılma, stratum geçişi (herkes için), Kola Witness, sezon plaketi.
+- **Tetikleyiciler:** Training Site turu, Pioneer rozeti, Spud-In (ilk yakıt), yeni kule tipi, saha seviyesi, katkı eşikleri, Survey bulgusu ve Core Collection seti, Crew'a katılma, stratum geçişi (herkes için), Kola Witness, sezon plaketi. **Durum (2026-10-13):** oyunda "Share on X" düğmesi olanlar: Training Site turu, katkı kartı (profil penceresi), vardiya raporu, Survey bulgusu, stratum geçişi, yeni rozet (Pioneer dahil; Foreman Mo bir kez verir), saha seviyesi ve bir rig tipinin ilki (Mo bir kez söyler; seviye 1 ve Pilot Rig saha açılışıyla geldiği için sayılmaz). Paylaşılan profil/davet linki X'te oyuncunun kendi kartını gösterir (Pages Function; kartta kazanılan rozetler). Sezon plaketi (2026-10-13): biten bir sezonun World Bore katkı sıralamasında ilk 10 (işaretli hesaplar sıra almaz; 1. altın, 2–3 gümüş, 4–10 bronz) kulübe duvarında pixel plaka, profil penceresinde ve herkese açık sayfada liste; paylaşımı kart ve profil linkiyle (ayrı düğme yok). İlk 10 sınırı varsayılan; kurucu değiştirebilir (`PLAQUE_RANKS`, services/api/src/data.ts).
 - **Kartta olanlar:** saha görüntüsü, **World Bore'a katkı** ("I've cored [x] m of the World Bore"), Crew, World Bore derinliği, stratum, "Race to the Moho". **Kartta olmayanlar:** kişisel DP/hashrate, sıralama, MOHN miktarı, kazanç, USD, APR, fiyat (01 §4.11).
 - **Önceden doldurulmuş metin (katkı):** `I've cored 1,240 m of the World Bore with Crew [Name]. The bore is at 9,870 m, Stratum III: Granite Basement. Race to the Moho. mohonaut.com/s/7Q2K (my invite link)`
 - **Önceden doldurulmuş metin (Training Site):** `I ran a test rig on the Mohonaut training site. No wallet, no tokens, just a bore log that only goes down. mohonaut.com/train`
@@ -909,6 +912,16 @@ Köşeli parantezler doldurulacak alanlardır. **Tüm taslaklar yayından önce 
 - **F-04 (T−37):** `If you've played an on-chain mining game that died, what killed it for you? Not looking for names. Looking for failure modes. I'm reading every reply.`
 - **F-04b (T−36):** `Tomorrow it gets a name.`
 
+**Devlog cephanesi (2026-10-13'te oyuna eklenenler; isimsiz, stealth dönemine uygun, kurucu hesabı)**
+
+- **D-01:** `Built a thing tonight: come back to your drill site after a while and the foreman hands you a shift log. What your rigs cored, the diesel they burned, how much deeper the shared hole got. No fireworks. Just the log.` [ekran görüntüsü]
+- **D-02:** `Finish a set in the daily survey and it ends up on your site: an old wooden derrick, a rack of core samples, an ammonite in a glass case. Free, once a day, nothing to buy. It changes nothing in the economy.` [ekran görüntüsü]
+- **D-03:** `Your crew's tag now flies on the flagpole of your core shack. I had to draw a 3x5 pixel alphabet for it. M and W didn't fit in three pixels. They get five.` [ekran görüntüsü]
+- **D-04:** `Transparency detail nobody asked for: the equipment market shows what Drill Power cost on each of the last 7 days, read from the chain. Prices come from a public formula. Nobody sets them by hand.` [ekran görüntüsü]
+- **D-05:** `If your transaction is slow, the game keeps its hash, tells you it is still on its way, and won't let you pay twice. Reload the page and it picks it up again. Boring. Important.` [ekran görüntüsü]
+- **D-06:** `Season reward design, settled: the top ten in World Bore contribution get a plaque screwed to the wall of their core shack. Gold, silver, bronze, 5x4 pixels each. Cosmetic. It also shows on your share card.` [ekran görüntüsü: kulübe duvarı + kart]
+- **D-07:** `Small one: when your site levels up or your first rig of a new type lands on its pad, the foreman says so once. You can share it. Level 1 and the free starter rig don't count, because everyone gets those.` [ekran görüntüsü]
+
 **Reveal**
 
 - **P-01 (T−35):** `This is Mohonaut. An idle drilling game, on-chain. Run a drill site. Fuel your rigs. Core one shared hole with everyone else: the World Bore. Not the moon. The Moho. Built on Robinhood Chain. Try the rig, no wallet needed: mohonaut.com` [20 sn teaser]
@@ -930,7 +943,7 @@ Köşeli parantezler doldurulacak alanlardır. **Tüm taslaklar yayından önce 
 
 **Training Site**
 
-- **P-04 (T−33, sabit):** `The Mohonaut training site is open: mohonaut.com/train. No wallet, no sign-up, no tokens. Fuel a Pilot Rig, buy rigs, level up your site and watch the bore log move at 60x speed. Same formulas as the real game. The only thing missing is the chain.`
+- **P-04 (T−33, sabit):** `The Mohonaut training site is open: mohonaut.com/train. No wallet, no sign-up, no tokens. Fuel a Pilot Rig, buy rigs, level up and watch the bore log move at 60x speed. Same emission formula as the real game, illustrative prices. The only thing missing is the chain.`
 - **F-06 (T−33):** `If something on the training site confuses you, that's a bug in my design, not in you. Tell me what you expected to happen. Replies or mohonaut.com/support. Never DMs.`
 
 **Lore, kule serisi, maskot, sistemler**
@@ -1069,7 +1082,7 @@ Köşeli parantezler doldurulacak alanlardır. **Tüm taslaklar yayından önce 
 ### 6.3 Görsel ve format yasakları
 
 - **Hukuki/finansal:** USD kazanç grafikleri, "profit calculator", para/altın yığını, roket/Lambo/ay görselleri, geri sayım + "kaçırma" kombinasyonu, fiyat grafiği RT'leri, "next 100x" alıntıları.
-- **Marka (01 §7, §2):** yeraltı tüneli/şaft/asansör, kazma sallayan karakter, mücevher/kristal/damar, pixel font, astronot/uzay kaskı, pastel ve mor tonlar, lacivert-siyah zemin, Robinhood işaretleri (AI üretimi medyada da).
+- **Marka (01 §7, §2):** yeraltı tüneli/şaft/asansör, kazma sallayan karakter, mücevher/kristal/damar, astronot/uzay kaskı, pastel ve mor tonlar, Robinhood işaretleri (AI üretimi medyada da).
 
 ### 6.4 İşbirliği ifşası
 
@@ -1080,10 +1093,10 @@ Köşeli parantezler doldurulacak alanlardır. **Tüm taslaklar yayından önce 
 
 ### 6.4b Rakip adları: herkese açık hiçbir yerde yok (kurucu kararı, 2026-10-10)
 
-- **[a competitor]** ([a competitor], [a competitor], @[a competitor], [a competitor]), **[a competitor]** ([a competitor]) ve diğer rakip projelerin adları, ticker'ları, handle'ları ve görselleri **sitede, oyun içinde, dokümantasyon sitesinde, X gönderilerinde, X Spaces konuşma metinlerinde, logo ve görsel prompt'larında, hibe başvurularında ve basın metinlerinde geçmez.** Dolaylı ima da yok ("diğer madencilik oyunlarının aksine…", "PC oyunu gibi değil" vb.).
+- Rakip projelerin (liste: `research_notes/rakip-karsilastirma.md`; metin denetiminde SHA-256 özetleri) adları, ticker'ları, handle'ları ve görselleri **sitede, oyun içinde, dokümantasyon sitesinde, X gönderilerinde, X Spaces konuşma metinlerinde, logo ve görsel prompt'larında, hibe başvurularında ve basın metinlerinde geçmez.** Dolaylı ima da yok ("diğer madencilik oyunlarının aksine…", "PC oyunu gibi değil" vb.).
 - Oyun mekaniği, görselleri ve isimlendirmesi de bu projelere benzememeli (CLAUDE.md).
 - Farkımızı rakibi anarak değil, **kendi doğrulanabilir özelliklerimizle** anlatırız: "No presale. No team buy. Every token comes out of the ground." / "Every contract verified a week before Genesis." / "Existing rigs never change." / "Every change waits 96 hours in a public queue."
-- Rakip karşılaştırmaları yalnızca iç dokümanlarda kalır (bu dokümanın §9'u, 01 §2, 09 §1, araştırma raporu ve notlar). Bu bölümler hiçbir zaman herkese açık siteye veya herkese açık dokümantasyon klasörüne kopyalanmaz.
+- Rakip karşılaştırmaları yalnızca iç dokümanlarda kalır (`research_notes/` ve `reports/`; repo açılmadan önce özel repoya taşınır). Bu bölümler hiçbir zaman herkese açık siteye veya herkese açık dokümantasyon klasörüne kopyalanmaz.
 - Teknik uygulama: web içeriği, MDX dokümanları ve `docs/tweets` altındaki gönderi taslakları için CI'daki yasaklı kelime kontrolü (06 → 4.2) bu adları, §6.1'deki yasak ifadeleri, §2.2'deki kullanılmayan marka terimlerini ve "$MOHO"yu yakalar.
 
 ### 6.5 Yayın öncesi kontrol listesi (12 soru)
@@ -1204,12 +1217,10 @@ Next update by [time] UTC on mohonaut.com/status. A full post-mortem follows wit
 ```
 Kural: Guardian yalnızca pause eder (≤ 72 saat, kendiliğinden biter); uzatma ve her düzeltme 96 saatlik timelock kuyruğundan (kontrat yükseltmesi 7 gün) geçer (`mohonaut.com/timelock`) ve /security'de görünür.
 
-**Saatlik mint devre kesicisi (S1):**
+**Saatlik mint sınırı (S2; kontrattaki davranışa göre düzeltildi, 2026-10-12):** Sınır bir şalter değil, hız sınırıdır. Son 60–65 dakikada basılan miktarı 150K'nın üstüne çıkaracak bir mint geri döner (`MintWindowFull`) ve **sonra yeniden denenebilir**. Kimse mintleri başkaları için durduramaz ve sınırı sıfırlamak için timelock gerekmez (MiningCore NatSpec, invariant B1). Bu yüzden sınırın dolması tek başına S1 değildir. Sınır, beklenmedik bir mint artışıyla birlikte doluyorsa runbook 1 (anormal mint) uygulanır.
 ```
-The hourly mint breaker stopped all minting at [time] UTC: [x] $MOHN were minted in 60 minutes, above the 150,000 limit. This is a safety limit doing its job.
-Still working: drilling and accrual. Paused: refines and anything that mints.
-Minting can only be switched back on through the public timelock, which takes at least 96 hours: mohonaut.com/timelock. Nothing in your unrefined balance is lost.
-Next update by [time] UTC on mohonaut.com/status.
+Refines are queuing for a moment: more than 150,000 $MOHN were minted in the last hour, the safety limit in the contract. Minting resumes by itself as the hour rolls on; anything that waits can simply be retried. Nothing in your unrefined balance is lost, and drilling continues as normal.
+Live numbers: mohonaut.com/status
 ```
 
 **Günlük mint tavanı doldu (S3):**
@@ -1297,66 +1308,9 @@ Pano: İndeksleyici + X Analytics + site analitiği (PostHog ücretsiz kademe ve
 
 ---
 
-## 9. İÇ KULLANIM — Rakiplerden çıkarılan dersler
+## 9. Rakiplerden çıkarılan dersler
 
-> **İÇ KULLANIM. Bu bölüm herkese açık hiçbir içeriğe (site, dokümantasyon sitesi, X, Space, hibe başvurusu, basın metni, görsel prompt'u) taşınmaz ve alıntılanmaz (§6.4b, CLAUDE.md).** Buradaki gerekçeler, §2–§8'deki kararların neden alındığını ekip içinde açıklamak içindir.
-
-Kanıtlar araştırma raporu ve notlarından; [a competitor] verileri lansmandan sonraki ilk ~48 saatin erken anlık görüntüsüdür.
-
-### 9.1 [a competitor]: şeffafça uyarladıklarımız
-
-| Ne yaptılar (kanıt) | Bizim uygulamamız |
-|---|---|
-| Kurucu kişisel hesabından köken hikâyesiyle başladı, sonra proje hesabı açıldı ([[a competitor]](https://x.com/[a competitor]/status/2103521958931697699), 26.8K görüntülenme) | F-05 reveal thread'i; **doxx videosu reveal'da yayımlanır, vaat edilmez** (onların vaat ettiği video 2026-10-10'da bulunamadı) |
-| En büyük kaldıraç form + referans oldu: 815.5K görüntülenme, diğer gönderilerin ~10 katı ([[a competitor]](https://x.com/[a competitor]/status/2104630991939879423)) | Form yerine **Training Site + Testnet Season 0** (kanıt = oyun) + tek seviyeli davet linki (§4.10); paylaşım kartları |
-| Lansmandan sonra sıfat değil sayı paylaştılar (oyuncu, harcama, yakım) ([gün 1 özeti](https://x.com/[a competitor]/status/2108654064917701009)) | Canlı /economy + P-26/P-27 + haftalık Shift Report; yalnızca zincirde doğrulanabilir, kaynak ve dönemi belli sayılar |
-| "CA yalnızca bu hesaptan" uyarısı en az 6 kez ([[a competitor]](https://x.com/[a competitor]/status/2107531530167890360)) | Tek kaynak kuralı + "Market Open'dan önce $MOHN marketi yoktur" kuralı (P-17), T−34'ten itibaren |
-| 2 günlük gecikmeyi saat saat planla duyurdular, ivme korundu ([[a competitor]](https://x.com/[a competitor]/status/2107168365936603465)) | Gecikme şablonu (§7.3) ve F-10 taahhüdü |
-| Hızlı patch ve iade: $2 giriş ücreti ~75 dk'da kaldırıldı, 973 cüzdana iade ([iade tx](https://robinhoodchain.blockscout.com/tx/0x4ae3a544045be07b0a47c57b329678f756b7038547ad4e72343de438981a40bf)) | Rig Notes ritmi; iade/tazmin politikası önceden yazılı |
-| Dokümanlar "herkes öğrensin diye" lansmandan önce ([[a competitor]](https://x.com/[a competitor]/status/2107441847576506559)) | Ekonomi kâğıdı **T−18'de**, ilk çekim kuralları T−7'de dondurulur (onlarda rehber lansmandan 1 gün önce geldi) |
-| Gömülü viral döngü: otomatik paylaşım metinleri, cüzdansız ada görüntüleyici ([[a competitor] Patch #3](https://x.com/[a competitor]/status/2108429143029256239)) | `/s/<id>` + World Bore katkı kartları (hashrate, kazanç ve USD göstermeden) |
-| Maskot + mekân + topluluk adı (Boot, ada, Islanders) ([[a competitor]](https://x.com/[a competitor]/status/2108463190614876162)) | Foreman Mo, gece sondaj sahası + World Bore, Mohonauts ve Crews; görsel ve isimlendirme bilerek onlardan uzak (pastel ada ve PC teması yok) |
-| İlk gün patch'i WalletConnect ve iPhone düzeltmeleriydi ([[a competitor]](https://x.com/[a competitor]/status/2108428607802445852)) | Mobil öncelik, ilk günden WalletConnect + ≥ 20 günlük herkese açık Testnet Season 0 ve cihaz matrisi |
-| Proje hesabı yalnızca 2 hesabı takip ediyor ([x.com/[a competitor]](https://x.com/[a competitor])) | Proje hesabı ≤ 5 hesap takip eder |
-| Mevsimsel içerik (Cadılar Bayramı, kış) ([[a competitor]](https://x.com/[a competitor]/status/2106828855000387816)) | Stratum tema paketleri, sezonlar, mevsimsel kozmetik |
-| Kurucu fiyat konuşmaktan kaçındı ([[a competitor]](https://x.com/[a competitor]/status/2108451702718226792)) | Fiyat konuşmama kuralı kurumsal politika (§4.6, §6) |
-
-### 9.2 [a competitor]: bilerek farklı yaptıklarımız
-
-| Onlarda ne oldu (kanıt) | Bizde |
-|---|---|
-| Pons V2 `launchAndBuy` ile %60.9'luk dev buy; CA ilan saatinden 10–15 dk önce deploy; sniper'lar ([Blockscout](https://robinhoodchain.blockscout.com/address/0x0d322304A7fF44C73f12e6b098289cD178d815F6); [[a competitor]](https://x.com/[a competitor]/status/2108234561867989194)) | Dev buy yok, premine yok; kontratlar **T−7'de, ilan edildiği gibi**; havuz yalnızca T0+72 saatte formülle → snipe edilecek havuz yok |
-| Planlanan dev buy %40'tan %60'a, NFT dağılımı 1,111×3'ten 1,889/1,111/333'e değişti ([@uniquesingh__](https://x.com/uniquesingh__/status/2108607200557965685)) | Duyurulan her rakam dondurulur (02 v1.0); değişebilenler yalnızca sınırlı ve 96 saat timelock'lu parametrelerdir |
-| Ödül havuzu kontratı doğrulanmamış, treasury tek bir EOA ([Blockscout](https://robinhoodchain.blockscout.com/address/0x651dbFbD45A0681De3BBc25aAF8b81f0f8514823)) | Tüm kontratlar deploy anında Blockscout + Sourcify'da doğrulanır; Safe + 96 saat timelock (yükseltme 7 gün); /contracts ve /timelock |
-| İkinci gün $25/$50'lık PC'lere habersiz nerf → "ihanet" ([[a competitor]](https://x.com/[a competitor]/status/2108879884881690936); [@ShoshiEth](https://x.com/ShoshiEth/status/2108878124561617172)) | Mevcut kule istatistikleri için setter yok; yükseltme 7 günlük herkese açık kuyrukta (02 §12) |
-| Gacha paketleri, çökme riskli overclock, başarısızlıkta seviye kaybı ([[a competitor]](https://x.com/[a competitor]/status/2108872098911281531)) | Ücretli rastgelelik yok; Survey ücretsiz ve kozmetik |
-| "Sadece tweet atarak para kazan" Social Rewards Pool ([[a competitor]](https://x.com/[a competitor]/status/2108711417461256204)) | Paylaşmak hiçbir şey kazandırmaz; yap-to-earn yok |
-| Harcamanın %60'ı ertesi günün ödülüne: "sink ve faucet aynı boruyu paylaşıyor" ([@_groundcrypto](https://x.com/_groundcrypto/status/2108631389650485515)) | Harcamanın %80'i kalıcı yakım, %20'si yıllara yayılan rezerv |
-| USD'ye sabit fiyatlar volatil tokenla ödeniyor; düşüşte yük artıyor ([@coinfro2](https://x.com/coinfro2/status/2108683497376219525)) | Kuleler VRGDA ile token cinsinden, yakıt ETH ile (`02` §5–6) |
-| $2 giriş ücreti "scam" diye alay konusu oldu ([[a competitor]](https://x.com/[a competitor]/status/2108245609371013238)) | Giriş ücreti yok; Pilot Rig ücretsiz; ilk deneyim tamamen ücretsiz (Training Site) |
-| Form doğrulaması beyana dayalı; referans %5'i davet edilenin ödülünden ([arşiv config](https://web.archive.org/web/20261005205201/https://www.[a competitor]/api/early-access/config); [[a competitor]](https://x.com/[a competitor]/status/2108428607802445852)) | Form yok; Season 0'da sunucu tarafı bot kümeleme; referans %3, hazineden, davet edilenden kesinti yok |
-| Beğeni + yanıt + alıntı zorunlu form; erişimi optimize etti, kanıtı değil | Etkileşim kapısı yok; toplu yanıt yok (X erişimi düşürüyor) |
-| 3,333 NFT'nin 1,889'u collab'lara: dağıtım için arz takası ([[a competitor]](https://x.com/[a competitor]/status/2105714354687533248)) | Pazarlama için token/NFT tahsisi yok; işbirlikleri kozmetik |
-| "5,700+ oyuncu" beyanı, sıralamada ~2,590 ada ([@faliey287](https://x.com/faliey287/status/2108877525653090433)) | Yalnızca zincirde doğrulanabilir sayılar, yöntem/dönem/kaynakla; işaretlenen bot sayısı da yayımlanır |
-| Herkese açık beta olmadan lansman: ~25 dk yüklenmeyen ekran, mobil sorunlar ([[a competitor]](https://x.com/[a competitor]/status/2108232382243619221)) | ≥ 20 günlük Testnet Season 0, cihaz matrisi, yük testi |
-| MetaMask siteyi ilk iki gün güvensiz işaretledi; uyarıyı Blockaid'in site taraması verdi, 1–2 günde kalktı ([[a competitor]](https://x.com/[a competitor]/status/2108489670757925233); 09 §6) | Domain ≥ 30 gün önce gerçek içerikle; T−7'de Blockaid "verify a project" başvurusu; approve'suz `buyFuel`; T−24 saatten itibaren saatlik tarama; hazır yanlış pozitif başvuruları (§3.7, §7.2) |
-| Sıcak pastel pixel-art estetik nişte baskın ([ny14co](https://x.com/ny14co/status/2108545285953552617)) | Gece sondaj sahası, litoloji renkli kuyu logu; pixel font yok |
-| Zincir ekli ad ([a competitor]) ve sahnede Robinhood simgesi | Zincir eki yok; Robinhood markası hiçbir varlıkta yok; yalnızca "Built on Robinhood Chain" + uyarı (ToS §5.6–§5.7) |
-| Fiyat zirvesi halka açılıştan 6–7 saat önce; ~$700K float'a karşı günde ~$48K emisyon (havuzun %10'u/gün) | Oyuna giriş ile token piyasası 72 saat ayrık (Genesis'te market yok); emisyon rezervin günlük %0.05'i; günlük mint tavanı 500K |
-| İkinci gün yeni risk mekanikleri ve nerf aynı gün açıklandı (araştırma raporu, "Asla" 10) | Lansman günü yeni mekanik ve parametre değişikliği yok (§7.2) |
-
-### 9.3 [a competitor]: bilerek farklı yaptıklarımız (01 §2, 09 §1)
-
-| Onlarda (lansman öncesi gözlem) | Bizde |
-|---|---|
-| X görevleri + XP sıralaması + forma cüzdan adresi yapıştırma ile bekleme listesi | Training Site + Testnet Season 0; görev, XP ve adres yapıştırma yok; kanıt = oyun |
-| Yeraltı madenleri, asansör, kasaba; kahraman, boss, koşu başı ücret | Yüzey sondaj sahası, tek ortak kuyu; savaş yok, giriş ücreti yok; yeraltı/asansör görseli yasak |
-| Paslı kazma başlangıcı | Pilot Rig (küçük motorlu kule); alet sallayan karakter yok |
-| Stamina | Dizel yakıt (ℓ, ℓ/h), ETH ile |
-| "72 saat önceden duyuru" sözü | Zincir üstü 96 saat timelock + canlı kuyruk linki; yükseltme 7 gün |
-| 1B sabit arz, %80 piyasa, satış vergisi | Premine yok, vergi yok, her token kazılarak basılır |
-
----
+_İç karşılaştırma `research_notes/rakip-karsilastirma.md` dosyasına taşındı (iç notlarla birlikte özel repoda tutulur; CLAUDE.md rakip adı kuralı)._
 
 ## 10. Açık kararlar (sahibi)
 

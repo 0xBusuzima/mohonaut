@@ -1,0 +1,98 @@
+#cloud-config
+# First boot of an Ubuntu 24.04 server for the back end (docs/03 §6, infra/RUNBOOK.md).
+# Works on any provider that accepts cloud-init (Oracle Cloud, Hetzner, ...). Replace the SSH
+# public key below with yours before use; a public key is not a secret.
+#
+# Result: key-only SSH for the `ops` user (no root, no passwords), a firewall that allows SSH
+# only, automatic security updates, fail2ban, Docker, SOPS + age, rclone, and the swap file
+# a small machine needs. The API is reached through a Cloudflare Tunnel, not an open port.
+
+users:
+  - name: ops
+    groups: [sudo, docker]
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    lock_passwd: true
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAA_REPLACE_WITH_YOUR_PUBLIC_KEY founder
+
+disable_root: true
+ssh_pwauth: false
+
+package_update: true
+package_upgrade: true
+packages:
+  - ufw
+  - fail2ban
+  - unattended-upgrades
+  - ca-certificates
+  - curl
+  - git
+  - age
+  - rclone
+  - jq
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/10-mohonaut.conf
+    permissions: '0644'
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PubkeyAuthentication yes
+      AllowUsers ops
+      MaxAuthTries 3
+      LoginGraceTime 20
+      X11Forwarding no
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    permissions: '0644'
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+  - path: /etc/fail2ban/jail.d/sshd.local
+    permissions: '0644'
+    content: |
+      [sshd]
+      enabled = true
+      maxretry = 4
+      bantime = 1h
+  - path: /etc/sysctl.d/90-mohonaut.conf
+    permissions: '0644'
+    content: |
+      net.ipv4.conf.all.rp_filter = 1
+      net.ipv4.tcp_syncookies = 1
+      kernel.kptr_restrict = 2
+      vm.swappiness = 10
+
+runcmd:
+  # Firewall: SSH in, everything out. Docker publishes nothing beyond 127.0.0.1 (compose.yml).
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow OpenSSH
+  - ufw --force enable
+  # Docker from Docker's own repository.
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - sh -c 'echo "deb [signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list'
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+  - usermod -aG docker ops
+  # SOPS (single static binary, pinned, checked against its published checksum list; amd64 or
+  # arm64, e.g. Oracle's free Ampere machines).
+  - |
+    set -e
+    V=3.10.2
+    A=$(dpkg --print-architecture)
+    cd /tmp
+    curl -fsSLO "https://github.com/getsops/sops/releases/download/v$V/sops-v$V.linux.$A"
+    curl -fsSLO "https://github.com/getsops/sops/releases/download/v$V/sops-v$V.checksums.txt"
+    grep " sops-v$V.linux.$A\$" "sops-v$V.checksums.txt" | sha256sum -c -
+    install -m 0755 "sops-v$V.linux.$A" /usr/local/bin/sops
+  # 2 GB swap for small machines.
+  - fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+  - echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  # Secret files live here, root only (infra/RUNBOOK.md §Secrets).
+  - install -d -m 0700 /etc/mohonaut /etc/mohonaut/secrets /etc/mohonaut/secrets/faucet
+  - sysctl --system
+  - systemctl enable --now fail2ban unattended-upgrades
+  - systemctl restart ssh

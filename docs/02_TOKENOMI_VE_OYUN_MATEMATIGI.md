@@ -1,4 +1,4 @@
-# 02 — Tokenomi ve Oyun Matematiği (Kanonik Şartname v1.0 — DONDURULDU)
+# 02 — Tokenomi ve Oyun Matematiği (Kanonik Şartname v1.1 — DONDURULDU)
 
 > **Durum:** **v1.0 — 2026-10-11, kurucu onayıyla donduruldu.** v0.1 ve v0.2 Monte Carlo simülasyonlarından geçti (`sim/RAPOR.md`, "v0.2 doğrulaması"). Bundan sonraki her değişiklik: yeni sürüm numarası + simülasyon + test vektörleri + değişiklik günlüğü.
 >
@@ -12,8 +12,8 @@
 
 1. **Protokol emisyon takviminden fazlasını asla borçlanmaz.** Ödül = sabit/azalan emisyonun hashpower payı (`r_i = E·h_i/H`). Makine başına sabit verim yok.
 2. **Dış gelir şart.** Yakıt (opex) ETH ile ödenir → gerçek gelir → buyback-burn + protokol likiditesi + operasyon.
-3. **Harcama ertesi günün ödülü olmaz.** Oyun içi MOHN harcamasının %80'i kalıcı yakılır, %20'si yıllara yayılan rezerve döner ([a competitor]'nin %60 → ertesi gün ödül hatası yok).
-4. **Değiştirilemeyenler değiştirilemez:** token, cap, emisyon takvimi, 90/5/5 dağılımı, %80/%20 yakım oranı, mevcut makinelerin istatistikleri.
+3. **Harcama ertesi günün ödülü olmaz.** Oyun içi MOHN harcamasının %80'i kalıcı yakılır, %20'si yıllara yayılan rezerve döner ("harcamanın bir kısmı ertesi günün ödülü olur" döngüsü burada yok).
+4. **Değiştirilemeyenler değiştirilemez:** token, cap, emisyon takvimi, 90/5/5 dağılımı, %80/%20 yakım oranı, mevcut makinelerin istatistikleri. Token ve cap kodda tamamen sabittir. Diğerleri yükseltilebilir MiningCore'da yaşar ve yalnızca **7 günlük yükseltme timelock'u** ile, herkesin göreceği şekilde değiştirilebilir; 96 saatlik parametre timelock'u bunlara dokunamaz (v1.0.2, AI review AI-6).
 5. **Ayarlanabilenler sınırlı ve timelock'lu:** her ayar kontratta kodlanmış alt/üst sınır + değişim hızı limiti + **96 saat** timelock (yükseltmeler 7 gün) + herkese açık canlı kuyruk linki.
 6. **Geriye dönük nerf yok.** Yeni nesil makineler eklenebilir; eskiler aynı kalır.
 7. **Rastgelelik ekonomide yok.** Gacha, paket, şanslı upgrade, çökme riskli overclock yok (7258 riski + Robinhood Chain'de VRF yok).
@@ -53,11 +53,11 @@
 | Transfer vergisi / blacklist / pause | **Yok** | Honeypot şüphesi yok, DEX/aggregator uyumlu |
 | Yükseltilebilirlik | **Yok** (immutable) | — |
 | **Günlük mint tavanı** | **500,000 MOHN / UTC günü** (%0.5 CAP), immutable | Denetimsiz lansmanın son savunma hattı. Simülasyonda (3.12M koşu-günü) en yüksek meşru gün 141K, P99.9 69K; market açılış günü LP basımı ≈ 40K. Tavan hiç devreye girmedi. Bir hata olursa günlük zarar 2M'ye göre 4 kat küçük. |
-| **Saatlik mint devre kesicisi** | **150,000 MOHN / kayan 60 dk** (MiningCore) | En yüksek meşru saat 71K (market açılış saati, LP dahil); açılıştan sonra 23K. Aşılırsa mint yolları otomatik durur, yalnızca Timelock açar (bu durumda çekimler ~4 gün bekler). |
+| **Saatlik mint sınırı** | **150,000 MOHN / kayan 60 dk** (MiningCore) | En yüksek meşru saat 71K (market açılış saati, LP dahil); açılıştan sonra 23K. Sınırı aşacak mint **geri çevrilir** (`MintWindowFull`) ve pencerede yer açılınca tekrar denenir. Rafine isteği başına en çok 100K. Acil durdurma Guardian pause'udur. (v1.0.1: eski "aşılırsa her şey durur" tasarımı herkesin bedavaya oyunu dondurmasına izin veriyordu, iç denetim.) |
 
 **Invariant T1:** `totalSupply ≤ CAP` her durumda.
 **Invariant T3:** Bir UTC gününde basılan toplam ≤ `DAILY_MINT_CAP` (500K). Tavan dolarsa mint revert eder; standart kuyruktaki çekimler ertesi gün tamamlanır (kaybolmaz).
-**Invariant B1:** Kayan 60 dakikada basılan > 150K ise mint yolları durur.
+**Invariant B1:** Kayan 60 dakikada basılan hiçbir zaman 150K'yı aşmaz (aşacak mint geri çevrilir).
 **Invariant T2:** `mint` yalnızca `minter` adresinden çağrılabilir; `minter` atandıktan sonra değişmez.
 
 ---
@@ -109,7 +109,7 @@ Rezerve geri dönen harcamalar (§6) bu eğriyi yukarı iter → oyun "bitmez", 
 
 **Neden takım payı emisyondan?** Takım, oyun yaşadıkça kazanır; oyun ölürse kazanmaz. Premine/unlock uçurumu yok (DFK/Hamster dersleri).
 
-**Kurucu ve hazine çekimleri de kuyruktan geçer ve sınırlıdır:** Talep başına ve gün başına **en fazla 100,000 MOHN**; hazine en az ayda bir çeker (birikmiş büyük bir tutar günlük tavana çarpmasın). Kurucu ve hazine payları yalnızca **standart 72 saatlik rafine kuyruğu** ile çekilebilir (hızlı seçenek yok). Böylece kurucunun her çekimi, token cüzdana ulaşmadan **72 saat önce** zincirde ve Ekonomi sayfasında görünür. Oyunculardan farklı bir ayrıcalık yoktur.
+**Kurucu ve hazine çekimleri de kuyruktan geçer ve sınırlıdır:** Talep başına ve gün başına **en fazla 100,000 MOHN**; hazine en az ayda bir çeker (birikmiş büyük bir tutar günlük tavana çarpmasın). Kurucu ve hazine payları yalnızca **standart rafine kuyruğu** ile çekilebilir (hızlı seçenek yok; kuyruk varsayılan 72 saat, Timelock ile 24–168 saat arasında ayarlanabilir). Böylece kurucunun her çekimi, token cüzdana ulaşmadan kuyruk süresi kadar önce zincirde ve Ekonomi sayfasında görünür. Ayrıca kuyruk süresini kısaltmak 96 saatlik timelock'tan geçer (v1.0.2, AI review AI-10). Oyunculardan farklı bir ayrıcalık yoktur.
 
 ### 3.4 "Derinlik" göstergesi ve Strata
 
@@ -139,8 +139,8 @@ Yeni nesil makine ekleme yetkisi **stratum eşiğine bağlıdır** (kontrat kont
 ## 4. Ödül muhasebesi (MasterChef tipi akümülatör + saatlik bitiş takvimi)
 
 ```
-acc  += (dağıtılan_madenci_DIG × 1e18) / H          (her checkpoint'te)
-pending_i = h_i × (acc_bitiş − debt_i) / 1e18
+acc  += (dağıtılan_madenci_DIG × PREC) / H          (her checkpoint'te; kodda PREC = 1e36)
+pending_i = h_i × (acc_bitiş − debt_i) / PREC
 acc_bitiş = (now < expiry_i) ? acc_şimdi : accAtHour[expiry_i]
 ```
 
@@ -164,7 +164,7 @@ acc_bitiş = (now < expiry_i) ? acc_şimdi : accAtHour[expiry_i]
 ```
 Saatlik tüketim (ℓ/h)      = Σ aktif makinelerin ℓ/h tüketimi  (≤ saha yakıt hattı kapasitesi)
 Tank (ℓ)                = satın alınan − tüketilen
-Bitiş zamanı              = floor_saat( now + tank / aktif_kW )
+Bitiş zamanı              = floor_saat( now + tank / aktif_ℓ_saat )
 ETH maliyeti              = ℓ × π_ℓ / ETHUSD          (Chainlink ETH/USD; sequencer uptime feed bu zincirde yok → kontrolü opsiyonel)
 ```
 
@@ -197,7 +197,7 @@ H* = 0.90 · E · P / c_DP,        c_DP = π_ℓ · 24 / η     (USD/DP/gün)
 
 ### 6.1 Gen-1 katalog
 
-| ID | Makine | DP | ℓ/h | η (DP/(ℓ/h)) | Prim | Fiyat @ p0=10 | Kilit |
+| ID | Makine | DP | ℓ/h | η (DP/(ℓ/h)) | Prim | DP × p0 × (1 + prim), p0=10 (parti içi artış hariç; gerçek ilk alım +%0.2–11.8) | Kilit |
 |---|---|---|---|---|---|---|---|
 | 0 | Pilot Rig (başlangıç) | 10 | 0.25 | 40 | — | **Ücretsiz, hesap başı 1** | — |
 | 1 | Rotary Rig | 50 | 1.0 | 50 | %0 | 500 | Saha L1 |
@@ -206,7 +206,7 @@ H* = 0.90 · E · P / c_DP,        c_DP = π_ℓ · 24 / η     (USD/DP/gün)
 | 4 | Turbodrill | 1,000 | 12.5 | 80 | %27 | 12,700 | Saha L10 |
 | 5 | Plasma Bore | 2,700 | 30.0 | 90 | %40 | 37,800 | Saha L15 |
 
-**Kural "pahalı = daha verimli, daha ucuz hash değil":** DP başına fiyat tier ile artar (prim), karşılığında ℓ/h başına DP artar (yakıt tasarrufu) ve slot başına DP artar. [a competitor]'nin ucuz PC'lerinin kuralı bozup nerf'e yol açması burada tasarım gereği imkânsız.
+**Kural "pahalı = daha verimli, daha ucuz hash değil":** DP başına fiyat tier ile artar (prim), karşılığında ℓ/h başına DP artar (yakıt tasarrufu) ve slot başına DP artar. Ucuz makinelerin dengeyi bozup sonradan nerf gerektirmesi burada tasarım gereği imkânsız.
 
 **Prim geri dönüşü örneği:** T5'in T1'e göre yakıt tasarrufu `0.10×24×(1/50−1/90) = $0.0213/DP/gün`; prim `4 MOHN/DP`. `P=$0.15` iken prim `$0.60/DP` → **~28 günde** kendini çıkarır. Fiyat ve yakıt değiştikçe bu karar değişir → gerçek strateji.
 
@@ -300,6 +300,7 @@ Koşullar           = davet edilenin toplam yakıt harcaması ≥ 0.003 ETH ve d
 
 - En kötü durumda (herkesin davet edeni var): `%3 × %90 = %2.7 < %5` → **hazine payını asla aşamaz**.
 - Koşul sağlanmazsa kredi hazinede kalır. Çok seviyeli referans yok (MLM görüntüsü yok).
+- **Zamanlama (AI denetimi SPEC-8):** koşullar, davet edilenin tahakkuku hesaplandığında (davet edilenin her işleminde) **bir kez** kontrol edilir ve sonuç son hesaplamadan bu yana geçen aralığın tamamına uygulanır. Davet edenin yakıtı o an bitmişse aralığın kredisi hazinede kalır; o an varsa aralığın tamamı için ödenir. Davet edilen uzun süre işlem yapmazsa aralık da uzar. Kredi her durumda davet edilenin tahakkukunun %3'üyle sınırlıdır ve yeni emisyon basılmaz. Simülasyon koşulları günlük kontrol eder; bu, günde en az bir kez işlem yapan oyuncular için aynı sonucu verir.
 
 ---
 
@@ -307,11 +308,19 @@ Koşullar           = davet edilenin toplam yakıt harcaması ≥ 0.003 ETH ve d
 
 | Hedef | Pay | Sınır | Açıklama |
 |---|---|---|---|
-| Buyback & Burn | **%55** (v0.1: %40) | %30–60 | Keeper rolü, günlük tavan, slippage sınırı; alınan MOHN %100 yakılır |
-| Protokol Likiditesi (POL) | **%30** | %20–50 | Tam aralık Uniswap v4 pozisyonu, **çekilemez** |
+| Buyback & Burn | **%55** (v0.1: %40) | %30–60 | Keeper rolü; günde kovanın en çok **1/20**'si (§10.1); fiyat çapası; alınan MOHN %100 yakılır |
+| Protokol Likiditesi (POL) | **%30** | %20–50 | Tam aralık Uniswap v4 pozisyonu, **çekilemez**; günde kovanın en çok **1/7**'si eklenir (§10.1). Pozisyonun **işlem ücretleri** her eklemede ya da `collectFees` çağrısında pozisyondan alınır: MOHN ücretleri **yakılır**, ETH ücretleri buyback kovasına gider. Havuzda birikmez (AI denetimi SPEC-5; simülasyon da böyle modeller) |
 | Operasyon (Safe) | **%15** (v0.1: %30) | %10–35 | Sunucu, bağımsız denetim fonu, bug bounty, giriş servisi, ekip; aylık rapor (08 §3 sırası) |
 
 > **Neden 55/30/15?** Ops payı, gelirin MOHN piyasasından kalıcı olarak çıkan kısmıdır; buyback ise dış gelirin tokene dönen tek kanalıdır. Simülasyonda tek başına bu değişiklik SR'yi 0.65 → 0.86'ya çıkardı ve en yüksek Gini'yi 0.74 → 0.56'ya indirdi. Simülasyonun mutlak gelir rakamları uydurma bir talep kalibrasyonuna dayandığı için ops payının nihai değeri gerçek bütçeye göre seçilir. Kural: kötü senaryoda ops geliri aylık bütçenin ≈ 2 katını karşılamalı. **Bu oran kurucunun kararıdır.**
+
+### 10.1 Keeper harcama tavanları ve fiyat çapası (v1.1, AI denetimi AI-2 / AI-3)
+
+- **Tavan kovadan hesaplanır, havuzdan değil.** Günlük buyback, buyback kovasının günün ilk harcamasındaki bakiyesinin en çok **1/20**'si; günlük POL ekleme, POL kovasının en çok **1/7**'si kadardır. Buyback oranı Timelock ile %5–25 arasında ayarlanabilir, 7 günde bir; POL oranı sabittir. Kova yalnızca gerçek yakıt geliriyle büyür. Aynı blokta eklenip çekilen geçici (JIT) likidite tavanı şişiremez; havuzun anlık likiditesine bakan v1.0 tavanı şişirebiliyordu. Buyback kovası böylece yaklaşık 20 günlük, POL kovası yaklaşık 7 günlük gelirle dengede kalır.
+- **Neden buyback'te 1/20, 1/7 değil?** 1/7 ile Market Open sonrası genesis buyback kovası birkaç günde harcanıyor, 1. ay fiyatı yaklaşık 4 kat yükselip sonra sert düşüyordu; derin ayı senaryosunda Gini 0,82'ye çıkıp §13 kriterini (< 0,8) geçemedi. 1/20 ve günde 8 parça ile 0,78 (kurucu kararı, 2026-10-12; `sim/RAPOR.md` v1.1).
+- **Fiyat çapası.** Havuzun hook'u (LiquidityManager), her bloğun ilk swap'ında fiyatın **1 saatlik üstel ortalamasını** tick cinsinden günceller. Ortalama, son swap'tan bu yana geçerli olan fiyatla, geçen süre oranında ilerler. Buyback ve LP eklemesindeki swap, fiyatı bu ortalamadan en çok **%3** uzağa götürebilir. Fiyat işlemden önce zaten bu bandın dışındaysa işlem yapılmaz ve ETH kovada kalır. Böylece çalınan bir keeper anahtarı fiyatı tek blokta kaydırıp sandviç yapamaz; bunun için kaydırılmış fiyatı arbitrajcılara rağmen saatlerce tutması gerekir.
+- Keeper günlük tutarı 3 saatte bir küçük parçalar halinde harcar; her parça fiyatı en çok yaklaşık %2 oynatır (LP eklemesinde yarısı swap edildiği için iki parça). Simülasyon bunu "günde en çok 8 parça" olarak modeller.
+
 
 **Sıfır enflasyon fiyatı (P\*), RCR ve dürüst bir not:**
 
@@ -343,13 +352,15 @@ Bu metrikler herkese açık Ekonomi sayfasında canlı yayımlanır.
 
 ```
 P0_USD   = Genesis yakıt harcaması (USD) / Genesis madenci tahakkuku (MOHN)     → madencilerin ortalama maliyeti
-MOHN_LP   = min( POL_ETH × ETHUSD / P0_USD , 1,000,000 )                         → rezervden basılır
-            (pratikte = 0.30 × genesis madenci tahakkuku ≈ 40K; 1M tavanı hiç bağlamaz)
-Havuz    = Uniswap v4, ETH/MOHN, tam aralık, pozisyon NFT'si çekilemez kontratta
+MOHN_LP   = min( POL_ETH × ETHUSD / P0_USD , 1,000,000 , saatlik mint sınırında kalan yer )  → rezervden basılır
+            (pratikte = 0.30 × genesis madenci tahakkuku ≈ 40K; tavanlar hiç bağlamaz)
+            LP kırpılırsa havuz yine P0'da açılır; yalnızca LP ile eşleşen POL ETH kullanılır, kalan ETH
+            POL kovasında addLiquidity için bekler (v1.0.1)
+Havuz    = Uniswap v4, ETH/MOHN, tam aralık; pozisyon doğrudan PoolManager'da LiquidityManager adına, NFT yok, çekme yolu yok
 ```
 
 - **Genesis'te tank üst sınırı:** Pre-fill ve Genesis boyunca bir hesabın tankı en fazla **Market Open + 24 saat** sonrasına kadar yetecek kadar doldurulabilir. Böylece "genesis yakıt harcaması" ≈ genesis'te gerçekten tüketilen yakıt olur. 30 günlük ön doldurma P0'ı 3–4 kat şişirirdi.
-- **Genesis'teki buyback payı:** Market açılmadan buyback yapılamaz. Bu süredeki buyback kovası birikir ve Market Open'dan sonra günlük tavanla harcanır (simülasyondaki davranış).
+- **Genesis'teki buyback payı:** Market açılmadan buyback yapılamaz. Bu süredeki buyback kovası birikir ve Market Open'dan sonra §10.1'deki tavanla, yani günde kovanın 1/20'si olarak harcanır (simülasyondaki davranış).
 - Takım alım yapmaz; açılış fiyatı formülle, zincir üstü verilerle belirlenir; kimsenin takdir yetkisi yok.
 - Açılış havuzu sığ başlar: tank sınırıyla genesis yakıt harcaması ≈ $5.4K, P0 ≈ $0.04 (sınırsız tankta $0.11), açılış POL'ü ≈ 0.55 ETH + ≈ 40K MOHN. Fiyat açılıştan sonraki 2 günde ~3 katına çıkabiliyor; 12. ayda iki yol birleşiyor. Asıl önlemler: "açılış fiyatı oynaktır" iletişimi ve opsiyonel anti-snipe ücret hook'u.
 - CA günler önceden yayımlanabilir: havuz `openMarket()` anına kadar yoktur → snipe edilecek bir şey yok.
@@ -367,7 +378,7 @@ Havuz    = Uniswap v4, ETH/MOHN, tam aralık, pozisyon NFT'si çekilemez kontrat
 | %80/%20 yakım/rezerv oranı | Rafineri ücreti ve kuyruk süresi (§8) |
 | Mevcut makinelerin DP/(ℓ/h)/prim değerleri | Yeni nesil ekleme (stratum eşiği + verim ≤ önceki en iyi +%15, ≤ 1 nesil/45 gün) |
 | Genesis/Market Open formülü | Saha maliyet tabanı (±%25/30g) |
-| Referans oranı ve kaynağı | Keeper adresi, günlük buyback tavanı |
+| Referans oranı ve kaynağı | Keeper adresi, buyback kova oranı (%5–25, 7 günde bir) |
 
 **Önceden ilan edilmiş müdahale politikası** (yumuşak, otomatik değil; her biri timelock kuyruğunda herkese görünür):
 
@@ -386,23 +397,25 @@ Simülasyon `/sim` altında, bu dokümandaki formüllerle **günlük adımlı, a
 
 **Senaryolar (her biri ≥ 200 tohum):** baz, ayı (talep −%70 şoku), derin ayı (−%90), balina (H'nin %20'si, 30 gün sonra çıkış), churn (3. aydan sonra yeni giriş −%80), sybil (1,000 cüzdan), hype (2 hafta 10x giriş).
 
-**Kabul kriterleri (v1.0 sonuçları: 7 senaryo × 200 tohum):**
+**Kabul kriterleri (v1.1 sonuçları: 7 senaryo × 200 tohum, `sim/RAPOR.md` "v1.1 doğrulaması"):**
 
 > **`r` değişiklikleri fiyat sürekliliğini korumalı:** Değişiklik anında VRGDA yeniden çapalanır: `p = p0·(1−k)^(s_a + (t−t_a) − (n−n_a)/r)`. Test vektörleri: `sim/vectors/vrgda_reanchor.json`. Aksi halde (1M DP satılmışken) %25'lik bir değişiklik takvimi ~167 gün kaydırır ve fiyat sıçrar.
 
-| Metrik | Tanım | Hedef | v0.1 sonucu | v0.2 sonucu |
-|---|---|---|---|---|
-| Fiyat dayanıklılığı | P(24. ay ort. fiyat > %30 × **2. ay** ort.)¹ | ≥ 0.5 (baz) | GEÇTİ | GEÇTİ |
-| Kohort geri dönüşü | Haftalık kohortun ilk 14 günlük capex'inin, o DP'nin net (yakıt sonrası) MOHN üretimiyle geri ödendiği gün; kohort medyanı | ≥ %70 kohortta < 365 gün (baz) | **KALDI (0.15)** | **GEÇTİ (0.95; medyan 96 gün)** |
-| Sink oranı SR | 12. ay, 28 günlük ortalama | ≥ 0.6 (baz), ≥ 0.3 (ayı) | GEÇTİ | **GEÇTİ (0.72 / 0.65; derin ayı 0.81)** |
-| Yoğunlaşma | Cüzdan bazında, aktif DP, 3–36. ayların aylık en yüksek Gini'si | < 0.8 (7 senaryo) | 5/7 | **7/7 (en yüksek 0.775, derin ayı)** |
-| Sybil-nötrlük | Aynı gün, aynı makine tipiyle ℓ başına emisyon oranı (sybil / normal) | ≤ 1 + referans oranı | GEÇTİ (1.006) | GEÇTİ (1.026) |
-| Ops runway | En kötü %5 hariç | > 12 ay | GEÇTİ | GEÇTİ |
-| RCR | Sağlık metriği (§10), kriter değil | Trend izlenir | 0.36 | 0.15 |
+| Metrik | Tanım | Hedef | v0.1 sonucu | v0.2 sonucu | v1.1 sonucu |
+|---|---|---|---|---|---|
+| Fiyat dayanıklılığı | P(24. ay ort. fiyat > %30 × **2. ay** ort.)¹ | ≥ 0.5 (baz) | GEÇTİ | GEÇTİ | **GEÇTİ (1.00)** |
+| Kohort geri dönüşü | Haftalık kohortun ilk 14 günlük capex'inin, o DP'nin net (yakıt sonrası) MOHN üretimiyle geri ödendiği gün; kohort medyanı | ≥ %70 kohortta < 365 gün (baz) | **KALDI (0.15)** | **GEÇTİ (0.95; medyan 96 gün)** | **GEÇTİ (1.00; medyan 51 gün)** |
+| Sink oranı SR | 12. ay, 28 günlük ortalama | ≥ 0.6 (baz), ≥ 0.3 (ayı) | GEÇTİ | **GEÇTİ (0.72 / 0.65; derin ayı 0.81)** | **GEÇTİ (0.71 / 0.82; derin ayı 0.81)** |
+| Yoğunlaşma | Cüzdan bazında, aktif DP, 3–36. ayların aylık en yüksek Gini'si | < 0.8 (7 senaryo) | 5/7 | **7/7 (en yüksek 0.775, derin ayı)** | **7/7 (en yüksek 0.788, derin ayı)** |
+| Sybil-nötrlük | Aynı gün, aynı makine tipiyle ℓ başına emisyon oranı (sybil / normal) | ≤ 1 + referans oranı | GEÇTİ (1.006) | GEÇTİ (1.026) | GEÇTİ (1.03) |
+| Ops runway | En kötü %5 hariç | > 12 ay | GEÇTİ | GEÇTİ | GEÇTİ |
+| RCR | Sağlık metriği (§10), kriter değil | Trend izlenir | 0.36 | 0.15 | 0.18 |
 
 ¹ "1. ay ortalaması" lansman dinamiğine çok duyarlı çıktı; referans 2. aya taşındı.
 
 **Önemli uyarı:** Simülasyondaki mutlak fiyat ve gelir seviyeleri, gerçek veri olmadan kurulmuş bir talep kalibrasyonuna dayanır. Önerilerin **yönü** talep yarıya indirildiğinde ve ikiye katlandığında da korunuyor; **seviyeleri** korunmuyor. Hiçbir simülasyon sonucu dışarıya fiyat veya getiri beklentisi olarak sunulmaz.
+
+**v1.1 doğrulaması (2026-10-12, son koşu 2026-10-13):** keeper tavanları kovadan (buyback 1/20, POL 1/7, günde 8 parça), 500K mint tavanı ve 96 saat timelock ile 2.850 koşu; bütün kriterler geçti. Son koşu AI-8 düzeltmesini içerir: havuzun LP ücretleri artık modelde birikip günlük toplanıyor (ETH tarafı buyback kovasına, MOHN tarafı yakıma), zap formülü ücreti iki kez sayıyor. Derin ayıda Gini 0.788, sınıra yakın; 1/7 buyback ile 0.82'ydi ve bu yüzden 1/20 seçildi (§10.1). §12 kuralı kapalıyken de 7/7 (en yüksek churn 0.795). Arz invariant'ının en büyük sapması 8.6e-7.
 
 **v1.0 doğrulaması tamamlandı:** Genesis tank sınırı, §12 müdahale kuralı ve mint tavanları modele eklendi; 7 senaryo × 200 tohum, talep ×0.5 / ×2 sağlamlık testi ve 96 saatlik timelock kontrolü geçti. Arz invariant'ı her koşunun her gününde tuttu. En zayıf nokta: derin ayıda Gini 0.775 (sınıra yakın), 36. ayda Nakamoto ≈ 8 → canlıda izlenir.
 
@@ -432,4 +445,23 @@ Simülasyon `/sim` altında, bu dokümandaki formüllerle **günlük adımlı, a
 | v0.1+ | 2026-10-10 | Kurucu/hazine çekimleri yalnızca 72s kuyruk; Dünya Derinliği tahakkuk eden emisyona göre, strata metre cinsinden (Kola Line, Moho Line) | Şeffaflık; marka çalışması |
 | v0.2 | 2026-10-10 | VRGDA `r` 8,000 → 2,000; ETH dağılımı 40/30/30 → 55/30/15; §12 müdahale kuralı yönü düzeltildi; genesis tank üst sınırı ve genesis buyback kovası tanımlandı; §13 tanımları netleştirildi; RCR kriterden sağlık metriğine alındı | `sim/RAPOR.md` §1, §7 |
 | v0.2+ | 2026-10-10 | Tema: enerji (kWh/kW) → dizel yakıt (ℓ, ℓ/h), üs → sondaj sahası, makine ve katman isimleri yenilendi (matematik aynı); parametre timelock'u 72s → 96s; oracle bayatlık eşiği 26s, sequencer feed opsiyonel, testnet mock (0.4 zincir doğrulaması) | Kurucu kararı (rakiplere benzememe), `docs/ZINCIR_DOGRULAMA.md` |
+| v1.0.1 | 2026-10-12 | **Güvenlik düzeltmeleri (iç denetim, ekonomi parametreleri değişmedi):** saatlik mint devre kesicisi → katı saatlik mint sınırı (aşan mint geri çevrilir; global durdurma yok); rafine isteği başına ≤ 100K; Market Open LP'si mint sınırına kırpılır (fiyat P0'da kalır); referans kredisinin %3'lük bütçesi hazine payı içinde ayrılır, hazine çekemez | `contracts/audits/FINDINGS.md` |
+| v1.0.2 | 2026-10-12 | **AI denetimi düzeltmeleri, ekonomi parametreleri değişmedi:** RevenueRouter kova kilidi geri alınamaz (`LOCKED_ROLE` kendi yöneticisi); rafineri ve kurucu/hazine çekimleri `openMarket` gerçekten çalıştıktan sonra açılır (yalnızca zamanı geldiğinde değil); başlatılmamış sequencer turu "kapalı" sayılır. Metin düzeltmeleri: §0 ilke 4'ün kapsamı (7 günlük yükseltme yolu), çekimlerin görünürlük süresi, §4 PREC, §6.1 fiyat sütunu, kodda olup burada yazmayan sınırlar (Ek: Kodlanmış sınırlar). Açık ekonomi kararları (POL günlük tavanı, buyback/LP tavanlarının tabanı, hurda kredisi fiyatı) ayrı sürüm olarak gelecek | `contracts/audits/AI_REVIEW.md`, `FIXES.md` |
+| v1.1 | 2026-10-12 | **Kurucu kararı (AI denetimi AI-2/AI-3/AI-5):** buyback ve POL günlük tavanları havuzun anlık ETH'sinden değil, kovadan hesaplanır (günde en çok buyback 1/20, POL 1/7; buyback için 1/7 derin ayıda Gini kriterini geçemedi, kurucu 1/20 + günde 8 parça seçti); keeper swap'ları hook'un 1 saatlik fiyat ortalamasından en çok %3 uzaklaşabilir; simülasyon POL'ü artık her gün tüm kovayı eklemiyor. Hurda kredisinin fiyatı değişmedi (AI-5 kabul edildi: kredi devredilemez ve yalnızca ekipmana harcanır; al-sat döngüsü yakım yüzünden net zararlı). §13 sonuçları v1.1 simülasyonuyla güncellendi | `contracts/audits/AI_REVIEW.md` |
 | **v1.0** | **2026-10-11** | **Donduruldu.** İsim Mohonaut / $MOHN; günlük mint tavanı 2M → 500K; saatlik mint devre kesicisi 150K; kurucu/hazine çekimi talep ve gün başına ≤ 100K; VRGDA `r` değişiklikleri fiyat sürekli (yeniden çapalama); §13 sonuçları v0.2 simülasyonuyla güncellendi | `sim/RAPOR.md` "v0.2 doğrulaması", kurucu onayı |
+
+## Ek: Kodlanmış sınırlar (v1.0.2, AI review AI-12 / SPEC-9, 10, 17–21)
+
+| Sınır | Değer | Kaynak |
+|---|---|---|
+| Günlük buyback harcaması | buyback kovasının en çok 1/20'si (günün ilk harcamasında); Timelock %5–25 arası, 7 günde bir (v1.1) | `BuybackBurner.sol` |
+| Günlük POL ekleme | POL kovasının en çok 1/7'si (günün ilk eklemesinde; sabit) (v1.1) | `LiquidityManager.sol` |
+| Fiyat çapası | 1 saatlik üstel ortalama tick; keeper swap'ları ortalamadan en çok %3 (≈296 tick) uzağa | `LiquidityManager` hook'u (v1.1) |
+| Saha maliyet ölçeği | 0.5×–2× (5,000–20,000 bps), adım ±%25, 30 günde bir | `MiningCore.paramBounds` |
+| Hız limitleri | hızlı rafine ücreti, kuyruk süresi, tank saati, oracle bayatlığı: 7 günde bir; gelir dağılımı, alıcılar, sequencer beslemesi: 30 günde bir | `MiningCore`, `RevenueRouter` |
+| Guardian pause | 72 saat, kendiliğinden biter; 7 günde en çok bir kez; Timelock ile uzatma ≤ 30 gün | `MiningCore` |
+| Sequencer toparlanma süresi | 1 saat (besleme bağlıysa) | `SEQUENCER_GRACE` |
+| Yeni nesil koruması | nesil başına ≤ 8 tür, prim ≤ %100, DP ≤ 10,000; Gen-8+ yalnızca 85,000 m'den sonra | `MiningCore.addMachineGeneration` |
+| Pilot Rig hurdası | kredi vermez | `scrapMachines` |
+| VRGDA yeniden çapalama | hem `r` hem `k` değişince fiyat sıçramasın diye | `_reanchorVrgda` |
+| Bayat oracle | yakıt alımını ve `openMarket`'i durdurur; kazı devam eder | `_ethUsdWad` |
