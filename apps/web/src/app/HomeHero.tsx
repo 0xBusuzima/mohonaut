@@ -19,28 +19,37 @@ const PADS: ScenePad[] = [
 export function HomeHero() {
   const model = useMemo(() => ({ pads: PADS, tankFill: 0.65 }), []);
   return (
-    <section className="relative h-[calc(100dvh-4rem)] min-h-[34rem] overflow-hidden bg-[#0d1220]">
-      <PixelWorld
-        contained
-        model={model}
-        label="A drill site at night: rigs on their pads, a diesel tank, the core shack and the World Bore."
-      />
-      <div className="pointer-events-none absolute inset-0 flex items-end justify-center p-4 pb-8 md:items-center md:justify-start md:p-10">
-        <div className="px-panel pointer-events-auto flex max-w-md flex-col gap-4 p-5 pt-0 font-pixel">
+    <section className="relative overflow-hidden bg-[#0d1220] md:h-[calc(100dvh-4rem)] md:min-h-[34rem]">
+      {/* Phones: the site in a strip above the panel. Wider screens: the site fills the hero. */}
+      <div className="relative h-64 md:absolute md:inset-0 md:h-auto">
+        <PixelWorld
+          contained
+          model={model}
+          label="A drill site at night: rigs on their pads, a diesel tank, the core shack and the World Bore."
+        />
+      </div>
+      <div className="relative -mt-8 flex justify-center px-4 pb-8 md:pointer-events-none md:absolute md:inset-0 md:mt-0 md:items-center md:justify-start md:p-10">
+        <div className="px-panel pointer-events-auto flex max-w-md flex-col gap-3 p-5 pt-0 font-pixel sm:gap-4">
           <div aria-hidden="true" className="px-hazard -mx-[14px] mb-1 h-3" />
-          <h1 className="font-display text-5xl font-black tracking-wide uppercase sm:text-6xl">
+          <h1 className="font-display text-4xl font-black tracking-wide uppercase sm:text-6xl">
             Not the moon. <span className="text-orange">The Moho.</span>
           </h1>
-          <p className="text-lg">
+          <p className="sm:text-lg">
             An on-chain idle drilling game. Run a drill site, fuel your rigs with diesel and core
             one shared hole with every other player: the World Bore. Every $MOHN comes out of the
             ground.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/play/" className="px-btn px-btn-primary px-6 py-3 text-xl uppercase">
+            <Link
+              href="/play/"
+              className="px-btn px-btn-primary px-4 py-2.5 text-lg uppercase sm:px-6 sm:py-3 sm:text-xl"
+            >
               Play now
             </Link>
-            <Link href="/train/" className="px-btn px-btn-light px-5 py-3 text-xl uppercase">
+            <Link
+              href="/train/"
+              className="px-btn px-btn-light px-4 py-2.5 text-lg uppercase sm:px-5 sm:py-3 sm:text-xl"
+            >
               Try the rig
             </Link>
           </div>
