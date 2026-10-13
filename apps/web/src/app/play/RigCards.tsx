@@ -60,12 +60,15 @@ export function MarketWindow({
   state,
   action,
   useQuote,
+  openSite,
 }: {
   state: GameState;
   action: Action;
   /** Prices more than one rig: the chain's batch quote (useRigQuote) or the training site's.
    * A prop, so the training site never loads the wallet code. */
   useQuote: QuoteHook;
+  /** Opens the site window (more pads and fuel line); without it no button shows. */
+  openSite?: () => void;
 }) {
   const p = state.player;
   if (p === null) return null;
@@ -76,9 +79,18 @@ export function MarketWindow({
         Choose rigs for your free pads. Prices follow the public auction formula and move with time
         and sales; you pay from scrap credit first, then unrefined $MOHN.
       </p>
-      <p className="mb-4 flex items-center justify-center gap-2 text-lg">
+      <p className="mb-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-lg">
         <PxIcon name="rig" /> {freePads > 0 ? freePads : 'No'} free pad
         {freePads === 1 ? '' : 's'} · Site level {p.level}
+        {openSite !== undefined && (
+          <PxButton
+            variant={freePads > 0 ? 'light' : 'primary'}
+            className="!px-3 !py-1 !text-base"
+            onClick={openSite}
+          >
+            Expand the site
+          </PxButton>
+        )}
       </p>
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {state.rigs
@@ -206,18 +218,30 @@ export function RigsWindow({
   state,
   action,
   openMarket,
+  openSite,
 }: {
   state: GameState;
   action: Action;
   openMarket: () => void;
+  /** Opens the site window; without it no button shows. */
+  openSite?: () => void;
 }) {
   const owned = state.rigs.filter((r) => r.owned > 0);
+  const p = state.player;
   return (
     <>
       <p className="mb-4 text-center text-base text-concrete">
         Stop a rig when its diesel is not worth it. Scrapping credits 20% of its value as scrap
         credit for rigs and site levels; the Pilot Rig credits nothing.
       </p>
+      {p !== null && openSite !== undefined && (
+        <p className="mb-4 flex flex-wrap items-center justify-center gap-3 text-lg">
+          Site level {p.level} · {p.padsUsed} / {sitePads(p.level)} pads
+          <PxButton variant="light" className="!px-3 !py-1 !text-base" onClick={openSite}>
+            Expand the site
+          </PxButton>
+        </p>
+      )}
       {owned.length === 0 ? (
         <div className="text-center">
           <p className="mb-4 text-lg">No rigs on your site yet.</p>

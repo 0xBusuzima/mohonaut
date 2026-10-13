@@ -172,9 +172,23 @@ export function TrainingGame() {
   if (panel === 'fuel')
     body = <FuelWindow state={game} action={action} first={false} ethBalance={sim.eth} />;
   else if (panel === 'market')
-    body = <MarketWindow state={game} action={action} useQuote={trainingQuote} />;
+    body = (
+      <MarketWindow
+        state={game}
+        action={action}
+        useQuote={trainingQuote}
+        openSite={() => setPanel('site')}
+      />
+    );
   else if (panel === 'rigs')
-    body = <RigsWindow state={game} action={action} openMarket={() => setPanel('market')} />;
+    body = (
+      <RigsWindow
+        state={game}
+        action={action}
+        openMarket={() => setPanel('market')}
+        openSite={() => setPanel('site')}
+      />
+    );
   else if (panel === 'refinery')
     body = <RefineryWindow state={game} action={action} address={TRAINEE} />;
   else if (panel === 'site') body = <SiteWindow state={game} action={action} />;

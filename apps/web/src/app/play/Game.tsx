@@ -360,9 +360,23 @@ function PanelWindow({
   if (panel === 'fuel')
     body = <FuelWindow state={state} action={action} first={false} ethBalance={ethBalance} />;
   else if (panel === 'market')
-    body = <MarketWindow state={state} action={action} useQuote={useRigQuote} />;
+    body = (
+      <MarketWindow
+        state={state}
+        action={action}
+        useQuote={useRigQuote}
+        openSite={() => go('site')}
+      />
+    );
   else if (panel === 'rigs')
-    body = <RigsWindow state={state} action={action} openMarket={() => go('market')} />;
+    body = (
+      <RigsWindow
+        state={state}
+        action={action}
+        openMarket={() => go('market')}
+        openSite={() => go('site')}
+      />
+    );
   else if (panel === 'refinery')
     body = <RefineryWindow state={state} action={action} address={address} />;
   else if (panel === 'site') body = <SiteWindow state={state} action={action} />;

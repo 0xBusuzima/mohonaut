@@ -208,6 +208,12 @@ test('the training site runs the game without a wallet', async ({ page }) => {
   await page.getByRole('button', { name: 'Close' }).click();
   await page.getByRole('button', { name: 'My rigs', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'My rigs' }).getByText('Rotary Rig')).toBeVisible();
+  // The site window is a button away, not only a click on the world (keyboard players).
+  await page
+    .getByRole('dialog', { name: 'My rigs' })
+    .getByRole('button', { name: 'Expand the site' })
+    .click();
+  await expect(page.getByRole('dialog', { name: 'Expand your site' })).toBeVisible();
   const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(
     axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`),
