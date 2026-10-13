@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import { PixelWorld } from '../../game/pixel/PixelWorld';
 import { ForemanMo } from '../../game/pixel/ForemanMo';
 import type { ScenePad } from '../../game/play';
+import { inAppBrowser } from '../../game/inapp';
 import { isTestnet } from '../../game/network';
 import { PxButton, PxModal, Steps } from './px';
 
@@ -53,6 +54,24 @@ export function LoadingScreen({ text = 'Spudding in…' }: { text?: string }) {
   );
 }
 
+const noSubscribe = () => () => {};
+
+/** Inside X's (or another app's) browser: wallets connect better in the phone's own one. */
+function InAppNotice() {
+  const app = useSyncExternalStore(
+    noSubscribe,
+    () => inAppBrowser(navigator.userAgent),
+    () => null,
+  );
+  if (app === null) return null;
+  return (
+    <p role="note" className="px-dark mt-4 px-3 py-2 text-base text-amber">
+      You opened this inside the {app} app. Wallets connect more reliably in your phone&apos;s own
+      browser: open the menu (⋯) and choose Open in browser.
+    </p>
+  );
+}
+
 /**
  * Prerendered and light: the world and the welcome window. The wallet code (~300 KB) loads when
  * the player presses Connect (`onConnect`); without it the button waits.
@@ -76,6 +95,7 @@ export function PlayShell({ onConnect }: { onConnect?: () => void }) {
             shared bore with every other driller.
           </p>
         </div>
+        <InAppNotice />
         <PxButton className="mt-5 w-full" onClick={onConnect} disabled={onConnect === undefined}>
           {onConnect === undefined ? 'Loading wallets…' : 'Connect wallet'}
         </PxButton>

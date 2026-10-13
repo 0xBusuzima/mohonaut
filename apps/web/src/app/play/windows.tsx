@@ -143,6 +143,8 @@ export function FuelWindow({
   const tank = p?.tank ?? 0n;
   const full = tank + room;
   const hoursLeft = registered && p.burn > 0n ? Number((tank * 10n) / p.burn) / 10 : null;
+  // Said before the wallet opens, not after it fails.
+  const overBalance = ethBalance !== undefined && wei > ethBalance;
   // How long the diesel being bought runs the site's rigs (a new site: the Pilot Rig).
   const siteBurn = registered ? p.burn : (state.rigs[0]?.burn ?? 0n);
   const buysHours =
@@ -184,6 +186,11 @@ export function FuelWindow({
         {buysHours !== null && <>, about {formatHours(buysHours)} for your rigs</>} · in wallet{' '}
         <b>{ethBalance === undefined ? '—' : formatEth(ethBalance)}</b>
       </p>
+      {overBalance && (
+        <p role="status" className="text-base text-amber">
+          That is more than your wallet holds. Leave a little ETH for gas.
+        </p>
+      )}
       {maxWei !== null && (
         <p className="text-base text-concrete">
           Your tank takes up to {formatLitres(room)} now (≈ {formatEth(maxWei)}).{' '}
@@ -200,7 +207,7 @@ export function FuelWindow({
       <PxButton
         className="flex w-full items-center justify-center gap-2 py-3 text-xl"
         busy={action.busy === 'buyFuel'}
-        disabled={wei === 0n || rate === null}
+        disabled={wei === 0n || rate === null || overBalance}
         onClick={() =>
           void action.run({ fn: 'buyFuel', args: [referrer], value: wei, done: 'Diesel delivered' })
         }
