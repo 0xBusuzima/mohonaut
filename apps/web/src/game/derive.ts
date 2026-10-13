@@ -96,19 +96,20 @@ export function maxRigsToBuy(p: {
 
 /**
  * `emitted` as of `now`: the stored value from the last checkpoint plus the hour's slice since,
- * while someone drills, after Genesis and outside a pause. For display only; the next hours'
- * slices are a little smaller, so a checkpoint long ago is overstated by about 0.05% a day.
+ * while someone drills and after Genesis (a pause stops players, not emission). Only up to the end
+ * of the checkpoint's hour, where the stored `activeDp` and `hourEmission` are exact: past it,
+ * fuel may have run out unseen, so the figure waits for the next checkpoint (never overstates).
  */
 export function emittedAt(p: {
   emitted: bigint;
   hourEmission: bigint;
   activeDp: bigint;
   lastUpdate: number;
-  pausedUntil: number;
   genesisTime: number;
   now: number;
 }): bigint {
-  const from = Math.max(p.lastUpdate, p.genesisTime, p.pausedUntil);
-  if (p.activeDp === 0n || p.now <= from) return p.emitted;
-  return p.emitted + (p.hourEmission * BigInt(p.now - from)) / 3600n;
+  const from = Math.max(p.lastUpdate, p.genesisTime);
+  const to = Math.min(p.now, (Math.floor(p.lastUpdate / 3600) + 1) * 3600);
+  if (p.activeDp === 0n || to <= from) return p.emitted;
+  return p.emitted + (p.hourEmission * BigInt(to - from)) / 3600n;
 }

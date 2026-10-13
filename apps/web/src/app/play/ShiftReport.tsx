@@ -23,6 +23,16 @@ function stored(address: string): ShiftSnapshot | null {
   }
 }
 
+function save(address: string, state: GameState): void {
+  const snap = snapshotOf(state);
+  if (snap === null) return;
+  try {
+    window.localStorage.setItem(key(address), JSON.stringify(snap));
+  } catch {
+    // Storage blocked: no report next time.
+  }
+}
+
 /**
  * Back after an hour or more: Foreman Mo reports what the site did meanwhile, once. Otherwise
  * (and after it is closed) shows `children`. Keeps this device's snapshot of the site fresh.
@@ -42,18 +52,17 @@ export function ShiftReportNotice({
     const prev = stored(address);
     return prev === null ? null : shiftReport(prev, state);
   });
+  // While the report is open the old snapshot stays, so a window opened over it (or a lost
+  // connection) does not lose the report; closing it saves the site as it is now.
   useEffect(() => {
-    const snap = snapshotOf(state);
-    if (snap === null) return;
-    try {
-      window.localStorage.setItem(key(address), JSON.stringify(snap));
-    } catch {
-      // Storage blocked: no report next time.
-    }
-  }, [state, address]);
+    if (report === null) save(address, state);
+  }, [state, address, report]);
 
   if (report === null) return <>{children}</>;
-  const close = () => setReport(null);
+  const close = () => {
+    save(address, state);
+    setReport(null);
+  };
   return (
     <PxModal title="Shift report" onClose={close}>
       <div className="flex items-center gap-4">

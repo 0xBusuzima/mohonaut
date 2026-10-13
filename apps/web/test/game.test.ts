@@ -282,17 +282,18 @@ describe('emittedAt', () => {
     emitted: 1_000n * 10n ** 18n,
     hourEmission: 3_600n * 10n ** 18n,
     activeDp: 10n,
-    lastUpdate: 1_000_000,
-    pausedUntil: 0,
+    lastUpdate: 1_000 * 3600 + 600, // ten minutes into an hour
     genesisTime: 0,
   };
   it('adds the slice since the last checkpoint while someone drills', () => {
-    expect(emittedAt({ ...base, now: 1_000_000 + 1800 })).toBe(2_800n * 10n ** 18n);
+    expect(emittedAt({ ...base, now: base.lastUpdate + 1800 })).toBe(2_800n * 10n ** 18n);
   });
-  it('adds nothing with nobody drilling, before Genesis or during a pause', () => {
-    const later = 1_000_000 + 1800;
+  it("stops at the end of the checkpoint's hour, where the stored numbers stop being exact", () => {
+    expect(emittedAt({ ...base, now: base.lastUpdate + 5 * 3600 })).toBe(4_000n * 10n ** 18n);
+  });
+  it('adds nothing with nobody drilling or before Genesis', () => {
+    const later = base.lastUpdate + 1800;
     expect(emittedAt({ ...base, activeDp: 0n, now: later })).toBe(base.emitted);
     expect(emittedAt({ ...base, genesisTime: later + 10, now: later })).toBe(base.emitted);
-    expect(emittedAt({ ...base, pausedUntil: later + 10, now: later })).toBe(base.emitted);
   });
 });

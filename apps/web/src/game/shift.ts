@@ -27,7 +27,7 @@ const MIN_AWAY_S = 3600;
 
 export function snapshotOf(s: GameState): ShiftSnapshot | null {
   const p = s.player;
-  if (p === null || !p.registered) return null;
+  if (p === null || !p.registered || p.readFailed === true) return null;
   return {
     at: s.at,
     pending: p.pending.toString(),
@@ -44,7 +44,7 @@ const atLeastZero = (x: bigint) => (x > 0n ? x : 0n);
  */
 export function shiftReport(prev: ShiftSnapshot, now: GameState): ShiftReport | null {
   const p = now.player;
-  if (p === null || !p.registered) return null;
+  if (p === null || !p.registered || p.readFailed === true) return null;
   const away = now.at - prev.at;
   if (away < MIN_AWAY_S) return null;
   const cored = atLeastZero(p.pending - BigInt(prev.pending));

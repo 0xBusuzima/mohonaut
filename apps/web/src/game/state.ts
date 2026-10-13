@@ -62,6 +62,8 @@ export interface GameState {
     walletMohn: bigint;
     siteUpgradePrice: bigint | null;
     refines: RefineItem[];
+    /** The tank or unrefined balance did not read: shown as 0, not to be compared over time. */
+    readFailed?: boolean;
   };
 }
 
@@ -199,13 +201,16 @@ export function useGameState(
       if (q !== undefined && q.amount > 0n)
         refines.push({ id, amount: q.amount, readyAt: Number(q.readyAt) });
     });
+    const tank = ok<bigint>(r[calls.length + 1]);
+    const pending = ok<bigint>(r[calls.length + 2]);
     playerState = {
+      ...(tank === undefined || pending === undefined ? { readFailed: true } : {}),
       registered: s?.registered ?? false,
       level: s?.level ?? 0,
       dp: s?.dp ?? 0n,
       burn: s?.burn ?? 0n,
-      tank: ok<bigint>(r[calls.length + 1]) ?? 0n,
-      pending: ok<bigint>(r[calls.length + 2]) ?? 0n,
+      tank: tank ?? 0n,
+      pending: pending ?? 0n,
       scrapCredit: s?.scrapCredit ?? 0n,
       padsUsed: s?.rigs ?? 0,
       walletMohn: ok<bigint>(r[calls.length + 4]) ?? 0n,
@@ -234,7 +239,6 @@ export function useGameState(
           hourEmission,
           activeDp,
           lastUpdate: Number(ok<bigint>(r[calls.length - 2]) ?? 0n),
-          pausedUntil,
           genesisTime,
           now: Number(ok<bigint>(r[calls.length - 1]) ?? BigInt(at)),
         }),

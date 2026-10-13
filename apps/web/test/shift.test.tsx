@@ -71,6 +71,29 @@ describe('the shift report', () => {
     expect(shiftReport(prev, { ...before, at: before.at + 8 * 3600 })).toBeNull();
   });
 
+  it('ignores a read where the tank or the unrefined balance failed', () => {
+    const prev = snapshotOf(before);
+    if (prev === null) throw new Error('no snapshot');
+    const failed: GameState = {
+      ...after8h,
+      player: after8h.player === null ? null : { ...after8h.player, readFailed: true },
+    };
+    expect(shiftReport(prev, failed)).toBeNull();
+    expect(snapshotOf(failed)).toBeNull();
+  });
+
+  it('keeps the report through a remount until it is closed', () => {
+    window.localStorage.setItem(
+      `mohonaut.shift.${ADDRESS.toLowerCase()}`,
+      JSON.stringify(snapshotOf(before)),
+    );
+    const first = render(<ShiftReportNotice state={after8h} address={ADDRESS} open={() => {}} />);
+    expect(screen.getByRole('dialog', { name: 'Shift report' })).toBeTruthy();
+    first.unmount(); // e.g. a window opened over it
+    render(<ShiftReportNotice state={after8h} address={ADDRESS} open={() => {}} />);
+    expect(screen.getByRole('dialog', { name: 'Shift report' })).toBeTruthy();
+  });
+
   it('shows once on return, offers diesel when the tank ran dry, then stays quiet', () => {
     const prev = snapshotOf(before);
     window.localStorage.setItem(`mohonaut.shift.${ADDRESS.toLowerCase()}`, JSON.stringify(prev));
