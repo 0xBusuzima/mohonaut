@@ -738,3 +738,23 @@ export function workerModel(facing: 'r' | 'l', step: 0 | 1): Model {
   put(2, 0, 5, v(P.flareHot, true)); // the head lamp
   return m;
 }
+
+/** Steppe scrub and rocks for the open land round the site: `kind` 0-2 bushes, 3-4 rocks. */
+export function landPropModel(kind: number): Model {
+  const m = new Model();
+  if (kind <= 2) {
+    const r = 1.6 + kind * 0.6;
+    for (let x = 0; x <= 5; x++)
+      for (let y = 0; y <= 5; y++)
+        for (let z = 0; z <= 3; z++) {
+          const d = Math.hypot(x - 2.5, y - 2.5, (z - 0.5) * 1.4);
+          if (d <= r && noise(x + kind * 7, y, z) > 0.18)
+            m.set(x, y, z, v(noise(x, y, z + kind) > 0.6 ? P.scrubLit : P.scrub));
+        }
+  } else {
+    const big = kind === 4;
+    m.box(1, 1, 0, big ? 4 : 3, big ? 3 : 2, big ? 2 : 1, v(P.rock));
+    m.box(2, 1, big ? 3 : 2, big ? 3 : 2, 2, big ? 3 : 2, v(P.rockLit));
+  }
+  return m;
+}

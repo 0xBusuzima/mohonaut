@@ -133,6 +133,9 @@ for (const [kind, centre] of [
   ['extinguisher', [0.5, 0.5]],
 ])
   bake(`clutter-${kind}`, models.clutterModel(kind), 2, [centre[0], centre[1], 0], 1);
+// Scrub and rocks for the open land, standing on their footprint's centre.
+for (let kind = 0; kind <= 4; kind++)
+  bake(`land-${kind}`, models.landPropModel(kind), 2, [2.5, 2.5, 0], 0);
 // The crew: two facings and two strides, at 1 art px a voxel, standing on their feet.
 for (const facing of ['r', 'l'])
   for (const step of [0, 1])

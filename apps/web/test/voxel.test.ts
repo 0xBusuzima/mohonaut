@@ -6,6 +6,7 @@ import {
   fenceBackModel,
   fenceFrontModel,
   generatorModel,
+  landPropModel,
   lampModel,
   pipeRackModel,
   PAD_SIZES,
@@ -282,5 +283,10 @@ describe('the voxel models', () => {
     expect(workerModel('r', 0).has(2, 0, 0)).toBe(true);
     expect(workerModel('r', 1).has(0, 0, 0)).toBe(true);
     expect(workerModel('l', 0).has(0, 2, 0)).toBe(true);
+  });
+
+  it('builds scrub bushes and rocks for the open land', () => {
+    for (let kind = 0; kind <= 4; kind++) expect(landPropModel(kind).size).toBeGreaterThan(3);
+    expect(landPropModel(4).get(1, 1, 0)?.colour).toEqual(hex('#46403b'));
   });
 });

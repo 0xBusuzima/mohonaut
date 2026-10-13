@@ -6,6 +6,7 @@ import { diamond, hash, line, px, rect } from './draw';
 import type { Ctx } from './draw';
 import { P } from './palette';
 import { scrub } from './props';
+import { blit, voxelSprite } from './voxel-sprites';
 
 const TW = 32;
 
@@ -287,5 +288,21 @@ export function landSmooth(
     }
   }
   c.globalAlpha = 1;
+  // Scrub and rocks on the open land (not on the road, not near the horizon haze).
+  for (let s = sMin; s <= sMax; s++) {
+    for (let d = dMin; d <= dMax; d++) {
+      if ((s + d) % 2 !== 0) continue;
+      const gx = (s + d) / 2;
+      const gy = (s - d) / 2;
+      if (gx >= -1 && gx <= gw && gy >= -1 && gy <= gh) continue;
+      if (gx < 0 && (gy === 2 || gy === 3)) continue;
+      const n = hash(gx, gy, 3);
+      if (n < 0.8) continue;
+      const p = iso(gx + 0.5, gy + 0.5);
+      if (p.y - horizon < 24) continue;
+      const sprite = voxelSprite(`land-${Math.floor(hash(gx, gy, 8) * 5)}`);
+      if (sprite !== null) blit(c, sprite, p.x, p.y);
+    }
+  }
   c.restore();
 }
