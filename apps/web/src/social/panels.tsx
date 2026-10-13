@@ -14,7 +14,7 @@ import { formatUtc } from '../lib/format';
 import { NOTIFY_EVENTS, api, apiMessage } from './api';
 import type { Collection, ContributionRow, Me, NotifyEvent, Prefs } from './api';
 import { ME_KEY, useMe } from './session';
-import { contributionPost, profileUrl, shortAddress, xIntentUrl } from './share';
+import { contributionPost, findPost, profileUrl, shortAddress, xIntentUrl } from './share';
 
 /**
  * The game's off-chain windows: crews, the daily Survey, seasons and the all-time board, the
@@ -258,12 +258,12 @@ function FindCrew() {
 
 // ------------------------------------------------------------------ survey
 
-export function SurveyPanel({ now }: { now: number }) {
+export function SurveyPanel({ now, address }: { now: number; address: Address }) {
   const client = useQueryClient();
   const collection = useQuery({ queryKey: ['collection'], queryFn: api.collection });
   const toast = useToast();
   const [busy, setBusy] = useState(false);
-  const [last, setLast] = useState<{ text: string; id: string } | null>(null);
+  const [last, setLast] = useState<{ text: string; id: string; name: string } | null>(null);
   const today = Math.floor(now / DAY_S);
   const doneToday = collection.data?.finds.some((f) => f.day === today) ?? false;
 
@@ -274,6 +274,7 @@ export function SurveyPanel({ now }: { now: number }) {
       setLast({
         text: r.isNew ? `You found: ${r.find.name}` : `Today's find was: ${r.find.name}`,
         id: r.find.id,
+        name: r.find.name,
       });
       await client.invalidateQueries({ queryKey: ['collection'] });
       // A completed set adds its decor to the site.
@@ -301,6 +302,14 @@ export function SurveyPanel({ now }: { now: number }) {
             <p role="status" className="text-lg text-amber">
               {last.text}
             </p>
+            <a
+              href={xIntentUrl(findPost({ find: last.name, address }))}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-btn px-btn-dark ml-auto px-3 py-1 text-base"
+            >
+              Share on X
+            </a>
           </div>
         )}
         <PxButton

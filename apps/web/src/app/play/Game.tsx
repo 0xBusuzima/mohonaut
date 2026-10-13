@@ -399,7 +399,8 @@ function PanelWindow({
   else if (panel === 'site') body = <SiteWindow state={state} action={action} />;
   else if (panel === 'crew') body = <SignedIn>{(me) => <CrewPanel me={me} />}</SignedIn>;
   else if (panel === 'board') body = <SeasonsPanel address={address} />;
-  else if (panel === 'survey') body = <SignedIn>{() => <SurveyPanel now={state.at} />}</SignedIn>;
+  else if (panel === 'survey')
+    body = <SignedIn>{() => <SurveyPanel now={state.at} address={address} />}</SignedIn>;
   else if (panel === 'profile')
     body = <SignedIn>{(me) => <ProfilePanel me={me} address={address} />}</SignedIn>;
   else if (panel === 'help') body = <HelpWindow />;

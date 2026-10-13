@@ -42,6 +42,15 @@ export function shiftPost(input: { boreMm: bigint; awayHours: number; address: A
   );
 }
 
+/** A Survey find (docs/05 §3.4): what turned up, free and once a day. Never a value. */
+export function findPost(input: { find: string; address: Address }): string {
+  return (
+    `Today's survey at my Mohonaut drill site turned up a find for my Core Collection: ` +
+    `${input.find}. Free, once a day, nothing to buy. Race to the Moho. ` +
+    `${profileUrl(input.address, 'survey')} (my invite link)`
+  );
+}
+
 /** X web intent; the player reviews and sends it themselves (docs/05 §3.4). */
 /** The training site's post: what was built, never an amount of tokens (docs/09 §A). */
 export function trainingPost(input: { level: number; rigs: number }): string {

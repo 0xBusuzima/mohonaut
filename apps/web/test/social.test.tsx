@@ -7,6 +7,7 @@ import {
   contributionPost,
   profileUrl,
   shortAddress,
+  findPost,
   shiftPost,
   trainingPost,
   xIntentUrl,
@@ -117,5 +118,12 @@ describe('the training site post', () => {
     expect(text).toContain('utm_campaign=shift');
     expect(text).toContain('(my invite link)');
     expect(text).not.toMatch(/MOHN|\$|earn|profit/i);
+  });
+
+  it('posts a Survey find with the invite link, never a value', () => {
+    const text = findPost({ find: 'Coral Fragment', address: ADDR });
+    expect(text).toContain('turned up a find for my Core Collection: Coral Fragment.');
+    expect(text).toContain('utm_campaign=survey');
+    expect(text).not.toMatch(/MOHN|\$|earn|profit|rare/i);
   });
 });
