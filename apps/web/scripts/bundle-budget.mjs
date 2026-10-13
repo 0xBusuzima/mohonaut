@@ -9,9 +9,10 @@ import { brotliCompressSync, constants } from 'node:zlib';
 
 const out = fileURLToPath(new URL('../out/', import.meta.url));
 const KB = 1024;
-// Players' pages: 180 KB. The design sandbox (/design/, out of search and not for players) shows
-// the whole game HUD over the site for reviewing art, so it gets more room.
-const BUDGET = { page: 180 * KB, sandbox: 220 * KB };
+// Players' pages: 150 KB. The design sandbox (/design/, out of search and not for players) shows
+// the whole game HUD over the site for reviewing art, so it gets more room. (Until 2026-10-13
+// the legacy polyfill below was counted too, and the budgets were 180 and 220 KB.)
+const BUDGET = { page: 150 * KB, sandbox: 190 * KB };
 const budgetOf = (route) => (route.startsWith('/design') ? BUDGET.sandbox : BUDGET.page);
 
 const sizeCache = new Map();
@@ -34,8 +35,11 @@ function pages(dir) {
   });
 }
 
+// Next's legacy polyfills come as a `noModule` script: browsers that run modules never fetch it.
 const scriptsOf = (html) =>
-  [...html.matchAll(/<script[^>]*\ssrc="([^"]+\.js)"/g)].map((m) => join(out, m[1] ?? ''));
+  [...html.matchAll(/<script([^>]*)\ssrc="([^"]+\.js)"([^>]*)>/g)]
+    .filter((m) => !/nomodule/i.test(`${m[1]} ${m[3]}`))
+    .map((m) => join(out, m[2] ?? ''));
 
 let failed = false;
 const report = [];
