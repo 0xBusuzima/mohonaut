@@ -391,7 +391,8 @@ export function SeasonsPanel({ address }: { address: Address | undefined }) {
         {season !== undefined && (
           <p className={HINT}>
             {formatUtc(season.startsAt)} to {formatUtc(season.endsAt)}. Ranked by World Bore
-            contribution during the season.
+            contribution during the season. When it ends, the top ten get a plaque on their shack
+            wall (cosmetic).
           </p>
         )}
         {board.data !== undefined && (
