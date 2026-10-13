@@ -39,15 +39,19 @@ function Gauge({
   label,
   segments = 16,
   progress = false,
+  low = false,
 }: {
   fill: number;
   label: string;
   segments?: number;
-  /** A progress bar (cyan) rather than a tank level (red when nearly empty). */
+  /** A progress bar (cyan) rather than a tank level. */
   progress?: boolean;
+  /** A tank level that is running low: red. */
+  low?: boolean;
 }) {
   const n = segments;
-  const lit = Math.round(Math.min(1, Math.max(0, fill)) * n);
+  // Anything in it lights at least one segment: a few litres in a big tank is not "empty".
+  const lit = fill > 0 ? Math.max(1, Math.round(Math.min(1, fill) * n)) : 0;
   return (
     <div
       role="meter"
@@ -60,7 +64,7 @@ function Gauge({
       {Array.from({ length: n }, (_, i) => (
         <span
           key={i}
-          className={`h-5 flex-1 ${i < lit ? (progress ? 'bg-cyan' : lit <= 3 ? 'bg-alarm' : 'bg-amber') : 'bg-steel'}`}
+          className={`h-5 flex-1 ${i < lit ? (progress ? 'bg-cyan' : low ? 'bg-alarm' : 'bg-amber') : 'bg-steel'}`}
         />
       ))}
     </div>
@@ -150,8 +154,9 @@ export function FuelWindow({
       {registered && (
         <>
           <Gauge
-            fill={full > 0n ? Number((tank * 1000n) / full) / 1000 : 0}
+            fill={full > 0n ? Number((tank * 1_000_000n) / full) / 1e6 : 0}
             label="Diesel in tank"
+            low={hoursLeft !== null && hoursLeft < 12}
           />
           <Readout
             rows={[

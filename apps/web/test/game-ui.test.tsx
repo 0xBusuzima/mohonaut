@@ -101,6 +101,36 @@ describe("Foreman Mo's guide", () => {
   });
 });
 
+describe('the diesel tank window', () => {
+  const action = { run: () => Promise.resolve(true), busy: null };
+  const withTank = (litres: bigint): GameState => ({
+    ...NEW_SITE,
+    player: NEW_SITE.player === null ? null : { ...NEW_SITE.player, tank: litres * E18 },
+  });
+  // After Market Open, so the tank holds its full 720 hours of fuel line (4,320 l at level 1).
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(1_792_000_000_000);
+  });
+  afterEach(() => vi.useRealTimers());
+  const lit = (cls: string) =>
+    [...screen.getByRole('meter').children].filter((s) => s.className.includes(cls)).length;
+
+  it('shows a few litres in a big tank as one lit segment, amber while there is a day left', async () => {
+    const { FuelWindow } = await import('../src/app/play/windows');
+    // 24 l against a 4,320 l tank: under 1%, still a day and more of diesel for the Pilot Rig.
+    render(<FuelWindow state={withTank(24n)} action={action} first={false} ethBalance={0n} />);
+    expect(lit('bg-amber')).toBe(1);
+    expect(lit('bg-alarm')).toBe(0);
+  });
+
+  it('turns red under 12 hours of diesel', async () => {
+    const { FuelWindow } = await import('../src/app/play/windows');
+    render(<FuelWindow state={withTank(2n)} action={action} first={false} ethBalance={0n} />);
+    expect(lit('bg-alarm')).toBe(1);
+  });
+});
+
 describe('game windows', () => {
   it('keep focus in a field when the game re-renders, close on Esc, keep Tab inside', async () => {
     const { PxModal } = await import('../src/app/play/px');
