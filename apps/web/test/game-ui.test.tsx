@@ -40,6 +40,12 @@ describe('the new-stratum notice', () => {
     );
   });
 
+  it('marks the Kola Line', () => {
+    window.localStorage.setItem('mohonaut.stratum', '2');
+    render(<StratumNotice depthMm={12_300_000n} />);
+    expect(screen.getByText(/This is the Kola Line/)).toBeTruthy();
+  });
+
   it('stays quiet within the same stratum', () => {
     window.localStorage.setItem('mohonaut.stratum', '1');
     render(<StratumNotice depthMm={3_000_000n} />);
