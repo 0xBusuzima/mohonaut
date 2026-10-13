@@ -46,7 +46,7 @@ describe('the voxel rig sprites in the scene', () => {
         json: async () => ({ shack: { w: 4, h: 4, ax: 2, ay: 4 } }),
       })),
     );
-    const made: { onload: (() => void) | null }[] = [];
+    const made: { onload: (() => void) | null; complete: boolean }[] = [];
     class PendingImage {
       src = '';
       complete = false;
@@ -57,7 +57,8 @@ describe('the voxel rig sprites in the scene', () => {
       }
     }
     vi.stubGlobal('Image', PendingImage);
-    const { onVoxelArrive, voxelSprite } = await import('../src/game/pixel/voxel-sprites');
+    const { onVoxelArrive, voxelSettled, voxelSprite } =
+      await import('../src/game/pixel/voxel-sprites');
     let calls = 0;
     const off = onVoxelArrive(() => {
       calls += 1;
@@ -66,10 +67,15 @@ describe('the voxel rig sprites in the scene', () => {
     await new Promise((r) => setTimeout(r, 0));
     expect(calls).toBe(1); // the manifest
     expect(voxelSprite('shack')).toBeNull(); // the image is still on its way
+    expect(voxelSettled()).toBe(false);
+    if (made[0] !== undefined) made[0].complete = true;
     made[0]?.onload?.();
     expect(calls).toBe(2);
+    expect(voxelSettled()).toBe(true);
     off();
+    if (made[0] !== undefined) made[0].complete = true;
     made[0]?.onload?.();
     expect(calls).toBe(2);
+    expect(voxelSettled()).toBe(true);
   });
 });

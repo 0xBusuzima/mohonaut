@@ -42,6 +42,14 @@ export function onVoxelArrive(onArrive: () => void): () => void {
   };
 }
 
+/**
+ * True once the manifest is in and every sprite asked for so far has loaded (or failed): the
+ * scene can show without its pixel stand-ins.
+ */
+export function voxelSettled(): boolean {
+  return manifest !== null && [...images.values()].every((img) => img.complete);
+}
+
 /** A baked sprite by name ("rig-1", "shack", "container"), or null until it has loaded. */
 export function voxelSprite(name: string): (Meta & { img: HTMLImageElement }) | null {
   if (typeof document === 'undefined' || typeof fetch === 'undefined') return null;

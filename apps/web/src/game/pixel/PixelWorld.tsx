@@ -6,7 +6,7 @@ import { useReducedMotion } from '../../lib/motion';
 import { useLowPower } from '../../lib/power';
 import type { Ctx } from './draw';
 import { siteEffects } from './fx';
-import { onVoxelArrive } from './voxel-sprites';
+import { onVoxelArrive, voxelSettled } from './voxel-sprites';
 import { drawWorld, siteRows, worldSize } from './world';
 import type { Hit, HitBox, WorldFx, WorldModel } from './world';
 
@@ -15,6 +15,8 @@ const DRAG_PX = 6;
 /** Device pixels per canvas for the voxel scene: on a phone, and on a larger screen. */
 const PIXELS_PHONE = 600_000;
 const PIXELS_LARGE = 2_500_000;
+/** The longest the voxel scene waits for its sprites before it shows anyway. */
+const SHOW_AFTER_MS = 2500;
 
 /**
  * The full-screen drill site, redrawn 10 times a second (once when motion is reduced): the voxel
@@ -133,7 +135,16 @@ export function PixelWorld({
   const res = Math.max(1, Math.min(6, ratio, Math.sqrt(budget / Math.max(1, size.w * size.h))));
 
   // Sprites arrive after the first frame; a still scene draws again once per animation frame.
+  // The voxel scene fades in once they are all in (or after SHOW_AFTER_MS), never showing its
+  // pixel stand-ins blown up.
   const [arrivals, setArrivals] = useState(0);
+  const [settled, setSettled] = useState(false);
+  const shown = !voxel || settled;
+  useEffect(() => {
+    if (!voxel) return undefined;
+    const id = window.setTimeout(() => setSettled(true), SHOW_AFTER_MS);
+    return () => window.clearTimeout(id);
+  }, [voxel]);
   useEffect(() => {
     if (!voxel) return undefined;
     let queued = 0;
@@ -177,6 +188,7 @@ export function PixelWorld({
           { ...model, voxel, hover, motion, pan: { x: vx, y: vy }, fx: fx.current },
           { base, night, glow, top },
         );
+        if (voxel && voxelSettled()) setSettled(true);
       } catch (err) {
         // A drawing bug stops the scene (once, reported), not the game around it.
         broken.current = true;
@@ -224,7 +236,12 @@ export function PixelWorld({
   const width = Math.round(size.w * res);
   const height = Math.round(size.h * res);
   const place = `${voxel ? 'block' : 'pixel-canvas'} ${contained ? 'absolute inset-0' : 'fixed inset-0 h-dvh w-screen touch-none'}`;
-  const box = { width: size.w * size.scale, height: size.h * size.scale };
+  const box = {
+    width: size.w * size.scale,
+    height: size.h * size.scale,
+    opacity: shown ? 1 : 0,
+    transition: 'opacity 0.4s',
+  };
   const layer = (ref: typeof canvas, blend?: 'plus-lighter') => (
     <canvas
       ref={ref}
