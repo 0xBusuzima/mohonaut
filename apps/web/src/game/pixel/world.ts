@@ -103,6 +103,16 @@ const DUST = 1.2; // seconds the dust takes to settle
 const FLOAT_EVERY = 6;
 
 const TW = 32; // tile width (2:1 diamonds)
+/** Where the voxel scene's yard clutter stands, in site grid coordinates. */
+const CLUTTER: readonly [string, number, number][] = [
+  ['drums', 7.1, 0.6],
+  ['crates', 11.6, 2.9],
+  ['reel', 13.2, 3.2],
+  ['cones', 0.9, 5.2],
+  ['cones', 0.9, 9.2],
+  ['extinguisher', 3.4, 2.6],
+];
+
 /** Site width in tiles. */
 export const GW = 14;
 const MAX_ROWS = 9; // 36 pad slots: enough for the 33 pads of site level 30 and one locked
@@ -289,6 +299,17 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   {
     const p = iso(9, 1);
     lights.push({ x: p.x + 16, y: p.y + 34, r: 20, tint: P.window });
+  }
+  // Yard clutter in the voxel scene: drums by the tank, crates by the Market, a cable reel by
+  // the generator, cones along the gate track, an extinguisher by the shack door.
+  if (m.voxel === true) {
+    for (const [kind, gx, gy] of CLUTTER) {
+      at(gx + 0.5, gy + 0.5, () => {
+        const sprite = voxelSprite(`clutter-${kind}`);
+        const p = iso(gx, gy);
+        if (sprite !== null) blit(c, sprite, p.x, p.y);
+      });
+    }
   }
   at(13, 2, () => {
     const p = iso(12, 1);

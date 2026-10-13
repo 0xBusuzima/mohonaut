@@ -650,3 +650,55 @@ export function decorModel(set: 'fossils' | 'cores' | 'bits' | 'relics'): Model 
   }
   return m;
 }
+
+/** Yard clutter (docs/06 7.8: dense detail, our drilling site's own things), each centred. */
+export type ClutterKind = 'drums' | 'reel' | 'crates' | 'cones' | 'extinguisher';
+
+export function clutterModel(kind: ClutterKind): Model {
+  const m = new Model();
+  if (kind === 'drums') {
+    // Oil drums: two standing, one on its side, banded.
+    for (const [cx, cy, colour] of [
+      [1.5, 1.5, P.orangeDark],
+      [4.5, 1.5, P.steel],
+    ] as const)
+      for (let x = 0; x <= 6; x++)
+        for (let y = 0; y <= 3; y++)
+          if (Math.hypot(x - cx, y - cy) <= 1.6)
+            for (let z = 0; z <= 4; z++)
+              m.set(x, y, z, v(z === 1 || z === 3 ? P.graphite : colour));
+    for (let y = 4; y <= 7; y++)
+      for (let x = 0; x <= 3; x++)
+        for (let z = 0; z <= 3; z++)
+          if (Math.hypot(x - 1.5, z - 1.5) <= 1.6) m.set(x, y, z, v(P.orange));
+  } else if (kind === 'reel') {
+    // A cable reel on its side: two drums of timber and the cable wound between.
+    for (const x of [0, 5])
+      for (let y = 0; y <= 7; y++)
+        for (let z = 0; z <= 7; z++)
+          if (Math.hypot(y - 3.5, z - 3.5) <= 3.6) m.set(x, y, z, v(P.wood));
+    for (let x = 1; x <= 4; x++)
+      for (let y = 0; y <= 7; y++)
+        for (let z = 0; z <= 7; z++)
+          if (Math.hypot(y - 3.5, z - 3.5) <= 2.6) m.set(x, y, z, v(P.graphite));
+  } else if (kind === 'crates') {
+    m.box(0, 0, 0, 3, 3, 3, v(P.wood));
+    m.box(4, 0, 0, 7, 3, 3, v(P.woodDark));
+    m.box(1, 1, 4, 4, 3, 6, v(P.wood));
+    for (const x of [0, 3]) m.box(x, 0, 0, x, 3, 3, v(P.woodDark));
+  } else if (kind === 'cones') {
+    for (const y of [0, 3, 6]) {
+      m.box(0, y, 0, 1, y + 1, 0, v(P.graphite));
+      m.box(0, y, 1, 1, y + 1, 1, v(P.orange));
+      m.set(0, y, 2, v(P.bone));
+      m.set(0, y, 3, v(P.orange));
+    }
+  } else {
+    // A fire extinguisher on a red post with a sign board.
+    m.box(0, 0, 0, 0, 0, 6, v(P.steelLight));
+    m.box(1, 0, 1, 1, 0, 3, v('#d1342b'));
+    m.set(1, 0, 4, v(P.graphite));
+    m.box(0, 0, 7, 0, 1, 8, v('#d1342b'));
+  }
+  return m;
+}

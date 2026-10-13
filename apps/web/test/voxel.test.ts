@@ -9,6 +9,7 @@ import {
   lampModel,
   pipeRackModel,
   PAD_SIZES,
+  clutterModel,
   decorModel,
   containerModel,
   diamondCoreDrill,
@@ -252,5 +253,12 @@ describe('the voxel models', () => {
           .map(([, , z]) => z),
       ),
     ).toBe(15);
+  });
+
+  it('builds the yard clutter: drums, a cable reel, crates, cones and an extinguisher', () => {
+    for (const kind of ['drums', 'reel', 'crates', 'cones', 'extinguisher'] as const)
+      expect(clutterModel(kind).size).toBeGreaterThan(5);
+    // Cones: orange with a white band.
+    expect(clutterModel('cones').get(0, 0, 2)?.colour).toEqual(hex('#ece7dc'));
   });
 });

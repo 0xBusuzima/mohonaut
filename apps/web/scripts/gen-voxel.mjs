@@ -122,6 +122,15 @@ bake('lamp', models.lampModel(), 2, [0.5, 0.5, 0]);
 bake('pipes', models.pipeRackModel(), 2, [6, 2, 0]);
 bake('tanker', models.tankerModel(), 2);
 bake('tank', models.tankModel(), 2, [7, 7, 0]);
+// Yard clutter, each standing on its footprint's centre.
+for (const [kind, centre] of [
+  ['drums', [3, 3]],
+  ['reel', [2.5, 3.5]],
+  ['crates', [4, 2]],
+  ['cones', [1, 4]],
+  ['extinguisher', [0.5, 0.5]],
+])
+  bake(`clutter-${kind}`, models.clutterModel(kind), 2, [centre[0], centre[1], 0], 1);
 // The wellhead with the cuttings of each stratum.
 const { module: sdk } = await runnerImport(join(web, '../../packages/sdk/src/depth.ts'));
 for (const [i, s] of sdk.STRATA.entries()) bake(`wellhead-${i}`, models.wellheadModel(s.colour), 2);
