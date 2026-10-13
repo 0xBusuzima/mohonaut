@@ -19,6 +19,7 @@ import {
   rotaryRig,
   shackModel,
   siteGround,
+  switchedOff,
   tankerModel,
   wellheadModel,
   siteDiorama,
@@ -260,5 +261,13 @@ describe('the voxel models', () => {
       expect(clutterModel(kind).size).toBeGreaterThan(5);
     // Cones: orange with a white band.
     expect(clutterModel('cones').get(0, 0, 2)?.colour).toEqual(hex('#ece7dc'));
+  });
+
+  it('switches the lights of a stopped rig off and leaves the rest as it was', () => {
+    const on = rotaryRig();
+    const off = switchedOff(on);
+    expect(off.size).toBe(on.size);
+    expect(off.entries().some(([, , , vox]) => vox.emissive === true)).toBe(false);
+    expect(off.get(0, 0, 0)).toEqual(on.get(0, 0, 0));
   });
 });

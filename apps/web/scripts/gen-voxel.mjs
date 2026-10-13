@@ -91,6 +91,8 @@ function bake(name, model, artScale, at = null, bloomArt = 2, k = K) {
 for (const [i, model] of rigs.entries()) {
   const n = models.PAD_SIZES[i];
   bake(`rig-${i}`, model, 32 / n, [n / 2, n / 2, 1]);
+  // A stopped rig: its lights off.
+  bake(`rig-${i}-off`, models.switchedOff(model), 32 / n, [n / 2, n / 2, 1]);
 }
 // Site buildings anchored at their footprint's back corner (the scene's box()).
 bake('shack', models.shackModel(), 2);

@@ -702,3 +702,11 @@ export function clutterModel(kind: ClutterKind): Model {
   }
   return m;
 }
+
+/** The same model with its lights off: glowing voxels turn to dark, unlit glass and steel. */
+export function switchedOff(m: Model): Model {
+  const off = new Model();
+  for (const [x, y, z, vox] of m.entries())
+    off.set(x, y, z, vox.emissive === true ? { colour: hex(shade(P.steel, 1.1)) } : vox);
+  return off;
+}

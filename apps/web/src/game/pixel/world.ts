@@ -398,7 +398,8 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
       // A still scene (reduced motion) is drawn at t = 0: effects stamped later never play.
       const age = drop === undefined || t < drop.at ? Infinity : t - drop.at;
       const fall = age < DROP ? -((1 - age / DROP) ** 2) * 56 : 0;
-      const sprite = m.voxel === true ? voxelSprite(`rig-${pad.typeId}`) : null;
+      const sprite =
+        m.voxel === true ? voxelSprite(`rig-${pad.typeId}${pad.running ? '' : '-off'}`) : null;
       if (sprite !== null) blit(c, sprite, cx, cy + fall + 1);
       else drawRig(c, cx, cy + fall, pad.typeId, pad.running, t, m.motion, gx * 3 + gy);
       if (age >= DROP * 0.8 && age < DROP + DUST) dust(c, cx, cy, (age - DROP * 0.8) / DUST);
