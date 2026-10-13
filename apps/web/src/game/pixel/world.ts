@@ -77,6 +77,8 @@ export interface WorldModel {
   crewTag?: string;
   /** The player's season plaques (ranks, oldest season first), on the shack's wall. */
   plaques?: readonly number[];
+  /** The colour of the stratum the World Bore is in: the cuttings by the wellhead. */
+  stratum?: string;
 }
 
 export interface WorldFx {
@@ -294,7 +296,7 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   }
   at(7, 7, () => {
     const p = iso(7, 6.5);
-    wellhead(c, p.x, p.y + 8, t, m.motion, m.hover === 'bore');
+    wellhead(c, p.x, p.y + 8, t, m.motion, m.hover === 'bore', m.stratum);
     hits.push({ id: 'bore', x: p.x - 20, y: p.y - 10, w: 40, h: 30 });
   });
   {

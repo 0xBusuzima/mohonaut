@@ -208,6 +208,8 @@ export function wellhead(
   t: number,
   motion: boolean,
   hover: boolean,
+  /** The colour of the stratum the World Bore is coring now: its cuttings pile up by the cellar. */
+  stratum?: string,
 ): void {
   // The World Bore: casing rings seen from above (the brand mark) on a concrete cellar.
   diamond(c, x, y - 4, 40, P.padEdge);
@@ -221,7 +223,27 @@ export function wellhead(
   rect(c, x - 2, y - 6, 4, 10, P.steelLight);
   rect(c, x - 4, y - 7, 8, 2, P.concrete);
   rect(c, x + 3, y - 3, 3, 1, P.amber);
+  if (stratum !== undefined) {
+    // Cuttings from the stratum being cored, heaped on the cellar's right corner (docs/01 4.6:
+    // each stratum brings its own colour to the site).
+    const dark = shade(stratum, 0.6);
+    rect(c, x + 9, y - 2, 10, 2, dark);
+    rect(c, x + 10, y - 4, 8, 2, stratum);
+    rect(c, x + 12, y - 6, 4, 2, shade(stratum, 1.2));
+    rect(c, x + 11, y - 3, 1, 1, dark);
+    rect(c, x + 15, y - 4, 1, 1, dark);
+  }
   if (hover) diamondEdge(c, x, y - 4, 40, P.amber);
+}
+
+/** `hex` lighter (factor > 1) or darker (< 1), each channel clamped. */
+export function shade(hex: string, factor: number): string {
+  const n = Number.parseInt(hex.slice(1), 16);
+  const ch = (shift: number) =>
+    Math.max(0, Math.min(255, Math.round(((n >> shift) & 255) * factor)))
+      .toString(16)
+      .padStart(2, '0');
+  return `#${ch(16)}${ch(8)}${ch(0)}`;
 }
 
 /** Generator set with an exhaust stack. */

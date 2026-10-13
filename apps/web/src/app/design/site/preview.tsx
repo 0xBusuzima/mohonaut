@@ -1,5 +1,6 @@
 'use client';
 
+import { millimetres, stratumAt } from '@mohonaut/sdk';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { DECOR_SETS } from '../../../game/pixel/decor';
@@ -127,6 +128,7 @@ export function SitePreview() {
       pads,
       tankFill: 0.4 + (step % 3) * 0.2,
       yieldPerDp: 0.375,
+      stratum: stratumAt(millimetres(SAMPLE.network.emitted)).current.colour,
       decor: decor ? DECOR_SETS : [],
       ...(decor ? { crewTag: 'NIGHT', plaques: [1, 3, 7] } : {}),
     }),

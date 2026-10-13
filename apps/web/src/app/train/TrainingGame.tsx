@@ -1,6 +1,6 @@
 'use client';
 
-import { fuelLineWad, millimetres } from '@mohonaut/sdk';
+import { fuelLineWad, millimetres, stratumAt } from '@mohonaut/sdk';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useToast } from '../../components/Toast';
@@ -131,6 +131,7 @@ export function TrainingGame() {
   // A simulated hour passes every real minute, so the floats over the rigs run 60x too.
   const yieldPerDp =
     p === null || p.dp === 0n ? 0 : Number(((perHour / Number(p.dp)) * SPEED).toPrecision(3));
+  const stratum = stratumAt(millimetres(sim.emitted)).current.colour;
   const model = useMemo(
     () => ({
       pads: scenePads(
@@ -141,9 +142,10 @@ export function TrainingGame() {
       tankFill: fill,
       tankLow,
       yieldPerDp,
+      stratum,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rigsKey stands for sim.rigs
-    [sim.level, rigsKey, fuelled, fill, yieldPerDp, tankLow],
+    [sim.level, rigsKey, fuelled, fill, yieldPerDp, tankLow, stratum],
   );
 
   const action: Action = {

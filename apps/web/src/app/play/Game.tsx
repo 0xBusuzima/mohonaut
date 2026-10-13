@@ -1,6 +1,6 @@
 'use client';
 
-import { fuelLineWad, millimetres } from '@mohonaut/sdk';
+import { fuelLineWad, millimetres, stratumAt } from '@mohonaut/sdk';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -94,6 +94,8 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
   const decorKey = (profile?.collection.completedSets ?? []).join(',');
   const crewTag = profile?.crew?.tag;
   const plaqueKey = (profile?.plaques ?? []).map((p) => p.rank).join(',');
+  const stratum =
+    state === null ? undefined : stratumAt(millimetres(state.network.emitted)).current.colour;
   const model = useMemo(
     () => ({
       pads: state === null ? [] : scenePads(level, state.rigs, running ? 1n : 0n),
@@ -103,9 +105,10 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
       decor: decorFor(decorKey === '' ? [] : decorKey.split(',')),
       ...(crewTag === undefined ? {} : { crewTag }),
       ...(plaqueKey === '' ? {} : { plaques: plaqueKey.split(',').map(Number) }),
+      ...(stratum === undefined ? {} : { stratum }),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rigsKey stands for state.rigs
-    [level, running, rigsKey, fill, yieldPerDp, tankLow, decorKey, crewTag, plaqueKey],
+    [level, running, rigsKey, fill, yieldPerDp, tankLow, decorKey, crewTag, plaqueKey, stratum],
   );
   const [panel, setPanel] = useState<Panel | null>(null);
   const [named, setNamed] = useState(false);
