@@ -43,7 +43,7 @@
 
 - **En az 1 donanım cüzdanı** (atlanmaması gereken tek güvenlik harcaması), ücretsiz şifre yöneticisi (Bitwarden), ücretsiz hesaplar: Alchemy, Cloudflare, Sentry, GitHub, WalletConnect project ID; kurucu ve proje X hesapları (2FA).
 
-### 0.6 Hibe başvuruları (sen + Claude)
+### 0.6 Hibe başvuruları (sen + Claude) — 🟡 araştırma ve taslaklar hazır 2026-10-13 (`docs/grants/`); gönderim kurucuda
 
 ```text
 docs/08_ARACLAR_VE_MALIYET.md §4'teki programları (Arbitrum Open House, Robinhood Chain buildathon, Arbitrum ekosistemi denetim sübvansiyonları, hackathonlar) web'den güncel koşullarıyla araştır: açık mı, son tarih, uygunluk, istenen belgeler. Sonra docs/01–04'ü kullanarak her biri için İngilizce başvuru metni taslağı hazırla (proje özeti, adil madencilik lansmanı, güvenlik yaklaşımı, açık kaynak taahhüdü, yol haritası). Getiri/fiyat dili kullanma (05 §6) ve hiçbir rakip projenin adını anma (05 §6.4b). Taslakları docs/grants/ altına yaz.
