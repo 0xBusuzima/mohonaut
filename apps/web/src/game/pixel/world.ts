@@ -13,6 +13,7 @@ import { diamond, diamondEdge, hash, line, px } from './draw';
 import type { Ctx } from './draw';
 import { drawText, textWidth } from './font';
 import { cached, glow, night } from './light';
+import { neighbourBeaconsAt } from './neighbours';
 import { blit, voxelSprite } from './voxel-sprites';
 import type { Light, Stack } from './light';
 import { P } from './palette';
@@ -222,7 +223,11 @@ export function drawWorld(
   const padSprite = m.voxel === true ? voxelSprite('pad') : null;
   const backFence = m.voxel === true ? voxelSprite('fence-back') : null;
   const tanker = m.voxel === true ? voxelSprite('tanker') : null;
-  const key = `${m.voxel === true ? 'v' : 'p'}:${W}x${H}:${ox},${oy}:${gh}:${m.pads.length}:${m.hover ?? ''}:${ground === null ? 'px' : 'vx'}:${padSprite === null ? 'px' : 'vx'}:${backFence === null ? 'px' : 'vx'}:${tanker === null ? 'px' : 'vx'}`;
+  const neighbourSprites = neighbours.map(([, , seed]) =>
+    m.voxel === true ? voxelSprite(`neighbour-${seed}`) : null,
+  );
+  const voxelNeighbours = neighbourSprites.filter((n) => n !== null).length;
+  const key = `${m.voxel === true ? 'v' : 'p'}:${W}x${H}:${ox},${oy}:${gh}:${m.pads.length}:${m.hover ?? ''}:${ground === null ? 'px' : 'vx'}:${padSprite === null ? 'px' : 'vx'}:${backFence === null ? 'px' : 'vx'}:${tanker === null ? 'px' : 'vx'}:${voxelNeighbours}`;
   if (stack !== undefined) c.clearRect(0, 0, W, H);
   cached(c, W, H, key, stack?.base, (g) => {
     // The voxel scene's sky and land are smooth; the pixel scene's are banded and dithered.
@@ -233,10 +238,12 @@ export function drawWorld(
       sky(g, W, horizon);
       land(g, W, H, horizon, ox, oy, iso, GW, gh);
     }
-    for (const [nx, ny, seed] of neighbours) {
+    neighbours.forEach(([nx, ny, seed], i) => {
       const p = iso(nx, ny);
-      neighbourSite(g, p.x, p.y, seed);
-    }
+      const sprite = neighbourSprites[i] ?? null;
+      if (sprite === null) neighbourSite(g, p.x, p.y, seed);
+      else blit(g, sprite, p.x, p.y);
+    });
     // Power line from the horizon to the gate.
     let prev: { x: number; y: number } | null = null;
     for (let gx = -20; gx <= -1; gx += 3) {
@@ -283,7 +290,7 @@ export function drawWorld(
     if (built === null) shack(c, p.x, p.y, t, m.motion, m.hover === 'shack', m.crewTag, m.plaques);
     else {
       blit(c, built, p.x, p.y + 4);
-      shackDressing(c, p.x, p.y, t, m.motion, m.crewTag, m.plaques);
+      shackDressing(c, p.x, p.y, t, m.motion, m.crewTag, m.plaques, true);
     }
     // A crew flag reaches past the roof to the right: it is part of the shack too.
     const flag = m.crewTag === undefined ? 0 : Math.max(0, 15 + textWidth(m.crewTag) + 6 - 34);
@@ -452,17 +459,21 @@ export function drawWorld(
   // Lights out on the land: the truck's headlights and the neighbours' lamps and beacons.
   const head = truckLights(truckAt.x, truckAt.y);
   lights.push({ x: head.x, y: head.y, r: 30, tint: P.bone, power: 0.8 });
-  for (const [nx, ny, seed] of neighbours) {
+  neighbours.forEach(([nx, ny, seed], i) => {
     const p = iso(nx, ny);
     lights.push({ x: p.x, y: p.y + 18, r: 44, tint: P.glow, power: 0.55 });
-    neighbourBeacons(p.x, p.y, seed).forEach((b, k) => {
+    const beacons =
+      (neighbourSprites[i] ?? null) === null
+        ? neighbourBeacons(p.x, p.y, seed)
+        : neighbourBeaconsAt(p.x, p.y, seed);
+    beacons.forEach((b, k) => {
       const on = !m.motion || (t * 0.8 + seed * 0.3 + k * 0.4) % 1 < 0.25;
       if (on) {
         px(c, b.x, b.y, P.beacon);
         px(c, b.x - 1, b.y, P.beacon);
       }
     });
-  }
+  });
   if (m.tankLow === true && (!m.motion || Math.sin(t * 6) > 0)) {
     const p = iso(5, 1);
     lights.push({ x: p.x, y: p.y - 18, r: 10, tint: P.beacon, power: 0.8 });

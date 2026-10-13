@@ -7,6 +7,7 @@ import {
   fenceFrontModel,
   generatorModel,
   landPropModel,
+  neighbourModel,
   lampModel,
   pipeRackModel,
   PAD_SIZES,
@@ -29,6 +30,7 @@ import {
   topDrive,
   turbodrill,
 } from '../src/game/voxel/models';
+import { NEIGHBOUR_SCALE, neighbourBeaconsAt, neighbourRigs } from '../src/game/pixel/neighbours';
 import { GW, siteDepth } from '../src/game/pixel/world';
 import { Model, anchorOf, render } from '../src/game/voxel/render';
 import type { Image } from '../src/game/voxel/render';
@@ -288,5 +290,24 @@ describe('the voxel models', () => {
   it('builds scrub bushes and rocks for the open land', () => {
     for (let kind = 0; kind <= 4; kind++) expect(landPropModel(kind).size).toBeGreaterThan(3);
     expect(landPropModel(4).get(1, 1, 0)?.colour).toEqual(hex('#46403b'));
+  });
+});
+
+describe('the far-off neighbour sites', () => {
+  it('have one or two derricks, and the scene puts each beacon on its crown', () => {
+    for (let seed = 1; seed <= 6; seed++) {
+      const model = neighbourModel(seed);
+      const rigs = neighbourRigs(seed);
+      expect(rigs).toHaveLength(1 + (seed % 2));
+      const image = render(model, { scale: NEIGHBOUR_SCALE });
+      const [ox, oy] = anchorOf(image, 0, 0, 1, NEIGHBOUR_SCALE);
+      neighbourBeaconsAt(0, 0, seed).forEach((b, k) => {
+        const r = rigs[k];
+        if (r === undefined) throw new Error(`no derrick ${k}`);
+        expect(model.has(r.x, r.y, r.h + 1)).toBe(true);
+        const [cx, cy] = anchorOf(image, r.x + 0.5, r.y + 0.5, r.h + 2, NEIGHBOUR_SCALE);
+        expect(b).toEqual({ x: Math.round(cx - ox), y: Math.round(cy - oy) });
+      });
+    }
   });
 });

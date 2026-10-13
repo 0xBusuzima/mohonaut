@@ -27,6 +27,7 @@ function writeWebp(file, { width, height, data }) {
 const { module: voxel } = await runnerImport(join(web, 'src/game/voxel/render.ts'));
 const { module: models } = await runnerImport(join(web, 'src/game/voxel/models.ts'));
 const { module: world } = await runnerImport(join(web, 'src/game/pixel/world.ts'));
+const { module: neighbours } = await runnerImport(join(web, 'src/game/pixel/neighbours.ts'));
 
 function chunk(type, data) {
   const out = new Uint8Array(12 + data.length);
@@ -154,6 +155,16 @@ for (const [kind, centre] of [
 // Scrub and rocks for the open land, standing on their footprint's centre.
 for (let kind = 0; kind <= 4; kind++)
   bake(`land-${kind}`, models.landPropModel(kind), 2, [2.5, 2.5, 0], 0);
+// The other drillers' sites far off, anchored on their pad's back corner (neighbours.ts).
+for (let seed = 1; seed <= 6; seed++)
+  bake(
+    `neighbour-${seed}`,
+    models.neighbourModel(seed),
+    neighbours.NEIGHBOUR_SCALE,
+    [0, 0, 1],
+    1,
+    2,
+  );
 // The crew: two facings and two strides, at 1 art px a voxel, standing on their feet.
 for (const facing of ['r', 'l'])
   for (const step of [0, 1])

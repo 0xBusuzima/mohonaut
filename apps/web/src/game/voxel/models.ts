@@ -3,6 +3,7 @@
  * look of our own night drilling plateau; no island, no pastel trees, no outside models).
  */
 import { shade } from '../pixel/draw';
+import { NEIGHBOUR_SIZE, neighbourRigs } from '../pixel/neighbours';
 import { P } from '../pixel/palette';
 import { Model } from './render';
 import type { Rgb, Voxel } from './render';
@@ -736,6 +737,50 @@ export function workerModel(facing: 'r' | 'l', step: 0 | 1): Model {
   put(1, 1, 5, v(P.skin));
   for (let y = 0; y <= 1; y++) for (let x = 0; x <= 2; x++) put(x, y, 6, v(P.hardHat));
   put(2, 0, 5, v(P.flareHot, true)); // the head lamp
+  return m;
+}
+
+/**
+ * Another driller's site far off (`seed` 1-6): a dirt pad with a fence of posts, one or two
+ * small lattice derricks narrowing to the crown (src/game/pixel/neighbours.ts) and a shed.
+ */
+export function neighbourModel(seed: number): Model {
+  const m = new Model();
+  const n = NEIGHBOUR_SIZE;
+  m.box(0, 0, 0, n - 1, n - 1, 0, v('#332d28'));
+  m.box(4, 4, 0, n - 5, n - 5, 0, v('#3d3730'));
+  for (let i = 0; i < n; i += 4)
+    for (const [x, y] of [
+      [i, 0],
+      [0, i],
+      [i, n - 1],
+      [n - 1, i],
+    ] as const)
+      m.box(x, y, 1, x, y, 2, v(P.fenceDark));
+  for (const r of neighbourRigs(seed)) {
+    m.box(r.x - 3, r.y - 3, 1, r.x + 3, r.y + 3, 1, CONCRETE_EDGE);
+    for (let z = 2; z <= r.h; z++) {
+      const off = Math.round(2 * (1 - (z - 2) / r.h));
+      for (const [dx, dy] of [
+        [-off, -off],
+        [off, -off],
+        [-off, off],
+        [off, off],
+      ] as const)
+        m.set(r.x + dx, r.y + dy, z, v('#9b4a1d'));
+      // A girth ring every third voxel, so the lattice reads as one tower from afar.
+      if (z % 3 === 0)
+        for (let d = -off; d <= off; d++) {
+          m.set(r.x + d, r.y - off, z, v('#7a3a17'));
+          m.set(r.x + d, r.y + off, z, v('#7a3a17'));
+          m.set(r.x - off, r.y + d, z, v('#7a3a17'));
+          m.set(r.x + off, r.y + d, z, v('#7a3a17'));
+        }
+    }
+    m.set(r.x, r.y, r.h + 1, STEEL);
+  }
+  m.box(18, 2, 1, 21, 5, 3, STEEL);
+  m.box(18, 2, 4, 21, 5, 4, STEEL_LIGHT);
   return m;
 }
 

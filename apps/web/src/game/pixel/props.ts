@@ -212,6 +212,7 @@ export function shackDressing(
   motion: boolean,
   crewTag?: string,
   plaques: readonly number[] = [],
+  voxel = false,
 ): void {
   [...plaques]
     .sort((a, b) => a - b)
@@ -224,6 +225,19 @@ export function shackDressing(
           : tier === 'silver'
             ? [P.boneDark, P.bone]
             : [P.orangeDark, P.orange];
+      if (voxel) {
+        // On the voxel shack's left wall (its +y face, at y = 13, under the core trays), sheared
+        // to the wall's slope: the shack sprite has voxel (0, 0, 0) at (x, y + 4), 2 art pixels
+        // a voxel, so a point (vx, 13, vz) of the wall is at (x + 2 (vx - 13), y + 17 + vx - 2 vz).
+        const vx = 2 + i * 3;
+        c.save();
+        c.transform(1, 0.5, 0, 1, x + 2 * (vx - 13), y + 17 + vx - 2 * 2.5);
+        rect(c, 0, 0, 5, 4, P.graphite);
+        rect(c, 1, 1, 3, 2, face);
+        rect(c, 1, 1, 1, 1, shine);
+        c.restore();
+        return;
+      }
       const left = x - 23 + i * 6;
       rect(c, left, y + 19, 5, 4, P.graphite);
       rect(c, left + 1, y + 20, 3, 2, face);
