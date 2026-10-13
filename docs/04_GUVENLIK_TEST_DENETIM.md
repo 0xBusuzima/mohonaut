@@ -21,7 +21,7 @@
 | T9 | Keeper anahtarı ele geçirilmesi | — | Keeper yalnızca tavanlı işlemler: günde buyback kovasının en çok 1/20'si, POL kovasının 1/7'si (JIT likidite şişiremez) ve swap'lar hook'un 1 saatlik fiyat çapasından en çok %3 uzağa (v1.1, ADR-017) | `integration/Market.t.sol` (bütçe aşımı, çapa, `test_jitLiquidityDoesNotRaiseTheCaps`, `test_stolenKeeperSandwichIsBounded`), `unit/PriceAnchor.t.sol` |
 | T10 | Safe/arayüz ele geçirilmesi | Bybit ($1.46B, kör imza) | Donanım cüzdan, net imzalama, `safe-tx-hashes-util` ile bağımsız hash kontrolü, 2 arayüz | Runbook + tatbikat |
 | T11 | Bot/sybil | Hamster (2.3M ban), Pixels (%40 bot) | Ekonomi bot-nötr (doğrusal ETH yakıt); zincir dışı ödüllerde Turnstile + kümeleme | Sim sybil senaryosu |
-| T12 | Lansman sniping | Pump.fun (%87 kârlı snipe), [a competitor] erken CA | Premine yok; havuz `openMarket()` ile formülle; opsiyonel azalan ücret hook'u | `OpenMarket.t.sol` |
+| T12 | Lansman sniping | Pump.fun (%87 kârlı snipe), lansmandan önce yayımlanan token adresinde havuz sniping | Premine yok; havuz `openMarket()` ile formülle; opsiyonel azalan ücret hook'u | `OpenMarket.t.sol` |
 | T13 | Web2 saldırıları | DNS/arayüz ele geçirme, XSS, oltalama | Cloudflare, CSP, SRI, DNSSEC, registrar kilidi, 2FA donanım anahtarı | Pentest + ZAP taraması |
 | T14 | Tedarik zinciri | Kötü npm paketi | Lockfile, Renovate, `npm audit`, Socket.dev, sabitlenmiş sürümler | CI |
 | T15 | Zincir kesintisi / kapanması | RH 4 Eylül 2026, Abstract kapanışı | Zaman damgası tabanlı tahakkuk, idempotent işlemler, göç planı | `Outage.t.sol` (zaman atlama) |
