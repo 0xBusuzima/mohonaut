@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from '../../lib/motion';
 import { useLowPower } from '../../lib/power';
+import { siteEffects } from './fx';
 import { drawWorld, siteRows, worldSize } from './world';
 import type { Hit, HitBox, WorldFx, WorldModel } from './world';
 
@@ -45,28 +46,13 @@ export function PixelWorld({
   const fx = useRef<WorldFx[]>([]);
   const before = useRef<Omit<WorldModel, 'hover' | 'motion' | 'pan' | 'fx'> | null>(null);
 
-  // One-off effects when the site changes: a rig of a type the player had fewer of drops in
-  // (pads are listed by rig type, so it is the last pad of that type); diesel arriving.
+  // One-off effects when the site changes (fx.ts): a rig drops in, diesel arrives, pads open.
   useEffect(() => {
     const was = before.current;
     before.current = model;
     if (was === null) return;
     const now = performance.now() / 1000;
-    const count = (pads: typeof model.pads, id: number) =>
-      pads.filter((p) => p.typeId === id).length;
-    const types = new Set(model.pads.map((p) => p.typeId).filter((id) => id !== null));
-    for (const id of types) {
-      if (count(model.pads, id) > count(was.pads, id)) {
-        const pad = model.pads.map((p) => p.typeId).lastIndexOf(id);
-        fx.current.push({ kind: 'rig', pad, at: now });
-      }
-    }
-    if (model.tankFill > was.tankFill + 0.005) fx.current.push({ kind: 'fuel', pad: -1, at: now });
-    // A bigger site: the new pads (listed last, empty) get their own effect.
-    for (let i = was.pads.length; i < model.pads.length && was.pads.length > 0; i++) {
-      fx.current.push({ kind: 'pad', pad: i, at: now });
-    }
-    fx.current = fx.current.filter((f) => now - f.at < 3);
+    fx.current = [...fx.current.filter((f) => now - f.at < 3), ...siteEffects(was, model, now)];
   }, [model]);
 
   useEffect(() => {

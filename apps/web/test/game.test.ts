@@ -253,3 +253,25 @@ describe('Badges', () => {
     }
   });
 });
+
+describe('site effects', () => {
+  it('drops a new rig on the last pad of its type, fuels, and opens new pads', async () => {
+    const { siteEffects } = await import('../src/game/pixel/fx');
+    const pad = (typeId: number | null) => ({ typeId, running: true });
+    const was = { pads: [pad(0), pad(1), pad(null), pad(null)], tankFill: 0.2 };
+    // A second Rotary Rig: pads are listed by type, so it lands on pad 2.
+    const bought = { pads: [pad(0), pad(1), pad(1), pad(null)], tankFill: 0.2 };
+    expect(siteEffects(was, bought, 5)).toEqual([{ kind: 'rig', pad: 2, at: 5 }]);
+    expect(siteEffects(was, { ...was, tankFill: 0.3 }, 5)).toEqual([
+      { kind: 'fuel', pad: -1, at: 5 },
+    ]);
+    const bigger = { pads: [...was.pads, pad(null)], tankFill: 0.2 };
+    expect(siteEffects(was, bigger, 5)).toEqual([{ kind: 'pad', pad: 4, at: 5 }]);
+    // Opening a site: the Pilot Rig drops in, but its first pads are not "new".
+    const opened = siteEffects({ pads: [], tankFill: 0 }, was, 5);
+    expect(opened.filter((f) => f.kind === 'pad')).toEqual([]);
+    expect(opened).toContainEqual({ kind: 'rig', pad: 0, at: 5 });
+    // A burning tank or a stopped rig makes no effect.
+    expect(siteEffects(was, { ...was, tankFill: 0.19 }, 5)).toEqual([]);
+  });
+});
