@@ -119,7 +119,7 @@ export function PxModal({
 /** "1 Wallet — 2 Sign in — 3 Your site". */
 export function Steps({ steps, at }: { steps: string[]; at: number }) {
   return (
-    <ol className="mb-4 flex items-center justify-center gap-1.5 text-sm sm:gap-2">
+    <ol className="mb-4 flex flex-wrap items-center justify-center gap-1.5 text-sm sm:gap-2">
       {steps.map((s, i) => (
         <li key={s} className="flex items-center gap-1.5 whitespace-nowrap sm:gap-2">
           {i > 0 && <span aria-hidden="true" className="h-0.5 w-3 bg-concrete sm:w-5" />}
@@ -130,7 +130,12 @@ export function Steps({ steps, at }: { steps: string[]; at: number }) {
           >
             {i < at ? '✓' : i + 1}
           </span>
-          <span className={i === at ? 'font-bold text-bone' : 'text-concrete'}>{s}</span>
+          {/* Narrow screens name only the current step; screen readers hear them all. */}
+          <span
+            className={i === at ? 'font-bold text-bone' : 'sr-only text-concrete sm:not-sr-only'}
+          >
+            {s}
+          </span>
         </li>
       ))}
     </ol>
