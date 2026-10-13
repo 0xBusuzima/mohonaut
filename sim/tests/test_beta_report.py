@@ -47,6 +47,19 @@ class BetaReportTest(unittest.TestCase):
         self.assertTrue(last["emission"].startswith("off schedule"))
         self.assertEqual(last["burned"], "above the 95 % band")
 
+    def test_reads_the_fans_where_a_partial_first_day_ends(self):
+        # Genesis at 18:00 UTC: the first UTC day holds a quarter day of emission, and every
+        # later day ends a quarter day into the simulator's day.
+        days = [day(0, 250, 125)] + [day(i, 1000, 500) for i in range(1, 30)]
+        checks = br.compare(days, GENESIS_DAY, fans(), day0_fraction=0.25)
+        emission = {c.day: c for c in checks if c.metric == "emission"}
+        self.assertEqual(emission[0].verdict, "ok")
+        self.assertAlmostEqual(emission[0].p50, 250 / 28, places=6)
+        self.assertEqual({c.verdict for c in checks if c.metric == "emission"}, {"ok"})
+        # Without the partial first day the same data would look 75 % short on day 0.
+        whole = br.compare(days, GENESIS_DAY, fans())
+        self.assertTrue(next(c for c in whole if c.metric == "emission").verdict.startswith("off"))
+
     def test_ignores_days_before_genesis_and_fills_gaps(self):
         days = [day(-3, 9999, 9999), day(0, 1000, 500), day(2, 1000, 500)]
         series = br.daily_series(days, GENESIS_DAY)

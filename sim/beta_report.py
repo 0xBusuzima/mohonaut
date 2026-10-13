@@ -64,7 +64,23 @@ def daily_series(days: list[dict], genesis_day: int) -> dict[str, np.ndarray]:
     return series
 
 
-def compare(days: list[dict], genesis_day: int, fans: dict[str, np.ndarray]) -> list[Check]:
+def _at(fan: np.ndarray, t: float, flow: bool) -> np.ndarray:
+    """The fan's percentiles at a fractional day index t (linear in between). Before day 0 a
+    flow scales down to zero (nothing has happened yet); a ratio keeps its day-0 value."""
+    if t < 0:
+        return fan[:, 0] * (1 + t) if flow else fan[:, 0]
+    i = min(int(t), fan.shape[1] - 1)
+    j = min(i + 1, fan.shape[1] - 1)
+    w = t - int(t)
+    return fan[:, i] * (1 - w) + fan[:, j] * w
+
+
+def compare(
+    days: list[dict], genesis_day: int, fans: dict[str, np.ndarray], day0_fraction: float = 1.0
+) -> list[Check]:
+    """`day0_fraction`: the share of the first UTC day after genesis (genesis is rarely at
+    midnight). The live UTC day i ends i + day0_fraction days after genesis, so the fans are read
+    there, not at a whole day."""
     live = daily_series(days, genesis_day)
     checks: list[Check] = []
     # The simulator's flow fans are trailing 28-day sums / 28 (run_scenarios.py); same here.
@@ -74,12 +90,13 @@ def compare(days: list[dict], genesis_day: int, fans: dict[str, np.ndarray]) -> 
     for i in range(len(emission)):
         if i >= fans["emission"].shape[1]:
             break
-        p5, _, p50, _, p95 = fans["emission"][:, i]
+        t = i + day0_fraction - 1
+        p5, _, p50, _, p95 = _at(fans["emission"], t, flow=True)
         off = abs(emission[i] - p50) / p50 if p50 > 0 else 0.0
         checks.append(Check(i, "emission", emission[i], p5, p50, p95, "ok" if off <= EMISSION_TOLERANCE else f"off schedule by {off:.1%}"))
-        b5, _, b50, _, b95 = sim_burn[:, i]
+        b5, _, b50, _, b95 = _at(sim_burn, t, flow=True)
         checks.append(Check(i, "burned", burned[i], b5, b50, b95, _band(burned[i], b5, b95)))
-        s5, _, s50, _, s95 = fans["sr28"][:, i]
+        s5, _, s50, _, s95 = _at(fans["sr28"], t, flow=False)
         sr = burned[i] / emission[i] if emission[i] > 0 else float("nan")
         checks.append(Check(i, "sr28", sr, s5, s50, s95, _band(sr, s5, s95)))
     return checks
@@ -100,6 +117,7 @@ def report(checks: list[Check], scenario: str) -> str:
         f"# Beta economy report against `{scenario}`",
         "",
         "28-day flows per day (MOHN/day; SR = burned / emitted). Testnet prices are fake, so USD figures are not compared.",
+        "Emission runs only in hours when someone drills: on a quiet testnet the live figure sits below the schedule.",
         "",
         "| Day | Metric | Live | Sim 5 % | Sim 50 % | Sim 95 % | Verdict |",
         "|---:|---|---:|---:|---:|---:|---|",
@@ -128,7 +146,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--scenario", default="spec__base")
     args = ap.parse_args(argv)
     days = fetch_days(args.api) if args.api else json.loads(args.days.read_text(encoding="utf-8"))["days"]
-    checks = compare(days, args.genesis // DAY, load_fans(args.fans, args.scenario))
+    day0_fraction = 1 - (args.genesis % DAY) / DAY
+    checks = compare(days, args.genesis // DAY, load_fans(args.fans, args.scenario), day0_fraction)
     sys.stdout.write(report(checks, args.scenario))
     return 0
 
