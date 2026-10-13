@@ -95,9 +95,14 @@ export function Hud({
         <p className="pointer-events-auto absolute top-[7.6rem] right-3 px-dark px-2 py-0.5 text-sm text-amber md:top-[6.7rem]">
           {n.marketOpenTime > state.at ? (
             <>
-              Refining opens at Market Open
-              <span className="hidden md:inline">: {formatUtc(n.marketOpenTime)}</span>, in{' '}
-              {formatDuration(n.marketOpenTime - state.at)}
+              {/* Phones: the short form, clear of the HUD's left column. */}
+              <span className="md:hidden">
+                Refining opens in {formatDuration(n.marketOpenTime - state.at)}
+              </span>
+              <span className="hidden md:inline">
+                Refining opens at Market Open: {formatUtc(n.marketOpenTime)}, in{' '}
+                {formatDuration(n.marketOpenTime - state.at)}
+              </span>
             </>
           ) : (
             'Refining opens at Market Open: waiting for the opening call'
