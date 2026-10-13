@@ -1,7 +1,9 @@
-# site/ — temporary landing page
+# site/ — maintenance page
 
-Static "coming soon" page for mohonaut.com, served by Cloudflare Pages (build command: none,
-output directory: `site`). It exists so the domain is live with real content well before launch
-(wallet-warning guidance, docs/09 §6). Phase 4 replaces it with the Next.js app.
+Static page for mohonaut.com, served by Cloudflare Pages (root directory `site`, no build command,
+production branch `main`, preview deployments off). Until launch the domain shows only a neutral
+"under maintenance" page: no project name, no description, `noindex`, `Disallow: /`.
 
-Rules: no token/price/ROI wording, no competitor names, "not affiliated with Robinhood" in the footer.
+The earlier "coming soon" page and `.well-known/security.txt` are in git history (commit 5f16787);
+restore them, without the noindex rules, when the project goes public. Phase 4 replaces this folder
+with the Next.js app.
