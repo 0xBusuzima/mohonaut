@@ -933,7 +933,7 @@ Köşeli parantezler doldurulacak alanlardır. **Tüm taslaklar yayından önce 
 
 **Training Site**
 
-- **P-04 (T−33, sabit):** `The Mohonaut training site is open: mohonaut.com/train. No wallet, no sign-up, no tokens. Fuel a Pilot Rig, buy rigs, level up your site and watch the bore log move at 60x speed. Same formulas as the real game. The only thing missing is the chain.`
+- **P-04 (T−33, sabit):** `The Mohonaut training site is open: mohonaut.com/train. No wallet, no sign-up, no tokens. Fuel a Pilot Rig, buy rigs, level up and watch the bore log move at 60x speed. Same emission formula as the real game, illustrative prices. The only thing missing is the chain.`
 - **F-06 (T−33):** `If something on the training site confuses you, that's a bug in my design, not in you. Tell me what you expected to happen. Replies or mohonaut.com/support. Never DMs.`
 
 **Lore, kule serisi, maskot, sistemler**
