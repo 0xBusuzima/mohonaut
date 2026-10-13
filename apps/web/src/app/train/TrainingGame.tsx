@@ -29,6 +29,7 @@ import type { Panel } from '../play/Hud';
 import { PxButton, PxModal, usePixelGame } from '../play/px';
 import { MarketWindow, RigsWindow } from '../play/RigCards';
 import { Brand } from '../play/Shell';
+import { WindowBoundary } from '../play/WindowBoundary';
 import { FuelWindow, RefineryWindow, SiteWindow } from '../play/windows';
 
 /** 60x: each real second is a simulated minute. */
@@ -257,7 +258,9 @@ export function TrainingGame() {
           onClose={() => setPanel(null)}
           wide={panel === 'market' || panel === 'rigs' || panel === 'help'}
         >
-          {body}
+          <WindowBoundary key={panel} onClose={() => setPanel(null)}>
+            {body}
+          </WindowBoundary>
         </PxModal>
       )}
     </>

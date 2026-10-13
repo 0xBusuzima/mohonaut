@@ -30,6 +30,7 @@ import { HelpWindow } from './HelpWindow';
 import { Hud } from './Hud';
 import { PriceHistory } from './PriceHistory';
 import { ShiftReportNotice } from './ShiftReport';
+import { WindowBoundary } from './WindowBoundary';
 import { StratumNotice } from './StratumNotice';
 import type { Panel } from './Hud';
 import { PxButton, PxIcon, PxModal, Steps, usePixelGame } from './px';
@@ -411,7 +412,9 @@ function PanelWindow({
       onClose={onClose}
       wide={['market', 'rigs', 'board', 'crew', 'profile', 'help'].includes(panel)}
     >
-      {body}
+      <WindowBoundary key={panel} onClose={onClose}>
+        {body}
+      </WindowBoundary>
     </PxModal>
   );
 }

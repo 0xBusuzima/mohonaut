@@ -170,3 +170,27 @@ describe('game windows', () => {
     expect(closed).toHaveBeenCalledWith(2);
   });
 });
+
+describe('a window that breaks', () => {
+  it('shows a note in that window only, and can be closed', async () => {
+    const { WindowBoundary } = await import('../src/app/play/WindowBoundary');
+    const onClose = vi.fn();
+    // React logs the caught error; keep the test output clean.
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    function Broken(): never {
+      throw new Error('unexpected answer');
+    }
+    render(
+      <>
+        <p>The site keeps running</p>
+        <WindowBoundary onClose={onClose}>
+          <Broken />
+        </WindowBoundary>
+      </>,
+    );
+    expect(screen.getByRole('alert').textContent).toContain('This window hit a snag');
+    expect(screen.getByText('The site keeps running')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onClose).toHaveBeenCalled();
+  });
+});
