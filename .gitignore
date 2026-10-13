@@ -48,6 +48,8 @@ apps/*/.next/
 apps/*/out/
 # Pixel art drawn at build time (apps/web/scripts/gen-pixel-art.mjs)
 apps/web/public/rigs/
+# Voxel sprites baked at build time (apps/web/scripts/gen-voxel.mjs)
+apps/web/public/voxel/
 apps/web/public/og-train.png
 apps/*/test-results/
 apps/*/playwright-report/

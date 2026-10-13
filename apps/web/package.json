@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "node scripts/gen-pixel-art.mjs && next dev",
     "build": "node scripts/gen-pixel-art.mjs && next build && node scripts/flatten-segments.mjs && node scripts/csp.mjs",
+    "voxel": "node scripts/gen-voxel.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
