@@ -236,7 +236,7 @@ describe('Badges', () => {
   it('match the API achievements: ids, names, descriptions, a 12x12 plate each', async () => {
     const { readFileSync } = await import('node:fs');
     const { join } = await import('node:path');
-    const { BADGES, BADGE_PALETTE } = await import('../src/game/badges');
+    const { BADGES, BADGE_PALETTE } = await import('@mohonaut/sdk');
     const api = readFileSync(
       join(__dirname, '..', '..', '..', 'services', 'api', 'src', 'game', 'achievements.ts'),
       'utf8',

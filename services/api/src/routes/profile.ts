@@ -122,16 +122,14 @@ export function registerProfile(app: OpenAPIHono<AppEnv>): void {
     }),
     async (c) => {
       const address = getAddress(c.req.valid('param').address);
-      const db = c.var.deps.database;
-      const acct = await account(db, address);
-      if (acct === null) throw new HTTPException(404, { message: 'unknown player' });
-      const user = await userByWallet(db, address);
-      const crew = user === null ? null : await crewOfUser(db, user.id);
+      const p = await profileOf(c.var.deps, address);
+      if (p.acct === null) throw new HTTPException(404, { message: 'unknown player' });
       const png = renderCardPng({
-        contributionMm: millimetres(acct.accrued),
-        worldDepthMm: millimetres(await worldEmitted(db)),
-        crew: crew?.name ?? null,
-        name: user?.displayName ?? `${address.slice(0, 6)}…${address.slice(-4)}`,
+        contributionMm: millimetres(p.acct.accrued),
+        worldDepthMm: millimetres(await worldEmitted(c.var.deps.database)),
+        crew: p.crew?.name ?? null,
+        name: p.user?.displayName ?? `${address.slice(0, 6)}…${address.slice(-4)}`,
+        badges: p.earned,
       });
       return c.body(new Uint8Array(png), 200, {
         'Content-Type': 'image/png',

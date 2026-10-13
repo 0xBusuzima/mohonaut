@@ -1,7 +1,15 @@
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { Resvg } from '@resvg/resvg-js';
-import { MO_ART, MO_COLORS, STRATA, formatDepth, stratumAt } from '@mohonaut/sdk';
+import {
+  BADGES,
+  BADGE_PALETTE,
+  MO_ART,
+  MO_COLORS,
+  STRATA,
+  formatDepth,
+  stratumAt,
+} from '@mohonaut/sdk';
 
 /**
  * Contribution card (docs/01 §4.11): the player's share of the shared World Bore, their crew and
@@ -14,6 +22,8 @@ export interface CardInput {
   worldDepthMm: bigint;
   crew: string | null;
   name: string;
+  /** Earned badge ids, drawn as their pixel plates (unknown ids are skipped). */
+  badges?: readonly string[];
 }
 
 const require = createRequire(import.meta.url);
@@ -40,16 +50,22 @@ const escapeXml = (s: string) =>
     (ch) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[ch] ?? ch,
   );
 
-/** Foreman Mo in pixels: one rect per run of same-coloured pixels, `px` pixels per pixel. */
-function moRects(x: number, y: number, px: number): string {
+/** Pixel art as rects: one per run of same-coloured pixels, `px` pixels per art pixel. */
+function pixelRects(
+  art: readonly string[],
+  colors: Readonly<Record<string, string>>,
+  x: number,
+  y: number,
+  px: number,
+): string {
   const out: string[] = [];
-  MO_ART.forEach((row, ry) => {
+  art.forEach((row, ry) => {
     let rx = 0;
     while (rx < row.length) {
       const ch = row[rx] ?? '.';
       let run = 1;
       while (row[rx + run] === ch) run++;
-      const fill = MO_COLORS[ch];
+      const fill = colors[ch];
       if (fill !== undefined) {
         out.push(
           `<rect x="${x + rx * px}" y="${y + ry * px}" width="${run * px}" height="${px}" fill="${fill}"/>`,
@@ -84,13 +100,18 @@ export function cardSvg(input: CardInput): string {
   ).join('');
   // "We are here": the current stratum's band on the bore log, in gauge cyan (data only).
   const marker = 40 + STRATA.findIndex((s) => s.name === current.name) * band + band / 2;
+  // Earned badges in a row under the world depth: 12x12 plates at 4x.
+  const plates = BADGES.filter((b) => input.badges?.includes(b.id) === true)
+    .map((b, i) => pixelRects(b.icon, BADGE_PALETTE, 64 + i * 60, 462, 4))
+    .join('');
   const mono = (text: string) =>
     `<tspan font-family="JetBrains Mono" font-weight="500">${escapeXml(text)}</tspan>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <rect width="1200" height="630" fill="${C.charcoal}"/>
   ${bands}
   <rect x="1060" y="${marker - 2}" width="120" height="4" fill="${C.cyan}"/>
-  ${moRects(852, 330, 8)}
+  ${pixelRects(MO_ART, MO_COLORS, 852, 330, 8)}
+  ${plates}
   ${hazard(1040, 606, 24)}
   <text x="64" y="116" font-family="Big Shoulders Display" font-weight="900" font-size="56" fill="${C.orange}">MOHONAUT</text>
   <text x="64" y="250" font-family="Barlow" font-weight="700" font-size="64" fill="${C.bone}">I've cored ${mono(formatDepth(input.contributionMm))}</text>

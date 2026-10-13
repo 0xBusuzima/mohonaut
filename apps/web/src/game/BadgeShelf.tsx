@@ -1,4 +1,4 @@
-import { BADGES, BADGE_PALETTE } from './badges';
+import { BADGES, BADGE_PALETTE } from '@mohonaut/sdk';
 import { PixelSvg } from './pixel/PixelSvg';
 
 /**

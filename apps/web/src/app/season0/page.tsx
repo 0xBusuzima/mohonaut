@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Card } from '../../components/Card';
 import { SitePage } from '../../components/SiteChrome';
-import { BADGES, BADGE_PALETTE } from '../../game/badges';
+import { BADGES, BADGE_PALETTE } from '@mohonaut/sdk';
 import { PixelSvg } from '../../game/pixel/PixelSvg';
 
 const PIONEER = BADGES.find((b) => b.id === 'pioneer')?.icon ?? [];

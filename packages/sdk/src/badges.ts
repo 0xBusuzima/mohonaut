@@ -1,6 +1,7 @@
 /**
- * Badges (services/api/src/game/achievements.ts: same ids, names and descriptions; a test keeps
- * them in step) with our own 12x12 pixel plates. Badges are cosmetic only.
+ * Badges (services/api/src/game/achievements.ts: same ids, names and descriptions; a web test
+ * keeps them in step) with our own 12x12 pixel plates, shared by the game and the API's share
+ * card. Badges are cosmetic only.
  */
 
 export const BADGE_PALETTE: Record<string, string> = {

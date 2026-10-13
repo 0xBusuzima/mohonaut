@@ -209,10 +209,14 @@ describe('contribution card', () => {
       worldDepthMm: 9_870_000n,
       crew: 'Night <Shift>',
       name: 'Bea',
+      badges: ['spud-in', 'no-such-badge'],
     });
     expect(svg).toMatch(/I've cored <tspan[^>]*>1,240 m<\/tspan>/);
     expect(svg).toContain('#FF6B1A'); // Safety Orange logo (docs/05 §2.4)
     expect(svg).toContain('Night &lt;Shift&gt;');
+    // One plate (unknown ids are skipped), in the badge row at 4x.
+    expect(svg).toMatch(/<rect x="68" y="462" /);
+    expect(svg).not.toMatch(/<rect x="1[2-7]\d" y="(4[6-9]\d|50\d)" /);
     for (const banned of ['$', 'USD', 'ROI', 'APY', 'APR', 'profit', 'earn'])
       expect(svg).not.toContain(banned);
     expect((await h.app.request(`/cards/${getAddress(newWallet().address)}`)).status).toBe(404);
