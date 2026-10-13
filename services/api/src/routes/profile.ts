@@ -142,6 +142,9 @@ export function registerProfile(app: OpenAPIHono<AppEnv>): void {
         crew: p.crew?.name ?? null,
         name: p.user?.displayName ?? `${address.slice(0, 6)}…${address.slice(-4)}`,
         badges: p.earned,
+        plaques: (
+          await seasonPlaques(c.var.deps.database, address, Math.floor(c.var.deps.now() / 1000))
+        ).map((q) => q.rank),
       });
       return c.body(new Uint8Array(png), 200, {
         'Content-Type': 'image/png',

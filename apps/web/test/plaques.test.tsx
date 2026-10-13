@@ -1,21 +1,11 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { PlaqueList } from '../src/game/PlaqueList';
-import { ordinal, plaqueText, plaqueTier } from '../src/game/plaques';
+import { ordinal, plaqueText } from '../src/game/plaques';
 
 afterEach(cleanup);
 
 describe('season plaques', () => {
-  it('are gold for first, silver for second and third, bronze to tenth', () => {
-    expect([1, 2, 3, 4, 10].map(plaqueTier)).toEqual([
-      'gold',
-      'silver',
-      'silver',
-      'bronze',
-      'bronze',
-    ]);
-  });
-
   it('name the place in plain words', () => {
     expect([1, 2, 3, 4, 10, 11, 12, 13, 21].map(ordinal)).toEqual([
       '1st',

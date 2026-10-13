@@ -5,11 +5,6 @@ export interface Plaque {
   rank: number;
 }
 
-/** First place is gold, second and third silver, the rest of the top ten bronze. */
-export function plaqueTier(rank: number): 'gold' | 'silver' | 'bronze' {
-  return rank === 1 ? 'gold' : rank <= 3 ? 'silver' : 'bronze';
-}
-
 /** 1st, 2nd, 3rd, 4th … 10th (ranks stop at 10). */
 export function ordinal(n: number): string {
   const tail =

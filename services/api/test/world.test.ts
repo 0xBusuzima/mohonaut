@@ -292,6 +292,19 @@ describe('contribution card', () => {
     expect(svg).not.toMatch(/<rect x="1[2-7]\d" y="(4[6-9]\d|50\d)" /);
     for (const banned of ['$', 'USD', 'ROI', 'APY', 'APR', 'profit', 'earn'])
       expect(svg).not.toContain(banned);
+    // Season plaques follow the badges, best first and three at most: gold after one badge.
+    const withPlaques = cardSvg({
+      contributionMm: 1n,
+      worldDepthMm: 1n,
+      crew: null,
+      name: 'Bea',
+      badges: ['spud-in'],
+      plaques: [7, 1, 4, 2],
+    });
+    // The first plaque is the gold one (its shine), in the slot after the badge.
+    expect(withPlaques).toContain('<rect x="136" y="470" width="4" height="4" fill="#ffe27a"/>');
+    expect(withPlaques).toContain('<rect x="248" y="466" width="40"'); // the third plaque
+    expect(withPlaques).not.toContain('<rect x="368" y="466"'); // no fourth
     // No drill site yet: the site's own share image.
     const unknown = await h.app.request(`/cards/${getAddress(newWallet().address)}`);
     expect(unknown.status).toBe(302);

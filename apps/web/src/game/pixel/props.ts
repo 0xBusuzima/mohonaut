@@ -3,7 +3,7 @@
  * and the neighbouring sites in the distance. Each function draws at a screen point (iso
  * already applied); none keeps state, animation comes from `t` (seconds).
  */
-import { plaqueTier } from '../plaques';
+import { plaqueTier } from '@mohonaut/sdk';
 import { rigShape } from '../rigs';
 import { box, diamond, diamondEdge, ellipse, line, polygon, polyline, px, rect } from './draw';
 import type { Ctx } from './draw';

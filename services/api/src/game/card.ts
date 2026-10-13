@@ -6,8 +6,11 @@ import {
   BADGE_PALETTE,
   MO_ART,
   MO_COLORS,
+  PLAQUE_ART,
+  PLAQUE_PALETTES,
   STRATA,
   formatDepth,
+  plaqueTier,
   stratumAt,
 } from '@mohonaut/sdk';
 
@@ -24,6 +27,8 @@ export interface CardInput {
   name: string;
   /** Earned badge ids, drawn as their pixel plates (unknown ids are skipped). */
   badges?: readonly string[];
+  /** Season plaque ranks; the best three follow the badges as plates. */
+  plaques?: readonly number[];
 }
 
 const require = createRequire(import.meta.url);
@@ -101,8 +106,14 @@ export function cardSvg(input: CardInput): string {
   // "We are here": the current stratum's band on the bore log, in gauge cyan (data only).
   const marker = 40 + STRATA.findIndex((s) => s.name === current.name) * band + band / 2;
   // Earned badges in a row under the world depth: 12x12 plates at 4x.
-  const plates = BADGES.filter((b) => input.badges?.includes(b.id) === true)
-    .map((b, i) => pixelRects(b.icon, BADGE_PALETTE, 64 + i * 60, 462, 4))
+  // Season plaques, best first, follow them.
+  const earned = BADGES.filter((b) => input.badges?.includes(b.id) === true);
+  const best = [...(input.plaques ?? [])].sort((a, b) => a - b).slice(0, 3);
+  const plates = [
+    ...earned.map((b) => pixelRects.bind(null, b.icon, BADGE_PALETTE)),
+    ...best.map((rank) => pixelRects.bind(null, PLAQUE_ART, PLAQUE_PALETTES[plaqueTier(rank)])),
+  ]
+    .map((draw, i) => draw(64 + i * 60, 462, 4))
     .join('');
   const mono = (text: string) =>
     `<tspan font-family="JetBrains Mono" font-weight="500">${escapeXml(text)}</tspan>`;

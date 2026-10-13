@@ -15,6 +15,7 @@ export {
 export type { Flows } from './metrics.js';
 export { MO_ART, MO_COLORS } from './art.js';
 export { BADGES, BADGE_PALETTE } from './badges.js';
+export { PLAQUE_ART, PLAQUE_PALETTES, plaqueTier } from './plaques.js';
 export { KOLA_LINE_M, MOHO_LINE_M, STRATA, formatDepth, millimetres, stratumAt } from './depth.js';
 export type { Stratum } from './depth.js';
 export { MAX_SITE_LEVEL, fuelLineWad, sitePads } from './site.js';
