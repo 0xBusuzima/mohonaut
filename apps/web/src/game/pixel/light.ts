@@ -163,9 +163,9 @@ function paintNightSmooth(g: Ctx, W: number, H: number, horizon: number, lights:
   // The night, a little lighter towards the horizon, and a soft vignette at the edges.
   if (typeof g.createLinearGradient === 'function') {
     const fade = g.createLinearGradient(0, top, 0, H);
-    fade.addColorStop(0, withAlpha(P.dark, 0.35));
-    fade.addColorStop(0.25, withAlpha(P.dark, 0.62));
-    fade.addColorStop(1, withAlpha(P.dark, 0.72));
+    fade.addColorStop(0, withAlpha(P.dark, 0.25));
+    fade.addColorStop(0.25, withAlpha(P.dark, 0.42));
+    fade.addColorStop(1, withAlpha(P.dark, 0.5));
     g.fillStyle = fade;
     g.fillRect(0, top, W, H - top);
     const edge = g.createRadialGradient(
@@ -177,7 +177,7 @@ function paintNightSmooth(g: Ctx, W: number, H: number, horizon: number, lights:
       Math.max(W, H) * 0.75,
     );
     edge.addColorStop(0, withAlpha(P.night, 0));
-    edge.addColorStop(1, withAlpha(P.night, 0.55));
+    edge.addColorStop(1, withAlpha(P.night, 0.4));
     g.fillStyle = edge;
     g.fillRect(0, top, W, H - top);
   } else rect(g, 0, top, W, H - top, P.dark);

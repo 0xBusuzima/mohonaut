@@ -41,7 +41,7 @@ import {
   wire,
   worker,
 } from './props';
-import { land, sky, skyLife, skyStill } from './terrain';
+import { land, landSmooth, sky, skyLife, skySmooth, skyStill } from './terrain';
 
 import { DECOR_SPOTS, drawDecor } from './decor';
 import type { DecorSet } from './decor';
@@ -198,10 +198,16 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   const padSprite = m.voxel === true ? voxelSprite('pad') : null;
   const backFence = m.voxel === true ? voxelSprite('fence-back') : null;
   const tanker = m.voxel === true ? voxelSprite('tanker') : null;
-  const key = `${W}x${H}:${ox},${oy}:${gh}:${m.pads.length}:${m.hover ?? ''}:${ground === null ? 'px' : 'vx'}:${padSprite === null ? 'px' : 'vx'}:${backFence === null ? 'px' : 'vx'}:${tanker === null ? 'px' : 'vx'}`;
+  const key = `${m.voxel === true ? 'v' : 'p'}:${W}x${H}:${ox},${oy}:${gh}:${m.pads.length}:${m.hover ?? ''}:${ground === null ? 'px' : 'vx'}:${padSprite === null ? 'px' : 'vx'}:${backFence === null ? 'px' : 'vx'}:${tanker === null ? 'px' : 'vx'}`;
   cached(c, W, H, key, (g) => {
-    sky(g, W, horizon);
-    land(g, W, H, horizon, ox, oy, iso, GW, gh);
+    // The voxel scene's sky and land are smooth; the pixel scene's are banded and dithered.
+    if (m.voxel === true) {
+      skySmooth(g, W, horizon);
+      landSmooth(g, W, H, horizon, ox, oy, iso, GW, gh);
+    } else {
+      sky(g, W, horizon);
+      land(g, W, H, horizon, ox, oy, iso, GW, gh);
+    }
     for (const [nx, ny, seed] of neighbours) {
       const p = iso(nx, ny);
       neighbourSite(g, p.x, p.y, seed);

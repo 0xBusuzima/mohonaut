@@ -154,3 +154,138 @@ export function land(
   }
   c.restore();
 }
+
+// ------------------------------------------------------------------ smooth (voxel scene)
+
+/** "#rrggbb" with an alpha, as rgba(). */
+function rgba(hex: string, a: number): string {
+  const n = Number.parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
+
+/** A ridge line as one smooth filled shape from `base` down to the bottom of the sky band. */
+function smoothRidge(
+  c: Ctx,
+  W: number,
+  base: number,
+  amp: number,
+  seed: number,
+  top: string,
+  foot: string,
+): void {
+  const grad = c.createLinearGradient(0, base - amp * 2, 0, base + 6);
+  grad.addColorStop(0, top);
+  grad.addColorStop(1, foot);
+  c.fillStyle = grad;
+  c.beginPath();
+  c.moveTo(0, base + 6);
+  for (let x = 0; x <= W; x += 4) {
+    const h = Math.sin(x / 37 + seed) * amp * 0.6 + Math.sin(x / 13 + seed * 2) * amp * 0.25 + amp;
+    c.lineTo(x, base - h);
+  }
+  c.lineTo(W, base + 6);
+  c.closePath();
+  c.fill();
+}
+
+/**
+ * The night sky for the voxel scene: a smooth gradient from deep blue to a dusky glow over the
+ * oil field, soft clouds, small stars and the far ridges as smooth silhouettes. Static.
+ */
+export function skySmooth(c: Ctx, W: number, horizon: number): void {
+  const g = c.createLinearGradient(0, 0, 0, horizon + 10);
+  g.addColorStop(0, '#0a1022');
+  g.addColorStop(0.55, '#1a2445');
+  g.addColorStop(0.85, '#2c2c50');
+  g.addColorStop(1, '#4a3346');
+  c.fillStyle = g;
+  c.fillRect(0, 0, W, horizon + 10);
+  // Stars: tiny and soft, brighter higher up.
+  for (let i = 0; i < W / 3; i++) {
+    const x = hash(i, 3) * W;
+    const y = hash(i, 4) * (horizon - 24);
+    const a = (0.25 + hash(i, 5) * 0.6) * (1 - y / horizon);
+    c.fillStyle = rgba(P.star, a);
+    c.fillRect(x, y, hash(i, 6) > 0.9 ? 1 : 0.6, hash(i, 6) > 0.9 ? 1 : 0.6);
+  }
+  // Clouds: long soft strands lit faintly from below by the flares.
+  for (let k = 0; k < 6; k++) {
+    const cx = hash(k, 21) * W;
+    const cy = horizon * (0.2 + hash(k, 22) * 0.5);
+    const r = 40 + hash(k, 23) * 60;
+    c.save();
+    c.translate(cx, cy);
+    c.scale(1, 0.22);
+    const cloud = c.createRadialGradient(0, 0, 0, 0, 0, r);
+    cloud.addColorStop(0, 'rgba(70, 80, 120, 0.22)');
+    cloud.addColorStop(1, 'rgba(70, 80, 120, 0)');
+    c.fillStyle = cloud;
+    c.fillRect(-r, -r, r * 2, r * 2);
+    c.restore();
+  }
+  // The flares' glow over the horizon.
+  const glow = c.createLinearGradient(0, horizon - 40, 0, horizon + 4);
+  glow.addColorStop(0, rgba(P.flare, 0));
+  glow.addColorStop(1, rgba(P.flare, 0.16));
+  c.fillStyle = glow;
+  c.fillRect(0, horizon - 40, W, 44);
+  smoothRidge(c, W, horizon - 2, 18, 1.3, '#2a3155', '#1b2140');
+  for (const f of flares(W, horizon)) {
+    c.strokeStyle = '#141a30';
+    c.lineWidth = 1;
+    c.beginPath();
+    c.moveTo(f.x - 3, f.y);
+    c.lineTo(f.x, f.y - 12);
+    c.lineTo(f.x + 3, f.y);
+    c.stroke();
+  }
+  smoothRidge(c, W, horizon + 2, 9, 4.1, '#1d2238', '#141827');
+}
+
+/**
+ * The open land for the voxel scene: a smooth fall from the haze at the horizon to the dark
+ * plain, broad soft patches of soil and the road to the gate. Static.
+ */
+export function landSmooth(
+  c: Ctx,
+  W: number,
+  H: number,
+  horizon: number,
+  ox: number,
+  oy: number,
+  iso: Iso,
+  gw: number,
+  gh: number,
+): void {
+  const g = c.createLinearGradient(0, horizon, 0, H);
+  g.addColorStop(0, '#2a2a3a');
+  g.addColorStop(0.12, '#2a2622');
+  g.addColorStop(1, '#1f1b18');
+  c.fillStyle = g;
+  c.fillRect(0, horizon, W, H - horizon);
+  const sMin = Math.floor((4 * (horizon - oy)) / TW) - 2;
+  const sMax = Math.ceil((4 * (H - oy)) / TW) + 2;
+  const dMin = Math.floor((2 * (-TW - ox)) / TW) - 1;
+  const dMax = Math.ceil((2 * (W + TW - ox)) / TW) + 1;
+  c.save();
+  c.beginPath();
+  c.rect(0, horizon + 1, W, H - horizon);
+  c.clip();
+  for (let s = sMin; s <= sMax; s++) {
+    for (let d = dMin; d <= dMax; d++) {
+      if ((s + d) % 2 !== 0) continue;
+      const gx = (s + d) / 2;
+      const gy = (s - d) / 2;
+      if (gx >= 0 && gx < gw && gy >= 0 && gy < gh) continue;
+      const p = iso(gx, gy);
+      const road = gx < 0 && (gy === 2 || gy === 3);
+      const patch = hash(Math.floor(gx / 3), Math.floor(gy / 3), 4);
+      const fade = Math.min(1, Math.max(0, (p.y - horizon) / 60));
+      if (road) c.globalAlpha = 0.8 * fade;
+      else c.globalAlpha = (patch < 0.3 ? 0.35 : patch > 0.8 ? 0.4 : 0.18) * fade;
+      diamond(c, p.x, p.y, TW, road ? P.road : patch > 0.8 ? P.earthDark : P.earthAlt);
+    }
+  }
+  c.globalAlpha = 1;
+  c.restore();
+}
