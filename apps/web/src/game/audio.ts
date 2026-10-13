@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 
 /**
  * The site's sound (docs/01 §7, "industrial ambient"): rain, a diesel generator's throb and
@@ -64,12 +64,19 @@ export function droneHz(stratum: number): number {
   return Math.round(98 * 2 ** (-down / 12) * 100) / 100;
 }
 
-/** Starts the ambience; gives back a function that fades it out and closes the context. */
-function startAmbience(stratum: number): () => void {
+interface Ambience {
+  /** Glides the drone to another stratum's note (no new audio context: iOS would hold it). */
+  tune: (stratum: number) => void;
+  /** Fades the ambience out and closes the context. */
+  stop: () => void;
+}
+
+/** Starts the ambience with the drone of `stratum`. */
+function startAmbience(stratum: number): Ambience {
   const Ctor =
     window.AudioContext ??
     (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (Ctor === undefined) return () => {};
+  if (Ctor === undefined) return { tune: () => {}, stop: () => {} };
   const ctx = new Ctor();
   const master = ctx.createGain();
   master.gain.value = 0;
@@ -149,7 +156,10 @@ function startAmbience(stratum: number): () => void {
   };
   timer = window.setTimeout(clank, 3000);
 
-  return () => {
+  const tune = (s: number) => {
+    drone.frequency.setTargetAtTime(droneHz(s), ctx.currentTime, 2);
+  };
+  const stop = () => {
     window.clearTimeout(timer);
     window.removeEventListener('pointerdown', wake);
     const t = ctx.currentTime;
@@ -162,17 +172,29 @@ function startAmbience(stratum: number): () => void {
       void ctx.close();
     }, 500);
   };
+  return { tune, stop };
 }
 
 /**
  * Plays the ambience while `on` (the toggle is a click, so browsers allow the audio), with the
- * drone of `stratum` (its index); a crossing fades the old theme out and the new one in.
+ * drone of `stratum` (its index); a crossing glides the drone to the new stratum's note.
  */
 export function useAmbience(on: boolean, stratum = 0): void {
+  const running = useRef<Ambience | null>(null);
+  const latest = useRef(stratum);
+  useEffect(() => {
+    latest.current = stratum;
+    running.current?.tune(stratum);
+  }, [stratum]);
   useEffect(() => {
     if (!on) return undefined;
-    return startAmbience(stratum);
-  }, [on, stratum]);
+    const ambience = startAmbience(latest.current);
+    running.current = ambience;
+    return () => {
+      running.current = null;
+      ambience.stop();
+    };
+  }, [on]);
 }
 
 /** One-shot sounds for what the player just did. */

@@ -27,8 +27,9 @@ import { AddressSchema, DepthSchema, OkSchema, errors, isUniqueViolation, json }
 
 const CREW_MIN = 5;
 const CREW_MAX = 25;
-/** A crew keeps its latest signals only. */
+/** A crew keeps its latest signals only, and one member holds at most a few of them. */
 const SIGNALS_KEPT = 12;
+const SIGNALS_PER_MEMBER = 3;
 const SIGNAL_IDS = CREW_SIGNALS.map((s) => s.id) as [string, ...string[]];
 const NOTIFY_EVENTS = ['fuel-low', 'refine-ready', 'stratum', 'season', 'announcements'] as const;
 
@@ -117,9 +118,10 @@ export function registerSocial(app: OpenAPIHono<AppEnv>): void {
                 contribution: DepthSchema,
               }),
             ),
-            /** The latest set phrases sent to the crew, newest first. */
+            /** The latest set phrases sent to the crew, newest first: shown to its members only. */
             signals: z.array(
               z.object({
+                id: z.number(),
                 signal: z.enum(SIGNAL_IDS),
                 text: z.string(),
                 wallet: AddressSchema.nullable(),
@@ -140,18 +142,25 @@ export function registerSocial(app: OpenAPIHono<AppEnv>): void {
       if (crew === undefined) throw new HTTPException(404, { message: 'no such crew' });
       const members = await crewMembersWithAccrual(db, id);
       const total = members.reduce((sum, m) => sum + (m.accrued ?? 0n), 0n);
-      const signals = await db.db
-        .select({
-          signal: crewSignals.signal,
-          at: crewSignals.at,
-          wallet: users.wallet,
-          displayName: users.displayName,
-        })
-        .from(crewSignals)
-        .innerJoin(users, eq(users.id, crewSignals.userId))
-        .where(eq(crewSignals.crewId, id))
-        .orderBy(desc(crewSignals.id))
-        .limit(SIGNALS_KEPT);
+      // Signals (and when they were sent) are for the crew itself, not the public page.
+      const viewer = c.var.user;
+      const member = viewer !== null && (await crewOfUser(db, viewer.id))?.id === id;
+      const signals = member
+        ? await db.db
+            .select({
+              id: crewSignals.id,
+              signal: crewSignals.signal,
+              at: crewSignals.at,
+              wallet: users.wallet,
+              displayName: users.displayName,
+            })
+            .from(crewSignals)
+            .innerJoin(users, eq(users.id, crewSignals.userId))
+            .where(eq(crewSignals.crewId, id))
+            .orderBy(desc(crewSignals.id))
+            .limit(SIGNALS_KEPT)
+        : [];
+      c.header('Cache-Control', 'private, no-store');
       return c.json(
         {
           id: crew.id,
@@ -171,6 +180,7 @@ export function registerSocial(app: OpenAPIHono<AppEnv>): void {
               ? []
               : [
                   {
+                    id: s.id,
                     signal: known.id,
                     text: known.text,
                     wallet: s.wallet as `0x${string}` | null,
@@ -212,7 +222,23 @@ export function registerSocial(app: OpenAPIHono<AppEnv>): void {
       if (crew === null) throw new HTTPException(404, { message: 'not in a crew' });
       await db.db.transaction(async (tx) => {
         await tx.insert(crewSignals).values({ crewId: crew.id, userId: user.id, signal });
-        // Only the latest few are kept.
+        // One member cannot push the others out: their own latest few only.
+        const mine = tx
+          .select({ id: crewSignals.id })
+          .from(crewSignals)
+          .where(and(eq(crewSignals.crewId, crew.id), eq(crewSignals.userId, user.id)))
+          .orderBy(desc(crewSignals.id))
+          .limit(SIGNALS_PER_MEMBER);
+        await tx
+          .delete(crewSignals)
+          .where(
+            and(
+              eq(crewSignals.crewId, crew.id),
+              eq(crewSignals.userId, user.id),
+              notInArray(crewSignals.id, mine),
+            ),
+          );
+        // And the crew keeps only the latest few.
         const keep = tx
           .select({ id: crewSignals.id })
           .from(crewSignals)
@@ -286,6 +312,10 @@ export function registerSocial(app: OpenAPIHono<AppEnv>): void {
       if (crew === null) throw new HTTPException(404, { message: 'not in a crew' });
       await db.db.transaction(async (tx) => {
         await tx.delete(crewMembers).where(eq(crewMembers.userId, user.id));
+        // A player who leaves takes their signals along.
+        await tx
+          .delete(crewSignals)
+          .where(and(eq(crewSignals.crewId, crew.id), eq(crewSignals.userId, user.id)));
         const [heir] = await tx
           .select({ userId: crewMembers.userId })
           .from(crewMembers)

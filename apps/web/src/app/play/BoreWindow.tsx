@@ -3,7 +3,7 @@
 import { KOLA_LINE_M, MOHO_LINE_M, STRATA, formatDepth, stratumAt } from '@mohonaut/sdk';
 import { useEffect, useRef } from 'react';
 import { depthFraction } from '../../components/BoreLog';
-import { hash } from '../../game/pixel/draw';
+import { hash, shade } from '../../game/pixel/draw';
 import { formatSpan, hoursToDepth } from '../../lib/schedule';
 
 const BAND = 18; // art pixels per stratum
@@ -12,13 +12,6 @@ const H = BAND * STRATA.length;
 const SCALE = 2;
 const COL_X = 9; // the core column's left edge
 const COL_W = 16;
-
-/** Darken a #rrggbb colour by `k` (0..1). */
-function shade(hex: string, k: number): string {
-  const n = parseInt(hex.slice(1), 16);
-  const f = (v: number) => Math.round(v * (1 - k));
-  return `rgb(${f((n >> 16) & 255)}, ${f((n >> 8) & 255)}, ${f(n & 255)})`;
-}
 
 /**
  * The World Bore as a pixel core column (the brand's well log, docs/05 §2.4): one band per
@@ -46,7 +39,8 @@ function CoreColumn({ metres }: { metres: number }) {
           else if (i === 5) k = n < 0.15 ? -0.2 : n > 0.9 ? 0.3 : 0;
           else if (i === 6) k = (x + y) % 5 === 0 ? -0.2 : 0;
           else k = n < 0.25 ? 0.15 : 0;
-          c.fillStyle = shade(s.colour, Math.max(0, Math.min(0.9, (y > here ? 0.55 : 0) + k)));
+          // Darkened by k (0..0.9): the rock still to come below today's depth is dimmer.
+          c.fillStyle = shade(s.colour, 1 - Math.max(0, Math.min(0.9, (y > here ? 0.55 : 0) + k)));
           c.fillRect(x, y, 1, 1);
         }
       }

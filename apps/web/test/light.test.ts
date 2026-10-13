@@ -78,7 +78,7 @@ describe('the site scene', () => {
 
 describe('stratum shades', () => {
   it('lightens and darkens each channel, clamped', async () => {
-    const { shade } = await import('../src/game/pixel/props');
+    const { shade } = await import('../src/game/pixel/draw');
     expect(shade('#B08A5E', 1)).toBe('#b08a5e');
     expect(shade('#B08A5E', 0.5)).toBe('#58452f');
     expect(shade('#D8C8A0', 1.5)).toBe('#fffff0');

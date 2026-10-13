@@ -262,13 +262,15 @@ html {
   }
 }
 
-/* Phones upright: the HUD's left column wraps into a second column before it reaches Foreman
-   Mo's tip box at the bottom (about 19.5rem with the bottom bar), so no button hides under it. */
-@media (max-width: 767px) {
-  .hud-side {
+/* Phones upright, while Foreman Mo's tip is up: the HUD's left column wraps into a second column
+   before it reaches the tip box at the bottom (about 19.5rem with the bottom bar), so no button
+   hides under it (the 8rem floor keeps it to three columns on the shortest screens). Phones
+   held sideways have their own rule below. */
+@media (max-width: 767px) and (min-height: 521px) {
+  body:has(.guide) .hud-side {
     flex-wrap: wrap;
     align-content: flex-start;
-    max-height: calc(100dvh - 7.6rem - 19.5rem);
+    max-height: max(8rem, calc(100dvh - 7.6rem - 19.5rem));
   }
 }
 
@@ -286,7 +288,7 @@ html {
     right: 0.75rem;
     left: auto;
     bottom: 5.5rem;
-    max-width: min(30rem, calc(100vw - 11rem));
+    max-width: min(30rem, calc(100vw - 17rem));
     padding: 0.5rem;
   }
   .guide .guide-mo {

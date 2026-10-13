@@ -158,3 +158,13 @@ export function ellipse(
     if (half > 0) c.fillRect(Math.round(cx) - half, y, half * 2, 1);
   }
 }
+
+/** `hex` lighter (factor > 1) or darker (< 1), each channel clamped. */
+export function shade(hex: string, factor: number): string {
+  const n = Number.parseInt(hex.slice(1), 16);
+  const ch = (shift: number) =>
+    Math.max(0, Math.min(255, Math.round(((n >> shift) & 255) * factor)))
+      .toString(16)
+      .padStart(2, '0');
+  return `#${ch(16)}${ch(8)}${ch(0)}`;
+}

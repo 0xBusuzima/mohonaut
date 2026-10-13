@@ -29,6 +29,7 @@ export interface Crew {
   }[];
   /** The latest set phrases sent to the crew, newest first; absent from an older API. */
   signals?: {
+    id: number;
     signal: string;
     text: string;
     wallet: Address | null;

@@ -5,7 +5,18 @@
  */
 import { plaqueTier } from '@mohonaut/sdk';
 import { rigShape } from '../rigs';
-import { box, diamond, diamondEdge, ellipse, line, polygon, polyline, px, rect } from './draw';
+import {
+  box,
+  diamond,
+  diamondEdge,
+  ellipse,
+  line,
+  polygon,
+  polyline,
+  px,
+  rect,
+  shade,
+} from './draw';
 import type { Ctx } from './draw';
 import { drawText, textWidth } from './font';
 import { P } from './palette';
@@ -234,16 +245,6 @@ export function wellhead(
     rect(c, x + 15, y - 4, 1, 1, dark);
   }
   if (hover) diamondEdge(c, x, y - 4, 40, P.amber);
-}
-
-/** `hex` lighter (factor > 1) or darker (< 1), each channel clamped. */
-export function shade(hex: string, factor: number): string {
-  const n = Number.parseInt(hex.slice(1), 16);
-  const ch = (shift: number) =>
-    Math.max(0, Math.min(255, Math.round(((n >> shift) & 255) * factor)))
-      .toString(16)
-      .padStart(2, '0');
-  return `#${ch(16)}${ch(8)}${ch(0)}`;
 }
 
 /** Generator set with an exhaust stack. */

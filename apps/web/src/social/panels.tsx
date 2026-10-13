@@ -143,7 +143,7 @@ function MyCrew({ id }: { id: number }) {
       ) : (
         <ul aria-label={`Signals in ${c.name}`} className="flex flex-col gap-1">
           {(c.signals ?? []).map((s) => (
-            <li key={`${s.at}-${s.signal}-${s.wallet ?? ''}`}>
+            <li key={s.id}>
               <span className="text-bone">{s.displayName ?? shortAddress(s.wallet)}:</span> {s.text}{' '}
               <span className="text-sm text-concrete">
                 {formatUtc(Math.floor(Date.parse(s.at) / 1000))}

@@ -46,18 +46,44 @@ describe('crews', () => {
     expect((await call(h, 'GET', `/crews/${id}`)).status).toBe(404); // the last one out closes it
   });
 
-  it('talks in set phrases only: members send, the crew page shows the latest, newest first', async () => {
+  it('talks in set phrases only, to its own members, and keeps the latest few', async () => {
     const h = await harness();
     const captain = newWallet();
-    const [a, outsider] = await Promise.all([signIn(h, captain), signIn(h, newWallet())]);
+    const [a = '', b = '', c = '', d = '', e = '', outsider = '', other = ''] = await Promise.all([
+      signIn(h, captain),
+      ...Array.from({ length: 6 }, () => signIn(h, newWallet())),
+    ]);
     const created = await call(h, 'POST', '/crews', {
       cookie: a,
       body: { name: 'Night Shift', tag: 'nite' },
     });
     const id = Number(created.json['id']);
+    for (const m of [b, c, d, e])
+      expect((await call(h, 'POST', `/crews/${id}/join`, { cookie: m, body: {} })).status).toBe(
+        200,
+      );
+    const otherCrew = Number(
+      (await call(h, 'POST', '/crews', { cookie: other, body: { name: 'Day Shift', tag: 'day' } }))
+        .json['id'],
+    );
     const send = (cookie: string, signal: unknown) =>
       call(h, 'POST', '/crews/signal', { cookie, body: { signal } });
+    const rows = async (crew: number, where = '') =>
+      Number(
+        (
+          await h.database.query(
+            `SELECT count(*)::int AS n FROM crew_signals WHERE crew_id = ${crew}${where}`,
+          )
+        )[0]?.['n'],
+      );
+    const signals = async (cookie?: string) =>
+      (await call(h, 'GET', `/crews/${id}`, { cookie })).json['signals'] as {
+        id: number;
+        signal: string;
+        wallet: string | null;
+      }[];
 
+    expect((await send(other, 'welcome')).status).toBe(200);
     expect((await send(a, 'welcome')).status).toBe(200);
     expect((await send(a, 'nice-core')).status).toBe(200);
     // No free text, no crew, no session.
@@ -67,26 +93,31 @@ describe('crews', () => {
       401,
     );
 
-    const crew = await call(h, 'GET', `/crews/${id}`);
-    expect(crew.json['signals']).toMatchObject([
-      { signal: 'nice-core', text: 'Nice coring, crew.', wallet: captain.address },
-      { signal: 'welcome', text: 'Welcome to the crew.' },
+    // Members see them, newest first; the public page and other players do not.
+    expect(await signals(a)).toMatchObject([
+      { signal: 'nice-core', wallet: captain.address },
+      { signal: 'welcome' },
     ]);
+    expect(await signals()).toEqual([]);
+    expect(await signals(outsider)).toEqual([]);
+
+    // One member holds three at most, the crew twelve; another crew's rows are untouched.
+    for (let k = 0; k < 3; k++) expect((await send(a, 'survey')).status).toBe(200);
+    expect(
+      await rows(id, ` AND user_id = (SELECT id FROM users WHERE wallet = '${captain.address}')`),
+    ).toBe(3);
+    for (const m of [b, c, d, e]) for (let k = 0; k < 3; k++) await send(m, 'fuel-check');
+    expect(await rows(id)).toBe(12);
+    expect(await signals(b)).toHaveLength(12);
+    expect(await rows(otherCrew)).toBe(1);
+
+    // A player who leaves takes their signals along.
+    expect((await call(h, 'POST', '/crews/leave', { cookie: e, body: {} })).status).toBe(200);
+    expect(await rows(id)).toBe(9);
 
     // Twelve tries an hour per player (the refused phrase counted too).
-    for (let i = 0; i < 9; i++) expect((await send(a, 'survey')).status).toBe(200);
-    expect((await send(a, 'survey')).status).toBe(429);
-    const kept = (await call(h, 'GET', `/crews/${id}`)).json['signals'] as { signal: string }[];
-    expect(kept).toHaveLength(11);
-    expect(kept.at(-1)?.signal).toBe('welcome');
-    // Only the latest twelve are kept.
-    h.clock.now += 3_600_000;
-    expect((await send(a, 'fuel-check')).status).toBe(200);
-    expect((await send(a, 'signing-off')).status).toBe(200);
-    const later = (await call(h, 'GET', `/crews/${id}`)).json['signals'] as { signal: string }[];
-    expect(later).toHaveLength(12);
-    expect(later[0]?.signal).toBe('signing-off');
-    expect(later.map((x) => x.signal)).not.toContain('welcome');
+    for (let k = 0; k < 6; k++) expect((await send(a, 'signing-off')).status).toBe(200);
+    expect((await send(a, 'signing-off')).status).toBe(429);
   });
 
   it('keeps names and tags unique and caps crews at 25', async () => {

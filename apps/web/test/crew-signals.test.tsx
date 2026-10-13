@@ -18,7 +18,8 @@ vi.mock('../src/social/api', async (actual) => ({
       members: [
         { wallet: A, displayName: 'bea', captain: true, contribution: { mm: '0', text: '0 mm' } },
       ],
-      signals: sent.signals.map((signal) => ({
+      signals: sent.signals.map((signal, i) => ({
+        id: i + 1,
         signal,
         text: 'Nice coring, crew.',
         wallet: A,
