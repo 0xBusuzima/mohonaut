@@ -5,7 +5,6 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Action } from '../../game/actions';
 import { efficiency, maxRigsToBuy, withHeadroom } from '../../game/derive';
-import { useRigQuote } from '../../game/quote';
 import type { QuoteHook } from '../../game/quote';
 import { rigName } from '../../game/play';
 import { RigPortrait } from '../../game/pixel/RigPortrait';
@@ -60,12 +59,13 @@ function RigCard({
 export function MarketWindow({
   state,
   action,
-  useQuote = useRigQuote,
+  useQuote,
 }: {
   state: GameState;
   action: Action;
-  /** Prices more than one rig (the chain's batch quote; the training site computes its own). */
-  useQuote?: QuoteHook;
+  /** Prices more than one rig: the chain's batch quote (useRigQuote) or the training site's.
+   * A prop, so the training site never loads the wallet code. */
+  useQuote: QuoteHook;
 }) {
   const p = state.player;
   if (p === null) return null;

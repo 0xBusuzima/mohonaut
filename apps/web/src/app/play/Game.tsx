@@ -30,6 +30,7 @@ import { Hud } from './Hud';
 import { StratumNotice } from './StratumNotice';
 import type { Panel } from './Hud';
 import { PxButton, PxIcon, PxModal, Steps, usePixelGame } from './px';
+import { useRigQuote } from '../../game/quote';
 import { MarketWindow, RigsWindow } from './RigCards';
 import { FuelWindow, RefineryWindow, SiteWindow } from './windows';
 import { Brand, LoadingScreen, ONBOARDING_STEPS } from './Shell';
@@ -355,7 +356,8 @@ function PanelWindow({
   let body: ReactNode;
   if (panel === 'fuel')
     body = <FuelWindow state={state} action={action} first={false} ethBalance={ethBalance} />;
-  else if (panel === 'market') body = <MarketWindow state={state} action={action} />;
+  else if (panel === 'market')
+    body = <MarketWindow state={state} action={action} useQuote={useRigQuote} />;
   else if (panel === 'rigs')
     body = <RigsWindow state={state} action={action} openMarket={() => go('market')} />;
   else if (panel === 'refinery')

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider, createConfig, http } from 'wagmi';
 import { gameChain } from '../../../game/network';
 import type { GameState } from '../../../game/state';
+import { useRigQuote } from '../../../game/quote';
 import { MarketWindow, RigsWindow } from '../../play/RigCards';
 
 /** Chain reads only (the market's batch quotes); no wallet in the preview. */
@@ -26,7 +27,7 @@ export function RigWindows({
     <WagmiProvider config={config}>
       <QueryClientProvider client={queries}>
         {panel === 'market' ? (
-          <MarketWindow state={state} action={NO_ACTION} />
+          <MarketWindow state={state} action={NO_ACTION} useQuote={useRigQuote} />
         ) : (
           <RigsWindow state={state} action={NO_ACTION} openMarket={openMarket} />
         )}
