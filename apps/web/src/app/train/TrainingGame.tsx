@@ -192,17 +192,17 @@ export function TrainingGame() {
       />
       <Brand />
       <Hud state={game} open={setPanel} training />
-      <div className="px-dark fixed top-[7.6rem] right-3 z-20 flex max-w-[16rem] md:max-w-xs flex-col gap-2 p-2 font-pixel text-sm md:top-[9.4rem]">
+      <div className="px-dark fixed top-[7.6rem] right-3 z-20 flex max-w-[16rem] flex-col gap-2 p-2 font-pixel text-sm tall:top-[9.4rem] tall:max-w-xs">
         <button
           type="button"
           aria-expanded={about}
-          className="text-left text-amber uppercase md:hidden"
+          className="text-left text-amber uppercase tall:hidden"
           onClick={() => setAbout(!about)}
         >
           Simulation {about ? '▴' : '▾'}
         </button>
-        <p className="hidden text-amber uppercase md:block">Training site · simulation</p>
-        <div className={`${about ? 'flex' : 'hidden'} flex-col gap-2 md:flex`}>
+        <p className="hidden text-amber uppercase tall:block">Training site · simulation</p>
+        <div className={`${about ? 'flex' : 'hidden'} flex-col gap-2 tall:flex`}>
           <p className="text-concrete">
             60× speed, practice ETH and practice $MOHN with no value, illustrative prices. Nothing
             here touches a wallet or the chain.

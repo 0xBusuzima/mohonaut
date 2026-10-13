@@ -5,6 +5,9 @@
  */
 @import 'tailwindcss';
 
+/* Wide and tall enough for side panels: not a phone held sideways (the game's HUD uses it). */
+@custom-variant tall (@media (min-width: 768px) and (min-height: 521px));
+
 @theme {
   /* Brand palette */
   --color-night: #0e1013;
@@ -252,11 +255,11 @@ html {
 }
 
 /* Short screens (phones held sideways): Foreman Mo's tip box shrinks to a strip at the bottom
-   left so the site and the HUD stay visible. */
+   right, clear of the HUD's left column, so the site and the HUD stay visible. */
 @media (max-height: 520px) {
   .guide {
-    right: auto;
-    left: 0.75rem;
+    right: 0.75rem;
+    left: auto;
     bottom: 5.5rem;
     max-width: 22rem;
     padding: 0.5rem;

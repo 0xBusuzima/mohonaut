@@ -215,6 +215,18 @@ test('the training site runs the game without a wallet', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('on a phone held sideways, nothing covers the main buttons or the HUD switches', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.goto('/train/');
+  // A click lands only if the button is on top: the simulation panel and the guide keep clear.
+  await page.getByRole('button', { name: 'Sound' }).click({ timeout: 15_000 });
+  await expect(page.getByRole('button', { name: 'Sound' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Refinery', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Refinery' })).toBeVisible();
+});
+
 test('/timelock goes to the live queue on the economy page', async ({ request }) => {
   const res = await request.get('/timelock', { maxRedirects: 0 });
   expect(res.status()).toBe(301);
