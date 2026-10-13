@@ -37,6 +37,7 @@ export function PixelWorld({
   label,
   describe,
   contained = false,
+  still = false,
 }: {
   model: Omit<WorldModel, 'hover' | 'motion' | 'pan' | 'fx'>;
   onSelect?: ((hit: Hit) => void) | undefined;
@@ -44,6 +45,8 @@ export function PixelWorld({
   /** A short name for what the pointer is over, shown above it ("Diesel tank"). */
   describe?: ((hit: Hit) => string | null) | undefined;
   contained?: boolean;
+  /** A still scene (drawn once, and on changes), e.g. behind a window that covers it. */
+  still?: boolean;
 }) {
   // The interactive canvas, on top; under it the still layer, the scene, the night and the glow.
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -62,7 +65,7 @@ export function PixelWorld({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const reduced = useReducedMotion();
   const lowPower = useLowPower();
-  const motion = !reduced && !lowPower;
+  const motion = !reduced && !lowPower && !still;
   const rows = siteRows(model.pads.length);
   const fx = useRef<WorldFx[]>([]);
   const before = useRef<Omit<WorldModel, 'hover' | 'motion' | 'pan' | 'fx'> | null>(null);

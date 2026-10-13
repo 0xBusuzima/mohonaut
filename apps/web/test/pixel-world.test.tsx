@@ -155,4 +155,30 @@ describe('the pixel world', () => {
       vi.resetModules();
     }
   });
+
+  it('draws a still scene when asked to (behind a window), with no animation', async () => {
+    vi.resetModules();
+    const motions: boolean[] = [];
+    vi.doMock('../src/game/pixel/world', async (actual) => ({
+      ...(await actual<object>()),
+      drawWorld: (...args: unknown[]) => {
+        motions.push((args[4] as { motion: boolean }).motion);
+        return [];
+      },
+    }));
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      setTransform: () => undefined,
+    } as unknown as CanvasRenderingContext2D);
+    try {
+      const { PixelWorld } = await import('../src/game/pixel/PixelWorld');
+      render(
+        <PixelWorld still model={{ pads: [], tankFill: 0, voxel: false }} label="A drill site" />,
+      );
+      expect(motions.length).toBeGreaterThan(0);
+      expect(motions.every((m) => !m)).toBe(true);
+    } finally {
+      vi.doUnmock('../src/game/pixel/world');
+      vi.resetModules();
+    }
+  });
 });

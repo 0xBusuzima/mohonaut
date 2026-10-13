@@ -81,7 +81,9 @@ export function PlayShell({ onConnect }: { onConnect?: () => void }) {
   return (
     <>
       <h1 className="sr-only">Mohonaut: your drill site</h1>
+      {/* Still behind the welcome window: it is scenery here, and stays kind to the battery. */}
       <PixelWorld
+        still
         model={model}
         label="A drill site at night: four rigs on their pads, a diesel tank, the core shack and the World Bore."
       />
