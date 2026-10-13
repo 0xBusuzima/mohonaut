@@ -1,15 +1,29 @@
 /* global console, URL, TextEncoder, Buffer */
-// Bakes the voxel models (src/game/voxel/models.ts) into isometric PNG sprites in public/voxel,
-// with the build-time renderer (src/game/voxel/render.ts): docs/01 7, the voxel diorama look.
-import { mkdirSync, writeFileSync } from 'node:fs';
+// Bakes the voxel models (src/game/voxel/models.ts) into isometric sprites in public/voxel
+// (lossless WebP, about 40 % smaller than PNG), with the build-time renderer
+// (src/game/voxel/render.ts): docs/01 7, the voxel diorama look.
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { crc32, deflateSync } from 'node:zlib';
 import { Resvg } from '@resvg/resvg-js';
+import sharp from 'sharp';
 import { runnerImport } from 'vite';
 
 const web = fileURLToPath(new URL('..', import.meta.url));
+/** Files still being encoded; awaited before the script ends. */
+const pending = [];
+/** Writes an RGBA image as lossless WebP (the colour under fully clear pixels is dropped). */
+function writeWebp(file, { width, height, data }) {
+  pending.push(
+    sharp(Buffer.from(data.buffer, data.byteOffset, data.byteLength), {
+      raw: { width, height, channels: 4 },
+    })
+      .webp({ lossless: true, effort: 6 })
+      .toFile(file),
+  );
+}
 const { module: voxel } = await runnerImport(join(web, 'src/game/voxel/render.ts'));
 const { module: models } = await runnerImport(join(web, 'src/game/voxel/models.ts'));
 const { module: world } = await runnerImport(join(web, 'src/game/pixel/world.ts'));
@@ -51,7 +65,9 @@ function png({ width, height, data }) {
   return out;
 }
 
+// Build output only (gitignored): cleared first, so no stale file is ever deployed.
 const out = join(web, 'public/voxel');
+rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 const LIGHT = [0.2, 0.55, 0.85];
 const rigs = [
@@ -79,7 +95,7 @@ function bake(name, model, artScale, at = null, bloomArt = 2, k = K) {
   const scale = artScale * k;
   const image = voxel.render(model, { scale, bloom: bloomArt * k, light: LIGHT });
   const [ax, ay] = at === null ? image.origin : voxel.anchorOf(image, at[0], at[1], at[2], scale);
-  writeFileSync(join(out, `site-${name}.png`), png(image));
+  writeWebp(join(out, `site-${name}.webp`), image);
   manifest[name] = {
     w: image.width,
     h: image.height,
@@ -217,6 +233,7 @@ function over(dst, img, x, y, ax, ay) {
     }
 }
 const rigsOut = join(web, 'public/rigs');
+rmSync(rigsOut, { recursive: true, force: true });
 mkdirSync(rigsOut, { recursive: true });
 const portraits = [];
 for (const [i, model] of rigs.entries()) {
@@ -232,6 +249,8 @@ for (const [i, model] of rigs.entries()) {
     const [ax, ay] = voxel.anchorOf(image, n / 2, n / 2, 1, scale);
     const data = backdrop();
     over(data, image, PW / 2, PH * 0.84, ax, ay);
+    // WebP for the pages; PNG for the brand page's downloads and the share card.
+    writeWebp(join(rigsOut, `rig-${i}${suffix}.webp`), { width: PW, height: PH, data });
     const file = png({ width: PW, height: PH, data });
     writeFileSync(join(rigsOut, `rig-${i}${suffix}.png`), file);
     if (suffix === '') portraits[i] = file;
@@ -289,6 +308,7 @@ ${foreman}
   console.log('gen-voxel: public/og-train.png');
 }
 
+await Promise.all(pending);
 console.log(
   `gen-voxel: ${rigs.length} rigs, the site diorama and ${Object.keys(manifest).length} in-game sprites`,
 );

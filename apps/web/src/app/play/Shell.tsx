@@ -44,7 +44,7 @@ export function LoadingScreen({ text = 'Spudding in…' }: { text?: string }) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-[#0b0f17] font-pixel text-bone">
       <div className="flex flex-col items-center gap-5">
-        <img src="/rigs/rig-2.png" alt="" width={300} height={276} className="block" />
+        <img src="/rigs/rig-2.webp" alt="" width={300} height={276} className="block" />
         <p className="text-xl tracking-wider uppercase">{text}</p>
         <div className="px-inset h-6 w-72 p-1">
           <div className="px-hazard h-full w-1/2 animate-[loadbar_1.6s_steps(12)_infinite]" />

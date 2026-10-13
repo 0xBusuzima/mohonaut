@@ -78,7 +78,9 @@ test('SEO and PWA files are served', async ({ request }) => {
     '/og.png',
     '/og-train.png',
     '/rigs/rig-5.png',
-    '/rigs/rig-5-off.png',
+    '/rigs/rig-5.webp',
+    '/rigs/rig-5-off.webp',
+    '/voxel/site-rig-0.webp',
     '/.well-known/security.txt',
   ]) {
     expect((await request.get(path)).status(), path).toBe(200);

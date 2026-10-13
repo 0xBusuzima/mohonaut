@@ -23,7 +23,7 @@ describe('the voxel rig sprites in the scene', () => {
     await new Promise((r) => setTimeout(r, 0));
     const sprite = voxelSprite('rig-1');
     expect(sprite).toMatchObject({ ax: 36, ay: 76 });
-    expect(sprite?.img.src).toBe('/voxel/site-rig-1.png');
+    expect(sprite?.img.src).toBe('/voxel/site-rig-1.webp');
     expect(voxelSprite('rig-9')).toBeNull(); // no such rig: the pixel drawing stays
   });
 

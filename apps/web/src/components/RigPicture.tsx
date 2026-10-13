@@ -21,7 +21,7 @@ export function RigPicture({
   return (
     <div style={{ background: PORTRAIT_BANDS }}>
       <img
-        src={`/rigs/rig-${id}${running ? '' : '-off'}.png`}
+        src={`/rigs/rig-${id}${running ? '' : '-off'}.webp`}
         alt={`${name} on its pad at night${running ? '' : ', stopped'}`}
         width={300}
         height={276}

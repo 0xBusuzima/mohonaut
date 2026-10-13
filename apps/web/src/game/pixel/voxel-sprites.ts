@@ -66,7 +66,7 @@ export function voxelSprite(name: string): (Meta & { img: HTMLImageElement }) | 
   if (img === undefined) {
     img = new Image();
     img.onload = arrived;
-    img.src = `/voxel/site-${name}.png`;
+    img.src = `/voxel/site-${name}.webp`;
     images.set(name, img);
   }
   return img.complete && img.naturalWidth > 0 ? { ...meta, img } : null;

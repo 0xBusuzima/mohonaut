@@ -46,7 +46,7 @@ services/keeper/data/
 # Next.js and Playwright output
 apps/*/.next/
 apps/*/out/
-# Pixel art drawn at build time (apps/web/scripts/gen-pixel-art.mjs)
+# Rig portraits rendered at build time (apps/web/scripts/gen-voxel.mjs)
 apps/web/public/rigs/
 # Voxel sprites baked at build time (apps/web/scripts/gen-voxel.mjs)
 apps/web/public/voxel/
