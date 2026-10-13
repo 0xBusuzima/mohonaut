@@ -153,4 +153,5 @@ test('without the chain, the game says so and keeps trying', async ({ page }) =>
   await page.goto('/play/');
   await expect(page.getByRole('dialog', { name: 'No signal' })).toBeVisible({ timeout: 60_000 });
   await expect(page.getByRole('button', { name: 'Try now' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'status page' })).toHaveAttribute('href', '/status/');
 });

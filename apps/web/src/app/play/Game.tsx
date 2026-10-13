@@ -140,6 +140,13 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
         <PxButton className="mt-4 w-full" onClick={refetch}>
           Try now
         </PxButton>
+        <p className="mt-3 text-center text-sm">
+          What we know is on the{' '}
+          <a href="/status/" className="text-amber underline">
+            status page
+          </a>
+          .
+        </p>
       </PxModal>
     );
   } else if (address !== undefined && !named && (known === null || known === '')) {
