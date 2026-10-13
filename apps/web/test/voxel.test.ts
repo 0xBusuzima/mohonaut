@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   GROUND_VOXELS,
+  emptyPad,
+  generatorModel,
+  lampModel,
+  pipeRackModel,
   PAD_SIZES,
   containerModel,
   diamondCoreDrill,
@@ -182,5 +186,19 @@ describe('the voxel models', () => {
     // One grid cell is GROUND_VOXELS voxels of 16 / GROUND_VOXELS pixels: the scene's 32 x 16.
     const img = render(ground, { scale: 16 / GROUND_VOXELS });
     expect(anchorOf(img, GROUND_VOXELS, 0, 0, 16 / GROUND_VOXELS)[0] - img.origin[0]).toBe(16);
+  });
+
+  it('builds the small props: the empty pad, the generator, the lamp mast and the pipe rack', () => {
+    expect(emptyPad().size).toBe(16 * 16);
+    expect(generatorModel().has(5, 2, 9)).toBe(true); // the exhaust stack
+    expect(
+      lampModel()
+        .entries()
+        .filter(([, , , vox]) => vox.emissive === true),
+    ).toHaveLength(2);
+    // Three layers of pipe on two sleepers.
+    const rack = pipeRackModel();
+    expect(Math.max(...rack.entries().map(([, , z]) => z))).toBe(3);
+    expect(rack.get(1, 0, 0)?.colour).toEqual(hex('#5e4330'));
   });
 });

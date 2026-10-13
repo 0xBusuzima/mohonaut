@@ -464,3 +464,39 @@ export function siteGround(gw: number, gh: number): Model {
   m.set(W, D, -1, v(P.concrete));
   return m;
 }
+
+/** An empty pad (the 16-voxel concrete slab every in-game rig stands on). */
+export function emptyPad(): Model {
+  return pad(new Model(), 16);
+}
+
+/** The generator set on a 7 x 6 footprint: a steel housing with a grille and an exhaust stack. */
+export function generatorModel(): Model {
+  const m = new Model();
+  m.box(0, 0, 0, 6, 5, 4, v(P.steel));
+  m.box(0, 0, 5, 6, 5, 5, v(P.steelLight));
+  for (let x = 1; x <= 5; x += 2) m.box(x, 6, 1, x, 6, 3, v(P.graphite));
+  for (let z = 6; z <= 9; z++) m.set(5, 2, z, v(P.night));
+  return m;
+}
+
+/** A lamp mast: a steel pole with an arm and a sodium head that glows. */
+export function lampModel(): Model {
+  const m = new Model();
+  for (let z = 0; z <= 14; z++) m.set(0, 0, z, v(P.steelLight));
+  m.box(-1, 0, 15, 1, 0, 15, v(P.steel));
+  m.set(1, 0, 14, LAMP);
+  m.set(-1, 0, 14, LAMP);
+  return m;
+}
+
+/** Drill pipe stacked on two timber sleepers, three layers deep. */
+export function pipeRackModel(): Model {
+  const m = new Model();
+  m.box(1, 0, 0, 1, 4, 0, v(P.woodDark));
+  m.box(10, 0, 0, 10, 4, 0, v(P.woodDark));
+  for (let layer = 0; layer < 3; layer++)
+    for (let y = layer; y <= 4 - layer; y += 2)
+      m.box(0, y, 1 + layer, 11, y, 1 + layer, v(layer % 2 === 0 ? P.concrete : P.steelLight));
+  return m;
+}

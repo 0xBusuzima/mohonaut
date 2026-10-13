@@ -300,6 +300,11 @@ export function generator(c: Ctx, x: number, y: number, t: number, motion: boole
   box(c, x, y + 8, 26, 11, P.steelLight, P.steel, P.graphite);
   for (let i = 0; i < 4; i++) rect(c, x - 10 + i * 3, y + 14 + i * 1.5, 1, 4, P.graphite);
   rect(c, x + 5, y + 1, 2, 7, P.night);
+  generatorDressing(c, x, y, t, motion);
+}
+
+/** The generator's live parts, over either generator: the run LED and the exhaust. */
+export function generatorDressing(c: Ctx, x: number, y: number, t: number, motion: boolean): void {
   rect(c, x - 3, y + 10, 2, 1, motion && Math.sin(t * 6) > 0 ? P.led : P.teal);
   if (motion) puff(c, x + 6, y - 2, t, 0.3);
 }

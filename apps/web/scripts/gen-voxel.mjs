@@ -109,6 +109,18 @@ for (let rows = 3; rows <= 9; rows++) {
     ay: image.origin[1],
   };
 }
+// Small props at 2 px a voxel, each anchored where the scene's pixel drawing stands.
+for (const [name, model, at] of [
+  ['pad', models.emptyPad(), [8, 8, 1]],
+  ['generator', models.generatorModel(), [0, 0, 0]],
+  ['lamp', models.lampModel(), [0.5, 0.5, 0]],
+  ['pipes', models.pipeRackModel(), [6, 2, 0]],
+]) {
+  const image = voxel.render(model, { scale: 2, bloom: 4, light: LIGHT });
+  const [ax, ay] = voxel.anchorOf(image, at[0], at[1], at[2], 2);
+  writeFileSync(join(out, `site-${name}.png`), png(image));
+  manifest[name] = { w: image.width, h: image.height, ax: Math.round(ax), ay: Math.round(ay) };
+}
 // The tank stands on its centre: anchored at its footprint's middle on the ground.
 {
   const image = voxel.render(models.tankModel(), { scale: 2, bloom: 4, light: LIGHT });

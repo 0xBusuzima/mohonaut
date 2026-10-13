@@ -31,6 +31,7 @@ import {
   rigTop,
   shack,
   shackDressing,
+  generatorDressing,
   tankDressing,
   tank,
   truck,
@@ -193,7 +194,8 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
 
   // ---- Still layer: sky, land, site ground, pads, back fence, the road's furniture.
   const ground = m.voxel === true ? voxelSprite(`ground-${rows}`) : null;
-  const key = `${W}x${H}:${ox},${oy}:${gh}:${m.pads.length}:${m.hover ?? ''}:${ground === null ? 'px' : 'vx'}`;
+  const padSprite = m.voxel === true ? voxelSprite('pad') : null;
+  const key = `${W}x${H}:${ox},${oy}:${gh}:${m.pads.length}:${m.hover ?? ''}:${ground === null ? 'px' : 'vx'}:${padSprite === null ? 'px' : 'vx'}`;
   cached(c, W, H, key, (g) => {
     sky(g, W, horizon);
     land(g, W, H, horizon, ox, oy, iso, GW, gh);
@@ -217,7 +219,13 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
     fenceBack(g, iso);
     slots.forEach(([gx, gy], i) => {
       const p = iso(gx, gy);
-      padTile(g, p.x, p.y, i < m.pads.length, m.hover === `pad:${i}`);
+      const open = i < m.pads.length;
+      if (padSprite === null) padTile(g, p.x, p.y, open, m.hover === `pad:${i}`);
+      // Voxel: a slab for each pad the site has; the rest are bare ground, staked out.
+      else if (open) {
+        g.drawImage(padSprite.img, p.x - padSprite.ax, p.y + TW / 2 - padSprite.ay + 1);
+        if (m.hover === `pad:${i}`) diamondEdge(g, p.x, p.y, TW * 2, P.amber);
+      }
     });
   });
   slots.forEach(([gx, gy], i) => {
@@ -273,11 +281,18 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   }
   at(13, 2, () => {
     const p = iso(12, 1);
-    generator(c, p.x, p.y, t, m.motion);
+    const built = m.voxel === true ? voxelSprite('generator') : null;
+    if (built === null) generator(c, p.x, p.y, t, m.motion);
+    else {
+      c.drawImage(built.img, p.x - built.ax, p.y + 8 - built.ay);
+      generatorDressing(c, p.x, p.y, t, m.motion);
+    }
   });
   at(1, 4, () => {
     const p = iso(0.4, 3.4);
-    pipeRack(c, p.x, p.y);
+    const built = m.voxel === true ? voxelSprite('pipes') : null;
+    if (built === null) pipeRack(c, p.x, p.y);
+    else c.drawImage(built.img, p.x - built.ax, p.y + 6 - built.ay);
   });
   for (const set of m.decor ?? []) {
     const [gx, gy] = DECOR_SPOTS[set];
@@ -310,7 +325,9 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
     const on = !m.motion || Math.sin(t * 0.7 + gx + gy) > -0.97; // an occasional flicker
     at(gx, gy, () => {
       const p = iso(gx, gy);
-      lampPost(c, p.x, p.y + 8, on);
+      const built = m.voxel === true && on ? voxelSprite('lamp') : null;
+      if (built === null) lampPost(c, p.x, p.y + 8, on);
+      else c.drawImage(built.img, p.x - built.ax, p.y + 8 - built.ay);
     });
     const p = iso(gx, gy);
     lights.push({ x: p.x, y: p.y + 6, r: 54 + (i % 2) * 6, tint: P.glow, power: on ? 1 : 0.35 });
