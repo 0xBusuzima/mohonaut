@@ -40,7 +40,7 @@ Sorumlular: **K** kurucu (anahtarlar, Safe'ler, X), **Ke** keeper servisi (otoma
 | 7 | Genesis | 2026-10-11 22:00 | |
 | 8 | Saatlik checkpoint | 2026-10-13 08:00 | **Bulgu:** keeper çalışmıyordu. Checkpoint 9 saat gecikti, besleme bayatladı ve yakıt alımı kendiliğinden durdu (tasarım gereği). 2026-10-13 11:44'te besleme yenilendi; 12:00'den beri keeper sürekli çalışıyor (`poked`). **Ders:** keeper, Genesis'ten önce en az bir gün sürekli çalışıyor olmalı; adım 5'in kontrolüne eklendi. |
 | 9 | Market Open | 2026-10-14 22:00 (bekleniyor) | |
-| 10 | İlk buyback / POL | (bekleniyor) | |
+| 10 | İlk buyback / POL | (bekleniyor) | Beklenti: bu eski kontratlarda `anchorTick()` yok. Keeper'ın buyback/POL işleri her turda hata yazıp atlar, servis çalışmaya devam eder. Bu adım Prova 2'de (güncel kod) ölçülür. `openMarket` imzası değişmedi. |
 
 ### Prova 2
 
