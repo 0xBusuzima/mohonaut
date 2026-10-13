@@ -79,6 +79,7 @@ describe('OpenAPI', () => {
         '/cards/{address}',
         '/crews',
         '/crews/leave',
+        '/crews/signal',
         '/crews/{id}',
         '/crews/{id}/join',
         '/economy/daily',
@@ -112,7 +113,7 @@ describe('OpenAPI', () => {
 
 describe('schema', () => {
   it.each(apiTables.map((t) => [getTableConfig(t).name, t] as const))(
-    'Drizzle table %s matches migrations/1001_api_init.sql',
+    'Drizzle table %s matches the migrations',
     async (name, table) => {
       const h = await harness();
       const rows = await h.database.query(

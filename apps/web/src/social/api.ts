@@ -27,6 +27,14 @@ export interface Crew {
     captain: boolean;
     contribution: Depth;
   }[];
+  /** The latest set phrases sent to the crew, newest first; absent from an older API. */
+  signals?: {
+    signal: string;
+    text: string;
+    wallet: Address | null;
+    displayName: string | null;
+    at: string;
+  }[];
 }
 export interface CrewRow {
   rank: number | null;
@@ -185,6 +193,7 @@ export const api = {
     call<{ id: number }>('POST', '/crews', { body: { name, tag }, botCheck: true }),
   joinCrew: (id: number) => call<{ ok: true }>('POST', `/crews/${id}/join`),
   leaveCrew: () => call<{ ok: true }>('POST', '/crews/leave'),
+  signal: (signal: string) => call<{ ok: true }>('POST', '/crews/signal', { body: { signal } }),
   survey: () =>
     call<{ day: number; find: Find; isNew: boolean }>('POST', '/survey', { botCheck: true }),
   collection: () => call<Collection>('GET', '/me/collection'),

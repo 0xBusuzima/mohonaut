@@ -46,6 +46,49 @@ describe('crews', () => {
     expect((await call(h, 'GET', `/crews/${id}`)).status).toBe(404); // the last one out closes it
   });
 
+  it('talks in set phrases only: members send, the crew page shows the latest, newest first', async () => {
+    const h = await harness();
+    const captain = newWallet();
+    const [a, outsider] = await Promise.all([signIn(h, captain), signIn(h, newWallet())]);
+    const created = await call(h, 'POST', '/crews', {
+      cookie: a,
+      body: { name: 'Night Shift', tag: 'nite' },
+    });
+    const id = Number(created.json['id']);
+    const send = (cookie: string, signal: unknown) =>
+      call(h, 'POST', '/crews/signal', { cookie, body: { signal } });
+
+    expect((await send(a, 'welcome')).status).toBe(200);
+    expect((await send(a, 'nice-core')).status).toBe(200);
+    // No free text, no crew, no session.
+    expect((await send(a, 'buy now')).status).toBe(400);
+    expect((await send(outsider, 'welcome')).status).toBe(404);
+    expect((await call(h, 'POST', '/crews/signal', { body: { signal: 'welcome' } })).status).toBe(
+      401,
+    );
+
+    const crew = await call(h, 'GET', `/crews/${id}`);
+    expect(crew.json['signals']).toMatchObject([
+      { signal: 'nice-core', text: 'Nice coring, crew.', wallet: captain.address },
+      { signal: 'welcome', text: 'Welcome to the crew.' },
+    ]);
+
+    // Twelve tries an hour per player (the refused phrase counted too).
+    for (let i = 0; i < 9; i++) expect((await send(a, 'survey')).status).toBe(200);
+    expect((await send(a, 'survey')).status).toBe(429);
+    const kept = (await call(h, 'GET', `/crews/${id}`)).json['signals'] as { signal: string }[];
+    expect(kept).toHaveLength(11);
+    expect(kept.at(-1)?.signal).toBe('welcome');
+    // Only the latest twelve are kept.
+    h.clock.now += 3_600_000;
+    expect((await send(a, 'fuel-check')).status).toBe(200);
+    expect((await send(a, 'signing-off')).status).toBe(200);
+    const later = (await call(h, 'GET', `/crews/${id}`)).json['signals'] as { signal: string }[];
+    expect(later).toHaveLength(12);
+    expect(later[0]?.signal).toBe('signing-off');
+    expect(later.map((x) => x.signal)).not.toContain('welcome');
+  });
+
   it('keeps names and tags unique and caps crews at 25', async () => {
     const h = await harness();
     const founder = await signIn(h, newWallet());

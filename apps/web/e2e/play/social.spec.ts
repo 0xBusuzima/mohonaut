@@ -44,6 +44,14 @@ test('sign in, start a crew, survey, name the site, set alerts and see the publi
   });
   await expect(win.getByText('1 of 5 to rank')).toBeVisible();
   await expect(win.getByText('Captain')).toBeVisible();
+  // The crew talks in set phrases: a signal goes through the API and shows up in the window.
+  await win
+    .getByRole('group', { name: 'Send a signal' })
+    .getByRole('button', { name: 'Night shift signing off.' })
+    .click();
+  await expect(
+    win.getByRole('list', { name: 'Signals in Night Shift' }).getByText('Night shift signing off.'),
+  ).toBeVisible({ timeout: 15_000 });
   await shot(page, 's1-crew');
   expect(await axe(page)).toEqual([]);
   await win.getByRole('button', { name: 'Close' }).click();

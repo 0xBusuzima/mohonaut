@@ -1,6 +1,6 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import type { OpenAPIHono } from '@hono/zod-openapi';
-import { asc, count, desc, eq } from 'drizzle-orm';
+import { and, asc, count, desc, eq, notInArray } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 import type { AppEnv, SessionUser } from '../context.js';
 import {
@@ -10,8 +10,16 @@ import {
   findsOf,
   seasonRanking,
 } from '../data.js';
-import { crewMembers, crews, notificationPrefs, seasons, surveyFinds } from '../db/schema.js';
-import { formatDepth, millimetres } from '@mohonaut/sdk';
+import {
+  crewMembers,
+  crewSignals,
+  crews,
+  notificationPrefs,
+  seasons,
+  surveyFinds,
+  users,
+} from '../db/schema.js';
+import { CREW_SIGNALS, formatDepth, millimetres } from '@mohonaut/sdk';
 import { SURVEY_ITEMS, SURVEY_SETS, completedSets, surveyFind } from '../game/survey.js';
 import { signedIn } from '../rbac.js';
 import { rateLimit, turnstile } from '../security.js';
@@ -19,6 +27,9 @@ import { AddressSchema, DepthSchema, OkSchema, errors, isUniqueViolation, json }
 
 const CREW_MIN = 5;
 const CREW_MAX = 25;
+/** A crew keeps its latest signals only. */
+const SIGNALS_KEPT = 12;
+const SIGNAL_IDS = CREW_SIGNALS.map((s) => s.id) as [string, ...string[]];
 const NOTIFY_EVENTS = ['fuel-low', 'refine-ready', 'stratum', 'season', 'announcements'] as const;
 
 const me = (user: SessionUser | null): SessionUser => {
@@ -106,6 +117,16 @@ export function registerSocial(app: OpenAPIHono<AppEnv>): void {
                 contribution: DepthSchema,
               }),
             ),
+            /** The latest set phrases sent to the crew, newest first. */
+            signals: z.array(
+              z.object({
+                signal: z.enum(SIGNAL_IDS),
+                text: z.string(),
+                wallet: AddressSchema.nullable(),
+                displayName: z.string().nullable(),
+                at: z.string(),
+              }),
+            ),
           }),
           'Crew',
         ),
@@ -119,6 +140,18 @@ export function registerSocial(app: OpenAPIHono<AppEnv>): void {
       if (crew === undefined) throw new HTTPException(404, { message: 'no such crew' });
       const members = await crewMembersWithAccrual(db, id);
       const total = members.reduce((sum, m) => sum + (m.accrued ?? 0n), 0n);
+      const signals = await db.db
+        .select({
+          signal: crewSignals.signal,
+          at: crewSignals.at,
+          wallet: users.wallet,
+          displayName: users.displayName,
+        })
+        .from(crewSignals)
+        .innerJoin(users, eq(users.id, crewSignals.userId))
+        .where(eq(crewSignals.crewId, id))
+        .orderBy(desc(crewSignals.id))
+        .limit(SIGNALS_KEPT);
       return c.json(
         {
           id: crew.id,
@@ -132,9 +165,65 @@ export function registerSocial(app: OpenAPIHono<AppEnv>): void {
             captain: m.userId === crew.captainUserId,
             contribution: depth(millimetres(m.accrued ?? 0n)),
           })),
+          signals: signals.flatMap((s) => {
+            const known = CREW_SIGNALS.find((k) => k.id === s.signal);
+            return known === undefined
+              ? []
+              : [
+                  {
+                    signal: known.id,
+                    text: known.text,
+                    wallet: s.wallet as `0x${string}` | null,
+                    displayName: s.displayName,
+                    at: s.at.toISOString(),
+                  },
+                ];
+          }),
         },
         200,
       );
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: 'post',
+      path: '/crews/signal',
+      tags: ['crews'],
+      summary: 'Send a set phrase to your crew (no free text)',
+      middleware: [signedIn, rateLimit('crew-signal', 12, 3600, true)] as const,
+      request: {
+        body: {
+          content: { 'application/json': { schema: z.object({ signal: z.enum(SIGNAL_IDS) }) } },
+        },
+      },
+      responses: {
+        200: json(OkSchema, 'Sent'),
+        401: errors[401],
+        404: errors[404],
+        429: errors[429],
+      },
+    }),
+    async (c) => {
+      const user = me(c.var.user);
+      const { signal } = c.req.valid('json');
+      const db = c.var.deps.database;
+      const crew = await crewOfUser(db, user.id);
+      if (crew === null) throw new HTTPException(404, { message: 'not in a crew' });
+      await db.db.transaction(async (tx) => {
+        await tx.insert(crewSignals).values({ crewId: crew.id, userId: user.id, signal });
+        // Only the latest few are kept.
+        const keep = tx
+          .select({ id: crewSignals.id })
+          .from(crewSignals)
+          .where(eq(crewSignals.crewId, crew.id))
+          .orderBy(desc(crewSignals.id))
+          .limit(SIGNALS_KEPT);
+        await tx
+          .delete(crewSignals)
+          .where(and(eq(crewSignals.crewId, crew.id), notInArray(crewSignals.id, keep)));
+      });
+      return c.json({ ok: true as const }, 200);
     },
   );
 

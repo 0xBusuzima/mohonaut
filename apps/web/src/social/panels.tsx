@@ -1,6 +1,6 @@
 'use client';
 
-import { PLAQUE_ART, PLAQUE_PALETTES, plaqueTier } from '@mohonaut/sdk';
+import { CREW_SIGNALS, PLAQUE_ART, PLAQUE_PALETTES, plaqueTier } from '@mohonaut/sdk';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
@@ -137,6 +137,37 @@ function MyCrew({ id }: { id: number }) {
           { key: 'c', header: 'Cored', numeric: true, render: (m) => m.contribution.text },
         ]}
       />
+      <h3 className="text-amber">Signals</h3>
+      {(c.signals ?? []).length === 0 ? (
+        <p className={HINT}>No signals yet. A crew talks in set phrases, never free text.</p>
+      ) : (
+        <ul aria-label={`Signals in ${c.name}`} className="flex flex-col gap-1">
+          {(c.signals ?? []).map((s) => (
+            <li key={`${s.at}-${s.signal}-${s.wallet ?? ''}`}>
+              <span className="text-bone">{s.displayName ?? shortAddress(s.wallet)}:</span> {s.text}{' '}
+              <span className="text-sm text-concrete">
+                {formatUtc(Math.floor(Date.parse(s.at) / 1000))}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Send a signal">
+        {CREW_SIGNALS.map((s) => (
+          <PxButton
+            key={s.id}
+            variant="light"
+            className="!px-2 !py-1 !text-sm"
+            busy={busy === `signal-${s.id}`}
+            onClick={async () => {
+              if (await write(`signal-${s.id}`, () => api.signal(s.id), 'Signal sent'))
+                await client.invalidateQueries({ queryKey: ['crew', id] });
+            }}
+          >
+            {s.text}
+          </PxButton>
+        ))}
+      </div>
       <PxButton
         variant="light"
         className="self-start"

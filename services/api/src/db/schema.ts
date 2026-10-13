@@ -47,6 +47,15 @@ export const crewMembers = pgTable('crew_members', {
   joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Set phrases a crew member sends to the crew (docs/01 §6.7: no free chat). */
+export const crewSignals = pgTable('crew_signals', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  crewId: id('crew_id').notNull(),
+  userId: id('user_id').notNull(),
+  signal: text('signal').notNull(),
+  at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const surveyFinds = pgTable(
   'survey_finds',
   {
@@ -138,6 +147,7 @@ export const apiTables = [
   sessions,
   crews,
   crewMembers,
+  crewSignals,
   surveyFinds,
   notificationPrefs,
   seasons,

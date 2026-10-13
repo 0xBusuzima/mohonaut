@@ -13,6 +13,7 @@ economy.
 | Sign-in | `GET /auth/nonce`, `POST /auth/siwe` (EIP-4361; EOAs locally, smart wallets via `RPC_URL`), `POST /auth/external` (optional Dynamic/Privy JWT), `POST /auth/logout`, `GET/PATCH /me` |
 | World | `GET /world` (World Bore depth and stratum), `GET /economy/daily` (docs/02 §10 metrics, 28-day SR), `GET /market/prices` (average paid per DP by day, docs/01 §4.4) |
 | Rankings | `GET /leaderboards/contribution`, `GET /leaderboards/crews`, `GET /seasons`, `GET /seasons/{id}/leaderboard` |
+| Crew signals | `POST /crews/signal` (signed in, crew member; one of the SDK's set phrases, never free text; 12 tries an hour), the latest 12 in `GET /crews/{id}` |
 | Profile | `GET /profiles/{address}` (public, no wallet needed: site, contribution, crew, badges, season plaques: a top-10 World Bore contribution in a season that has ended, never for a flagged account), `GET /cards/{address}` (PNG share card, no earnings or prices) |
 | Crews | `POST /crews`, `GET /crews/{id}`, `POST /crews/{id}/join`, `POST /crews/leave` (5–25 players, social only) |
 | Survey | `POST /survey` (one cosmetic find per UTC day: HMAC of a server secret, the player and the day; no economic value), `GET /me/collection` |
