@@ -122,6 +122,8 @@ describe('the diesel tank window', () => {
     render(<FuelWindow state={withTank(24n)} action={action} first={false} ethBalance={0n} />);
     expect(lit('bg-amber')).toBe(1);
     expect(lit('bg-alarm')).toBe(0);
+    // 0.001 ETH buys 25 l: about 100 hours for the Pilot Rig's 0.25 l/h.
+    expect(screen.getByText(/about 4\.2 days for your rigs/)).toBeTruthy();
   });
 
   it('turns red under 12 hours of diesel', async () => {

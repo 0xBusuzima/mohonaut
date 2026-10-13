@@ -143,6 +143,12 @@ export function FuelWindow({
   const tank = p?.tank ?? 0n;
   const full = tank + room;
   const hoursLeft = registered && p.burn > 0n ? Number((tank * 10n) / p.burn) / 10 : null;
+  // How long the diesel being bought runs the site's rigs (a new site: the Pilot Rig).
+  const siteBurn = registered ? p.burn : (state.rigs[0]?.burn ?? 0n);
+  const buysHours =
+    litres === null || siteBurn === 0n || litres === 0n
+      ? null
+      : Number((litres * 10n) / siteBurn) / 10;
   return (
     <div className="flex flex-col gap-4">
       {first && (
@@ -174,7 +180,8 @@ export function FuelWindow({
       )}
       <AmountInput label="ETH to spend" value={eth} onChange={setTyped} />
       <p className="text-base">
-        ≈ <b>{litres === null ? '—' : formatLitres(litres)}</b> · in wallet{' '}
+        ≈ <b>{litres === null ? '—' : formatLitres(litres)}</b>
+        {buysHours !== null && <>, about {formatHours(buysHours)} for your rigs</>} · in wallet{' '}
         <b>{ethBalance === undefined ? '—' : formatEth(ethBalance)}</b>
       </p>
       {maxWei !== null && (
@@ -202,6 +209,11 @@ export function FuelWindow({
       </PxButton>
     </div>
   );
+}
+
+/** "36 h" under three days, "4.2 days" after. */
+function formatHours(h: number): string {
+  return h < 72 ? `${Math.round(h)} h` : `${(h / 24).toFixed(1)} days`;
 }
 
 /** The site level: pads and fuel line, and the upgrade. */
