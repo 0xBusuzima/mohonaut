@@ -210,6 +210,13 @@ test('the training site runs the game without a wallet', async ({ page }) => {
   await page.getByRole('button', { name: 'Close' }).click();
   await page.getByRole('button', { name: 'My rigs', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'My rigs' }).getByText('Rotary Rig')).toBeVisible();
+  // Starting over asks once more before it erases the practice site.
+  await page.getByRole('button', { name: 'Close' }).click();
+  const fold = page.getByRole('button', { name: /^Simulation/ });
+  if (await fold.isVisible()) await fold.click(); // phones: the panel is folded
+  await page.getByRole('button', { name: 'Start over' }).click();
+  await expect(page.getByRole('button', { name: 'Sure? Erase my site' })).toBeVisible();
+  await page.getByRole('button', { name: 'My rigs', exact: true }).click();
   // The site window is a button away, not only a click on the world (keyboard players).
   await page
     .getByRole('dialog', { name: 'My rigs' })

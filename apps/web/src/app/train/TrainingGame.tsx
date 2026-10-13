@@ -96,6 +96,8 @@ export function TrainingGame() {
   const [saved, setSaved] = useState(load);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [about, setAbout] = useState(false);
+  // Starting over wipes the practice site: a second click confirms.
+  const [confirmReset, setConfirmReset] = useState(false);
   const { base, state: sim } = saved;
 
   // The clock: a simulated minute every second (every 5 in low-power mode, 5 minutes at a time).
@@ -240,13 +242,19 @@ export function TrainingGame() {
               Share
             </a>
             <PxButton
-              variant="dark"
+              variant={confirmReset ? 'primary' : 'dark'}
               className="!px-2 !py-1 !text-sm"
-              onClick={() =>
-                setSaved({ base: Math.floor(Date.now() / 1000), state: newTraining() })
-              }
+              onClick={() => {
+                if (!confirmReset) {
+                  setConfirmReset(true);
+                  return;
+                }
+                setConfirmReset(false);
+                setSaved({ base: Math.floor(Date.now() / 1000), state: newTraining() });
+              }}
+              onBlur={() => setConfirmReset(false)}
             >
-              Start over
+              {confirmReset ? 'Sure? Erase my site' : 'Start over'}
             </PxButton>
           </div>
         </div>
