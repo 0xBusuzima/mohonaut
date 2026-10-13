@@ -9,6 +9,7 @@ import {
   lampModel,
   pipeRackModel,
   PAD_SIZES,
+  decorModel,
   containerModel,
   diamondCoreDrill,
   hex,
@@ -236,5 +237,18 @@ describe('the voxel models', () => {
     expect(bare.get(0, 4, 1)?.colour).toEqual(hex('#ff6b1a')); // the outer casing ring
     expect(bare.has(11, 1, 1)).toBe(false);
     expect(wellheadModel('#B79A9A').get(11, 1, 1)?.colour).toEqual(hex('#B79A9A'));
+  });
+
+  it('builds a decor piece for each Core Collection set', () => {
+    for (const set of ['fossils', 'cores', 'bits', 'relics'] as const)
+      expect(decorModel(set).size).toBeGreaterThan(10);
+    expect(decorModel('fossils').get(4, 2, 3)?.emissive).toBe(true); // the ammonite catches the light
+    expect(
+      Math.max(
+        ...decorModel('relics')
+          .entries()
+          .map(([, , z]) => z),
+      ),
+    ).toBe(15);
   });
 });

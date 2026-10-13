@@ -303,7 +303,9 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
     const [gx, gy] = DECOR_SPOTS[set];
     at(gx, gy, () => {
       const p = iso(gx, gy);
-      drawDecor(c, set, p.x, p.y);
+      const built = m.voxel === true ? voxelSprite(`decor-${set}`) : null;
+      if (built === null) drawDecor(c, set, p.x, p.y);
+      else c.drawImage(built.img, p.x - built.ax, p.y - built.ay);
     });
     // A work light on each piece, so it reads at night.
     const p = iso(gx, gy);

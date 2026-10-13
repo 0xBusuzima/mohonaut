@@ -598,3 +598,55 @@ export function wellheadModel(stratum?: string): Model {
   }
   return m;
 }
+
+/**
+ * The Core Collection decor (docs/01 4.9), one model per completed set, each standing on its
+ * footprint's centre: the fossil case, the core rack, the bit stand and the old wooden derrick.
+ */
+export function decorModel(set: 'fossils' | 'cores' | 'bits' | 'relics'): Model {
+  const m = new Model();
+  if (set === 'fossils') {
+    m.box(0, 0, 0, 5, 5, 1, v(P.wood));
+    m.box(1, 1, 2, 4, 4, 4, v(P.glass));
+    m.box(1, 1, 5, 4, 4, 5, v(P.glassTop));
+    // The ammonite behind the front glass.
+    m.set(4, 2, 3, v(P.amber, true));
+    m.set(4, 3, 3, v(P.flareHot));
+    m.set(2, 4, 3, v(P.amber));
+  } else if (set === 'cores') {
+    m.box(0, 0, 0, 0, 0, 4, v(P.graphite));
+    m.box(7, 0, 0, 7, 0, 4, v(P.graphite));
+    const bands = ['#B08A5E', '#D8C8A0', '#B79A9A', '#7E8288'];
+    bands.forEach((colour, i) => m.box(0, 1 + (i % 2), 1 + i, 7, 1 + (i % 2), 1 + i, v(colour)));
+  } else if (set === 'bits') {
+    m.box(0, 0, 0, 8, 2, 0, v(P.steel));
+    for (const x of [1, 4, 7]) {
+      m.box(x, 1, 1, x, 1, 2, v(P.steelLight));
+      m.set(x, 1, 3, v(P.concrete));
+      m.set(x - 1, 1, 1, v(P.amber));
+      m.set(x + 1, 1, 1, v(P.amber));
+    }
+  } else {
+    // The cable-tool derrick: four wooden legs leaning in, girts, a crown block, and the walking
+    // beam on its samson post beside it.
+    for (let z = 0; z <= 14; z++) {
+      const lean = Math.floor(z / 6);
+      for (const [x, y] of [
+        [lean, lean],
+        [5 - lean, lean],
+        [lean, 5 - lean],
+        [5 - lean, 5 - lean],
+      ] as const)
+        m.set(x, y, z, v(P.wood));
+      if (z % 4 === 0 && z > 0)
+        for (let i = lean; i <= 5 - lean; i++) {
+          m.set(i, 5 - lean, z, v(P.woodDark));
+          m.set(5 - lean, i, z, v(P.woodDark));
+        }
+    }
+    m.box(2, 2, 15, 3, 3, 15, v(P.woodDark));
+    m.box(8, 2, 0, 8, 2, 3, v(P.woodDark));
+    m.box(5, 2, 4, 11, 2, 4, v(P.wood));
+  }
+  return m;
+}

@@ -160,6 +160,23 @@ for (const [i, s] of sdk.STRATA.entries()) {
     ay: image.origin[1],
   };
 }
+// Core Collection decor, each standing on its footprint's centre (where the pixel prop stands).
+for (const [set, centre] of [
+  ['fossils', [3, 3]],
+  ['cores', [4, 1]],
+  ['bits', [4.5, 1.5]],
+  ['relics', [3, 3]],
+]) {
+  const image = voxel.render(models.decorModel(set), { scale: 2, bloom: 3, light: LIGHT });
+  const [ax, ay] = voxel.anchorOf(image, centre[0], centre[1], 0, 2);
+  writeFileSync(join(out, `site-decor-${set}.png`), png(image));
+  manifest[`decor-${set}`] = {
+    w: image.width,
+    h: image.height,
+    ax: Math.round(ax),
+    ay: Math.round(ay),
+  };
+}
 // The tank stands on its centre: anchored at its footprint's middle on the ground.
 {
   const image = voxel.render(models.tankModel(), { scale: 2, bloom: 4, light: LIGHT });
