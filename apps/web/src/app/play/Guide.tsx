@@ -58,7 +58,7 @@ export function Guide({
         <ForemanMo scale={3} />
       </span>
       <div className="flex min-w-0 flex-col gap-2">
-        <p className="text-xs tracking-widest text-amber uppercase">Foreman Mo</p>
+        <p className="guide-name text-xs tracking-widest text-amber uppercase">Foreman Mo</p>
         <p role="status" className="text-sm md:text-base">
           {tip.text}
         </p>

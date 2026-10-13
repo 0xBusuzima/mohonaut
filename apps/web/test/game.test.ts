@@ -340,5 +340,8 @@ describe('the yard in words', () => {
       'The shack flies the NIGHT crew flag. 2 season plaques on its wall. ' +
         '1 Core Collection piece on show by the fence.',
     );
+    expect(yardWords({ plaques: [1, 2, 3, 4, 5] })).toBe(
+      '5 season plaques, the best three on its wall.',
+    );
   });
 });

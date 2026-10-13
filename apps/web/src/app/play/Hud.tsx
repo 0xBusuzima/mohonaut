@@ -89,7 +89,7 @@ export function Hud({
         </p>
       )}
       {/* Left: help, boards, crew, the World Bore, and the sound and low power switches. */}
-      <div className="pointer-events-auto absolute top-[7.6rem] left-3 flex flex-col items-start gap-2 md:top-16">
+      <div className="hud-side pointer-events-auto absolute top-[7.6rem] left-3 flex flex-col items-start gap-2 md:top-16">
         <PxButton
           variant="light"
           className={side}

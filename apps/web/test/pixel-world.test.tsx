@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const reported = vi.hoisted(() => ({ count: 0 }));
@@ -11,6 +11,7 @@ vi.mock('../src/lib/errors', () => ({
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('the pixel world', () => {
@@ -50,10 +51,14 @@ describe('the pixel world', () => {
     expect(screen.getByText('HUD')).toBeTruthy();
   });
 
-  it('follows its own box in contained mode, and lets go of it on unmount', async () => {
+  it('re-fits to its own box in contained mode, and lets go of it on unmount', async () => {
+    let refit: (() => void) | undefined;
     const watched: Element[] = [];
     let disconnected = 0;
     class Watcher {
+      constructor(callback: () => void) {
+        refit = callback;
+      }
       observe(el: Element) {
         watched.push(el);
       }
@@ -65,13 +70,21 @@ describe('the pixel world', () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
     const { PixelWorld } = await import('../src/game/pixel/PixelWorld');
     const { container, unmount } = render(
-      <div data-testid="box">
+      <div>
         <PixelWorld contained model={{ pads: [], tankFill: 0 }} label="A drill site" />
       </div>,
     );
-    expect(watched).toEqual([container.firstChild]);
+    const box = container.firstChild as HTMLElement;
+    expect(watched).toEqual([box]);
+    // The box is shown at 900 x 600 (it was 0 x 0): the scene takes its size.
+    Object.defineProperty(box, 'clientWidth', { value: 900, configurable: true });
+    Object.defineProperty(box, 'clientHeight', { value: 600, configurable: true });
+    act(() => refit?.());
+    const canvas = screen.getByRole('img', { name: 'A drill site' });
+    const scale = Number.parseInt(canvas.style.width) / Number(canvas.getAttribute('width'));
+    expect(Number(canvas.getAttribute('width'))).toBe(Math.ceil(900 / scale));
+    expect(Number(canvas.getAttribute('height'))).toBe(Math.ceil(600 / scale));
     unmount();
     expect(disconnected).toBe(1);
-    vi.unstubAllGlobals();
   });
 });

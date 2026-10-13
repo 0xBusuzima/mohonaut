@@ -21,8 +21,11 @@ export function yardWords(m: {
 }): string {
   const parts: string[] = [];
   if (m.crewTag !== undefined) parts.push(`The shack flies the ${m.crewTag} crew flag.`);
+  // The wall carries the best three (props.ts shack()).
   const plaques = m.plaques?.length ?? 0;
-  if (plaques > 0) parts.push(`${plaques} season plaque${plaques === 1 ? '' : 's'} on its wall.`);
+  if (plaques > 3) parts.push(`${plaques} season plaques, the best three on its wall.`);
+  else if (plaques > 0)
+    parts.push(`${plaques} season plaque${plaques === 1 ? '' : 's'} on its wall.`);
   const decor = m.decor?.length ?? 0;
   if (decor > 0)
     parts.push(`${decor} Core Collection piece${decor === 1 ? '' : 's'} on show by the fence.`);

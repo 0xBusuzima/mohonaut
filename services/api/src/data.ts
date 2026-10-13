@@ -180,7 +180,7 @@ export async function seasonRanking(database: Database, from: number, to: number
     .groupBy(sql`${events.args}->>'account'`)
     .orderBy(
       desc(sql`sum((${events.args}->>'amount')::numeric)`),
-      asc(sql`${events.args}->>'account'`),
+      asc(sql`lower(${events.args}->>'account')`),
     )
     .limit(limit);
   return rows.map((r) => ({ address: getAddress(r.address), accrued: BigInt(r.accrued) }));
