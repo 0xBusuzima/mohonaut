@@ -29,6 +29,8 @@ export interface CardInput {
   badges?: readonly string[];
   /** Season plaque ranks; the best three follow the badges as plates. */
   plaques?: readonly number[];
+  /** Titles from completed Core Collection sets, after the name. */
+  titles?: readonly string[];
 }
 
 const require = createRequire(import.meta.url);
@@ -135,7 +137,7 @@ export function cardSvg(input: CardInput): string {
   <text x="64" y="320" font-family="Barlow" font-weight="400" font-size="40" fill="${C.bone}">of the World Bore${crewLine}</text>
   <text x="64" y="430" font-family="Barlow" font-weight="400" font-size="32" fill="${C.concrete}">World depth ${depth(input.worldDepthMm)} · Stratum ${current.numeral} — ${escapeXml(current.name)}</text>
   <text x="64" y="560" font-family="Barlow" font-weight="700" font-size="32" fill="${C.bone}">Race to the Moho</text>
-  <text x="64" y="590" font-family="Barlow" font-weight="400" font-size="24" fill="${C.concrete}">${escapeXml(input.name)}</text>
+  <text x="64" y="590" font-family="Barlow" font-weight="400" font-size="24" fill="${C.concrete}">${escapeXml(input.name)}${(input.titles ?? []).map((t) => ` · <tspan fill="#FFB31A">${escapeXml(t)}</tspan>`).join('')}</text>
 </svg>`;
 }
 

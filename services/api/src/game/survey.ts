@@ -78,6 +78,11 @@ export function surveyFind(secret: string, userId: number, day: number): SurveyI
   return SURVEY_ITEMS[index] as SurveyItem;
 }
 
+/** The titles that completed sets give, in catalogue order. */
+export function titlesOf(setIds: readonly string[]): string[] {
+  return SURVEY_SETS.filter((s) => setIds.includes(s.id)).map((s) => s.title);
+}
+
 /** Sets whose every item the player has found (each completed set gives its title). */
 export function completedSets(itemIds: Iterable<string>): string[] {
   const owned = new Set(itemIds);

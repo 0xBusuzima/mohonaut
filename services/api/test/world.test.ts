@@ -313,7 +313,11 @@ describe('contribution card', () => {
       name: 'Bea',
       badges: ['spud-in'],
       plaques: [7, 1, 4, 2],
+      titles: ['Fossil Hunter', 'Rig <Historian>'],
     });
+    expect(withPlaques).toContain(
+      'Bea · <tspan fill="#FFB31A">Fossil Hunter</tspan> · <tspan fill="#FFB31A">Rig &lt;Historian&gt;</tspan>',
+    );
     // The first plaque is the gold one (its shine), in the slot after the badge.
     expect(withPlaques).toContain('<rect x="136" y="470" width="4" height="4" fill="#ffe27a"/>');
     expect(withPlaques).toContain('<rect x="248" y="466" width="40"'); // the third plaque
