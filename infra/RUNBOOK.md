@@ -61,7 +61,18 @@ shred -u /tmp/s.env
    - *Security* → *Bots* → **Bot Fight Mode** açık.
    - *Security* → *Settings* → güvenlik seviyesi *Medium*.
    - Tek ücretsiz hız sınırı kuralı: `http.host eq "api.mohonaut.com" and (starts_with(http.request.uri.path, "/auth") or starts_with(http.request.uri.path, "/support"))` → IP başına 10 sn'de 20 istek → 10 sn blok. Bu, API'nin kendi sınırlarının önünde ikinci bir katmandır.
-4. **Pages**: proje `mohonaut`, build komutu `npm ci && npx turbo run build --filter=@mohonaut/web...`, çıktı `apps/web/out`. Ortam değişkenleri: `NEXT_PUBLIC_API_URL=https://api.mohonaut.com`, `NEXT_PUBLIC_WC_PROJECT_ID`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_SENTRY_DSN` (hepsi herkese açık değerlerdir).
+4. **Pages** (proje `mohonaut`, üretim dalı `main`). Yayına kadar kök dizin `site` (bakım sayfası). **Yayın günü** *Settings → Builds* bölümünde:
+   - **Root directory:** `apps/web`. Pages Function (`functions/s/[[path]].ts`, ADR-019) yalnızca kök dizindeki `functions/` klasöründen okunur.
+   - **Build command:** `cd ../.. && npm ci && npx turbo run build --filter=@mohonaut/web`. npm workspaces kurulumu depo kökünden yapılır; SDK de birlikte derlenir.
+   - **Build output** ve Function'ın `API_URL` değişkeni `apps/web/wrangler.toml`'dan gelir (`out`, `https://api.mohonaut.com`). Node sürümü `apps/web/.node-version`'dan (24).
+   - **Derleme ortam değişkenleri** (*Settings → Variables*, hepsi herkese açık değerler):
+     - `NEXT_PUBLIC_API_URL=https://api.mohonaut.com`
+     - `NEXT_PUBLIC_WC_PROJECT_ID`
+     - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
+     - `NEXT_PUBLIC_SENTRY_DSN` (isteğe bağlı)
+     - `NEXT_PUBLIC_DEPLOY_ENV=production`
+
+   Kaydedip son `main` commit'ini yeniden derle; `mohonaut.com/s/<adres>` sayfasının `og:image` etiketi API kartını göstermeli.
 
 ## 4. Deploy
 

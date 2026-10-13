@@ -1,0 +1,11 @@
+# Cloudflare Pages settings for the game site (ADR-019). Read only once the Pages project's root
+# directory is `apps/web` (launch day, infra/RUNBOOK.md §3.4); until then the root is `site`
+# (the maintenance page) and this file has no effect.
+name = "mohonaut"
+pages_build_output_dir = "out"
+compatibility_date = "2026-10-01"
+
+# Read by the Pages Function (functions/s/[[path]].ts) at run time: the API that draws share
+# cards. Public, not a secret.
+[vars]
+API_URL = "https://api.mohonaut.com"
