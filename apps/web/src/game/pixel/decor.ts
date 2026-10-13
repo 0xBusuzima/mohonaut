@@ -91,7 +91,7 @@ const DRAW: Record<DecorSet, (c: Ctx, x: number, y: number) => void> = {
  * beyond the right fence, where no rig or fence stands in front of it.
  */
 export const DECOR_SPOTS: Record<DecorSet, [number, number]> = {
-  relics: [15.6, 1.4],
+  relics: [15.6, 2.0], // inside the framing of the smallest site, walking beam included
   cores: [15.8, 3.6],
   fossils: [15.8, 5.8],
   bits: [15.8, 8.0],
