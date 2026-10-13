@@ -121,6 +121,25 @@ export async function contributionRanking(database: Database, limit: number, off
     .offset(offset);
 }
 
+/** One player's place in `contributionRanking` (same order), or null without a drill site. */
+export async function contributionRank(database: Database, address: Address) {
+  const [me] = await database.db
+    .select({ accrued: accounts.accrued })
+    .from(accounts)
+    .where(and(eq(accounts.address, address), isNotNull(accounts.registeredAt)));
+  if (me === undefined) return null;
+  const [ahead] = await database.db
+    .select({ n: count() })
+    .from(accounts)
+    .where(
+      and(
+        isNotNull(accounts.registeredAt),
+        sql`(${accounts.accrued} > ${me.accrued} OR (${accounts.accrued} = ${me.accrued} AND ${accounts.address} < ${address}))`,
+      ),
+    );
+  return { rank: (ahead?.n ?? 0) + 1, accrued: me.accrued };
+}
+
 /** Crews with their members' total accrual; `active` crews have at least 5 members. */
 export async function crewRanking(database: Database) {
   const rows = await database.db

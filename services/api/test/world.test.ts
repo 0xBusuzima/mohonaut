@@ -95,6 +95,31 @@ describe('world, economy and leaderboards', () => {
       },
       { rank: 2, address: a.address, displayName: null, contribution: { mm: '3000', text: '3 m' } },
     ]);
+    expect(board.json['you']).toBeUndefined();
+    // A player outside the page asks for their own place too; a wallet without a site has none.
+    const mine = await call(h, 'GET', `/leaderboards/contribution?limit=2&address=${c.address}`);
+    expect(mine.json['you']).toEqual({ rank: 3, contribution: { mm: '10', text: '1 cm' } });
+    const none = await call(
+      h,
+      'GET',
+      `/leaderboards/contribution?address=${newWallet().address.toLowerCase()}`,
+    );
+    expect(none.json['you']).toBeNull();
+    // Ties go by address, as on the board.
+    const [d = a, e = a] = [newWallet(), newWallet()].sort((x, y) =>
+      x.address < y.address ? -1 : 1,
+    );
+    await seedAccount(h.database, d.address, { accrued: mohn(3000) });
+    await seedAccount(h.database, e.address, { accrued: mohn(3000) });
+    const tied = (await call(h, 'GET', '/leaderboards/contribution?limit=10')).json['rows'] as {
+      address: string;
+      rank: number;
+    }[];
+    for (const w of [a, d, e]) {
+      const place = tied.find((r) => r.address === w.address)?.rank;
+      const asked = await call(h, 'GET', `/leaderboards/contribution?address=${w.address}`);
+      expect((asked.json['you'] as { rank: number }).rank).toBe(place);
+    }
     const crewId = Number(
       (await call(h, 'POST', '/crews', { cookie, body: { name: 'Bea Crew', tag: 'BEA' } })).json[
         'id'

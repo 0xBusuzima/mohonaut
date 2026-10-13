@@ -203,8 +203,12 @@ export const api = {
   seasons: () => call<{ seasons: Season[] }>('GET', '/seasons'),
   seasonBoard: (id: number) =>
     call<{ season: Season; rows: ContributionRow[] }>('GET', `/seasons/${id}/leaderboard`),
-  contributionBoard: () =>
-    call<{ rows: ContributionRow[] }>('GET', '/leaderboards/contribution?limit=50'),
+  /** With `address`, `you` is that player's own place (null without a drill site). */
+  contributionBoard: (address?: Address) =>
+    call<{ rows: ContributionRow[]; you?: { rank: number; contribution: Depth } | null }>(
+      'GET',
+      `/leaderboards/contribution?limit=50${address === undefined ? '' : `&address=${address}`}`,
+    ),
   prefs: () => call<Prefs>('GET', '/me/notifications'),
   setPrefs: (p: Prefs) => call<{ ok: true }>('PUT', '/me/notifications', { body: p }),
   profile: (address: Address) => call<Profile>('GET', `/profiles/${address}`),

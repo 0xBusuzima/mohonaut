@@ -425,7 +425,10 @@ export function SeasonsPanel({ address }: { address: Address | undefined }) {
     enabled: season !== undefined,
     queryFn: () => api.seasonBoard(season?.id ?? 0),
   });
-  const overall = useQuery({ queryKey: ['contribution'], queryFn: api.contributionBoard });
+  const overall = useQuery({
+    queryKey: ['contribution', address],
+    queryFn: () => api.contributionBoard(address),
+  });
   return (
     <div className="flex flex-col gap-4">
       <PxSection
@@ -457,11 +460,22 @@ export function SeasonsPanel({ address }: { address: Address | undefined }) {
         {overall.data === undefined ? (
           <Status>{overall.isError ? apiMessage(overall.error) : 'Loading…'}</Status>
         ) : (
-          <Board
-            rows={overall.data.rows}
-            caption="All-time contribution leaderboard"
-            address={address}
-          />
+          <>
+            <Board
+              rows={overall.data.rows}
+              caption="All-time contribution leaderboard"
+              address={address}
+            />
+            {/* Outside the top 50: the player's own place under the board. */}
+            {overall.data.you != null &&
+              !overall.data.rows.some(
+                (r) => r.address.toLowerCase() === address?.toLowerCase(),
+              ) && (
+                <p className="text-amber">
+                  You: #{overall.data.you.rank}, {overall.data.you.contribution.text} cored
+                </p>
+              )}
+          </>
         )}
       </PxSection>
     </div>

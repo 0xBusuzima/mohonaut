@@ -3,7 +3,15 @@ import type { OpenAPIHono } from '@hono/zod-openapi';
 import { addFlows, revenueCoverageRatio, sinkRatio, ZERO_FLOWS } from '@mohonaut/sdk';
 import type { Flows } from '@mohonaut/sdk';
 import type { AppEnv } from '../context.js';
-import { contributionRanking, crewRanking, dpSales, economyDays, worldEmitted } from '../data.js';
+import {
+  contributionRank,
+  contributionRanking,
+  crewRanking,
+  dpSales,
+  economyDays,
+  worldEmitted,
+} from '../data.js';
+import { getAddress } from 'viem';
 import { KOLA_LINE_M, MOHO_LINE_M, formatDepth, millimetres, stratumAt } from '@mohonaut/sdk';
 import { AddressSchema, AmountSchema, DepthSchema, json } from './common.js';
 
@@ -194,6 +202,8 @@ export function registerWorld(app: OpenAPIHono<AppEnv>): void {
         query: z.object({
           limit: z.coerce.number().int().min(1).max(100).default(50),
           offset: z.coerce.number().int().min(0).max(100_000).default(0),
+          /** A player whose own place is wanted too, wherever it is. */
+          address: AddressSchema.optional(),
         }),
       },
       responses: {
@@ -207,14 +217,20 @@ export function registerWorld(app: OpenAPIHono<AppEnv>): void {
                 contribution: DepthSchema,
               }),
             ),
+            /** The `address` player's place; null without a drill site, absent without `address`. */
+            you: z.object({ rank: z.number(), contribution: DepthSchema }).nullable().optional(),
           }),
           'Ranking',
         ),
       },
     }),
     async (c) => {
-      const { limit, offset } = c.req.valid('query');
+      const { limit, offset, address } = c.req.valid('query');
       const rows = await contributionRanking(c.var.deps.database, limit, offset);
+      const you =
+        address === undefined
+          ? undefined
+          : await contributionRank(c.var.deps.database, getAddress(address));
       c.header('Cache-Control', 'public, max-age=60');
       return c.json(
         {
@@ -224,6 +240,14 @@ export function registerWorld(app: OpenAPIHono<AppEnv>): void {
             displayName: r.displayName,
             contribution: depth(millimetres(r.accrued)),
           })),
+          ...(you === undefined
+            ? {}
+            : {
+                you:
+                  you === null
+                    ? null
+                    : { rank: you.rank, contribution: depth(millimetres(you.accrued)) },
+              }),
         },
         200,
       );

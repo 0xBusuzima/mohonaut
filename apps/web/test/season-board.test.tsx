@@ -16,7 +16,10 @@ vi.mock('../src/social/api', async (actual) => ({
       seasons: [{ id: 1, name: 'Season 1', startsAt: 1_790_000_000, endsAt: 1_795_000_000 }],
     }),
     seasonBoard: async () => ({ rows: [1, 2, 10, 11].map(row) }),
-    contributionBoard: async () => ({ rows: [1, 2].map(row) }),
+    contributionBoard: async () => ({
+      rows: [1, 2].map(row),
+      you: { rank: 73, contribution: { mm: '12', text: '1 cm' } },
+    }),
   },
 }));
 
@@ -27,7 +30,7 @@ describe('the season board', () => {
     const { SeasonsPanel } = await import('../src/social/panels');
     render(
       <QueryClientProvider client={new QueryClient()}>
-        <SeasonsPanel address={undefined} />
+        <SeasonsPanel address="0x00000000000000000000000000000000000000aa" />
       </QueryClientProvider>,
     );
     const season = await screen.findByRole('table', { name: 'Season 1 leaderboard' });
@@ -39,6 +42,8 @@ describe('the season board', () => {
     expect(screen.getByText(/the top ten get a plaque/)).toBeTruthy();
     const overall = await screen.findByRole('table', { name: 'All-time contribution leaderboard' });
     expect(within(overall).queryByText(/plaque place/)).toBeNull();
+    // Outside the top 50, the player's own place shows under the board.
+    expect(screen.getByText('You: #73, 1 cm cored')).toBeTruthy();
   });
 
   it('says where the season stands', async () => {
