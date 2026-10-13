@@ -1,6 +1,7 @@
 import { defineChain, getAddress } from 'viem';
 import type { Address } from 'viem';
 import testnet from '../../../../deployments/46630.json';
+import { RPC_URL } from './chain-id';
 
 /** The contracts the client talks to (deployments/<chainId>.json, Deploy.s.sol). */
 export interface GameDeployment {
@@ -43,12 +44,6 @@ function load(): GameDeployment {
 
 export const GAME = load();
 
-const RPC: Record<number, string> = {
-  4663: 'https://rpc.mainnet.chain.robinhood.com',
-  46630: 'https://rpc.testnet.chain.robinhood.com',
-  31337: 'http://127.0.0.1:8545',
-};
-
 const EXPLORER: Record<number, string> = {
   4663: 'https://robinhoodchain.blockscout.com',
   46630: 'https://explorer.testnet.chain.robinhood.com',
@@ -63,7 +58,7 @@ export const gameChain = defineChain({
         ? 'Robinhood Chain Testnet'
         : 'Local chain',
   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-  rpcUrls: { default: { http: [process.env['NEXT_PUBLIC_RPC_URL'] ?? RPC[GAME.chainId] ?? ''] } },
+  rpcUrls: { default: { http: [RPC_URL] } },
   // The canonical Multicall3 (same bytecode on 4663 and 46630): one eth_call per state read.
   contracts: { multicall3: { address: '0xcA11bde05977b3631167028862bE2a173976CA11' } },
   ...(EXPLORER[GAME.chainId] === undefined

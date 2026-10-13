@@ -21,7 +21,7 @@ for (const [i, target] of targets.entries()) {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(base + path);
-  await page.waitForTimeout(2500);
+  await page.waitForTimeout(Number(process.env.WAIT ?? 2500));
   if (click !== undefined) {
     await page.getByRole('button', { name: click }).first().click();
     await page.waitForTimeout(800);

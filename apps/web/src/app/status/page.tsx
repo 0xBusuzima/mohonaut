@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { SitePage } from '../../components/SiteChrome';
 import { LINKS } from '../../lib/site';
+import { ChainStatusBoard } from './ChainStatus';
 
 export const metadata: Metadata = {
   title: 'Status',
@@ -19,6 +20,7 @@ export default function StatusPage() {
       <a href={LINKS.status} className="mt-6 inline-block text-data underline" rel="noopener">
         status.mohonaut.com
       </a>
+      <ChainStatusBoard />
       <p className="mt-6 text-fg-muted">
         Today’s mint against the daily and hourly limits, the last hour closed and the pause state
         are on the{' '}
