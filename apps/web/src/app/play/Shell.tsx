@@ -16,7 +16,7 @@ const DEMO_PADS: ScenePad[] = [
   { typeId: 2, running: false },
 ];
 
-export const ONBOARDING_STEPS = ['Wallet', 'Sign in', 'Your site'];
+export const ONBOARDING_STEPS = ['Wallet', 'Signature', 'Site name'];
 
 /** The top-left badge: the casing mark and the name, plus the testnet tag. */
 export function Brand() {

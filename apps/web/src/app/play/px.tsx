@@ -117,28 +117,40 @@ export function PxModal({
 }
 
 /** "1 Wallet — 2 Sign in — 3 Your site". */
+/**
+ * Onboarding progress as a drill string being made up for the spud-in (our own picture, not a
+ * row of numbered steps): one pipe joint per step, done joints in orange, the current one with
+ * an amber collar. Narrow screens name only the current step; screen readers hear them all.
+ */
 export function Steps({ steps, at }: { steps: string[]; at: number }) {
   return (
-    <ol className="mb-4 flex flex-wrap items-center justify-center gap-1.5 text-sm sm:gap-2">
-      {steps.map((s, i) => (
-        <li key={s} className="flex items-center gap-1.5 whitespace-nowrap sm:gap-2">
-          {i > 0 && <span aria-hidden="true" className="h-0.5 w-3 bg-concrete sm:w-5" />}
-          <span
-            className={`grid h-6 w-6 place-items-center border-2 border-[#0b0d10] text-xs ${
-              i < at ? 'bg-ok text-night' : i === at ? 'bg-orange text-night' : 'bg-steel text-bone'
-            }`}
-          >
-            {i < at ? '✓' : i + 1}
-          </span>
-          {/* Narrow screens name only the current step; screen readers hear them all. */}
-          <span
-            className={i === at ? 'font-bold text-bone' : 'sr-only text-concrete sm:not-sr-only'}
-          >
-            {s}
-          </span>
-        </li>
-      ))}
-    </ol>
+    <div className="mb-4">
+      <p className="mb-1 text-center text-xs tracking-widest text-amber uppercase">
+        Spud-in · {Math.min(at + 1, steps.length)} of {steps.length}
+      </p>
+      <ol className="flex items-start justify-center">
+        {steps.map((s, i) => (
+          <li key={s} className="flex w-24 flex-col items-center gap-1 sm:w-28">
+            <span aria-hidden="true" className="flex w-full items-center">
+              <span
+                className={`h-3 w-1.5 ${i <= at ? 'bg-amber' : 'bg-concrete'} ${i === 0 ? 'invisible' : ''}`}
+              />
+              <span
+                className={`h-2 grow border-y-2 border-[#0b0d10] ${
+                  i < at ? 'bg-orange' : i === at ? 'animate-pulse bg-amber' : 'bg-steel'
+                }`}
+              />
+              <span className={`h-3 w-1.5 ${i < at ? 'bg-amber' : 'bg-concrete'}`} />
+            </span>
+            <span
+              className={`text-xs ${i === at ? 'font-bold text-bone' : 'sr-only text-concrete sm:not-sr-only'}`}
+            >
+              {i < at ? `${s} ✓` : s}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
 
