@@ -204,7 +204,7 @@ function WalletStep({ autoOpen }: { autoOpen: boolean }) {
               {c.icon !== undefined ? (
                 <img src={c.icon} alt="" width={28} height={28} className="h-7 w-7" />
               ) : (
-                <PxIcon name="link" size={28} />
+                <PxIcon name="link" />
               )}
               {c.id === 'injected' ? 'Browser wallet' : c.name}
             </button>

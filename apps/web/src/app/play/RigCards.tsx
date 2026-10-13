@@ -77,7 +77,7 @@ export function MarketWindow({
         and sales; you pay from scrap credit first, then unrefined $MOHN.
       </p>
       <p className="mb-4 flex items-center justify-center gap-2 text-lg">
-        <PxIcon name="rig" size={18} /> {freePads > 0 ? freePads : 'No'} free pad
+        <PxIcon name="rig" /> {freePads > 0 ? freePads : 'No'} free pad
         {freePads === 1 ? '' : 's'} · Site level {p.level}
       </p>
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -102,14 +102,14 @@ export function MarketWindow({
                 {locked ? (
                   <>
                     <p className="mb-2 flex items-center justify-center gap-2 text-xl font-bold">
-                      <PxIcon name="coin" size={20} /> {formatMohn(r.price, 0)}
+                      <PxIcon name="coin" /> {formatMohn(r.price, 0)}
                     </p>
                     <PxButton
                       variant="dark"
                       className="flex w-full items-center justify-center gap-2"
                       disabled
                     >
-                      <PxIcon name="lock" size={18} /> Site L{r.minLevel}
+                      <PxIcon name="lock" /> Site L{r.minLevel}
                     </PxButton>
                   </>
                 ) : (
@@ -153,7 +153,7 @@ function BuyRig({
   return (
     <>
       <p className="mb-2 flex items-center justify-center gap-2 text-xl font-bold">
-        <PxIcon name="coin" size={20} /> {exact ? '' : '≈ '}
+        <PxIcon name="coin" /> {exact ? '' : '≈ '}
         {formatMohn(total, 0)}
       </p>
       {max > 1 && (

@@ -101,58 +101,68 @@ export function Hud({
         </PxButton>
         {!training && (
           <PxButton variant="light" className={side} onClick={() => open('board')}>
-            <PxIcon name="trophy" size={20} />
+            <PxIcon name="trophy" />
             <span className="hidden md:inline">Leaderboard</span>
           </PxButton>
         )}
         {apiEnabled && !training && (
           <>
             <PxButton variant="light" className={side} onClick={() => open('crew')}>
-              <PxIcon name="crew" size={20} />
+              <PxIcon name="crew" />
               <span className="hidden md:inline">Crew</span>
             </PxButton>
             <PxButton variant="light" className={side} onClick={() => open('profile')}>
-              <PxIcon name="link" size={20} />
+              <PxIcon name="link" />
               <span className="hidden md:inline">Invite</span>
             </PxButton>
             <PxButton variant="light" className={side} onClick={() => open('survey')}>
-              <PxIcon name="core" size={20} />
+              <PxIcon name="survey" />
               <span className="hidden md:inline">Survey</span>
             </PxButton>
           </>
         )}
-        <PxButton variant="light" className={side} onClick={() => open('bore')}>
-          <PxIcon name="core" size={20} /> {formatDepth(depth)}
-        </PxButton>
         <PxButton
-          variant="dark"
-          aria-pressed={lowPower}
-          title="A still scene and slower updates, for older phones and saving battery"
-          className="!px-2 !py-1 !text-sm"
-          onClick={() => setLowPower(!lowPower)}
+          variant="light"
+          className={side}
+          aria-label={`World Bore, ${formatDepth(depth)}`}
+          onClick={() => open('bore')}
         >
-          Low power {lowPower ? 'on' : 'off'}
+          <PxIcon name="bore" /> {formatDepth(depth)}
         </PxButton>
-        <PxButton
-          variant="dark"
-          aria-pressed={sound}
-          title="Rain, the generator and the odd pipe clank"
-          className="!px-2 !py-1 !text-sm"
-          onClick={() => setSound(!sound)}
-        >
-          Sound {sound ? 'on' : 'off'}
-        </PxButton>
+        {/* Settings: two switches, lit teal when on. */}
+        <div className="flex gap-2">
+          <PxButton
+            variant="light"
+            aria-pressed={sound}
+            aria-label="Sound"
+            title={`Sound ${sound ? 'on' : 'off'}: rain, the generator and the odd pipe clank`}
+            className="!p-1.5"
+            onClick={() => setSound(!sound)}
+          >
+            <PxIcon name={sound ? 'sound' : 'mute'} />
+          </PxButton>
+          <PxButton
+            variant="light"
+            aria-pressed={lowPower}
+            aria-label="Low power"
+            title={`Low power ${lowPower ? 'on' : 'off'}: a still scene and slower updates, for older phones and saving battery`}
+            className="!p-1.5"
+            onClick={() => setLowPower(!lowPower)}
+          >
+            <PxIcon name="battery" />
+          </PxButton>
+        </div>
       </div>
       {/* Bottom: the main buttons. */}
       <div className="pointer-events-auto absolute inset-x-3 bottom-3 grid grid-cols-3 gap-2 md:inset-x-auto md:bottom-4 md:left-1/2 md:flex md:-translate-x-1/2 md:gap-3">
         <PxButton variant="light" className={main} onClick={() => open('market')}>
-          <PxIcon name="market" size={28} /> Market
+          <PxIcon name="market" /> Market
         </PxButton>
         <PxButton variant="light" className={main} onClick={() => open('rigs')}>
-          <PxIcon name="rig" size={28} /> My rigs
+          <PxIcon name="rig" /> My rigs
         </PxButton>
         <PxButton variant="light" className={main} onClick={() => open('refinery')}>
-          <PxIcon name="core" size={28} /> Refinery
+          <PxIcon name="core" /> Refinery
         </PxButton>
       </div>
     </div>

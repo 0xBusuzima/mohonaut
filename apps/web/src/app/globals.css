@@ -228,6 +228,13 @@ html {
 .px-btn-light:hover:not(:disabled) {
   background: #46505b;
 }
+/* A switch that is on: lit teal. */
+.px-btn-light[aria-pressed='true'] {
+  background: #0d6e6a;
+}
+.px-btn-light[aria-pressed='true']:hover:not(:disabled) {
+  background: #12827d;
+}
 .px-btn-dark {
   background: #1b1f24;
   color: #ece7dc;

@@ -188,7 +188,7 @@ export function FuelWindow({
           void action.run({ fn: 'buyFuel', args: [referrer], value: wei, done: 'Diesel delivered' })
         }
       >
-        <PxIcon name="fuel" size={22} /> {first ? 'Open my site' : 'Buy diesel'}
+        <PxIcon name="fuel" /> {first ? 'Open my site' : 'Buy diesel'}
       </PxButton>
     </div>
   );
@@ -230,7 +230,7 @@ export function SiteWindow({ state, action }: { state: GameState; action: Action
               })
             }
           >
-            <PxIcon name="coin" size={22} /> Upgrade for {formatMohn(price, 0)}
+            <PxIcon name="coin" /> Upgrade for {formatMohn(price, 0)}
           </PxButton>
         </>
       ) : (

@@ -49,7 +49,7 @@ export function HelpWindow() {
         {STEPS.map((s, i) => (
           <li key={s.title} className="px-inset flex gap-3 p-3">
             <span className="shrink-0">
-              <PxIcon name={s.icon} size={28} />
+              <PxIcon name={s.icon} />
             </span>
             <div>
               <p className="text-amber">
