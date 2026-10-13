@@ -65,6 +65,22 @@ export function stratumPost(input: {
   );
 }
 
+/** A site level reached (docs/05 §3.4): what was built, never an amount. */
+export function levelPost(input: { level: number; pads: number; address: Address }): string {
+  return (
+    `My Mohonaut drill site is level ${input.level} now: ${input.pads} pads inside the fence. ` +
+    `Race to the Moho. ${profileUrl(input.address, 'level')} (my invite link)`
+  );
+}
+
+/** The first rig of a type on the player's pads (docs/05 §3.4). */
+export function rigTypePost(input: { rig: string; address: Address }): string {
+  return (
+    `First ${input.rig} on the pads at my Mohonaut drill site. ` +
+    `Race to the Moho. ${profileUrl(input.address, 'rig')} (my invite link)`
+  );
+}
+
 /** The training site's post: what was built, never an amount of tokens (docs/09 §A). */
 export function trainingPost(input: { level: number; rigs: number }): string {
   return (

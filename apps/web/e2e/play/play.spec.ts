@@ -130,6 +130,11 @@ test('after genesis, a returning driller reads the shift report and buys two Rot
   await buy.click();
   await expect(page.getByText('2 Rotary Rigs installed')).toBeVisible({ timeout: 30_000 });
   await market.getByRole('button', { name: 'Close' }).click();
+  // The first Rotary Rig on this site: Foreman Mo says so once, with a post to share.
+  const milestone = page.getByRole('dialog', { name: 'New rig on the pads' });
+  await expect(milestone.getByText('Rotary Rig', { exact: true })).toBeVisible();
+  await shot(page, '7b-new-rig');
+  await milestone.getByRole('button', { name: 'Back to work' }).click();
   await page.getByRole('button', { name: 'My rigs' }).click();
   const rigs = page.getByRole('dialog', { name: 'My rigs' });
   await expect(rigs.getByText('2 / 2 on')).toBeVisible({ timeout: 30_000 });

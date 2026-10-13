@@ -25,6 +25,7 @@ import { api, apiEnabled, apiMessage } from '../../social/api';
 import { ME_KEY, useMe } from '../../social/session';
 import { CrewPanel, ProfilePanel, SeasonsPanel, SignedIn, SurveyPanel } from '../../social/panels';
 import { BadgeNotice } from './BadgeNotice';
+import { MilestoneNotice } from './MilestoneNotice';
 import { BoreWindow } from './BoreWindow';
 import { Guide } from './Guide';
 import { HelpWindow } from './HelpWindow';
@@ -179,7 +180,9 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
         <ShiftReportNotice state={state} address={address} open={setPanel}>
           {/* A crossing comes first; a badge waits for it (one window at a time). */}
           <StratumNotice depthMm={millimetres(state.network.emitted)} address={address}>
-            <BadgeNotice key={address} address={address} held={profile?.badges.map((b) => b.id)} />
+            <BadgeNotice key={address} address={address} held={profile?.badges.map((b) => b.id)}>
+              <MilestoneNotice key={address} address={address} state={state} />
+            </BadgeNotice>
           </StratumNotice>
         </ShiftReportNotice>
       )}
