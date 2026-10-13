@@ -7,6 +7,7 @@ import { LiveStrip } from '../components/LiveStrip';
 import { SiteFooter, SiteHeader } from '../components/SiteChrome';
 import { GEN1_RIGS, efficiency } from '../lib/catalog';
 import { LINKS } from '../lib/site';
+import { PxIcon } from '../game/pixel/icons';
 import { HomeHero } from './HomeHero';
 
 const FAQ_PREVIEW = [
@@ -48,6 +49,16 @@ const ROADMAP = [
   ['Independent audit, paid from operations revenue', 'next'],
 ];
 
+/** A step's title with its pixel icon (the game's own, drawn at 3x). */
+function Step({ icon, children }: { icon: 'rig' | 'fuel' | 'bore'; children: string }) {
+  return (
+    <span className="flex items-center gap-3">
+      <PxIcon name={icon} size={36} />
+      {children}
+    </span>
+  );
+}
+
 export default function Home() {
   return (
     <>
@@ -66,19 +77,19 @@ export default function Home() {
           <h2 className="font-display text-4xl font-black tracking-wide uppercase">How it works</h2>
           <ol className="mt-6 grid gap-4 md:grid-cols-3">
             <li>
-              <Card label="1" title="Build">
+              <Card label="1" title={<Step icon="rig">Build</Step>}>
                 Every drill site starts with a free Pilot Rig. Level up your site for more pads and
                 more fuel-line capacity.
               </Card>
             </li>
             <li>
-              <Card label="2" title="Fuel">
+              <Card label="2" title={<Step icon="fuel">Fuel</Step>}>
                 Rigs burn diesel, measured in litres per hour. You fill your tank with ETH. When a
                 rig isn’t worth its fuel, shut it down.
               </Card>
             </li>
             <li>
-              <Card label="3" title="Drill">
+              <Card label="3" title={<Step icon="bore">Drill</Step>}>
                 Every hour the network cores a fixed slice of what’s left in the reserve. 90% goes
                 to players, split by Drill Power: your share is your active DP divided by
                 everyone’s.
