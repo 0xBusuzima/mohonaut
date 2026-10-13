@@ -262,6 +262,16 @@ html {
   }
 }
 
+/* Phones upright: the HUD's left column wraps into a second column before it reaches Foreman
+   Mo's tip box at the bottom (about 19.5rem with the bottom bar), so no button hides under it. */
+@media (max-width: 767px) {
+  .hud-side {
+    flex-wrap: wrap;
+    align-content: flex-start;
+    max-height: calc(100dvh - 7.6rem - 19.5rem);
+  }
+}
+
 /* Short screens (phones held sideways): Foreman Mo's tip box shrinks to a wide, low strip at
    the bottom right, clear of the HUD's left column and of the panels under the gauges, so the
    site and the HUD stay visible. */
