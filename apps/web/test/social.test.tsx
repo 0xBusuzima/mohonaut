@@ -7,6 +7,7 @@ import {
   contributionPost,
   profileUrl,
   shortAddress,
+  shiftPost,
   trainingPost,
   xIntentUrl,
 } from '../src/social/share';
@@ -108,5 +109,13 @@ describe('the training site post', () => {
     expect(text).toContain('mohonaut.com/train/');
     for (const banned of ['MOHN', '$', 'earn', 'profit', 'ROI']) expect(text).not.toContain(banned);
     expect(text.length).toBeLessThanOrEqual(280);
+  });
+
+  it('posts a shift report with the bore and the invite link, never an amount of $MOHN', () => {
+    const text = shiftPost({ boreMm: 16_000n, awayHours: 7.6, address: ADDR });
+    expect(text.startsWith('Back on shift after 8 h: the World Bore went 16 m deeper')).toBe(true);
+    expect(text).toContain('utm_campaign=shift');
+    expect(text).toContain('(my invite link)');
+    expect(text).not.toMatch(/MOHN|\$|earn|profit/i);
   });
 });

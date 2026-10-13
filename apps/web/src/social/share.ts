@@ -30,6 +30,18 @@ export function contributionPost(input: {
   );
 }
 
+/**
+ * The shift report post (docs/05 §3.4): how much deeper the World Bore went while the player was
+ * away. Never an amount of $MOHN.
+ */
+export function shiftPost(input: { boreMm: bigint; awayHours: number; address: Address }): string {
+  return (
+    `Back on shift after ${Math.max(1, Math.round(input.awayHours))} h: the World Bore went ` +
+    `${formatDepth(input.boreMm)} deeper while I was away. Race to the Moho. ` +
+    `${profileUrl(input.address, 'shift')} (my invite link)`
+  );
+}
+
 /** X web intent; the player reviews and sends it themselves (docs/05 §3.4). */
 /** The training site's post: what was built, never an amount of tokens (docs/09 §A). */
 export function trainingPost(input: { level: number; rigs: number }): string {

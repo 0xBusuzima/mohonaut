@@ -3,11 +3,13 @@
 import { formatDepth } from '@mohonaut/sdk';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import type { Address } from 'viem';
 import { ForemanMo } from '../../game/pixel/ForemanMo';
 import { shiftReport, snapshotOf } from '../../game/shift';
 import type { ShiftSnapshot } from '../../game/shift';
 import type { GameState } from '../../game/state';
 import { formatDuration, formatLitres, formatMohn } from '../../lib/format';
+import { shiftPost, xIntentUrl } from '../../social/share';
 import type { Panel } from './Hud';
 import { PxButton, PxModal } from './px';
 import { Readout } from './windows';
@@ -99,6 +101,22 @@ export function ShiftReportNotice({
         <PxButton variant={report.tankEmpty ? 'light' : 'primary'} onClick={close}>
           Back to work
         </PxButton>
+        {report.boreMm > 0n && (
+          <a
+            href={xIntentUrl(
+              shiftPost({
+                boreMm: report.boreMm,
+                awayHours: report.away / 3600,
+                address: address as Address,
+              }),
+            )}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-btn px-btn-dark px-4 py-2 text-lg"
+          >
+            Share on X
+          </a>
+        )}
       </div>
     </PxModal>
   );
