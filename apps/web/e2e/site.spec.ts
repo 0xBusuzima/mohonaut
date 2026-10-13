@@ -204,3 +204,9 @@ test('the training site runs the game without a wallet', async ({ page }) => {
   ).toEqual([]);
   expect(errors).toEqual([]);
 });
+
+test('/timelock goes to the live queue on the economy page', async ({ request }) => {
+  const res = await request.get('/timelock', { maxRedirects: 0 });
+  expect(res.status()).toBe(301);
+  expect(res.headers()['location']).toBe('/economy/#timelock');
+});

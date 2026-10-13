@@ -56,8 +56,24 @@ function brotli(file) {
   return compressed.get(file);
 }
 
+// public/_redirects: the 301/302 lines (the /s/* rewrite is handled below).
+const redirects = new Map(
+  existsSync(join(root, '_redirects'))
+    ? readFileSync(join(root, '_redirects'), 'utf8')
+        .split('\n')
+        .map((l) => l.trim().split(/\s+/))
+        .filter(([from, , code]) => from?.startsWith('/') && (code === '301' || code === '302'))
+        .map(([from, to, code]) => [from, { to, code: Number(code) }])
+    : [],
+);
+
 createServer((req, res) => {
   const urlPath = new URL(req.url ?? '/', 'http://x').pathname;
+  const moved = redirects.get(urlPath);
+  if (moved !== undefined) {
+    res.writeHead(moved.code, { location: moved.to }).end();
+    return;
+  }
   const path = normalize(decodeURIComponent(urlPath));
   let file = join(root, path);
   if (!file.startsWith(root) && file + sep !== root) {
