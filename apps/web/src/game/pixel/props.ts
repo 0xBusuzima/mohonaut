@@ -15,7 +15,9 @@ import {
   polyline,
   px,
   rect,
+  resolutionOf,
   shade,
+  stamp,
 } from './draw';
 import type { Ctx } from './draw';
 import { drawText, textWidth } from './font';
@@ -51,6 +53,10 @@ export function padTile(c: Ctx, x: number, y: number, unlocked: boolean, hover: 
  * with hazard tape between them, and a levelling tripod in the middle (ours; not a padlock sign).
  */
 export function surveyPlot(c: Ctx, x: number, y: number): void {
+  stamp(c, 'survey', x, y, [-27, -23, 56, 38], paintSurveyPlot);
+}
+
+function paintSurveyPlot(c: Ctx, x: number, y: number): void {
   const corners: [number, number][] = [
     [x - 26, y],
     [x, y - 13],
@@ -378,7 +384,7 @@ export function rigTop(typeId: number, x: number, y: number): { x: number; y: nu
 /** Steam: three pixel puffs rising and fading. */
 function puff(c: Ctx, x: number, y: number, t: number, seed: number): void {
   // On a high-resolution canvas (the voxel scene) the steam is soft round puffs.
-  const smooth = typeof c.getTransform === 'function' && c.getTransform().a > 1;
+  const smooth = resolutionOf(c) > 1;
   for (let k = 0; k < 3; k++) {
     const phase = (t * 0.6 + seed * 0.37 + k / 3) % 1;
     const yy = y - phase * 18;
@@ -532,6 +538,9 @@ export function scrub(c: Ctx, x: number, y: number, kind: number): void {
 
 export function rain(c: Ctx, W: number, H: number, t: number): void {
   c.globalAlpha = 0.3;
+  // On a high-resolution canvas (the voxel scene) the drops are thin streaks, one path in all.
+  const smooth = resolutionOf(c) > 1 && typeof c.stroke === 'function';
+  if (smooth) c.beginPath();
   const n = Math.floor((W * H) / 1500);
   for (let i = 0; i < n; i++) {
     const seed = i * 7.31;
@@ -539,7 +548,15 @@ export function rain(c: Ctx, W: number, H: number, t: number): void {
     const speed = 160 + ((Math.sin(seed * 3.1) + 1) / 2) * 80;
     const y = ((((Math.sin(seed * 1.7) + 1) / 2) * H + t * speed) % (H + 20)) - 10;
     const x = x0 - ((y * 0.25) % (W + 40));
-    line(c, x, y, x - 1, y + 3, P.rain);
+    if (smooth) {
+      c.moveTo(x, y);
+      c.lineTo(x - 1, y + 3);
+    } else line(c, x, y, x - 1, y + 3, P.rain);
+  }
+  if (smooth) {
+    c.strokeStyle = P.rain;
+    c.lineWidth = 0.6;
+    c.stroke();
   }
   c.globalAlpha = 1;
 }

@@ -3,7 +3,7 @@
  * the crew tag on the site's banner. Our own glyphs: digits, the decimal point, plus, minus and
  * capitals (M, N and W are wider). One pixel between characters.
  */
-import { rect } from './draw';
+import { rect, stamp } from './draw';
 import type { Ctx } from './draw';
 
 const GLYPHS: Record<string, string[]> = {
@@ -58,6 +58,24 @@ export function textWidth(text: string): number {
 
 /** Draws `text` with its top-left corner at (x, y), with a 1 px dark outline for contrast. */
 export function drawText(
+  c: Ctx,
+  x: number,
+  y: number,
+  text: string,
+  color: string,
+  outline: string,
+): void {
+  stamp(
+    c,
+    `text:${text}:${color}:${outline}`,
+    x,
+    y,
+    [-1, -1, textWidth(text) + 2, 7],
+    (g, sx, sy) => paintText(g, sx, sy, text, color, outline),
+  );
+}
+
+function paintText(
   c: Ctx,
   x: number,
   y: number,

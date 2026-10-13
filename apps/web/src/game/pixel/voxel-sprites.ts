@@ -26,6 +26,21 @@ export function blit(
 let manifest: Record<string, Meta> | null = null;
 let asked = false;
 const images = new Map<string, HTMLImageElement>();
+const listeners = new Set<() => void>();
+const arrived = () => {
+  for (const f of listeners) f();
+};
+
+/**
+ * Calls `onArrive` each time the manifest or another sprite has loaded, so a still scene (drawn
+ * once) can draw again with it. Gives back the unsubscribe.
+ */
+export function onVoxelArrive(onArrive: () => void): () => void {
+  listeners.add(onArrive);
+  return () => {
+    listeners.delete(onArrive);
+  };
+}
 
 /** A baked sprite by name ("rig-1", "shack", "container"), or null until it has loaded. */
 export function voxelSprite(name: string): (Meta & { img: HTMLImageElement }) | null {
@@ -37,6 +52,7 @@ export function voxelSprite(name: string): (Meta & { img: HTMLImageElement }) | 
         .then((r) => (r.ok ? (r.json() as Promise<Record<string, Meta>>) : null))
         .then((m) => {
           manifest = m;
+          arrived();
         })
         .catch(() => {
           // No sprites: the pixel drawings stay.
@@ -49,6 +65,7 @@ export function voxelSprite(name: string): (Meta & { img: HTMLImageElement }) | 
   let img = images.get(name);
   if (img === undefined) {
     img = new Image();
+    img.onload = arrived;
     img.src = `/voxel/site-${name}.png`;
     images.set(name, img);
   }

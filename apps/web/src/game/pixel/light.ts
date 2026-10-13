@@ -6,11 +6,13 @@
  * pixel bands rather than a smooth gradient, and a warm tint is added on top of the brightest
  * band. The screen edges get extra night (a stepped vignette) to pull the eye to the site.
  *
- * Caching: what does not move (sky, land, site ground, pads) is painted once into an offscreen
- * canvas and copied each frame; it is repainted only when its key (size, pan, site size,
- * unlocked pads, hover) changes.
+ * Caching: what does not move (sky, land, site ground, pads) is painted once and repainted only
+ * when its key (size, pan, site size, unlocked pads, hover) changes; so is the night. Given a
+ * `Stack` (PixelWorld's canvases under and over the scene) they are painted into those canvases
+ * and the browser lays them together; otherwise into offscreen layers copied onto every frame.
+ * Copying a screen-sized layer was the costliest part of a high-resolution frame.
  */
-import { ellipse, rect } from './draw';
+import { ellipse, rect, resolutionOf } from './draw';
 import type { Ctx } from './draw';
 import { P } from './palette';
 
@@ -46,18 +48,30 @@ function checker(g: Ctx): CanvasPattern | null {
   return pattern;
 }
 
+/**
+ * Canvases stacked with the scene's: `base` under it (the still layer), `night` over it, `glow`
+ * over the night (the lights' tint, composited with plus-lighter) and `top` over all of that.
+ */
+export interface Stack {
+  base: Ctx;
+  night: Ctx;
+  glow: Ctx;
+  top: Ctx;
+}
+
+/** What a stack canvas holds: its key plus the canvas's own size (a resize clears it). */
+const painted = new WeakMap<Ctx, string>();
+function stale(g: Ctx, key: string): string | null {
+  const full = `${g.canvas?.width ?? 0}x${g.canvas?.height ?? 0}|${key}`;
+  return painted.get(g) === full ? null : full;
+}
+
 interface Layer {
   key: string;
   canvas: HTMLCanvasElement;
 }
 const statics = new WeakMap<Ctx, Layer>();
 const nights = new WeakMap<Ctx, Layer>();
-
-/** Device pixels per art pixel of `c` (its transform's scale; 1 for a plain context). */
-function resolutionOf(c: Ctx): number {
-  const t = typeof c.getTransform === 'function' ? c.getTransform() : null;
-  return t !== null && t.a > 0 ? t.a : 1;
-}
 
 function layerFor(map: WeakMap<Ctx, Layer>, c: Ctx, W: number, H: number): Ctx | null {
   // No layer for an empty screen: drawImage throws on a 0-pixel canvas.
@@ -84,8 +98,27 @@ function layerFor(map: WeakMap<Ctx, Layer>, c: Ctx, W: number, H: number): Ctx |
   return g;
 }
 
-/** Paints `paint` into a cached layer when `key` changed, then copies the layer onto `c`. */
-export function cached(c: Ctx, W: number, H: number, key: string, paint: (g: Ctx) => void): void {
+/**
+ * Paints `paint` into `base` (a stack canvas) when `key` changed; without one, into a cached
+ * layer that is then copied onto `c`.
+ */
+export function cached(
+  c: Ctx,
+  W: number,
+  H: number,
+  key: string,
+  base: Ctx | undefined,
+  paint: (g: Ctx) => void,
+): void {
+  if (base !== undefined) {
+    const full = stale(base, key);
+    if (full !== null) {
+      base.clearRect(0, 0, W, H);
+      paint(base);
+      painted.set(base, full);
+    }
+    return;
+  }
   const g = layerFor(statics, c, W, H);
   const l = statics.get(c);
   if (g === null || l === undefined) {
@@ -111,15 +144,27 @@ export function night(
   horizon: number,
   lights: Light[],
   smooth = false,
+  stack?: Stack,
 ): void {
-  const g = layerFor(nights, c, W, H);
-  const layer = nights.get(c);
-  if (g === null || layer === undefined) return;
-  // Rebuilt only when a light moves or its strength visibly changes (eight steps): the layer
-  // was the costliest part of every frame.
+  // Repainted only when a light moves or its strength visibly changes (eight steps).
   const key = `${horizon}|${lights
     .map((l) => `${Math.round(l.x)},${Math.round(l.y)},${l.r},${Math.round((l.power ?? 1) * 8)}`)
     .join(';')}`;
+  if (stack !== undefined) {
+    if (W <= 0 || H <= 0) return;
+    const full = stale(stack.night, `${smooth ? 's' : 'p'}${key}`);
+    if (full === null) return;
+    if (smooth) paintNightSmooth(stack.night, W, H, horizon, lights);
+    else paintNight(stack.night, W, H, horizon, lights);
+    stack.glow.clearRect(0, 0, W, H);
+    if (smooth) tintSmooth(stack.glow, lights);
+    else tint(stack.glow, lights);
+    painted.set(stack.night, full); // after the paint: a paint that throws is not kept
+    return;
+  }
+  const g = layerFor(nights, c, W, H);
+  const layer = nights.get(c);
+  if (g === null || layer === undefined) return;
   if (layer.key !== `${smooth ? 's' : 'p'}${key}`) {
     if (smooth) paintNightSmooth(g, W, H, horizon, lights);
     else paintNight(g, W, H, horizon, lights);
@@ -148,6 +193,16 @@ function pool(
   g.fillStyle = grad;
   g.fillRect(-r, -r, r * 2, r * 2);
   g.restore();
+}
+
+/** A soft pool of lamplight laid over the night (a light that moves every frame). */
+export function glow(c: Ctx, l: Light): void {
+  const p = l.power ?? 1;
+  pool(c, l, l.tint ?? P.bone, [
+    [0, 0.3 * p],
+    [0.5, 0.12 * p],
+    [1, 0],
+  ]);
 }
 
 /** "#rrggbb" with an alpha, as rgba(). */

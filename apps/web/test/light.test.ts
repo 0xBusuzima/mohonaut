@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { night } from '../src/game/pixel/light';
-import type { Light } from '../src/game/pixel/light';
+import { cached, night } from '../src/game/pixel/light';
+import type { Light, Stack } from '../src/game/pixel/light';
 
 /** A 2D context that only counts what the light code asks of it. */
 function fakeContext() {
@@ -96,6 +96,69 @@ describe('the high-resolution night (the voxel scene)', () => {
     expect(gradients).toContain('radial');
     expect(layer.calls.drawImage).toBe(0);
     expect(screen.calls.drawImage).toBe(1);
+  });
+});
+
+describe('the stacked canvases (PixelWorld)', () => {
+  /** A stack canvas: a counting context with a canvas of its own size. */
+  function stackCanvas() {
+    const canvas = { width: 600, height: 360 };
+    return {
+      ...fakeContext(),
+      canvas,
+      save: () => {},
+      restore: () => {},
+      translate: () => {},
+      scale: () => {},
+    };
+  }
+
+  it('paints the night and the glow into their own canvases only when they change', () => {
+    const stack = {
+      base: stackCanvas(),
+      night: stackCanvas(),
+      glow: stackCanvas(),
+      top: stackCanvas(),
+    };
+    const screen = fakeContext();
+    const lamps: Light[] = [{ x: 40, y: 60, r: 30, tint: '#ffd27a', power: 1 }];
+    const frame = (ls: Light[]) =>
+      night(
+        screen as unknown as CanvasRenderingContext2D,
+        200,
+        120,
+        20,
+        ls,
+        false,
+        stack as unknown as Stack,
+      );
+    frame(lamps);
+    frame(lamps);
+    expect([stack.night.calls.clearRect, stack.glow.calls.clearRect]).toEqual([1, 1]);
+    frame([{ ...lamps[0], x: 44 } as Light]);
+    expect([stack.night.calls.clearRect, stack.glow.calls.clearRect]).toEqual([2, 2]);
+    // A resized canvas has lost its drawing: painted again with the same lights.
+    stack.night.canvas.width = 640;
+    frame([{ ...lamps[0], x: 44 } as Light]);
+    expect(stack.night.calls.clearRect).toBe(3);
+    // Nothing is copied onto the scene: the browser lays the canvases together.
+    expect(screen.calls.drawImage).toBe(0);
+  });
+
+  it('paints the still layer into the base canvas once per key', () => {
+    const base = stackCanvas();
+    const screen = fakeContext() as unknown as CanvasRenderingContext2D;
+    let paints = 0;
+    const paint = () => {
+      paints += 1;
+    };
+    const b = base as unknown as CanvasRenderingContext2D;
+    cached(screen, 200, 120, 'a', b, paint);
+    cached(screen, 200, 120, 'a', b, paint);
+    expect(paints).toBe(1);
+    cached(screen, 200, 120, 'b', b, paint);
+    expect(paints).toBe(2);
+    expect((screen as unknown as { calls: { drawImage: number } }).calls.drawImage).toBe(0);
   });
 });
 

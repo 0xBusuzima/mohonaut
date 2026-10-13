@@ -36,10 +36,16 @@ export function ForemanMo({ scale = 3, label }: { scale?: number; label?: string
     draw(false, true);
     if (still) return undefined;
     let tick = 0;
+    let shown = 'false,true';
     const id = window.setInterval(() => {
       tick++;
-      // A blink every four seconds or so, the lamp glints on and off.
-      draw(tick % 27 === 0, tick % 8 < 5);
+      // A blink every four seconds or so, the lamp glints on and off. Drawn only when that
+      // changes: every repaint has the browser lay the page together again over the scene.
+      const blink = tick % 27 === 0;
+      const glint = tick % 8 < 5;
+      if (`${blink},${glint}` === shown) return;
+      shown = `${blink},${glint}`;
+      draw(blink, glint);
     }, 150);
     return () => window.clearInterval(id);
   }, [still]);

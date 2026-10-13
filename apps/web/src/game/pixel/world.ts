@@ -12,9 +12,9 @@ import type { ScenePad } from '../play';
 import { diamond, diamondEdge, hash, line, px } from './draw';
 import type { Ctx } from './draw';
 import { drawText, textWidth } from './font';
-import { cached, night } from './light';
+import { cached, glow, night } from './light';
 import { blit, voxelSprite } from './voxel-sprites';
-import type { Light } from './light';
+import type { Light, Stack } from './light';
 import { P } from './palette';
 import {
   container,
@@ -83,7 +83,10 @@ export interface WorldModel {
   plaques?: readonly number[];
   /** The colour of the stratum the World Bore is in: the cuttings by the wellhead. */
   stratum?: string;
-  /** Draw the rigs as baked voxel sprites (docs/06 7.8, a preview while the redesign is on). */
+  /**
+   * The voxel scene (docs/06 7.8): baked voxel sprites, smooth sky and light. Unset, the scene
+   * follows low-power mode (pixel scene when it is on).
+   */
   voxel?: boolean;
 }
 
@@ -174,7 +177,19 @@ function walk(path: [number, number][], t: number, seed: number) {
   return { gx: a[0] + (b[0] - a[0]) * k, gy: a[1] + (b[1] - a[1]) * k, facing: dx >= 0 ? 1 : -1 };
 }
 
-export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel): HitBox[] {
+/**
+ * Draws the site onto `c`. With a `stack` (PixelWorld's canvases under and over `c`) the still
+ * layer, the night and the glow go to their own canvases, repainted only when they change, and
+ * what lies over the night to `stack.top`; without one, everything is drawn onto `c`.
+ */
+export function drawWorld(
+  c: Ctx,
+  W: number,
+  H: number,
+  t: number,
+  m: WorldModel,
+  stack?: Stack,
+): HitBox[] {
   const hits: HitBox[] = [];
   // A hidden or collapsed box (0 pixels): nothing to draw until it has a size again.
   if (W <= 0 || H <= 0) return hits;
@@ -208,7 +223,8 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   const backFence = m.voxel === true ? voxelSprite('fence-back') : null;
   const tanker = m.voxel === true ? voxelSprite('tanker') : null;
   const key = `${m.voxel === true ? 'v' : 'p'}:${W}x${H}:${ox},${oy}:${gh}:${m.pads.length}:${m.hover ?? ''}:${ground === null ? 'px' : 'vx'}:${padSprite === null ? 'px' : 'vx'}:${backFence === null ? 'px' : 'vx'}:${tanker === null ? 'px' : 'vx'}`;
-  cached(c, W, H, key, (g) => {
+  if (stack !== undefined) c.clearRect(0, 0, W, H);
+  cached(c, W, H, key, stack?.base, (g) => {
     // The voxel scene's sky and land are smooth; the pixel scene's are banded and dithered.
     if (m.voxel === true) {
       skySmooth(g, W, horizon);
@@ -409,6 +425,7 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
       lights.push({ x: top.x, y: top.y, r: 6, tint: P.beacon, power: 0.5 });
     }
   });
+  const headlamps: Light[] = [];
   crewRounds(gh).forEach((path, i) => {
     const w = walk(path, m.motion ? t : 0, i);
     at(w.gx, w.gy, () => {
@@ -420,7 +437,11 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
       else blit(c, built, p.x, p.y);
     });
     const p = iso(w.gx, w.gy);
-    lights.push({ x: p.x + w.facing * 5, y: p.y, r: 6, tint: null, power: 0.4 });
+    const lamp = { x: p.x + w.facing * 5, y: p.y, r: 6, tint: null, power: 0.4 };
+    // In the voxel scene a walker's lamp is a glow over the night, so the night (cut afresh
+    // whenever a light moves) does not have to follow the crew every frame.
+    if (m.voxel === true) headlamps.push(lamp);
+    else lights.push(lamp);
   });
   items.sort((a, b) => a.depth - b.depth);
   for (const it of items) it.draw();
@@ -454,18 +475,22 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
       lights.push({ x: tankAt.x, y: tankAt.y + 12, r: 30, tint: P.amber, power: 1 - age / 2.4 });
     }
   }
-  night(c, W, H, horizon, lights, m.voxel === true);
+  night(c, W, H, horizon, lights, m.voxel === true, stack);
+  // Over the night: sparks, the cored floats, rain.
+  const over = stack?.top ?? c;
+  if (stack !== undefined) over.clearRect(0, 0, W, H);
+  for (const l of headlamps) glow(over, l);
   for (const f of m.fx ?? []) {
     const age = t - f.at;
     if (f.kind !== 'fuel' || age < 0 || age >= 2.4) continue;
-    c.globalAlpha = 1 - age / 2.4;
+    over.globalAlpha = 1 - age / 2.4;
     for (let j = 0; j < 12; j++) {
       const a = j * 0.52 + age * 3;
       const x = tankAt.x + Math.cos(a) * (12 + (j % 3) * 2);
       const y = tankAt.y + 6 - age * 16 - (j % 4) * 3 + Math.sin(a) * 4;
-      px(c, x, y, j % 3 === 0 ? P.flareHot : P.amber);
+      px(over, x, y, j % 3 === 0 ? P.flareHot : P.amber);
     }
-    c.globalAlpha = 1;
+    over.globalAlpha = 1;
   }
   // What each drilling rig cored since its last float, rising from its crown and fading out.
   const perDp = m.yieldPerDp ?? 0;
@@ -482,12 +507,12 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
       const p = iso(gx, gy);
       const top = rigTop(pad.typeId, p.x, p.y + TW / 2);
       const k = phase / 0.4;
-      c.globalAlpha = k < 0.7 ? 1 : (1 - k) / 0.3;
-      drawText(c, top.x - textWidth(text) / 2, top.y - 10 - k * 14, text, P.cyan, P.night);
-      c.globalAlpha = 1;
+      over.globalAlpha = k < 0.7 ? 1 : (1 - k) / 0.3;
+      drawText(over, top.x - textWidth(text) / 2, top.y - 10 - k * 14, text, P.cyan, P.night);
+      over.globalAlpha = 1;
     });
   }
-  if (m.motion) rain(c, W, H, t);
+  if (m.motion) rain(over, W, H, t);
   return hits;
 }
 

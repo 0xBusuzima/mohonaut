@@ -4,16 +4,24 @@ import { useEffect, useRef, useState } from 'react';
 import { reportError } from '../../lib/errors';
 import { useReducedMotion } from '../../lib/motion';
 import { useLowPower } from '../../lib/power';
+import type { Ctx } from './draw';
 import { siteEffects } from './fx';
+import { onVoxelArrive } from './voxel-sprites';
 import { drawWorld, siteRows, worldSize } from './world';
 import type { Hit, HitBox, WorldFx, WorldModel } from './world';
 
 /** Pointer travel (CSS px) after which a press is a drag, not a click. */
 const DRAG_PX = 6;
+/** Device pixels per canvas for the voxel scene: on a phone, and on a larger screen. */
+const PIXELS_PHONE = 600_000;
+const PIXELS_LARGE = 2_500_000;
 
 /**
- * The full-screen pixel world: a low-resolution canvas scaled up by a whole number with
- * `image-rendering: pixelated`, redrawn about 12 times a second (once when motion is reduced).
+ * The full-screen drill site, redrawn 10 times a second (once when motion is reduced): the voxel
+ * scene near screen resolution, or (low-power mode) the pixel scene on a low-resolution canvas
+ * scaled up by a whole number with `image-rendering: pixelated`. Five canvases are stacked (the
+ * still layer, the scene, the night, the glow, and the top one that takes the pointer) so a frame
+ * repaints only what moved.
  * Clicking a building or a pad calls `onSelect`. Where the site is larger than the screen (phones)
  * it can be dragged around. `contained`: fills its positioned parent instead of the screen, and
  * leaves touch scrolling to the page (no dragging).
@@ -32,13 +40,20 @@ export function PixelWorld({
   describe?: ((hit: Hit) => string | null) | undefined;
   contained?: boolean;
 }) {
+  // The interactive canvas, on top; under it the still layer, the scene, the night and the glow.
   const canvas = useRef<HTMLCanvasElement>(null);
+  const baseCanvas = useRef<HTMLCanvasElement>(null);
+  const sceneCanvas = useRef<HTMLCanvasElement>(null);
+  const nightCanvas = useRef<HTMLCanvasElement>(null);
+  const glowCanvas = useRef<HTMLCanvasElement>(null);
   const hits = useRef<HitBox[]>([]);
   const press = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
   const [dragging, setDragging] = useState(false);
   const [hoverBox, setHoverBox] = useState<HitBox | null>(null);
   const hover = hoverBox?.id ?? null;
-  const [size, setSize] = useState({ w: 640, h: 360, scale: 3, maxX: 0, maxY: 0 });
+  // Nothing is drawn until the screen has been measured (a first frame at a made-up size built
+  // screen-sized layers for nothing).
+  const [size, setSize] = useState({ w: 0, h: 0, scale: 3, maxX: 0, maxY: 0 });
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const reduced = useReducedMotion();
   const lowPower = useLowPower();
@@ -104,37 +119,64 @@ export function PixelWorld({
   const vy = clampY(pan.y);
   const canPan = !contained && (size.maxX > 0 || size.maxY > 0);
 
-  // The voxel scene draws at screen resolution (art pixels times the scale and the device's
-  // pixel ratio, at most 3) so its baked sprites stay soft; the pixel scene draws at art size.
-  const hiRes = model.voxel === true;
+  // The voxel scene is the default; low-power mode keeps the lighter pixel scene (a caller can
+  // pick one). The voxel scene draws near screen resolution (art pixels times the scale and the
+  // device's pixel ratio, at most 2) so its baked sprites stay soft; the pixel one at art size.
+  const voxel = model.voxel ?? !lowPower;
   const ratio =
-    hiRes && typeof window !== 'undefined'
+    voxel && typeof window !== 'undefined'
       ? size.scale * Math.min(2, Math.max(1, window.devicePixelRatio || 1))
       : 1;
-  const res = Math.min(6, ratio);
+  // Within a pixel budget: each frame the browser lays the five canvases together, which a phone
+  // without GPU compositing (and Lighthouse's mobile run) pays for per pixel.
+  const budget = size.w * size.scale < 768 ? PIXELS_PHONE : PIXELS_LARGE;
+  const res = Math.max(1, Math.min(6, ratio, Math.sqrt(budget / Math.max(1, size.w * size.h))));
+
+  // Sprites arrive after the first frame; a still scene draws again once per animation frame.
+  const [arrivals, setArrivals] = useState(0);
+  useEffect(() => {
+    if (!voxel) return undefined;
+    let queued = 0;
+    const off = onVoxelArrive(() => {
+      if (queued === 0)
+        queued = requestAnimationFrame(() => {
+          queued = 0;
+          setArrivals((n) => n + 1);
+        });
+    });
+    return () => {
+      off();
+      cancelAnimationFrame(queued);
+    };
+  }, [voxel]);
 
   // Set by a drawing error: the scene stays stopped (and reported once) for this mount.
   const broken = useRef(false);
   useEffect(() => {
-    const el = canvas.current;
-    const c = el?.getContext('2d');
-    if (el === null || c === null || c === undefined) return undefined;
+    const contexts = [canvas, baseCanvas, sceneCanvas, nightCanvas, glowCanvas]
+      .map((r) => r.current?.getContext('2d') ?? null)
+      .filter((g) => g !== null);
+    if (contexts.length < 5) return undefined;
+    const [top, base, c, night, glow] = contexts as [Ctx, Ctx, Ctx, Ctx, Ctx];
     let frame = 0;
     let last = 0;
     const draw = (now: number) => {
       if (broken.current) return;
       try {
         // Art pixels to device pixels (1 for the pixel scene); smooth only when scaled.
-        c.setTransform(res, 0, 0, res, 0, 0);
-        c.imageSmoothingEnabled = res !== 1;
-        if (res !== 1) c.imageSmoothingQuality = 'high';
-        hits.current = drawWorld(c, size.w, size.h, now / 1000, {
-          ...model,
-          hover,
-          motion,
-          pan: { x: vx, y: vy },
-          fx: fx.current,
-        });
+        for (const g of contexts) {
+          g.setTransform(res, 0, 0, res, 0, 0);
+          g.imageSmoothingEnabled = res !== 1;
+          if (res !== 1) g.imageSmoothingQuality = 'high';
+        }
+        hits.current = drawWorld(
+          c,
+          size.w,
+          size.h,
+          now / 1000,
+          { ...model, voxel, hover, motion, pan: { x: vx, y: vy }, fx: fx.current },
+          { base, night, glow, top },
+        );
       } catch (err) {
         // A drawing bug stops the scene (once, reported), not the game around it.
         broken.current = true;
@@ -157,7 +199,7 @@ export function PixelWorld({
     };
     frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
-  }, [size, model, hover, motion, vx, vy, res]);
+  }, [size, model, voxel, hover, motion, vx, vy, res, arrivals]);
 
   const hitAt = (clientX: number, clientY: number): HitBox | null => {
     const at = canvas.current?.getBoundingClientRect();
@@ -179,16 +221,35 @@ export function PixelWorld({
 
   const tip = hoverBox !== null && describe !== undefined ? describe(hoverBox.id) : null;
 
+  const width = Math.round(size.w * res);
+  const height = Math.round(size.h * res);
+  const place = `${voxel ? 'block' : 'pixel-canvas'} ${contained ? 'absolute inset-0' : 'fixed inset-0 h-dvh w-screen touch-none'}`;
+  const box = { width: size.w * size.scale, height: size.h * size.scale };
+  const layer = (ref: typeof canvas, blend?: 'plus-lighter') => (
+    <canvas
+      ref={ref}
+      width={width}
+      height={height}
+      aria-hidden="true"
+      className={`${place} pointer-events-none`}
+      style={blend === undefined ? box : { ...box, mixBlendMode: blend }}
+    />
+  );
+
   return (
     <>
+      {layer(baseCanvas)}
+      {layer(sceneCanvas)}
+      {layer(nightCanvas)}
+      {layer(glowCanvas, 'plus-lighter')}
       <canvas
         ref={canvas}
-        width={Math.round(size.w * res)}
-        height={Math.round(size.h * res)}
+        width={width}
+        height={height}
         role="img"
         aria-label={label}
-        className={`pixel-canvas ${contained ? 'absolute inset-0' : 'fixed inset-0 h-dvh w-screen touch-none'}`}
-        style={{ width: size.w * size.scale, height: size.h * size.scale, cursor }}
+        className={place}
+        style={{ ...box, cursor }}
         onPointerDown={(e) => {
           if (!canPan) return;
           press.current = { x: e.clientX, y: e.clientY, px: vx, py: vy };
