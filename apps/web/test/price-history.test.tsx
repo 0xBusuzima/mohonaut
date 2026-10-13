@@ -29,7 +29,7 @@ describe('the DP price chart', () => {
     const label = chart.getAttribute('aria-label') ?? '';
     expect(label).toContain('11-10: no sales');
     expect(label).toContain('11-14: 8.50 MOHN');
-    expect(label).toContain('11-16: 12.00 MOHN');
+    expect(label).toContain('11-16 (today): 12.00 MOHN');
     // The baseline and one shape per day; the highest day is the full height.
     const rects = [...container.querySelectorAll('rect')];
     expect(rects).toHaveLength(8);

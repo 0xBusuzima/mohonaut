@@ -316,3 +316,39 @@ describe('DP price by day', () => {
     expect(days[0]?.perDp).toBeNull();
   });
 });
+
+describe('DP price by day, edges', () => {
+  it('cuts days at UTC midnight, skips rows without units, and follows a chain that runs ahead', async () => {
+    const h = await harness();
+    const today = Math.floor(T0 / 1000 / 86_400);
+    const WAD = 10n ** 18n;
+    const row = (n: number, time: number, units: bigint | null) => ({
+      blockNumber: BigInt(n),
+      logIndex: 0,
+      time: BigInt(time),
+      account: '0x0000000000000000000000000000000000000001',
+      typeId: 1,
+      qty: 1n,
+      units,
+      cost: 1n,
+      avgUnitPriceWad: 10n * WAD * WAD,
+    });
+    await h.database.db.insert(idx.vrgdaSales).values([
+      row(1, today * 86_400, 50n), // exactly midnight: today
+      row(2, today * 86_400 - 1, 50n), // a second before: yesterday
+      row(3, today * 86_400 + 60, null), // no units: skipped
+    ]);
+    const res = await call(h, 'GET', '/market/prices');
+    expect(res.res.headers.get('cache-control')).toBe('public, max-age=30');
+    const days = res.json['days'] as { day: number; sales: number }[];
+    expect(days.slice(-2).map((d) => d.sales)).toEqual([1, 1]);
+
+    // A sale a day ahead of the API's clock (the chain runs ahead): that day is today.
+    await h.database.db.insert(idx.vrgdaSales).values([row(4, (today + 1) * 86_400 + 5, 50n)]);
+    const ahead = (await call(h, 'GET', '/market/prices')).json['days'] as { day: number }[];
+    expect(ahead.at(-1)?.day).toBe(today + 1);
+
+    expect((await call(h, 'GET', '/market/prices?days=0')).status).toBe(400);
+    expect((await call(h, 'GET', '/market/prices?days=31')).status).toBe(400);
+  });
+});

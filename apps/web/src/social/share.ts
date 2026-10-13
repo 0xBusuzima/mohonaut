@@ -59,13 +59,12 @@ export function stratumPost(input: {
   address: Address;
 }): string {
   return (
-    `The World Bore just broke through into Stratum ${input.numeral}: ${input.name}, at ` +
+    `The World Bore has broken through into Stratum ${input.numeral}: ${input.name}, at ` +
     `${input.fromM.toLocaleString('en-US')} m. Every Mohonaut driller cored it together. ` +
     `Race to the Moho. ${profileUrl(input.address, 'stratum')} (my invite link)`
   );
 }
 
-/** X web intent; the player reviews and sends it themselves (docs/05 §3.4). */
 /** The training site's post: what was built, never an amount of tokens (docs/09 §A). */
 export function trainingPost(input: { level: number; rigs: number }): string {
   return (
@@ -75,6 +74,7 @@ export function trainingPost(input: { level: number; rigs: number }): string {
   );
 }
 
+/** X web intent; the player reviews and sends it themselves (docs/05 §3.4). */
 export function xIntentUrl(text: string): string {
   return `https://x.com/intent/post?text=${encodeURIComponent(text)}`;
 }

@@ -16,7 +16,8 @@ export function PriceBars({ days }: { days: readonly DpPriceDay[] }) {
   const summary = days
     .map((d, i) => {
       const p = prices[i];
-      return `${d.date.slice(5)}: ${p === null || p === undefined ? 'no sales' : formatMohn(p)}`;
+      const today = i === days.length - 1 ? ' (today)' : '';
+      return `${d.date.slice(5)}${today}: ${p === null || p === undefined ? 'no sales' : formatMohn(p)}`;
     })
     .join(', ');
   const w = days.length * (BAR_W + GAP) - GAP;
@@ -30,11 +31,11 @@ export function PriceBars({ days }: { days: readonly DpPriceDay[] }) {
       shapeRendering="crispEdges"
       className="block"
     >
-      <rect x={0} y={H - 1} width={w} height={1} fill="#39414a" />
+      <rect x={0} y={H - 1} width={w} height={1} fill="#59626c" />
       {prices.map((p, i) => {
         const x = i * (BAR_W + GAP);
         if (p === null || max === 0n)
-          return <rect key={i} x={x} y={H - 3} width={BAR_W} height={2} fill="#39414a" />;
+          return <rect key={i} x={x} y={H - 3} width={BAR_W} height={2} fill="#59626c" />;
         const h = Math.max(2, Math.round((Number((p * 1000n) / max) / 1000) * (H - 2)));
         return (
           <rect
@@ -43,7 +44,7 @@ export function PriceBars({ days }: { days: readonly DpPriceDay[] }) {
             y={H - 1 - h}
             width={BAR_W}
             height={h}
-            fill={i === days.length - 1 ? '#2ee6d6' : '#0d6e6a'}
+            fill={i === days.length - 1 ? '#2ee6d6' : '#1a9e97'}
           />
         );
       })}

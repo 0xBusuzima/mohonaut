@@ -194,7 +194,8 @@ export const api = {
   setPrefs: (p: Prefs) => call<{ ok: true }>('PUT', '/me/notifications', { body: p }),
   profile: (address: Address) => call<Profile>('GET', `/profiles/${address}`),
   world: () => call<World>('GET', '/world'),
-  marketPrices: () => call<{ days: DpPriceDay[] }>('GET', '/market/prices'),
+  /** `fresh`: the chart refreshes every 30 s while the market is open. */
+  marketPrices: () => call<{ days: DpPriceDay[] }>('GET', '/market/prices', { fresh: true }),
   cardUrl: (address: Address) => `${API_URL}/cards/${address}`,
   /** `fresh` skips the browser cache (the API allows 60 s): a new notice shows on next load. */
   faucetInfo: () => call<FaucetInfo>('GET', '/faucet', { fresh: true }),

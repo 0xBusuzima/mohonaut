@@ -91,6 +91,8 @@ export function PixelWorld({
   const vy = clampY(pan.y);
   const canPan = !contained && (size.maxX > 0 || size.maxY > 0);
 
+  // Set by a drawing error: the scene stays stopped (and reported once) for this mount.
+  const broken = useRef(false);
   useEffect(() => {
     const el = canvas.current;
     const c = el?.getContext('2d');
@@ -98,9 +100,8 @@ export function PixelWorld({
     c.imageSmoothingEnabled = false;
     let frame = 0;
     let last = 0;
-    let broken = false;
     const draw = (now: number) => {
-      if (broken) return;
+      if (broken.current) return;
       try {
         hits.current = drawWorld(c, size.w, size.h, now / 1000, {
           ...model,
@@ -111,7 +112,7 @@ export function PixelWorld({
         });
       } catch (err) {
         // A drawing bug stops the scene (once, reported), not the game around it.
-        broken = true;
+        broken.current = true;
         reportError(err);
       }
     };
@@ -121,12 +122,13 @@ export function PixelWorld({
     }
     draw(performance.now());
     const loop = (now: number) => {
-      // 10 frames a second: plenty for pixel art, and kind to phone batteries.
-      if (now - last > 100) {
+      // 10 frames a second: plenty for pixel art, and kind to phone batteries (the margin lets
+      // a 60 Hz display hit every sixth frame).
+      if (now - last >= 95) {
         last = now;
         draw(now);
       }
-      if (!broken) frame = requestAnimationFrame(loop);
+      if (!broken.current) frame = requestAnimationFrame(loop);
     };
     frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);

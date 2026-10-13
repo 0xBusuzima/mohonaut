@@ -32,6 +32,14 @@ describe('the new-stratum notice', () => {
     expect(window.localStorage.getItem('mohonaut.stratum')).toBe('1');
   });
 
+  it('offers the crossing as a post when the wallet is known', () => {
+    window.localStorage.setItem('mohonaut.stratum', '0');
+    render(<StratumNotice depthMm={2_500_000n} address={WALLET} />);
+    expect(screen.getByRole('link', { name: 'Share on X' }).getAttribute('href')).toContain(
+      'Sediment%20Cover',
+    );
+  });
+
   it('stays quiet within the same stratum', () => {
     window.localStorage.setItem('mohonaut.stratum', '1');
     render(<StratumNotice depthMm={3_000_000n} />);
@@ -192,5 +200,17 @@ describe('a window that breaks', () => {
     expect(screen.getByText('The site keeps running')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalled();
+  });
+});
+
+describe('scrapping a rig', () => {
+  it('asks for a second click before the rig is destroyed', async () => {
+    const { RigsWindow } = await import('../src/app/play/RigCards');
+    const run = vi.fn(() => Promise.resolve(true));
+    render(<RigsWindow state={NEW_SITE} action={{ run, busy: null }} openMarket={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Scrap one Pilot Rig' }));
+    expect(run).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm: scrap one Pilot Rig' }));
+    expect(run).toHaveBeenCalledWith(expect.objectContaining({ fn: 'scrapMachines' }));
   });
 });

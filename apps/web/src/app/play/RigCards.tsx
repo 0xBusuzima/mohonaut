@@ -242,6 +242,7 @@ export function RigsWindow({
 }) {
   const owned = state.rigs.filter((r) => r.owned > 0);
   const p = state.player;
+  const [confirmScrap, setConfirmScrap] = useState<number | null>(null);
   return (
     <>
       <p className="mb-4 text-center text-base text-concrete">
@@ -302,16 +303,27 @@ export function RigsWindow({
                   variant="dark"
                   className="!px-1 !text-base"
                   busy={action.busy === 'scrapMachines'}
-                  aria-label={`Scrap one ${rigName(r.id)}`}
-                  onClick={() =>
+                  aria-label={
+                    confirmScrap === r.id
+                      ? `Confirm: scrap one ${rigName(r.id)}`
+                      : `Scrap one ${rigName(r.id)}`
+                  }
+                  onBlur={() => setConfirmScrap(null)}
+                  onClick={() => {
+                    // Scrapping destroys the rig: a second click confirms.
+                    if (confirmScrap !== r.id) {
+                      setConfirmScrap(r.id);
+                      return;
+                    }
+                    setConfirmScrap(null);
                     void action.run({
                       fn: 'scrapMachines',
                       args: [BigInt(r.id), 1],
                       done: 'Rig scrapped',
-                    })
-                  }
+                    });
+                  }}
                 >
-                  Scrap
+                  {confirmScrap === r.id ? 'Sure?' : 'Scrap'}
                 </PxButton>
               </div>
             </RigCard>

@@ -78,22 +78,32 @@ export function registerWorld(app: OpenAPIHono<AppEnv>): void {
     }),
     async (c) => {
       const { days } = c.req.valid('query');
-      const today = Math.floor(c.var.deps.now() / 1000 / 86_400);
+      const clockDay = Math.floor(c.var.deps.now() / 1000 / 86_400);
+      const sales = await dpSales(c.var.deps.database, (clockDay - days + 1) * 86_400);
+      // Sales carry the chain's block time: if the chain runs ahead of this clock, its day is
+      // today, so the latest sales are never cut off.
+      const byDay = new Map<number, { dpSold: bigint; paid: bigint; sales: number }>();
+      let today = clockDay;
+      for (const s of sales) {
+        if (s.units === null || s.units === 0n) continue;
+        const day = Math.floor(Number(s.time) / 86_400);
+        today = Math.max(today, day);
+        const d = byDay.get(day) ?? { dpSold: 0n, paid: 0n, sales: 0 };
+        d.dpSold += s.units;
+        d.paid += (s.avgUnitPriceWad ?? 0n) * s.units;
+        d.sales += 1;
+        byDay.set(day, d);
+      }
       const first = today - days + 1;
-      const sales = await dpSales(c.var.deps.database, first * 86_400);
       const out = Array.from({ length: days }, (_, i) => {
         const day = first + i;
-        const rows = sales.filter(
-          (s) => Math.floor(Number(s.time) / 86_400) === day && s.units !== null && s.units > 0n,
-        );
-        const dpSold = rows.reduce((n, s) => n + (s.units ?? 0n), 0n);
-        const paid = rows.reduce((n, s) => n + (s.avgUnitPriceWad ?? 0n) * (s.units ?? 0n), 0n);
+        const d = byDay.get(day) ?? { dpSold: 0n, paid: 0n, sales: 0 };
         return {
           day,
           date: new Date(day * 86_400_000).toISOString().slice(0, 10),
-          perDp: dpSold === 0n ? null : (paid / dpSold / 10n ** 18n).toString(),
-          dpSold: dpSold.toString(),
-          sales: rows.length,
+          perDp: d.dpSold === 0n ? null : (d.paid / d.dpSold / 10n ** 18n).toString(),
+          dpSold: d.dpSold.toString(),
+          sales: d.sales,
         };
       });
       c.header('Cache-Control', 'public, max-age=30');

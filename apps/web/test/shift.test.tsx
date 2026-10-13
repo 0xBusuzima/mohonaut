@@ -107,6 +107,10 @@ describe('the shift report', () => {
     expect(screen.getByRole('dialog', { name: 'Shift report' })).toBeTruthy();
     expect(screen.getByText('15.00 MOHN')).toBeTruthy();
     expect(screen.getByRole('status').textContent).toContain('ran dry');
+    // The bore went deeper: a post to share, with the invite link.
+    expect(screen.getByRole('link', { name: 'Share on X' }).getAttribute('href')).toContain(
+      'utm_campaign%3Dshift',
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Fill the tank' }));
     expect(open).toHaveBeenCalledWith('fuel');
     expect(screen.getByText('underneath')).toBeTruthy();

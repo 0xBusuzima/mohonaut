@@ -97,8 +97,8 @@ export function night(c: Ctx, W: number, H: number, horizon: number, lights: Lig
     .map((l) => `${Math.round(l.x)},${Math.round(l.y)},${l.r},${Math.round((l.power ?? 1) * 8)}`)
     .join(';')}`;
   if (layer.key !== key) {
-    layer.key = key;
     paintNight(g, W, H, horizon, lights);
+    layer.key = key; // after the paint: a paint that throws is not cached
   }
   c.drawImage(layer.canvas, 0, 0);
   tint(c, lights);
