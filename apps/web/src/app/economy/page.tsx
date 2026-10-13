@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { SitePage } from '../../components/SiteChrome';
 import { EconomyDashboard } from './dashboard';
+import { BoreTimeline } from './timeline';
 
 export const metadata: Metadata = {
   title: 'Economy',
@@ -22,6 +23,7 @@ export default function EconomyPage() {
       <div className="mt-8">
         <EconomyDashboard />
       </div>
+      <BoreTimeline />
     </SitePage>
   );
 }
