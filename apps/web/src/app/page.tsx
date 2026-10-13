@@ -4,10 +4,12 @@ import { StratumBadge } from '../components/Badge';
 import { BoreLog } from '../components/BoreLog';
 import { Card } from '../components/Card';
 import { LiveStrip } from '../components/LiveStrip';
+import { RigPicture } from '../components/RigPicture';
 import { SiteFooter, SiteHeader } from '../components/SiteChrome';
 import { GEN1_RIGS, efficiency } from '../lib/catalog';
 import { LINKS } from '../lib/site';
 import { PxIcon } from '../game/pixel/icons';
+import type { IconName } from '../game/pixel/icons';
 import { HomeHero } from './HomeHero';
 
 const FAQ_PREVIEW = [
@@ -50,7 +52,7 @@ const ROADMAP = [
 ];
 
 /** A step's title with its pixel icon (the game's own, drawn at 3x). */
-function Step({ icon, children }: { icon: 'rig' | 'fuel' | 'bore'; children: string }) {
+function Step({ icon, children }: { icon: IconName; children: string }) {
   return (
     <span className="flex items-center gap-3">
       <PxIcon name={icon} size={36} />
@@ -136,15 +138,7 @@ export default function Home() {
                 key={r.id}
                 className="overflow-hidden rounded-lg border border-line bg-surface-raised"
               >
-                {/* Drawn by the game's own pixel code at build time (scripts/gen-pixel-art.mjs). */}
-                <img
-                  src={`/rigs/rig-${r.id}.png`}
-                  alt={`${r.name} on its pad at night`}
-                  width={300}
-                  height={276}
-                  loading="lazy"
-                  className="pixel-canvas h-auto w-full"
-                />
+                <RigPicture id={r.id} name={r.name} />
                 <div className="p-4">
                   <h3 className="font-display text-2xl font-extrabold tracking-wide uppercase">
                     {r.name}

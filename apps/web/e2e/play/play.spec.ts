@@ -9,6 +9,10 @@ async function shot(page: Page, name: string): Promise<void> {
     await page.screenshot({ path: `test-results/shots/${name}.png` });
 }
 
+// In order: the bulk buy uses the site the first test opens (and moves the chain four hours on,
+// which the later specs do not mind).
+test.describe.configure({ mode: 'serial' });
+
 const RPC = `http://127.0.0.1:${process.env['PLAY_ANVIL_PORT'] ?? '18546'}`; // e2e/play/start.mjs
 
 async function rpc(page: Page, method: string, params: unknown[]): Promise<void> {

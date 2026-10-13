@@ -13,10 +13,11 @@ import { runnerImport } from 'vite';
 
 const web = fileURLToPath(new URL('..', import.meta.url));
 const SCALE = 3;
-const RIGS = 6;
 
 const { module: art } = await runnerImport(join(web, 'src/game/pixel/portrait.ts'));
 const { module: mo } = await runnerImport(join(web, '../../packages/sdk/src/art.ts'));
+const { module: catalog } = await runnerImport(join(web, 'src/lib/catalog.ts'));
+const RIGS = catalog.GEN1_RIGS.length;
 const W = art.PORTRAIT_W;
 const H = art.PORTRAIT_H;
 

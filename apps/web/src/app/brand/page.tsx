@@ -1,6 +1,7 @@
 import { STRATA } from '@mohonaut/sdk';
 import type { Metadata } from 'next';
 import { Card } from '../../components/Card';
+import { RigPicture } from '../../components/RigPicture';
 import { SitePage } from '../../components/SiteChrome';
 import { ForemanMoSvg } from '../../game/pixel/mo-art';
 import { GEN1_RIGS } from '../../lib/catalog';
@@ -153,14 +154,7 @@ export default function BrandPage() {
         {GEN1_RIGS.map((r) => (
           <li key={r.id}>
             <figure className="overflow-hidden rounded-lg border border-line bg-surface-raised">
-              <img
-                src={`/rigs/rig-${r.id}.png`}
-                alt={`${r.name} on its pad at night`}
-                width={300}
-                height={276}
-                loading="lazy"
-                className="pixel-canvas h-auto w-full"
-              />
+              <RigPicture id={r.id} name={r.name} />
               <figcaption className="flex items-center justify-between p-3 text-sm">
                 {r.name}
                 <a href={`/rigs/rig-${r.id}.png`} download className="text-data underline">

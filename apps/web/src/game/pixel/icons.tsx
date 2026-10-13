@@ -1,5 +1,5 @@
 /** Our own 12x12 pixel icons (crisp rectangles; no icon packs). */
-const ICONS: Record<string, string[]> = {
+const ICONS = {
   fuel: [
     '...######...',
     '..#oooooo#..',
@@ -182,6 +182,20 @@ const ICONS: Record<string, string[]> = {
     '....#.......',
     '............',
   ],
+  batteryFull: [
+    '............',
+    '............',
+    '##########..',
+    '#cc.cc.cc#..',
+    '#cc.cc.cc###',
+    '#cc.cc.cc#y#',
+    '#cc.cc.cc#y#',
+    '#cc.cc.cc###',
+    '#cc.cc.cc#..',
+    '##########..',
+    '............',
+    '............',
+  ],
   battery: [
     '............',
     '............',
@@ -196,7 +210,7 @@ const ICONS: Record<string, string[]> = {
     '............',
     '............',
   ],
-};
+} satisfies Record<string, string[]>;
 const ICON_COLORS: Record<string, string> = {
   '#': '#16191d',
   o: '#ff6b1a',
@@ -207,8 +221,10 @@ const ICON_COLORS: Record<string, string> = {
 };
 
 /** An icon, `size` px square; keep it a multiple of 12 so every art pixel stays whole. */
-export function PxIcon({ name, size = 24 }: { name: keyof typeof ICONS; size?: number }) {
-  const rows = ICONS[name] ?? [];
+export type IconName = keyof typeof ICONS;
+
+export function PxIcon({ name, size = 24 }: { name: IconName; size?: number }) {
+  const rows = ICONS[name];
   return (
     <svg
       aria-hidden="true"

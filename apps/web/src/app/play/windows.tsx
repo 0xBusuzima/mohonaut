@@ -40,6 +40,7 @@ function Gauge({
   segments = 16,
   progress = false,
   low = false,
+  valueText,
 }: {
   fill: number;
   label: string;
@@ -48,6 +49,8 @@ function Gauge({
   progress?: boolean;
   /** A tank level that is running low: red. */
   low?: boolean;
+  /** What a screen reader says for the value, when a percentage says too little. */
+  valueText?: string;
 }) {
   const n = segments;
   // Anything in it lights at least one segment: a few litres in a big tank is not "empty".
@@ -59,6 +62,7 @@ function Gauge({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(Math.min(1, Math.max(0, fill)) * 100)}
+      aria-valuetext={valueText}
       className="flex gap-0.5 border-[3px] border-charcoal bg-night p-1"
     >
       {Array.from({ length: n }, (_, i) => (
@@ -157,6 +161,7 @@ export function FuelWindow({
             fill={full > 0n ? Number((tank * 1_000_000n) / full) / 1e6 : 0}
             label="Diesel in tank"
             low={hoursLeft !== null && hoursLeft < 12}
+            valueText={`${formatLitres(tank)}${hoursLeft === null ? '' : `, about ${hoursLeft.toFixed(1)} h of diesel`}${hoursLeft !== null && hoursLeft < 12 ? ', running low' : ''}`}
           />
           <Readout
             rows={[

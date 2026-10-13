@@ -128,6 +128,10 @@ describe('the diesel tank window', () => {
     const { FuelWindow } = await import('../src/app/play/windows');
     render(<FuelWindow state={withTank(2n)} action={action} first={false} ethBalance={0n} />);
     expect(lit('bg-alarm')).toBe(1);
+    // The value is read out in litres and hours, not as a rounded 0%.
+    expect(screen.getByRole('meter').getAttribute('aria-valuetext')).toBe(
+      '2.0 ℓ, about 8.0 h of diesel, running low',
+    );
   });
 });
 

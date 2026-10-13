@@ -278,6 +278,15 @@ html {
   .guide [role='status'] {
     font-size: 0.8rem;
   }
+  /* The guide has the bottom right here: toasts drop in at the top centre for a moment. */
+  body.pixel-game .toast-region {
+    top: 0.5rem;
+    right: auto;
+    bottom: auto;
+    left: 50%;
+    width: 20rem;
+    transform: translateX(-50%);
+  }
 }
 
 /* Pixelify Sans draws "fi" as one ligature glyph that reads like an "A": spell it out. */

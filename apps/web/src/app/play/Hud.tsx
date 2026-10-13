@@ -88,7 +88,7 @@ export function Hud({
             : 'Market Open: waiting for the opening call'}
         </p>
       )}
-      {/* Left: boards, crew, the World Bore and the power switch. */}
+      {/* Left: help, boards, crew, the World Bore, and the sound and low power switches. */}
       <div className="pointer-events-auto absolute top-[7.6rem] left-3 flex flex-col items-start gap-2 md:top-16">
         <PxButton
           variant="light"
@@ -149,7 +149,8 @@ export function Hud({
             className="!p-1.5"
             onClick={() => setLowPower(!lowPower)}
           >
-            <PxIcon name="battery" />
+            {/* Full cells at full power, one cell when saving. */}
+            <PxIcon name={lowPower ? 'battery' : 'batteryFull'} />
           </PxButton>
         </div>
       </div>
