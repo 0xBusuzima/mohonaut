@@ -912,6 +912,14 @@ Köşeli parantezler doldurulacak alanlardır. **Tüm taslaklar yayından önce 
 - **F-04 (T−37):** `If you've played an on-chain mining game that died, what killed it for you? Not looking for names. Looking for failure modes. I'm reading every reply.`
 - **F-04b (T−36):** `Tomorrow it gets a name.`
 
+**Devlog cephanesi (2026-10-13'te oyuna eklenenler; isimsiz, stealth dönemine uygun, kurucu hesabı)**
+
+- **D-01:** `Built a thing tonight: come back to your drill site after a while and the foreman hands you a shift log. What your rigs cored, the diesel they burned, how much deeper the shared hole got. No fireworks. Just the log.` [ekran görüntüsü]
+- **D-02:** `Finish a set in the daily survey and it ends up on your site: an old wooden derrick, a rack of core samples, an ammonite in a glass case. Free, once a day, nothing to buy. It changes nothing in the economy.` [ekran görüntüsü]
+- **D-03:** `Your crew's tag now flies on the flagpole of your core shack. I had to draw a 3x5 pixel alphabet for it. M and W didn't fit in three pixels. They get five.` [ekran görüntüsü]
+- **D-04:** `Transparency detail nobody asked for: the equipment market shows what Drill Power cost on each of the last 7 days, read from the chain. Prices come from a public formula. Nobody sets them by hand.` [ekran görüntüsü]
+- **D-05:** `If your transaction is slow, the game keeps its hash, tells you it is still on its way, and won't let you pay twice. Reload the page and it picks it up again. Boring. Important.` [ekran görüntüsü]
+
 **Reveal**
 
 - **P-01 (T−35):** `This is Mohonaut. An idle drilling game, on-chain. Run a drill site. Fuel your rigs. Core one shared hole with everyone else: the World Bore. Not the moon. The Moho. Built on Robinhood Chain. Try the rig, no wallet needed: mohonaut.com` [20 sn teaser]
