@@ -30,6 +30,7 @@ import { PxButton, PxModal, usePixelGame } from '../play/px';
 import { MarketWindow, RigsWindow } from '../play/RigCards';
 import { Brand } from '../play/Shell';
 import { WindowBoundary } from '../play/WindowBoundary';
+import { useTwoStep } from '../play/confirm';
 import { FuelWindow, RefineryWindow, SiteWindow } from '../play/windows';
 
 /** 60x: each real second is a simulated minute. */
@@ -96,8 +97,8 @@ export function TrainingGame() {
   const [saved, setSaved] = useState(load);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [about, setAbout] = useState(false);
-  // Starting over wipes the practice site: a second click confirms.
-  const [confirmReset, setConfirmReset] = useState(false);
+  // Starting over wipes the practice site: a second, separate press confirms.
+  const reset = useTwoStep();
   const { base, state: sim } = saved;
 
   // The clock: a simulated minute every second (every 5 in low-power mode, 5 minutes at a time).
@@ -242,20 +243,20 @@ export function TrainingGame() {
               Share
             </a>
             <PxButton
-              variant={confirmReset ? 'primary' : 'dark'}
+              variant={reset.armed !== null ? 'primary' : 'dark'}
               className="!px-2 !py-1 !text-sm"
-              onClick={() => {
-                if (!confirmReset) {
-                  setConfirmReset(true);
-                  return;
-                }
-                setConfirmReset(false);
-                setSaved({ base: Math.floor(Date.now() / 1000), state: newTraining() });
-              }}
-              onBlur={() => setConfirmReset(false)}
+              onClick={() =>
+                reset.press('reset', () =>
+                  setSaved({ base: Math.floor(Date.now() / 1000), state: newTraining() }),
+                )
+              }
+              onBlur={reset.disarm}
             >
-              {confirmReset ? 'Sure? Erase my site' : 'Start over'}
+              {reset.armed !== null ? 'Sure? Erase my site' : 'Start over'}
             </PxButton>
+            <p aria-live="polite" className="sr-only">
+              {reset.armed !== null ? 'Press again to erase your practice site.' : ''}
+            </p>
           </div>
         </div>
       </div>

@@ -58,19 +58,25 @@ export async function readChainStatus(
   const replies = new Map(((await res.json()) as RpcReply[]).map((r) => [r.id, r]));
   const uint = (id: number): bigint => {
     const r = replies.get(id)?.result;
-    if (typeof r !== 'string') throw new Error(`no answer to call ${id}`);
-    return BigInt(r === '0x' ? '0x0' : r);
+    // A real uint or bool is 32 bytes; "0x" means no contract there (a wrong chain or address).
+    if (typeof r !== 'string' || r === '0x') throw new Error(`no answer to call ${id}`);
+    return BigInt(r);
   };
   const block = replies.get(0)?.result as { timestamp?: string } | undefined;
   if (typeof block?.timestamp !== 'string') throw new Error('no latest block');
-  const quote = replies.get(5)?.result;
+  const quoteReply = replies.get(5);
+  const quote = quoteReply?.result;
+  // Only a revert means the price feed is late; a rate limit or a timeout says nothing about it.
+  const reverted =
+    quoteReply?.error !== undefined && /revert/i.test(JSON.stringify(quoteReply.error));
+  if (typeof quote !== 'string' && !reverted) throw new Error('no answer to the diesel quote');
   return {
     blockTime: Number(BigInt(block.timestamp)),
     pausedUntil: Number(uint(1)),
     lastUpdate: Number(uint(2)),
     marketOpened: uint(3) !== 0n,
     marketOpenTime: Number(uint(4)),
-    dieselOpen: typeof quote === 'string' && quote !== '0x' && BigInt(quote) > 0n,
+    dieselOpen: !reverted && typeof quote === 'string' && quote !== '0x' && BigInt(quote) > 0n,
   };
 }
 
@@ -93,7 +99,10 @@ export function statusRows(s: ChainStatus, now: number, utc: (t: number) => stri
     {
       label: 'Chain',
       ok: now - s.blockTime < 600,
-      text: `Reachable. Latest block ${ago(s.blockTime)}.`,
+      text:
+        now - s.blockTime < 600
+          ? `Reachable. Latest block ${ago(s.blockTime)}.`
+          : `Latest block ${ago(s.blockTime)}: the chain or this RPC is behind.`,
     },
     {
       label: 'Player actions',

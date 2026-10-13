@@ -10,6 +10,7 @@ import { rigName } from '../../game/play';
 import { RigPortrait } from '../../game/pixel/RigPortrait';
 import type { GameState, RigType } from '../../game/state';
 import { formatLitres, formatMohn } from '../../lib/format';
+import { useTwoStep } from './confirm';
 import { PxButton, PxIcon } from './px';
 
 /** One rig as a card: the drawing on its pad, the numbers, and the card's own buttons. */
@@ -242,7 +243,7 @@ export function RigsWindow({
 }) {
   const owned = state.rigs.filter((r) => r.owned > 0);
   const p = state.player;
-  const [confirmScrap, setConfirmScrap] = useState<number | null>(null);
+  const scrap = useTwoStep();
   return (
     <>
       <p className="mb-4 text-center text-base text-concrete">
@@ -257,6 +258,11 @@ export function RigsWindow({
           </PxButton>
         </p>
       )}
+      <p aria-live="polite" className="sr-only">
+        {scrap.armed === null
+          ? ''
+          : `Press again to scrap one ${rigName(Number(scrap.armed))}. It cannot be undone.`}
+      </p>
       {owned.length === 0 ? (
         <div className="text-center">
           <p className="mb-4 text-lg">No rigs on your site yet.</p>
@@ -304,26 +310,23 @@ export function RigsWindow({
                   className="!px-1 !text-base"
                   busy={action.busy === 'scrapMachines'}
                   aria-label={
-                    confirmScrap === r.id
+                    scrap.armed === String(r.id)
                       ? `Confirm: scrap one ${rigName(r.id)}`
                       : `Scrap one ${rigName(r.id)}`
                   }
-                  onBlur={() => setConfirmScrap(null)}
-                  onClick={() => {
-                    // Scrapping destroys the rig: a second click confirms.
-                    if (confirmScrap !== r.id) {
-                      setConfirmScrap(r.id);
-                      return;
-                    }
-                    setConfirmScrap(null);
-                    void action.run({
-                      fn: 'scrapMachines',
-                      args: [BigInt(r.id), 1],
-                      done: 'Rig scrapped',
-                    });
-                  }}
+                  onBlur={scrap.disarm}
+                  onClick={() =>
+                    // Scrapping destroys the rig: a second, separate press confirms.
+                    scrap.press(String(r.id), () => {
+                      void action.run({
+                        fn: 'scrapMachines',
+                        args: [BigInt(r.id), 1],
+                        done: 'Rig scrapped',
+                      });
+                    })
+                  }
                 >
-                  {confirmScrap === r.id ? 'Sure?' : 'Scrap'}
+                  {scrap.armed === String(r.id) ? 'Sure?' : 'Scrap'}
                 </PxButton>
               </div>
             </RigCard>

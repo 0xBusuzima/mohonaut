@@ -60,6 +60,10 @@ class BetaReportTest(unittest.TestCase):
         whole = br.compare(days, GENESIS_DAY, fans())
         self.assertTrue(next(c for c in whole if c.metric == "emission").verdict.startswith("off"))
 
+    def test_day0_fraction(self):
+        self.assertEqual(br.day0_fraction(GENESIS_DAY * 86_400), 1.0)
+        self.assertEqual(br.day0_fraction(GENESIS_DAY * 86_400 + 18 * 3600), 0.25)
+
     def test_ignores_days_before_genesis_and_fills_gaps(self):
         days = [day(-3, 9999, 9999), day(0, 1000, 500), day(2, 1000, 500)]
         series = br.daily_series(days, GENESIS_DAY)

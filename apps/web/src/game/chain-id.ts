@@ -24,4 +24,6 @@ const RPC_URLS: Readonly<Record<number, string>> = {
 };
 
 /** The RPC the client reads (a build may point elsewhere, e.g. the e2e anvil). */
-export const RPC_URL = process.env['NEXT_PUBLIC_RPC_URL'] ?? RPC_URLS[CHAIN_ID] ?? '';
+const override = process.env['NEXT_PUBLIC_RPC_URL'];
+export const RPC_URL =
+  override !== undefined && override !== '' ? override : (RPC_URLS[CHAIN_ID] ?? '');

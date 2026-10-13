@@ -45,6 +45,12 @@ describe('keeper config', () => {
     );
   });
 
+  it('refuses a blank JOBS line instead of running every job', () => {
+    expect(() => loadConfig({ ...base, KEEPER_PRIVATE_KEY: KEY, JOBS: '' })).toThrow(
+      'JOBS is empty',
+    );
+  });
+
   it('parses the job list and defaults', () => {
     const cfg = loadConfig({ ...base, KEEPER_PRIVATE_KEY: KEY, JOBS: 'poke, finalize' });
     expect(cfg.jobs).toEqual(['poke', 'finalize']);

@@ -50,6 +50,25 @@ describe('the chain status reader', () => {
     });
   });
 
+  it('refuses answers that are not answers: no contract there, a non-revert error, no array', async () => {
+    const reply = (calls: unknown) => () => Promise.resolve(new Response(JSON.stringify(calls)));
+    const good = (over: Record<number, unknown>) =>
+      [0, 1, 2, 3, 4, 5].map((id) =>
+        id in over
+          ? { id, ...(over[id] as object) }
+          : id === 0
+            ? { id, result: { timestamp: '0x6a000000' } }
+            : { id, result: hex(1) },
+      );
+    // A wrong chain or address: every call comes back empty.
+    await expect(readChainStatus('r', 'c', reply(good({ 1: { result: '0x' } })))).rejects.toThrow();
+    // A rate limit on the quote says nothing about the price feed.
+    await expect(
+      readChainStatus('r', 'c', reply(good({ 5: { error: { code: -32005, message: 'limit' } } }))),
+    ).rejects.toThrow();
+    await expect(readChainStatus('r', 'c', reply({ error: 'no batches' }))).rejects.toThrow();
+  });
+
   it('puts the state in words, flagging a pause, a late keeper and a late price feed', () => {
     const now = 2_000_000_000;
     const utc = (t: number) => `t${t}`;
@@ -66,6 +85,23 @@ describe('the chain status reader', () => {
       utc,
     );
     expect(fine.every((r) => r.ok)).toBe(true);
+    const behind = statusRows(
+      {
+        blockTime: now - 3600,
+        pausedUntil: 0,
+        lastUpdate: now - 3600,
+        marketOpened: true,
+        marketOpenTime: 0,
+        dieselOpen: true,
+      },
+      now,
+      utc,
+    );
+    expect(behind[0]).toEqual({
+      label: 'Chain',
+      ok: false,
+      text: 'Latest block 60 min ago: the chain or this RPC is behind.',
+    });
     expect(fine.find((r) => r.label === 'Market')?.text).toBe(
       `Opens at Market Open, t${now + 3600}.`,
     );

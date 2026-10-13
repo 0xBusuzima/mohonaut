@@ -75,6 +75,11 @@ def _at(fan: np.ndarray, t: float, flow: bool) -> np.ndarray:
     return fan[:, i] * (1 - w) + fan[:, j] * w
 
 
+def day0_fraction(genesis: int) -> float:
+    """The share of genesis's UTC day that lies after genesis (1.0 at midnight)."""
+    return 1 - (genesis % DAY) / DAY
+
+
 def compare(
     days: list[dict], genesis_day: int, fans: dict[str, np.ndarray], day0_fraction: float = 1.0
 ) -> list[Check]:
@@ -146,8 +151,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--scenario", default="spec__base")
     args = ap.parse_args(argv)
     days = fetch_days(args.api) if args.api else json.loads(args.days.read_text(encoding="utf-8"))["days"]
-    day0_fraction = 1 - (args.genesis % DAY) / DAY
-    checks = compare(days, args.genesis // DAY, load_fans(args.fans, args.scenario), day0_fraction)
+    checks = compare(days, args.genesis // DAY, load_fans(args.fans, args.scenario), day0_fraction(args.genesis))
     sys.stdout.write(report(checks, args.scenario))
     return 0
 

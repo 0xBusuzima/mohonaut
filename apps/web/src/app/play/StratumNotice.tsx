@@ -48,6 +48,8 @@ export function StratumNotice({
     return index;
   });
   if (index <= seen) return null;
+  // A line crossed since this device last looked, even if a stratum went by unseen.
+  const crossed = (m: number) => STRATA.slice(seen + 1, index + 1).some((st) => st.fromM === m);
   const close = () => {
     remember(index);
     setSeen(index);
@@ -64,14 +66,14 @@ export function StratumNotice({
             The World Bore has broken through at {current.fromM.toLocaleString('en-US')} m. Every
             driller&apos;s rigs are coring {current.name} now.
           </p>
-          {current.fromM === KOLA_LINE_M && (
+          {crossed(KOLA_LINE_M) && (
             <p className="mt-2 text-cyan">
-              This is the Kola Line: deeper than any hole people have actually drilled.
+              Past the Kola Line: as deep as the deepest hole people have ever drilled.
             </p>
           )}
-          {current.fromM === MOHO_LINE_M && (
+          {crossed(MOHO_LINE_M) && (
             <p className="mt-2 text-cyan">
-              This is the Moho Line, where the crust ends and the mantle begins.
+              Past the Moho Line, where the crust ends and the mantle begins.
             </p>
           )}
         </div>

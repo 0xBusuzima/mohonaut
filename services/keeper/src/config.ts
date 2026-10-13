@@ -91,6 +91,9 @@ export interface Config {
 }
 
 export function loadConfig(env: Record<string, string | undefined>): Config {
+  // A blank JOBS would quietly mean every job, buyback and liquidity included: say so instead.
+  if (env['JOBS'] === '')
+    throw new Error('JOBS is empty: list the jobs, or remove the line for all');
   // An empty value (a blank line left from .env.example) means the variable is not set.
   const e = envSchema.parse(Object.fromEntries(Object.entries(env).filter(([, v]) => v !== '')));
   const deployment = loadDeployment(e.DEPLOYMENT_FILE);

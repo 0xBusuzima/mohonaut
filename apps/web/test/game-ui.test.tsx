@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Guide } from '../src/app/play/Guide';
 import { StratumNotice } from '../src/app/play/StratumNotice';
@@ -40,10 +40,14 @@ describe('the new-stratum notice', () => {
     );
   });
 
-  it('marks the Kola Line', () => {
+  it('marks the Kola Line, even when a stratum went by unseen', () => {
     window.localStorage.setItem('mohonaut.stratum', '2');
-    render(<StratumNotice depthMm={12_300_000n} />);
-    expect(screen.getByText(/This is the Kola Line/)).toBeTruthy();
+    const first = render(<StratumNotice depthMm={12_300_000n} />);
+    expect(screen.getByText(/Past the Kola Line/)).toBeTruthy();
+    first.unmount();
+    window.localStorage.setItem('mohonaut.stratum', '1');
+    render(<StratumNotice depthMm={21_000_000n} />); // now in V, IV never shown here
+    expect(screen.getByText(/Past the Kola Line/)).toBeTruthy();
   });
 
   it('stays quiet within the same stratum', () => {
@@ -212,11 +216,23 @@ describe('a window that breaks', () => {
 describe('scrapping a rig', () => {
   it('asks for a second click before the rig is destroyed', async () => {
     const { RigsWindow } = await import('../src/app/play/RigCards');
+    vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] });
     const run = vi.fn(() => Promise.resolve(true));
     render(<RigsWindow state={NEW_SITE} action={{ run, busy: null }} openMarket={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: 'Scrap one Pilot Rig' }));
+    // A double click is one gesture: its second click confirms nothing.
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm: scrap one Pilot Rig' }));
     expect(run).not.toHaveBeenCalled();
+    expect(screen.getByText(/Press again to scrap one Pilot Rig/)).toBeTruthy();
+    vi.advanceTimersByTime(600);
     fireEvent.click(screen.getByRole('button', { name: 'Confirm: scrap one Pilot Rig' }));
     expect(run).toHaveBeenCalledWith(expect.objectContaining({ fn: 'scrapMachines' }));
+    // Armed and left alone, it disarms by itself.
+    fireEvent.click(screen.getByRole('button', { name: 'Scrap one Pilot Rig' }));
+    act(() => {
+      vi.advanceTimersByTime(5_100);
+    });
+    expect(screen.getByRole('button', { name: 'Scrap one Pilot Rig' })).toBeTruthy();
+    vi.useRealTimers();
   });
 });
