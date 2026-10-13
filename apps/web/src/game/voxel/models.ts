@@ -109,3 +109,75 @@ export function rotaryRig(): Model {
   m.set(1, 1, 8, LAMP);
   return m;
 }
+
+/** A stable 0..1 value per cell, for textures without randomness. */
+function noise(x: number, y: number, z: number): number {
+  const h = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453;
+  return h - Math.floor(h);
+}
+
+/**
+ * A corner of the drill site as a cut-away block of ground (docs/01 7): earth and gravel on
+ * top, and on its cut sides the World Bore's strata in their lithology colours, so the maquette
+ * shows what the rigs are drilling into. On it: the Rotary Rig, the diesel tank, the Market
+ * container, a pipe rack, a mud pit and work lamps.
+ */
+export function siteDiorama(): Model {
+  const m = new Model();
+  const N = 44;
+  const strata = ['#B08A5E', '#D8C8A0', '#B79A9A', '#7E8288'];
+  // The block: four strata bands below the surface, three voxels each.
+  for (let x = 0; x < N; x++)
+    for (let y = 0; y < N; y++)
+      for (let z = -12; z < 0; z++) {
+        const band = Math.min(3, Math.floor(-z / 3));
+        const c = strata[band] ?? '#7E8288';
+        m.set(x, y, z, v(noise(x, y, z) > 0.94 ? P.rock : c));
+      }
+  // The surface: dark earth with gravel and a few puddles.
+  for (let x = 0; x < N; x++)
+    for (let y = 0; y < N; y++) {
+      const n = noise(x, y, 0);
+      m.set(x, y, 0, v(n > 0.9 ? P.gravel : n > 0.72 ? P.groundSpeck : P.ground));
+    }
+  for (const [cx, cy] of [
+    [30, 8],
+    [10, 34],
+  ] as const)
+    for (let x = cx - 2; x <= cx + 2; x++)
+      for (let y = cy - 1; y <= cy + 1; y++) m.set(x, y, 0, v(P.puddle));
+  // The rig on its pad, lifted onto the surface.
+  for (const [x, y, z, vox] of rotaryRig().entries()) m.set(x + 14, y + 14, z + 1, vox);
+  // Diesel tank: a cylinder of steel with an orange band and a gauge window.
+  for (let x = 2; x <= 9; x++)
+    for (let y = 18; y <= 25; y++) {
+      if (Math.hypot(x - 5.5, y - 21.5) > 3.8) continue;
+      for (let z = 1; z <= 10; z++)
+        m.set(x, y, z, z === 7 ? v(P.orange) : z === 10 ? v(P.steelLight) : v(P.steel));
+    }
+  m.set(9, 21, 5, v(P.cyan, true));
+  // The Market container.
+  m.box(34, 2, 1, 41, 5, 4, v(P.orangeDark));
+  m.box(34, 2, 5, 41, 5, 5, v(P.orange));
+  for (let x = 35; x <= 40; x += 2) m.box(x, 5, 1, x, 5, 4, v(P.orange));
+  // A pipe rack: three layers of drill pipe on sleepers.
+  m.box(4, 30, 1, 4, 38, 1, v(P.woodDark));
+  m.box(10, 30, 1, 10, 38, 1, v(P.woodDark));
+  for (let layer = 0; layer < 3; layer++)
+    for (let y = 31 + layer; y <= 37 - layer; y += 2)
+      m.box(3, y, 2 + layer, 11, y, 2 + layer, v(layer % 2 === 0 ? P.concrete : P.steelLight));
+  // The mud pit beside the pad.
+  m.box(32, 30, 0, 39, 37, 0, v('#3a2a1e'));
+  m.box(31, 29, 1, 40, 29, 1, v(P.woodDark));
+  m.box(31, 38, 1, 40, 38, 1, v(P.woodDark));
+  // Work lamps on posts at the corners of the yard.
+  for (const [x, y] of [
+    [13, 2],
+    [42, 20],
+    [20, 42],
+  ] as const) {
+    for (let z = 1; z <= 9; z++) m.set(x, y, z, v(P.steelLight));
+    m.set(x, y, 10, LAMP);
+  }
+  return m;
+}

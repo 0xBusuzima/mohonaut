@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hex, rotaryRig } from '../src/game/voxel/models';
+import { hex, rotaryRig, siteDiorama } from '../src/game/voxel/models';
 import { Model, render } from '../src/game/voxel/render';
 import type { Image } from '../src/game/voxel/render';
 
@@ -86,5 +86,17 @@ describe('the voxel models', () => {
     expect(rig.get(0, 0, 0)?.colour).toEqual(hex('#ff6b1a'));
     const tops = [...rig.entries()].filter(([, , , v]) => v.emissive === true);
     expect(Math.max(...tops.map(([, , z]) => z))).toBe(35);
+  });
+
+  it('cuts the diorama block to show the strata the rigs drill into, under an earth surface', () => {
+    const site = siteDiorama();
+    // The cut side: Regolith just under the surface, Granite Basement further down.
+    expect(site.get(43, 20, -1)?.colour).toEqual(hex('#B08A5E'));
+    expect(site.get(43, 20, -8)?.colour).toEqual(hex('#B79A9A'));
+    // The rig stands on the surface, beacon and all; the lamps glow.
+    expect(site.get(14, 14, 1)).toBeDefined();
+    expect([...site.entries()].filter(([, , , v]) => v.emissive === true).length).toBeGreaterThan(
+      4,
+    );
   });
 });

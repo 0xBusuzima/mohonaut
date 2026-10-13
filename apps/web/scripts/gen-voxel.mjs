@@ -50,9 +50,9 @@ function png({ width, height, data }) {
 
 const out = join(web, 'public/voxel');
 mkdirSync(out, { recursive: true });
-const sprites = { 'rig-rotary': models.rotaryRig() };
+const sprites = { 'rig-rotary': models.rotaryRig(), 'site-diorama': models.siteDiorama() };
 for (const [name, model] of Object.entries(sprites)) {
-  const image = voxel.render(model, { scale: 3, bloom: 6 });
+  const image = voxel.render(model, { scale: 3, bloom: 8, light: [-0.6, -0.4, 0.75] });
   writeFileSync(join(out, `${name}.png`), png(image));
   console.log(`gen-voxel: ${name} ${image.width}x${image.height}`);
 }
