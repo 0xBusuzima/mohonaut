@@ -262,14 +262,15 @@ html {
   }
 }
 
-/* Short screens (phones held sideways): Foreman Mo's tip box shrinks to a strip at the bottom
-   right, clear of the HUD's left column, so the site and the HUD stay visible. */
+/* Short screens (phones held sideways): Foreman Mo's tip box shrinks to a wide, low strip at
+   the bottom right, clear of the HUD's left column and of the panels under the gauges, so the
+   site and the HUD stay visible. */
 @media (max-height: 520px) {
   .guide {
     right: 0.75rem;
     left: auto;
     bottom: 5.5rem;
-    max-width: 22rem;
+    max-width: min(30rem, calc(100vw - 9rem));
     padding: 0.5rem;
   }
   .guide .guide-mo {
