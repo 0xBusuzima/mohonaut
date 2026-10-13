@@ -54,7 +54,8 @@ const statics = new WeakMap<Ctx, Layer>();
 const nights = new WeakMap<Ctx, Layer>();
 
 function layerFor(map: WeakMap<Ctx, Layer>, c: Ctx, W: number, H: number): Ctx | null {
-  if (typeof document === 'undefined') return null;
+  // No layer for an empty screen: drawImage throws on a 0-pixel canvas.
+  if (typeof document === 'undefined' || W <= 0 || H <= 0) return null;
   let l = map.get(c);
   if (l === undefined) {
     l = { key: '', canvas: document.createElement('canvas') };

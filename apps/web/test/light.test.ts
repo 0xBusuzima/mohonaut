@@ -46,4 +46,32 @@ describe('the night layer', () => {
     // The layer is laid over the scene on every frame.
     expect((screen as unknown as { calls: { drawImage: number } }).calls.drawImage).toBe(6);
   });
+
+  it('lays nothing over a screen of 0 pixels (a hidden box), and does not throw', () => {
+    const layer = fakeContext();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+      layer as unknown as CanvasRenderingContext2D,
+    );
+    const screen = fakeContext();
+    night(screen as unknown as CanvasRenderingContext2D, 0, 120, 20, []);
+    night(screen as unknown as CanvasRenderingContext2D, 200, 0, 20, []);
+    expect(screen.calls.drawImage).toBe(0);
+    expect(layer.calls.clearRect).toBe(0);
+  });
+});
+
+describe('the site scene', () => {
+  it('draws nothing into a box of 0 pixels and reports no hit areas', async () => {
+    const { drawWorld } = await import('../src/game/pixel/world');
+    const screen = fakeContext();
+    const hits = drawWorld(screen as unknown as CanvasRenderingContext2D, 0, 0, 0, {
+      pads: [],
+      tankFill: 0,
+      hover: null,
+      motion: false,
+      pan: { x: 0, y: 0 },
+    });
+    expect(hits).toEqual([]);
+    expect(screen.calls.drawImage).toBe(0);
+  });
 });

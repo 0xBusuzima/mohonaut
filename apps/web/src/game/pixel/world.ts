@@ -155,6 +155,8 @@ function walk(path: [number, number][], t: number, seed: number) {
 
 export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel): HitBox[] {
   const hits: HitBox[] = [];
+  // A hidden or collapsed box (0 pixels): nothing to draw until it has a size again.
+  if (W <= 0 || H <= 0) return hits;
   const rows = siteRows(m.pads.length);
   const gh = siteDepth(rows);
   const slots = padSlots(rows);
