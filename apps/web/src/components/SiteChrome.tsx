@@ -80,6 +80,7 @@ export function SiteFooter() {
     { href: '/season0/', label: 'Season 0' },
     { href: '/security/', label: 'Security' },
     { href: '/contracts/', label: 'Contracts' },
+    { href: '/brand/', label: 'Brand' },
   ];
   return (
     <footer className="mt-24 border-t border-line bg-surface-sunken">

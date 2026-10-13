@@ -54,3 +54,18 @@ for (const name of [
   out(join(brand, `png/${name}.png`), png(`logo/${name}.svg`, 512));
   out(join(brand, `png/${name}@2x.png`), png(`logo/${name}.svg`, 1024));
 }
+
+// The press kit on the site (/brand): the vector logos and their 1x PNGs, served as they are.
+const kit = join(web, 'public/brand-kit');
+mkdirSync(kit, { recursive: true });
+for (const name of [
+  'mohonaut-wordmark',
+  'mohonaut-wordmark-on-charcoal',
+  'mohonaut-wordmark-white',
+  'mohonaut-lockup-on-charcoal',
+  'mohonaut-mark',
+  'mohonaut-monogram',
+]) {
+  out(join(kit, `${name}.svg`), readFileSync(join(brand, `logo/${name}.svg`)));
+  out(join(kit, `${name}.png`), readFileSync(join(brand, `png/${name}.png`)));
+}
