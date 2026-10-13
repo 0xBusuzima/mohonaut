@@ -104,18 +104,30 @@ export function PixelWorld({
   const vy = clampY(pan.y);
   const canPan = !contained && (size.maxX > 0 || size.maxY > 0);
 
+  // The voxel scene draws at screen resolution (art pixels times the scale and the device's
+  // pixel ratio, at most 3) so its baked sprites stay soft; the pixel scene draws at art size.
+  const hiRes = model.voxel === true;
+  const ratio =
+    hiRes && typeof window !== 'undefined'
+      ? size.scale * Math.min(2, Math.max(1, window.devicePixelRatio || 1))
+      : 1;
+  const res = Math.min(6, ratio);
+
   // Set by a drawing error: the scene stays stopped (and reported once) for this mount.
   const broken = useRef(false);
   useEffect(() => {
     const el = canvas.current;
     const c = el?.getContext('2d');
     if (el === null || c === null || c === undefined) return undefined;
-    c.imageSmoothingEnabled = false;
     let frame = 0;
     let last = 0;
     const draw = (now: number) => {
       if (broken.current) return;
       try {
+        // Art pixels to device pixels (1 for the pixel scene); smooth only when scaled.
+        c.setTransform(res, 0, 0, res, 0, 0);
+        c.imageSmoothingEnabled = res !== 1;
+        if (res !== 1) c.imageSmoothingQuality = 'high';
         hits.current = drawWorld(c, size.w, size.h, now / 1000, {
           ...model,
           hover,
@@ -145,7 +157,7 @@ export function PixelWorld({
     };
     frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
-  }, [size, model, hover, motion, vx, vy]);
+  }, [size, model, hover, motion, vx, vy, res]);
 
   const hitAt = (clientX: number, clientY: number): HitBox | null => {
     const at = canvas.current?.getBoundingClientRect();
@@ -171,8 +183,8 @@ export function PixelWorld({
     <>
       <canvas
         ref={canvas}
-        width={size.w}
-        height={size.h}
+        width={Math.round(size.w * res)}
+        height={Math.round(size.h * res)}
         role="img"
         aria-label={label}
         className={`pixel-canvas ${contained ? 'absolute inset-0' : 'fixed inset-0 h-dvh w-screen touch-none'}`}

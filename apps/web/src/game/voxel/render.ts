@@ -75,22 +75,42 @@ export interface RenderOptions {
   scale: number;
   /** Direction towards the light, in voxel space (z up). */
   light?: readonly [number, number, number];
-  /** How dark a face in shadow gets (0..1 of its lit value). */
-  shadow?: number;
   /** Ambient occlusion strength (0..1). */
   occlusion?: number;
+  /** Ambient (sky) light colour, 0..1 per channel: the colour of the shade. */
+  ambient?: readonly [number, number, number];
+  /** Direct light colour, 0..1 per channel. */
+  direct?: readonly [number, number, number];
+  /** Per-voxel colour variation (0..1), for material texture; 0 for flat colours. */
+  grain?: number;
   /** Bloom radius around glowing voxels, in pixels (0 for none). */
   bloom?: number;
 }
 
 type Face = 'top' | 'right' | 'left';
 
-/** The three faces the camera sees, their outward normals and light levels before shadows. */
+/** The three faces the camera sees, their outward normals and how much sky each one sees. */
 const FACES: Record<Face, { n: readonly [number, number, number]; base: number }> = {
   top: { n: [0, 0, 1], base: 1 },
-  left: { n: [0, 1, 0], base: 0.78 },
-  right: { n: [1, 0, 0], base: 0.6 },
+  left: { n: [0, 1, 0], base: 0.8 },
+  right: { n: [1, 0, 0], base: 0.62 },
 };
+
+/** Small fixed offsets round the light direction: several rays make a soft shadow edge. */
+const PENUMBRA: readonly (readonly [number, number])[] = [
+  [0, 0],
+  [0.09, 0],
+  [-0.09, 0],
+  [0, 0.09],
+  [0, -0.09],
+  [0.06, 0.06],
+];
+
+/** A stable 0..1 value per voxel (no randomness): the grain of its material. */
+function grainAt(x: number, y: number, z: number): number {
+  const h = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453;
+  return h - Math.floor(h);
+}
 
 /** Screen position of a voxel-space point (before the image offset). */
 function project(x: number, y: number, z: number, s: number): [number, number] {
@@ -126,6 +146,19 @@ function faceAo(
   return [corner(-1, -1), corner(1, -1), corner(1, 1), corner(-1, 1)];
 }
 
+function cross(a: readonly number[], b: readonly number[]): number[] {
+  return [
+    (a[1] ?? 0) * (b[2] ?? 0) - (a[2] ?? 0) * (b[1] ?? 0),
+    (a[2] ?? 0) * (b[0] ?? 0) - (a[0] ?? 0) * (b[2] ?? 0),
+    (a[0] ?? 0) * (b[1] ?? 0) - (a[1] ?? 0) * (b[0] ?? 0),
+  ];
+}
+
+function normalise(a: readonly number[]): number[] {
+  const n = Math.hypot(...a) || 1;
+  return a.map((v) => v / n);
+}
+
 /** True when a ray from `p` towards the light hits a voxel (a cast shadow). */
 function shadowed(m: Model, p: readonly [number, number, number], l: readonly number[]): boolean {
   const step = 0.5;
@@ -142,11 +175,22 @@ function shadowed(m: Model, p: readonly [number, number, number], l: readonly nu
 /** Renders `m` to a transparent image just large enough to hold it. */
 export function render(m: Model, opts: RenderOptions): Image {
   const s = opts.scale;
-  const lightDir = opts.light ?? [-0.55, -0.35, 1];
+  // From the front left and above: the left faces lit, the right ones in half light.
+  const lightDir = opts.light ?? [0.2, 0.55, 0.85];
   const len = Math.hypot(...lightDir);
   const l = lightDir.map((v) => v / len);
-  const shadowLevel = opts.shadow ?? 0.62;
-  const occlusion = opts.occlusion ?? 0.42;
+  // Two directions across the light, for the penumbra rays.
+  const side = normalise(
+    cross(l, [0, 0, 1]).some((v) => Math.abs(v) > 1e-6) ? cross(l, [0, 0, 1]) : [1, 0, 0],
+  );
+  const up = normalise(cross(side, l));
+  const rays = PENUMBRA.map(([p, q]) =>
+    normalise([0, 1, 2].map((k) => (l[k] ?? 0) + (side[k] ?? 0) * p + (up[k] ?? 0) * q)),
+  );
+  const occlusion = opts.occlusion ?? 0.5;
+  const ambient = opts.ambient ?? [0.36, 0.4, 0.58];
+  const direct = opts.direct ?? [0.82, 0.84, 0.96];
+  const grain = opts.grain ?? 0.06;
   const bloom = opts.bloom ?? 0;
 
   // Bounds on screen.
@@ -189,6 +233,26 @@ export function render(m: Model, opts: RenderOptions): Image {
       const a: [number, number, number] = face === 'right' ? [0, 1, 0] : [1, 0, 0];
       const b: [number, number, number] = face === 'top' ? [0, 1, 0] : [0, 0, 1];
       const ao = faceAo(m, x, y, z, n, a, b);
+      // How much of the direct light reaches each corner: the share of the penumbra rays that
+      // get through (a face turned away gets none).
+      const facing = n[0] * (l[0] ?? 0) + n[1] * (l[1] ?? 0) + n[2] * (l[2] ?? 0);
+      const sun = (
+        [
+          [0, 0],
+          [1, 0],
+          [1, 1],
+          [0, 1],
+        ] as const
+      ).map(([u, w]) => {
+        if (facing <= 0 || v.emissive === true) return 0;
+        const p: [number, number, number] = [
+          origin[0] + a[0] * (0.05 + 0.9 * u) + b[0] * (0.05 + 0.9 * w) + n[0] * 0.02,
+          origin[1] + a[1] * (0.05 + 0.9 * u) + b[1] * (0.05 + 0.9 * w) + n[1] * 0.02,
+          origin[2] + a[2] * (0.05 + 0.9 * u) + b[2] * (0.05 + 0.9 * w) + n[2] * 0.02,
+        ];
+        return rays.filter((r) => !shadowed(m, p, r)).length / rays.length;
+      });
+      const tint = 1 + (grainAt(x, y, z) - 0.5) * 2 * grain;
       const corners = [
         [0, 0],
         [1, 0],
@@ -234,23 +298,23 @@ export function render(m: Model, opts: RenderOptions): Image {
           if (d <= (depth[i] ?? -Infinity)) continue;
           depth[i] = d;
           alpha[i] = 255;
-          let light = 1;
-          if (v.emissive !== true) {
-            const aoAt =
-              ao[0] * (1 - u) * (1 - w) + ao[1] * u * (1 - w) + ao[2] * u * w + ao[3] * (1 - u) * w;
-            const p: [number, number, number] = [
-              origin[0] + a[0] * u + b[0] * w + n[0] * 0.01,
-              origin[1] + a[1] * u + b[1] * w + n[1] * 0.01,
-              origin[2] + a[2] * u + b[2] * w + n[2] * 0.01,
-            ];
-            const facing = n[0] * (l[0] ?? 0) + n[1] * (l[1] ?? 0) + n[2] * (l[2] ?? 0);
-            const lit = facing > 0 && !shadowed(m, p, l) ? 1 : shadowLevel;
-            light = base * lit * (1 - occlusion + occlusion * aoAt);
-          }
+          const bilinear = (q: readonly number[]) =>
+            (q[0] ?? 0) * (1 - u) * (1 - w) +
+            (q[1] ?? 0) * u * (1 - w) +
+            (q[2] ?? 0) * u * w +
+            (q[3] ?? 0) * (1 - u) * w;
+          const aoAt = 1 - occlusion + occlusion * bilinear(ao);
+          const sunAt = bilinear(sun) * Math.max(0, facing);
           for (let c = 0; c < 3; c++) {
-            const value = (v.colour[c] ?? 0) * light;
+            const own = v.colour[c] ?? 0;
+            // Glowing voxels keep their colour; the rest: sky light in the shade plus the direct
+            // light where it reaches, with the material's grain.
+            const value =
+              v.emissive === true
+                ? own
+                : own * tint * (base * (ambient[c] ?? 0) * aoAt + (direct[c] ?? 0) * sunAt * aoAt);
             rgb[i * 3 + c] = value;
-            glow[i * 3 + c] = v.emissive === true ? (v.colour[c] ?? 0) : 0;
+            glow[i * 3 + c] = v.emissive === true ? own : 0;
           }
         }
       }

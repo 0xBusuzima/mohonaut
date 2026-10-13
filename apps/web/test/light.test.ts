@@ -60,6 +60,45 @@ describe('the night layer', () => {
   });
 });
 
+describe('the high-resolution night (the voxel scene)', () => {
+  it('makes its layer as sharp as the screen and lays soft gradient pools, not dithered bands', () => {
+    const made: HTMLCanvasElement[] = [];
+    const create = document.createElement.bind(document);
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      const el = create(tag);
+      if (tag === 'canvas') made.push(el as HTMLCanvasElement);
+      return el;
+    });
+    const gradients: string[] = [];
+    const layer = {
+      ...fakeContext(),
+      setTransform: () => {},
+      save: () => {},
+      restore: () => {},
+      translate: () => {},
+      scale: () => {},
+      createLinearGradient: () => ({ addColorStop: () => gradients.push('linear') }),
+      createRadialGradient: () => ({ addColorStop: () => gradients.push('radial') }),
+    };
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+      layer as unknown as CanvasRenderingContext2D,
+    );
+    const screen = { ...fakeContext(), getTransform: () => ({ a: 3 }) };
+    night(
+      screen as unknown as CanvasRenderingContext2D,
+      200,
+      120,
+      20,
+      [{ x: 40, y: 60, r: 30, tint: '#ffd27a' }],
+      true,
+    );
+    expect([made[0]?.width, made[0]?.height]).toEqual([600, 360]);
+    expect(gradients).toContain('radial');
+    expect(layer.calls.drawImage).toBe(0);
+    expect(screen.calls.drawImage).toBe(1);
+  });
+});
+
 describe('the site scene', () => {
   it('draws nothing into a box of 0 pixels and reports no hit areas', async () => {
     const { drawWorld } = await import('../src/game/pixel/world');

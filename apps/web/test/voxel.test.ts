@@ -53,13 +53,15 @@ describe('the voxel renderer', () => {
   });
 
   it('draws one voxel as a lit top and two darker sides, in a 2s x 2s box', () => {
-    const img = render(new Model().set(0, 0, 0, GREY), { scale: 4, occlusion: 0 });
+    const img = render(new Model().set(0, 0, 0, GREY), { scale: 4, occlusion: 0, grain: 0 });
     expect([img.width, img.height]).toEqual([8, 8]);
     const top = pixel(img, 4, 2);
     const left = pixel(img, 1, 5);
     const right = pixel(img, 6, 5);
     expect(top[3]).toBe(255);
-    expect(top[0]).toBe(200);
+    // Sky light plus the direct light from the front left: the shade is bluish, never black.
+    expect(top[0]).toBeGreaterThan(150);
+    expect(right[2]).toBeGreaterThan(right[0] ?? 0);
     expect(left[0]).toBeLessThan(top[0] ?? 0);
     expect(right[0]).toBeLessThan(left[0] ?? 0);
     // The corners of the box stay transparent.

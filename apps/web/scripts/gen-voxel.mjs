@@ -51,7 +51,7 @@ function png({ width, height, data }) {
 
 const out = join(web, 'public/voxel');
 mkdirSync(out, { recursive: true });
-const LIGHT = [-0.6, -0.4, 0.75];
+const LIGHT = [0.2, 0.55, 0.85];
 const rigs = [
   models.pilotRig(),
   models.rotaryRig(),
@@ -67,123 +67,72 @@ for (const [i, model] of rigs.entries()) {
 }
 const diorama = voxel.render(models.siteDiorama(), { scale: 3, bloom: 8, light: LIGHT });
 writeFileSync(join(out, 'site-diorama.png'), png(diorama));
-// In-game sprites: each rig's pad fills the game's 64-pixel pad diamond (scale 32 / pad size),
-// anchored at the pad's top centre. The manifest tells the scene where to put each one.
+// In-game sprites, baked K times denser than the scene's art pixels: the scene draws them at
+// screen resolution (scaled down, smoothed), so voxels stay soft at any zoom. The manifest says
+// where each one's anchor is (in baked pixels) and its density k.
+const K = 4;
 const manifest = {};
-for (const [i, model] of rigs.entries()) {
-  const n = models.PAD_SIZES[i];
-  const scale = 32 / n;
-  const image = voxel.render(model, { scale, bloom: 4, light: LIGHT });
-  const [ax, ay] = voxel.anchorOf(image, n / 2, n / 2, 1, scale);
-  writeFileSync(join(out, `site-rig-${i}.png`), png(image));
-  manifest[`rig-${i}`] = {
+/** Bakes `model` at `artScale` art pixels a voxel, anchored at voxel point `at` (or its origin). */
+function bake(name, model, artScale, at = null, bloomArt = 2, k = K) {
+  const scale = artScale * k;
+  const image = voxel.render(model, { scale, bloom: bloomArt * k, light: LIGHT });
+  const [ax, ay] = at === null ? image.origin : voxel.anchorOf(image, at[0], at[1], at[2], scale);
+  writeFileSync(join(out, `site-${name}.png`), png(image));
+  manifest[name] = {
     w: image.width,
     h: image.height,
     ax: Math.round(ax),
     ay: Math.round(ay),
+    k,
   };
 }
-// Site buildings at 2 px a voxel, anchored at their footprint's back corner (the scene's box()).
-for (const [name, model] of [
-  ['shack', models.shackModel()],
-  ['container', models.containerModel()],
-]) {
-  const image = voxel.render(model, { scale: 2, bloom: 4, light: LIGHT });
-  writeFileSync(join(out, `site-${name}.png`), png(image));
-  manifest[name] = { w: image.width, h: image.height, ax: image.origin[0], ay: image.origin[1] };
+// Each rig's pad fills the game's 64-pixel pad diamond (32 / pad size art px a voxel), anchored
+// at the pad's top centre.
+for (const [i, model] of rigs.entries()) {
+  const n = models.PAD_SIZES[i];
+  bake(`rig-${i}`, model, 32 / n, [n / 2, n / 2, 1]);
 }
-// The site's ground for each number of pad rows (3 to 9), at the scene's grid: one cell is
-// GROUND_VOXELS voxels of 16 / GROUND_VOXELS pixels; anchored at iso(0, 0) on the surface.
-for (let rows = 3; rows <= 9; rows++) {
-  const scale = 16 / models.GROUND_VOXELS;
-  const image = voxel.render(models.siteGround(world.GW, world.siteDepth(rows)), {
-    scale,
-    light: LIGHT,
-    occlusion: 0.3,
-  });
-  writeFileSync(join(out, `site-ground-${rows}.png`), png(image));
-  manifest[`ground-${rows}`] = {
-    w: image.width,
-    h: image.height,
-    ax: image.origin[0],
-    ay: image.origin[1],
-  };
-}
-// The fence at the scene's grid (FENCE_VOXELS voxels a cell): the back run once, the front one
-// for each number of pad rows; anchored at iso(0, 0) on the ground.
-{
-  const scale = 16 / models.FENCE_VOXELS;
-  const back = voxel.render(models.fenceBackModel(world.GW), { scale, light: LIGHT });
-  writeFileSync(join(out, 'site-fence-back.png'), png(back));
-  manifest['fence-back'] = {
-    w: back.width,
-    h: back.height,
-    ax: back.origin[0],
-    ay: back.origin[1],
-  };
-  for (let rows = 3; rows <= 9; rows++) {
-    const front = voxel.render(models.fenceFrontModel(world.GW, world.siteDepth(rows)), {
-      scale,
-      light: LIGHT,
-    });
-    writeFileSync(join(out, `site-fence-front-${rows}.png`), png(front));
-    manifest[`fence-front-${rows}`] = {
-      w: front.width,
-      h: front.height,
-      ax: front.origin[0],
-      ay: front.origin[1],
-    };
-  }
-}
-// Small props at 2 px a voxel, each anchored where the scene's pixel drawing stands.
-for (const [name, model, at] of [
-  ['pad', models.emptyPad(), [8, 8, 1]],
-  ['generator', models.generatorModel(), [0, 0, 0]],
-  ['lamp', models.lampModel(), [0.5, 0.5, 0]],
-  ['pipes', models.pipeRackModel(), [6, 2, 0]],
-  ['tanker', models.tankerModel(), [0, 0, 0]],
-]) {
-  const image = voxel.render(model, { scale: 2, bloom: 4, light: LIGHT });
-  const [ax, ay] = voxel.anchorOf(image, at[0], at[1], at[2], 2);
-  writeFileSync(join(out, `site-${name}.png`), png(image));
-  manifest[name] = { w: image.width, h: image.height, ax: Math.round(ax), ay: Math.round(ay) };
-}
-// The wellhead with the cuttings of each stratum (8 variants), anchored at the cellar's back corner.
+// Site buildings anchored at their footprint's back corner (the scene's box()).
+bake('shack', models.shackModel(), 2);
+bake('container', models.containerModel(), 2);
+// The ground and the fence: large and plain, so baked only twice as dense (smaller files).
+for (let rows = 3; rows <= 9; rows++)
+  bake(
+    `ground-${rows}`,
+    models.siteGround(world.GW, world.siteDepth(rows)),
+    16 / models.GROUND_VOXELS,
+    null,
+    0,
+    2,
+  );
+bake('fence-back', models.fenceBackModel(world.GW), 16 / models.FENCE_VOXELS, null, 0, 2);
+for (let rows = 3; rows <= 9; rows++)
+  bake(
+    `fence-front-${rows}`,
+    models.fenceFrontModel(world.GW, world.siteDepth(rows)),
+    16 / models.FENCE_VOXELS,
+    null,
+    0,
+    2,
+  );
+// Small props, each anchored where the scene's pixel drawing stands.
+bake('pad', models.emptyPad(), 2, [8, 8, 1]);
+bake('generator', models.generatorModel(), 2);
+bake('lamp', models.lampModel(), 2, [0.5, 0.5, 0]);
+bake('pipes', models.pipeRackModel(), 2, [6, 2, 0]);
+bake('tanker', models.tankerModel(), 2);
+bake('tank', models.tankModel(), 2, [7, 7, 0]);
+// The wellhead with the cuttings of each stratum.
 const { module: sdk } = await runnerImport(join(web, '../../packages/sdk/src/depth.ts'));
-for (const [i, s] of sdk.STRATA.entries()) {
-  const image = voxel.render(models.wellheadModel(s.colour), { scale: 2, bloom: 4, light: LIGHT });
-  writeFileSync(join(out, `site-wellhead-${i}.png`), png(image));
-  manifest[`wellhead-${i}`] = {
-    w: image.width,
-    h: image.height,
-    ax: image.origin[0],
-    ay: image.origin[1],
-  };
-}
-// Core Collection decor, each standing on its footprint's centre (where the pixel prop stands).
+for (const [i, s] of sdk.STRATA.entries()) bake(`wellhead-${i}`, models.wellheadModel(s.colour), 2);
+// Core Collection decor, each standing on its footprint's centre.
 for (const [set, centre] of [
   ['fossils', [3, 3]],
   ['cores', [4, 1]],
   ['bits', [4.5, 1.5]],
   ['relics', [3, 3]],
-]) {
-  const image = voxel.render(models.decorModel(set), { scale: 2, bloom: 3, light: LIGHT });
-  const [ax, ay] = voxel.anchorOf(image, centre[0], centre[1], 0, 2);
-  writeFileSync(join(out, `site-decor-${set}.png`), png(image));
-  manifest[`decor-${set}`] = {
-    w: image.width,
-    h: image.height,
-    ax: Math.round(ax),
-    ay: Math.round(ay),
-  };
-}
-// The tank stands on its centre: anchored at its footprint's middle on the ground.
-{
-  const image = voxel.render(models.tankModel(), { scale: 2, bloom: 4, light: LIGHT });
-  const [ax, ay] = voxel.anchorOf(image, 7, 7, 0, 2);
-  writeFileSync(join(out, 'site-tank.png'), png(image));
-  manifest.tank = { w: image.width, h: image.height, ax: Math.round(ax), ay: Math.round(ay) };
-}
+])
+  bake(`decor-${set}`, models.decorModel(set), 2, [centre[0], centre[1], 0], 1.5);
 writeFileSync(join(out, 'manifest.json'), JSON.stringify(manifest));
 console.log(
   `gen-voxel: ${rigs.length} rigs, the site diorama and ${Object.keys(manifest).length} in-game sprites`,
