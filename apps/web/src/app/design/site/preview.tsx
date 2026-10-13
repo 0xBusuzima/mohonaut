@@ -122,6 +122,12 @@ export function SitePreview() {
     () => new URLSearchParams(window.location.search).has('decor'),
     () => false,
   );
+  // ?voxel=1: the rigs as baked voxel sprites (docs/06 7.8).
+  const voxel = useSyncExternalStore(
+    noSubscribe,
+    () => new URLSearchParams(window.location.search).has('voxel'),
+    () => false,
+  );
   // 367 MOHN/h over 980 DP, as the sample HUD says.
   const model = useMemo(
     () => ({
@@ -129,10 +135,11 @@ export function SitePreview() {
       tankFill: 0.4 + (step % 3) * 0.2,
       yieldPerDp: 0.375,
       stratum: stratumAt(millimetres(SAMPLE.network.emitted)).current.colour,
+      voxel,
       decor: decor ? DECOR_SETS : [],
       ...(decor ? { crewTag: 'NIGHT', plaques: [1, 3, 7] } : {}),
     }),
-    [pads, step, decor],
+    [pads, step, decor, voxel],
   );
   const [panel, setPanel] = useState<Panel | null>(null);
   // ?shift=1 opens the shift report a returning player sees.

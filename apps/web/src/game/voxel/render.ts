@@ -54,6 +54,20 @@ export interface Image {
   height: number;
   /** RGBA, row-major. */
   data: Uint8ClampedArray;
+  /** Where the voxel-space origin (0, 0, 0) lands in the image, to anchor the sprite. */
+  origin: [number, number];
+}
+
+/** Where a voxel-space point lands in a rendered image (e.g. a pad's centre, for anchoring). */
+export function anchorOf(
+  img: Image,
+  x: number,
+  y: number,
+  z: number,
+  scale: number,
+): [number, number] {
+  const [px, py] = project(x, y, z, scale);
+  return [img.origin[0] + px, img.origin[1] + py];
 }
 
 export interface RenderOptions {
@@ -154,7 +168,7 @@ export function render(m: Model, opts: RenderOptions): Image {
       maxY = Math.max(maxY, py);
     }
   }
-  if (m.size === 0) return { width: 0, height: 0, data: new Uint8ClampedArray(0) };
+  if (m.size === 0) return { width: 0, height: 0, data: new Uint8ClampedArray(0), origin: [0, 0] };
   const pad = Math.ceil(bloom);
   const width = Math.ceil(maxX - minX) + pad * 2;
   const height = Math.ceil(maxY - minY) + pad * 2;
@@ -251,7 +265,7 @@ export function render(m: Model, opts: RenderOptions): Image {
     data[i * 4 + 3] = alpha[i] ?? 0;
   }
   if (bloom > 0) addBloom(data, glow, width, height, bloom);
-  return { width, height, data };
+  return { width, height, data, origin: [offX, offY] };
 }
 
 /** A soft halo around glowing pixels, added on top (also onto transparent pixels). */

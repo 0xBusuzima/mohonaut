@@ -50,17 +50,32 @@ function png({ width, height, data }) {
 
 const out = join(web, 'public/voxel');
 mkdirSync(out, { recursive: true });
-const sprites = {
-  'rig-0': models.pilotRig(),
-  'rig-1': models.rotaryRig(),
-  'rig-2': models.topDrive(),
-  'rig-3': models.diamondCoreDrill(),
-  'rig-4': models.turbodrill(),
-  'rig-5': models.plasmaBore(),
-  'site-diorama': models.siteDiorama(),
-};
-for (const [name, model] of Object.entries(sprites)) {
-  const image = voxel.render(model, { scale: 3, bloom: 8, light: [-0.6, -0.4, 0.75] });
-  writeFileSync(join(out, `${name}.png`), png(image));
-  console.log(`gen-voxel: ${name} ${image.width}x${image.height}`);
+const LIGHT = [-0.6, -0.4, 0.75];
+const rigs = [
+  models.pilotRig(),
+  models.rotaryRig(),
+  models.topDrive(),
+  models.diamondCoreDrill(),
+  models.turbodrill(),
+  models.plasmaBore(),
+];
+// Large previews (3 px a voxel) for the design pages and the report.
+for (const [i, model] of rigs.entries()) {
+  const image = voxel.render(model, { scale: 3, bloom: 8, light: LIGHT });
+  writeFileSync(join(out, `rig-${i}.png`), png(image));
 }
+const diorama = voxel.render(models.siteDiorama(), { scale: 3, bloom: 8, light: LIGHT });
+writeFileSync(join(out, 'site-diorama.png'), png(diorama));
+// In-game sprites: each rig's pad fills the game's 64-pixel pad diamond (scale 32 / pad size),
+// anchored at the pad's top centre. The manifest tells the scene where to put each one.
+const manifest = {};
+for (const [i, model] of rigs.entries()) {
+  const n = models.PAD_SIZES[i];
+  const scale = 32 / n;
+  const image = voxel.render(model, { scale, bloom: 4, light: LIGHT });
+  const [ax, ay] = voxel.anchorOf(image, n / 2, n / 2, 1, scale);
+  writeFileSync(join(out, `site-rig-${i}.png`), png(image));
+  manifest[i] = { w: image.width, h: image.height, ax: Math.round(ax), ay: Math.round(ay) };
+}
+writeFileSync(join(out, 'manifest.json'), JSON.stringify(manifest));
+console.log(`gen-voxel: ${rigs.length} rigs, the site diorama and ${rigs.length} in-game sprites`);

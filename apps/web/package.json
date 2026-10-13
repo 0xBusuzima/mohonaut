@@ -5,9 +5,8 @@
   "type": "module",
   "description": "Game client, landing, docs and economy pages (Next.js static export).",
   "scripts": {
-    "dev": "node scripts/gen-pixel-art.mjs && next dev",
-    "build": "node scripts/gen-pixel-art.mjs && next build && node scripts/flatten-segments.mjs && node scripts/csp.mjs",
-    "voxel": "node scripts/gen-voxel.mjs",
+    "dev": "node scripts/gen-pixel-art.mjs && node scripts/gen-voxel.mjs && next dev",
+    "build": "node scripts/gen-pixel-art.mjs && node scripts/gen-voxel.mjs && next build && node scripts/flatten-segments.mjs && node scripts/csp.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",

@@ -12,6 +12,9 @@ export function hex(c: string): Rgb {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
+/** Each rig's pad size in voxels, by rig type id (the in-game sprites fit it to the pad). */
+export const PAD_SIZES = [12, 16, 18, 16, 22, 20] as const;
+
 const v = (c: string, emissive = false): Voxel =>
   emissive ? { colour: hex(c), emissive } : { colour: hex(c) };
 

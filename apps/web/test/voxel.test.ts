@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  PAD_SIZES,
   diamondCoreDrill,
   hex,
   pilotRig,
@@ -9,7 +10,7 @@ import {
   topDrive,
   turbodrill,
 } from '../src/game/voxel/models';
-import { Model, render } from '../src/game/voxel/render';
+import { Model, anchorOf, render } from '../src/game/voxel/render';
 import type { Image } from '../src/game/voxel/render';
 
 const GREY = { colour: [200, 200, 200] as const };
@@ -127,5 +128,18 @@ describe('the voxel models', () => {
     expect(height(rigs[0] ?? pilotRig())).toBeLessThan(height(rigs[1] ?? pilotRig()));
     expect(height(rigs[1] ?? pilotRig())).toBeLessThan(height(rigs[2] ?? pilotRig()));
     expect(height(rigs[2] ?? pilotRig())).toBeLessThan(height(rigs[4] ?? pilotRig()));
+  });
+
+  it('fits each in-game sprite to the 64-pixel pad, anchored at the pad top centre', () => {
+    expect(PAD_SIZES).toHaveLength(6);
+    const n = PAD_SIZES[1];
+    const scale = 32 / n;
+    const img = render(rotaryRig(), { scale });
+    const [ax, ay] = anchorOf(img, n / 2, n / 2, 1, scale);
+    // The pad spans 64 pixels across, centred on the anchor.
+    expect(img.width).toBe(64);
+    expect(ax).toBe(32);
+    // The pad's near corner (n, n, 1) sits 16 pixels below its top centre.
+    expect(anchorOf(img, n, n, 1, scale)[1] - ay).toBe(16);
   });
 });

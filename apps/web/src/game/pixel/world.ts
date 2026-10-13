@@ -12,6 +12,7 @@ import { diamond, diamondEdge, hash, line, px } from './draw';
 import type { Ctx } from './draw';
 import { drawText, textWidth } from './font';
 import { cached, night } from './light';
+import { voxelRig } from './voxel-sprites';
 import type { Light } from './light';
 import { P } from './palette';
 import {
@@ -79,6 +80,8 @@ export interface WorldModel {
   plaques?: readonly number[];
   /** The colour of the stratum the World Bore is in: the cuttings by the wellhead. */
   stratum?: string;
+  /** Draw the rigs as baked voxel sprites (docs/06 7.8, a preview while the redesign is on). */
+  voxel?: boolean;
 }
 
 export interface WorldFx {
@@ -342,7 +345,9 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
       // A still scene (reduced motion) is drawn at t = 0: effects stamped later never play.
       const age = drop === undefined || t < drop.at ? Infinity : t - drop.at;
       const fall = age < DROP ? -((1 - age / DROP) ** 2) * 56 : 0;
-      drawRig(c, cx, cy + fall, pad.typeId, pad.running, t, m.motion, gx * 3 + gy);
+      const sprite = m.voxel === true ? voxelRig(pad.typeId) : null;
+      if (sprite !== null) c.drawImage(sprite.img, cx - sprite.ax, cy + fall - sprite.ay + 1);
+      else drawRig(c, cx, cy + fall, pad.typeId, pad.running, t, m.motion, gx * 3 + gy);
       if (age >= DROP * 0.8 && age < DROP + DUST) dust(c, cx, cy, (age - DROP * 0.8) / DUST);
     });
     if (pad?.typeId !== null && pad?.typeId !== undefined && pad.running) {
