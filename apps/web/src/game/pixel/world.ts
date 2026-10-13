@@ -248,7 +248,9 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   at(3, 2, () => {
     const p = iso(1, 1);
     shack(c, p.x, p.y, t, m.motion, m.hover === 'shack', m.crewTag);
-    hits.push({ id: 'shack', x: p.x - 34, y: p.y - 40, w: 68, h: 66 });
+    // A crew flag reaches past the roof to the right: it is part of the shack too.
+    const flag = m.crewTag === undefined ? 0 : Math.max(0, 15 + textWidth(m.crewTag) + 6 - 34);
+    hits.push({ id: 'shack', x: p.x - 34, y: p.y - 48, w: 68 + flag, h: 74 });
   });
   {
     const p = iso(1, 1);

@@ -48,7 +48,7 @@ export function withCard(html: string, address: string, api: string): string {
   return out;
 }
 
-export async function onRequestGet({
+export async function onRequest({
   request,
   env,
 }: {
@@ -56,16 +56,18 @@ export async function onRequestGet({
   env: Env;
 }): Promise<Response> {
   const url = new URL(request.url);
+  const segment = url.pathname.split('/')[2] ?? '';
+  // Files under /s/ (Next's segment payloads such as /s/index.txt) and other methods pass
+  // straight to the static assets.
+  if ((request.method !== 'GET' && request.method !== 'HEAD') || segment.includes('.'))
+    return env.ASSETS.fetch(request);
   const page = await env.ASSETS.fetch(new URL('/s/', url));
-  const address = url.pathname.split('/')[2] ?? '';
   const html = await page.text();
   const headers = new Headers(page.headers);
   // The body changes: the asset's length, encoding and tag no longer describe it.
   for (const k of ['content-length', 'content-encoding', 'etag']) headers.delete(k);
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) headers.set(k, v);
   const api = (env.API_URL ?? DEFAULT_API).replace(/\/$/, '');
-  return new Response(
-    page.ok && ADDRESS.test(address) ? withCard(html, address.toLowerCase(), api) : html,
-    { status: page.status, headers },
-  );
+  const body = page.ok && ADDRESS.test(segment) ? withCard(html, segment.toLowerCase(), api) : html;
+  return new Response(request.method === 'HEAD' ? null : body, { status: page.status, headers });
 }

@@ -24,6 +24,8 @@ import { AddressSchema, DepthSchema, errors, json } from './common.js';
 
 const BadgeSchema = z.object({ id: z.string(), name: z.string(), description: z.string() });
 
+const DEFAULT_CARD = 'https://mohonaut.com/og.png';
+
 async function profileOf(deps: AppEnv['Variables']['deps'], address: Address) {
   const db = deps.database;
   const acct = await account(db, address);
@@ -117,13 +119,15 @@ export function registerProfile(app: OpenAPIHono<AppEnv>): void {
       request: { params: z.object({ address: AddressSchema }) },
       responses: {
         200: { content: { 'image/png': { schema: z.any() } }, description: 'PNG, 1200 × 630' },
-        404: errors[404],
+        302: { description: 'No drill site yet: the site share image (Location header)' },
       },
     }),
     async (c) => {
       const address = getAddress(c.req.valid('param').address);
       const p = await profileOf(c.var.deps, address);
-      if (p.acct === null) throw new HTTPException(404, { message: 'unknown player' });
+      // No drill site yet (an invite from someone who signed in but never fuelled): the site's
+      // own share image, so a shared link still shows a picture.
+      if (p.acct === null) return c.redirect(DEFAULT_CARD, 302);
       const png = renderCardPng({
         contributionMm: millimetres(p.acct.accrued),
         worldDepthMm: millimetres(await worldEmitted(c.var.deps.database)),

@@ -9,7 +9,7 @@ import { cue } from './audio';
 import type { Cue } from './audio';
 import { explain } from './errors';
 import { GAME, txUrl } from './network';
-import { forgetTx, pendingTx, rememberTx } from './pending';
+import { follow, isFollowing, pendingTx, rememberTx } from './pending';
 
 const GAS_MARGIN_PCT = 125n;
 
@@ -54,6 +54,15 @@ export function useGameAction(onDone: () => void) {
 
   async function run({ fn, args, value, done }: ActionInput): Promise<boolean> {
     if (address === undefined || client === undefined) return false;
+    // One transaction at a time: a player who thinks a slow one failed must not pay twice.
+    if (isFollowing(address)) {
+      toast({
+        tone: 'info',
+        title: 'Your last transaction is still on its way',
+        body: 'The game says so here as soon as the chain confirms it.',
+      });
+      return false;
+    }
     setBusy(fn);
     try {
       const call = {
@@ -73,21 +82,11 @@ export function useGameAction(onDone: () => void) {
       } as never)) as Hash;
       // From here the transaction exists: it is kept on the device until its receipt is seen,
       // so a reload or a lost connection never loses track of it (docs/09 7).
-      rememberTx(address, { hash, done });
-      const link = explorerLink(hash);
-      let receipt;
-      try {
-        receipt = await client.waitForTransactionReceipt({ hash, timeout: RECEIPT_WAIT_MS });
-      } catch {
-        toast({ tone: 'info', title: 'Still waiting for the chain', ...link });
-        return false;
-      }
-      forgetTx(address);
-      if (receipt.status !== 'success') throw new Error('transaction reverted');
-      toast({ tone: 'success', title: done, ...link });
-      cue(CUES[fn]);
-      onDone();
-      return true;
+      const sent = { hash, done };
+      rememberTx(address, sent);
+      const ok = await follow({ client, address, sent, toast, link: explorerLink, onDone });
+      cue(ok ? CUES[fn] : 'error');
+      return ok;
     } catch (err) {
       toast({ tone: 'warning', title: 'Not done', body: explain(err) });
       cue('error');
@@ -102,17 +101,14 @@ export function useGameAction(onDone: () => void) {
 
 export type Action = ReturnType<typeof useGameAction>;
 
-/** How long an action waits for its receipt before saying it is still waiting. */
-const RECEIPT_WAIT_MS = 120_000;
-
-function explorerLink(hash: Hash): { link?: { href: string; label: string } } {
+function explorerLink(hash: Hash): { href: string; label: string } | undefined {
   const href = txUrl(hash);
-  return href === null ? {} : { link: { href, label: 'View on the explorer' } };
+  return href === null ? undefined : { href, label: 'View on the explorer' };
 }
 
 /**
  * A transaction this device sent and never saw the receipt of (a reload, a lost connection):
- * waits for it once and says how it went.
+ * follows it (once, even if the action that sent it is still following it) and says how it went.
  */
 export function useResumeTx(onDone: () => void): void {
   const { address } = useAccount();
@@ -122,30 +118,7 @@ export function useResumeTx(onDone: () => void): void {
     if (address === undefined || client === undefined) return;
     const sent = pendingTx(address);
     if (sent === null) return;
-    let live = true;
-    client
-      .waitForTransactionReceipt({ hash: sent.hash, timeout: RECEIPT_WAIT_MS })
-      .then((receipt) => {
-        forgetTx(address);
-        if (!live) return;
-        toast(
-          receipt.status === 'success'
-            ? { tone: 'success', title: sent.done, ...explorerLink(sent.hash) }
-            : {
-                tone: 'warning',
-                title: 'Not done',
-                body: 'The transaction reverted.',
-                ...explorerLink(sent.hash),
-              },
-        );
-        onDone();
-      })
-      .catch(() => {
-        // Not mined yet or the RPC is down: try again on the next visit.
-      });
-    return () => {
-      live = false;
-    };
+    void follow({ client, address, sent, toast, link: explorerLink, onDone });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per wallet and client
   }, [address, client]);
 }

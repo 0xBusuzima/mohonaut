@@ -219,7 +219,10 @@ describe('contribution card', () => {
     expect(svg).not.toMatch(/<rect x="1[2-7]\d" y="(4[6-9]\d|50\d)" /);
     for (const banned of ['$', 'USD', 'ROI', 'APY', 'APR', 'profit', 'earn'])
       expect(svg).not.toContain(banned);
-    expect((await h.app.request(`/cards/${getAddress(newWallet().address)}`)).status).toBe(404);
+    // No drill site yet: the site's own share image.
+    const unknown = await h.app.request(`/cards/${getAddress(newWallet().address)}`);
+    expect(unknown.status).toBe(302);
+    expect(unknown.headers.get('location')).toBe('https://mohonaut.com/og.png');
   });
 });
 

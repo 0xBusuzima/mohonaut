@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { SECURITY_HEADERS, onRequestGet } from '../functions/s/[[path]]';
+import { SECURITY_HEADERS, onRequest } from '../functions/s/[[path]]';
 
 // The share tags as Next writes them into out/s/index.html.
 const PAGE = [
@@ -16,14 +16,15 @@ const PAGE = [
 ].join('');
 const ADDRESS = '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC';
 
-async function get(path: string, env: { API_URL?: string } = {}) {
-  const res = await onRequestGet({
-    request: new Request(`https://mohonaut.com${path}`),
+async function get(path: string, env: { API_URL?: string } = {}, method = 'GET') {
+  const fetched: string[] = [];
+  const res = await onRequest({
+    request: new Request(`https://mohonaut.com${path}`, { method }),
     env: {
       ...env,
       ASSETS: {
         fetch: (input) => {
-          expect(String(input)).toBe('https://mohonaut.com/s/');
+          fetched.push(input instanceof Request ? input.url : String(input));
           return Promise.resolve(
             new Response(PAGE, { headers: { 'content-type': 'text/html', 'content-length': '1' } }),
           );
@@ -31,7 +32,7 @@ async function get(path: string, env: { API_URL?: string } = {}) {
       },
     },
   });
-  return { res, html: await res.text() };
+  return { res, html: await res.text(), fetched };
 }
 
 const meta = (html: string, key: string) =>
@@ -39,7 +40,8 @@ const meta = (html: string, key: string) =>
 
 describe('the public profile Pages Function', () => {
   it("puts the player's own card on a profile link", async () => {
-    const { res, html } = await get(`/s/${ADDRESS}`, { API_URL: 'https://api.example/' });
+    const { res, html, fetched } = await get(`/s/${ADDRESS}`, { API_URL: 'https://api.example/' });
+    expect(fetched).toEqual(['https://mohonaut.com/s/']);
     const card = `https://api.example/cards/${ADDRESS.toLowerCase()}`;
     expect(meta(html, 'og:image')).toBe(card);
     expect(meta(html, 'twitter:image')).toBe(card);
@@ -48,6 +50,18 @@ describe('the public profile Pages Function', () => {
     expect(res.headers.get('x-frame-options')).toBe('DENY');
     // The page itself is unchanged apart from the share tags.
     expect(html.replace(/<meta [^>]*>/g, '')).toBe(PAGE.replace(/<meta [^>]*>/g, ''));
+  });
+
+  it('answers HEAD with the same headers and no body', async () => {
+    const { res, html } = await get(`/s/${ADDRESS}`, {}, 'HEAD');
+    expect(res.status).toBe(200);
+    expect(res.headers.get('x-frame-options')).toBe('DENY');
+    expect(html).toBe('');
+  });
+
+  it('passes files under /s/ straight to the static assets', async () => {
+    const { fetched } = await get('/s/index.txt');
+    expect(fetched).toEqual(['https://mohonaut.com/s/index.txt']);
   });
 
   it('leaves the page alone for anything that is not an address', async () => {
