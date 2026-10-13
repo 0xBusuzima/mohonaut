@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { PixelWorld } from '../../game/pixel/PixelWorld';
 import { ForemanMo } from '../../game/pixel/ForemanMo';
 import type { ScenePad } from '../../game/play';
@@ -17,6 +17,26 @@ const DEMO_PADS: ScenePad[] = [
 ];
 
 export const ONBOARDING_STEPS = ['Wallet', 'Signature', 'Site name'];
+
+/** True once the page has loaded and gone idle: for scenery that can wait for it. */
+function useAfterLoad(): boolean {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let idle = 0;
+    const go = () => {
+      if (typeof window.requestIdleCallback === 'function')
+        idle = window.requestIdleCallback(() => setReady(true), { timeout: 2000 });
+      else setReady(true);
+    };
+    if (document.readyState === 'complete') go();
+    else window.addEventListener('load', go, { once: true });
+    return () => {
+      window.removeEventListener('load', go);
+      if (idle !== 0) window.cancelIdleCallback(idle);
+    };
+  }, []);
+  return ready;
+}
 
 /** The top-left badge: the casing mark and the name, plus the testnet tag. */
 export function Brand() {
@@ -78,15 +98,19 @@ function InAppNotice() {
  */
 export function PlayShell({ onConnect }: { onConnect?: () => void }) {
   const model = useMemo(() => ({ pads: DEMO_PADS, tankFill: 0.6 }), []);
+  // The welcome window comes first; the site behind it, still (it is scenery here, and kind to
+  // the battery), once the page has loaded and gone idle.
+  const scenery = useAfterLoad();
   return (
     <>
       <h1 className="sr-only">Mohonaut: your drill site</h1>
-      {/* Still behind the welcome window: it is scenery here, and stays kind to the battery. */}
-      <PixelWorld
-        still
-        model={model}
-        label="A drill site at night: four rigs on their pads, a diesel tank, the core shack and the World Bore."
-      />
+      {scenery && (
+        <PixelWorld
+          still
+          model={model}
+          label="A drill site at night: four rigs on their pads, a diesel tank, the core shack and the World Bore."
+        />
+      )}
       <Brand />
       <PxModal title="Welcome">
         <Steps steps={ONBOARDING_STEPS} at={0} />
