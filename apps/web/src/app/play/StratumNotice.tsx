@@ -2,6 +2,8 @@
 
 import { STRATA, stratumAt } from '@mohonaut/sdk';
 import { useState } from 'react';
+import type { Address } from 'viem';
+import { stratumPost, xIntentUrl } from '../../social/share';
 import { ForemanMo } from '../../game/pixel/ForemanMo';
 import { PxButton, PxModal } from './px';
 
@@ -28,7 +30,14 @@ function remember(index: number): void {
  * When the World Bore has broken into a new stratum since this device last looked, Foreman Mo
  * says so once. The first visit only notes where the bore is.
  */
-export function StratumNotice({ depthMm }: { depthMm: bigint }) {
+export function StratumNotice({
+  depthMm,
+  address,
+}: {
+  depthMm: bigint;
+  /** The player's wallet, for the share link (their invite link). */
+  address?: Address;
+}) {
   const { current } = stratumAt(depthMm);
   const index = STRATA.findIndex((s) => s.numeral === current.numeral);
   // A first visit only notes where the bore is: crossings from here on are announced.
@@ -62,9 +71,21 @@ export function StratumNotice({ depthMm }: { depthMm: bigint }) {
         className="mt-4 h-4 border-[3px] border-[#0b0d10]"
         style={{ background: current.colour }}
       />
-      <PxButton className="mt-5 w-full" onClick={close}>
-        Back to work
-      </PxButton>
+      <div className="mt-5 flex flex-wrap gap-3">
+        <PxButton className="grow" onClick={close}>
+          Back to work
+        </PxButton>
+        {address !== undefined && (
+          <a
+            href={xIntentUrl(stratumPost({ ...current, address }))}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-btn px-btn-dark px-4 py-2 text-lg"
+          >
+            Share on X
+          </a>
+        )}
+      </div>
     </PxModal>
   );
 }

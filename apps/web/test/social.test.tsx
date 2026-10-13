@@ -9,6 +9,7 @@ import {
   shortAddress,
   findPost,
   shiftPost,
+  stratumPost,
   trainingPost,
   xIntentUrl,
 } from '../src/social/share';
@@ -125,5 +126,17 @@ describe('the training site post', () => {
     expect(text).toContain('turned up a find for my Core Collection: Coral Fragment.');
     expect(text).toContain('utm_campaign=survey');
     expect(text).not.toMatch(/MOHN|\$|earn|profit|rare/i);
+  });
+
+  it('posts a stratum crossing as an event for everyone, with the invite link', () => {
+    const text = stratumPost({
+      numeral: 'II',
+      name: 'Sediment Cover',
+      fromM: 2_000,
+      address: ADDR,
+    });
+    expect(text).toContain('Stratum II: Sediment Cover, at 2,000 m. Every Mohonaut driller');
+    expect(text).toContain('utm_campaign=stratum');
+    expect(text).not.toMatch(/MOHN|earn|profit/i);
   });
 });

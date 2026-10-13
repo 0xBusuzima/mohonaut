@@ -168,7 +168,7 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
       )}
       {state !== null && onboarding === null && panel === null && address !== undefined && (
         <ShiftReportNotice state={state} address={address} open={setPanel}>
-          <StratumNotice depthMm={millimetres(state.network.emitted)} />
+          <StratumNotice depthMm={millimetres(state.network.emitted)} address={address} />
         </ShiftReportNotice>
       )}
       {onboarding}

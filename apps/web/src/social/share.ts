@@ -51,6 +51,20 @@ export function findPost(input: { find: string; address: Address }): string {
   );
 }
 
+/** A stratum crossing (docs/05 §3.4): an event for everyone who drills, not a personal score. */
+export function stratumPost(input: {
+  numeral: string;
+  name: string;
+  fromM: number;
+  address: Address;
+}): string {
+  return (
+    `The World Bore just broke through into Stratum ${input.numeral}: ${input.name}, at ` +
+    `${input.fromM.toLocaleString('en-US')} m. Every Mohonaut driller cored it together. ` +
+    `Race to the Moho. ${profileUrl(input.address, 'stratum')} (my invite link)`
+  );
+}
+
 /** X web intent; the player reviews and sends it themselves (docs/05 §3.4). */
 /** The training site's post: what was built, never an amount of tokens (docs/09 §A). */
 export function trainingPost(input: { level: number; rigs: number }): string {
