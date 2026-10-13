@@ -156,7 +156,16 @@ test('after genesis, a returning driller reads the shift report and buys two Rot
   await rigs.getByRole('button', { name: 'Expand the site' }).click();
   const site = page.getByRole('dialog', { name: 'Expand your site' });
   await site.getByRole('button', { name: /^Upgrade for/ }).click({ timeout: 30_000 });
-  await expect(page.getByText('Site upgraded to L2')).toBeVisible({ timeout: 30_000 });
+  // This step has failed now and then on the CI runner only: say what the player saw.
+  await expect(page.getByText('Site upgraded to L2'))
+    .toBeVisible({ timeout: 30_000 })
+    .catch(async (err: unknown) => {
+      const toasts = await page.locator('.toast-region').allInnerTexts();
+      const window = await site.innerText().catch(() => '(window closed)');
+      throw new Error(`${String(err)}
+toasts: ${toasts.join(' | ')}
+window: ${window}`);
+    });
   await site.getByRole('button', { name: 'Close' }).click();
   const levelUp = page.getByRole('dialog', { name: 'Site level up' });
   await expect(levelUp.getByText('Level 2')).toBeVisible({ timeout: 30_000 });
