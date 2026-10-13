@@ -16,6 +16,7 @@ const PAGES = [
   '/contracts/',
   '/faq/',
   '/play/',
+  '/train/',
   '/s/0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc',
 ];
 const MIN = { performance: 85, accessibility: 95, 'best-practices': 90, seo: 90 };
