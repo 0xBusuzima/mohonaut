@@ -6,6 +6,7 @@ import { Card } from '../../components/Card';
 import { Table } from '../../components/Table';
 import { formatDuration, formatMohn, formatUtc } from '../../lib/format';
 import { API_URL, DEPLOYMENT, NETWORK } from '../../lib/site';
+import type { DpPriceDay } from '../../social/api';
 
 interface Day {
   day: number;
@@ -38,6 +39,8 @@ interface Data {
   world: { depth: { text: string }; stratum: { numeral: string; name: string } };
   days: Day[];
   queue: { pending: Op[]; recent: Op[] };
+  /** Rig sales by day (GET /market/prices), oldest first. */
+  prices: DpPriceDay[];
   at: Date;
 }
 
@@ -58,9 +61,11 @@ export function EconomyDashboard() {
       get<Data['world']>('/world'),
       get<{ days: Day[] }>('/economy/daily?days=30'),
       get<Data['queue']>('/governance/timelock'),
+      get<{ days: DpPriceDay[] }>('/market/prices?days=7'),
     ])
-      .then(([world, economy, queue]) => {
-        if (live) setData({ world, days: economy.days, queue, at: new Date() });
+      .then(([world, economy, queue, prices]) => {
+        if (live)
+          setData({ world, days: economy.days, queue, prices: prices.days, at: new Date() });
       })
       .catch(() => {
         if (live) setData('off');
@@ -132,6 +137,36 @@ export function EconomyDashboard() {
                 numeric: true,
                 render: (d) => d.activeAccounts,
               },
+            ]}
+          />
+        </div>
+        <p className="mt-2 text-sm text-fg-muted">{source}</p>
+      </section>
+
+      <section id="market">
+        <h2 className="font-display text-3xl font-black tracking-wide uppercase">
+          Equipment market
+        </h2>
+        <p className="mt-2 text-fg-muted">
+          What players paid per Drill Power each day, before tier premiums, from every rig sale on
+          the chain. The auction price falls while sales run behind its schedule and rises when they
+          run ahead; nobody sets it by hand.
+        </p>
+        <div className="mt-4">
+          <Table
+            caption="Rig sales, last 7 days"
+            rowKey={(d) => String(d.day)}
+            rows={[...data.prices].reverse()}
+            columns={[
+              { key: 'date', header: 'Day (UTC)', render: (d) => d.date },
+              {
+                key: 'perDp',
+                header: 'Average per DP',
+                numeric: true,
+                render: (d) => (d.perDp === null ? '—' : formatMohn(BigInt(d.perDp))),
+              },
+              { key: 'dp', header: 'DP sold', numeric: true, render: (d) => d.dpSold },
+              { key: 'sales', header: 'Sales', numeric: true, render: (d) => d.sales },
             ]}
           />
         </div>
