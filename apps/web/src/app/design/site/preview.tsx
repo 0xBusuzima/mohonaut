@@ -85,6 +85,11 @@ const ShiftPreview = dynamic(() => import('./shift-preview').then((m) => m.Shift
   ssr: false,
 });
 
+const MilestonePreview = dynamic(
+  () => import('./milestone-preview').then((m) => m.MilestonePreview),
+  { ssr: false },
+);
+
 /** The rig windows read the chain (batch quotes): loaded with their providers when opened. */
 const RigWindows = dynamic(() => import('./rig-windows').then((m) => m.RigWindows), {
   ssr: false,
@@ -134,6 +139,12 @@ export function SitePreview() {
     () => new URLSearchParams(window.location.search).has('shift'),
     () => false,
   );
+  // ?milestone=1 shows Foreman Mo's level-up and first-rig notices.
+  const milestone = useSyncExternalStore(
+    noSubscribe,
+    () => new URLSearchParams(window.location.search).has('milestone'),
+    () => false,
+  );
   return (
     <>
       <PixelWorld
@@ -155,6 +166,7 @@ export function SitePreview() {
         />
       )}
       {shift && panel === null && <ShiftPreview state={SAMPLE} open={setPanel} />}
+      {milestone && panel === null && <MilestonePreview state={SAMPLE} />}
       {panel === 'help' && (
         <PxModal title="How to play" onClose={() => setPanel(null)} wide>
           <HelpWindow />
