@@ -478,7 +478,7 @@ Kural: Kullanılan her aracın ticari kullanım koşulları (ücretsiz kademeler
 | Paylaşım kartı şablonları (Satori) | JSX + font dosyaları | T−29 |
 | Pioneer rozeti | SVG/PNG | T−29 |
 | Müzik: stratum başına industrial ambient döngü + kule SFX | OGG/MP3 | T−29 |
-| Maskot karakter sayfası (7 poz) | SVG/PNG | T−27 |
+| Maskot karakter sayfası (7 poz) | SVG/PNG | T−27. Taslak 2026-10-14: `brand/png/foreman-mo-poses.png` (`tools/brand/gen_mo_sheet.py`; temel poz oyunun kendi çizimi). İşaret etme ve el sallama kolları elle rötuş adayı |
 | Survey / Core Collection kozmetikleri (karot numuneleri, fosiller, eski matkap uçları, tarihî sondaj ekipmanı) | Sprite | T−25 |
 | Stratum tema paketleri | Regolith T−36; diğerleri eşik yaklaştıkça | — |
 | Basın kiti (/brand): logo paketi, ekran görüntüleri, kurucu fotoğrafı, tek sayfalık özet | ZIP + sayfa | T−18 |
