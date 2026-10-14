@@ -483,7 +483,7 @@ Kural: Kullanılan her aracın ticari kullanım koşulları (ücretsiz kademeler
 | Stratum tema paketleri | Regolith T−36; diğerleri eşik yaklaştıkça | — |
 | Basın kiti (/brand): logo paketi, ekran görüntüleri, kurucu fotoğrafı, tek sayfalık özet | ZIP + sayfa | T−18 |
 | Trailer (45–60 sn), devlog video şablonu | MP4 | T−10 |
-| Olay grafikleri: delay, known issue, paused, breaker, resolved | 1200×675 | T−10 |
+| Olay grafikleri: delay, known issue, paused, breaker, resolved | 1200×675 | T−10. ✅ 2026-10-14: `brand/png/incident-*.png` (`tools/brand/gen_brand.py`; "breaker" yerine kontrattaki davranışa uygun "mint limit", §7.3) |
 | Crew sancak/amblem şablonları | SVG | T+10 |
 
 ---
