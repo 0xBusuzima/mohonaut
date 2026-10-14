@@ -1,12 +1,20 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { PixelWorld } from '../../game/pixel/PixelWorld';
 import { ForemanMo } from '../../game/pixel/ForemanMo';
 import type { ScenePad } from '../../game/play';
 import { inAppBrowser } from '../../game/inapp';
 import { isTestnet } from '../../game/chain-id';
 import { PxButton, PxModal, Steps } from './px';
+
+/**
+ * The scene behind the welcome window: its code loads only when it is shown, after the page has
+ * loaded and gone idle (the game itself imports it as usual).
+ */
+const PixelWorld = dynamic(() => import('../../game/pixel/PixelWorld').then((m) => m.PixelWorld), {
+  ssr: false,
+});
 
 /** A site at work behind the welcome window, before any wallet is known. */
 const DEMO_PADS: ScenePad[] = [
