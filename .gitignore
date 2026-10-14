@@ -46,8 +46,10 @@ services/keeper/data/
 # Next.js and Playwright output
 apps/*/.next/
 apps/*/out/
-# Pixel art drawn at build time (apps/web/scripts/gen-pixel-art.mjs)
+# Rig portraits rendered at build time (apps/web/scripts/gen-voxel.mjs)
 apps/web/public/rigs/
+# Voxel sprites baked at build time (apps/web/scripts/gen-voxel.mjs)
+apps/web/public/voxel/
 apps/web/public/og-train.png
 apps/*/test-results/
 apps/*/playwright-report/
@@ -57,3 +59,6 @@ apps/*/lighthouse.json
 # AI audit scratch builds (docs/06 7.1): each auditor builds into its own folders
 contracts/out-*/
 contracts/cache-*/
+
+# Devlog clips and stills rendered from the game (large; the founder posts them)
+brand/devlog/

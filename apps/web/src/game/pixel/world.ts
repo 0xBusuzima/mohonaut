@@ -6,20 +6,23 @@
  * with the lamps cut out of it, and rain. Pure drawing on a low-resolution canvas; gives back the
  * clickable areas.
  */
+import { STRATA } from '@mohonaut/sdk';
 import { GEN1_RIGS } from '../../lib/catalog';
 import type { ScenePad } from '../play';
 import { diamond, diamondEdge, hash, line, px } from './draw';
 import type { Ctx } from './draw';
 import { drawText, textWidth } from './font';
-import { cached, night } from './light';
-import type { Light } from './light';
+import { cached, glow, night } from './light';
+import { neighbourBeaconsAt } from './neighbours';
+import { blit, voxelSprite } from './voxel-sprites';
+import type { Light, Stack } from './light';
 import { P } from './palette';
 import {
   container,
   drawRig,
   generator,
   lampPost,
-  lockSign,
+  surveyPlot,
   neighbourBeacons,
   neighbourSite,
   padTile,
@@ -29,6 +32,9 @@ import {
   rain,
   rigTop,
   shack,
+  shackDressing,
+  generatorDressing,
+  tankDressing,
   tank,
   truck,
   truckLights,
@@ -36,11 +42,10 @@ import {
   wire,
   worker,
 } from './props';
-import { land, sky, skyLife, skyStill } from './terrain';
+import { land, landSmooth, sky, skyLife, skySmooth, skyStill } from './terrain';
 
 import { DECOR_SPOTS, drawDecor } from './decor';
 import type { DecorSet } from './decor';
-export { drawRig, padTile } from './props';
 
 export type Hit = 'tank' | 'shack' | 'market' | 'bore' | `pad:${number}`;
 export interface HitBox {
@@ -79,6 +84,11 @@ export interface WorldModel {
   plaques?: readonly number[];
   /** The colour of the stratum the World Bore is in: the cuttings by the wellhead. */
   stratum?: string;
+  /**
+   * The voxel scene (docs/06 7.8): baked voxel sprites, smooth sky and light. Unset, the scene
+   * follows low-power mode (pixel scene when it is on).
+   */
+  voxel?: boolean;
 }
 
 export interface WorldFx {
@@ -96,7 +106,18 @@ const DUST = 1.2; // seconds the dust takes to settle
 const FLOAT_EVERY = 6;
 
 const TW = 32; // tile width (2:1 diamonds)
-const GW = 14; // site size in tiles
+/** Where the voxel scene's yard clutter stands, in site grid coordinates. */
+const CLUTTER: readonly [string, number, number][] = [
+  ['drums', 7.1, 0.6],
+  ['crates', 11.6, 2.9],
+  ['reel', 13.2, 3.2],
+  ['cones', 0.9, 5.2],
+  ['cones', 0.9, 9.2],
+  ['extinguisher', 3.4, 2.6],
+];
+
+/** Site width in tiles. */
+export const GW = 14;
 const MAX_ROWS = 9; // 36 pad slots: enough for the 33 pads of site level 30 and one locked
 
 /**
@@ -108,7 +129,7 @@ export function siteRows(padCount: number): number {
 }
 
 /** Site depth in tiles: the yard behind the pads, three tiles per row, and a margin. */
-const siteDepth = (rows: number) => 3 * rows + 4;
+export const siteDepth = (rows: number) => 3 * rows + 4;
 
 /** Pad slots, four to a row, front rows added as the site grows. */
 function padSlots(rows: number): [number, number][] {
@@ -157,7 +178,19 @@ function walk(path: [number, number][], t: number, seed: number) {
   return { gx: a[0] + (b[0] - a[0]) * k, gy: a[1] + (b[1] - a[1]) * k, facing: dx >= 0 ? 1 : -1 };
 }
 
-export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel): HitBox[] {
+/**
+ * Draws the site onto `c`. With a `stack` (PixelWorld's canvases under and over `c`) the still
+ * layer, the night and the glow go to their own canvases, repainted only when they change, and
+ * what lies over the night to `stack.top`; without one, everything is drawn onto `c`.
+ */
+export function drawWorld(
+  c: Ctx,
+  W: number,
+  H: number,
+  t: number,
+  m: WorldModel,
+  stack?: Stack,
+): HitBox[] {
   const hits: HitBox[] = [];
   // A hidden or collapsed box (0 pixels): nothing to draw until it has a size again.
   if (W <= 0 || H <= 0) return hits;
@@ -186,56 +219,62 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   const truckAt = iso(-3.6, 2.3);
 
   // ---- Still layer: sky, land, site ground, pads, back fence, the road's furniture.
-  const key = `${W}x${H}:${ox},${oy}:${gh}:${m.pads.length}:${m.hover ?? ''}`;
-  cached(c, W, H, key, (g) => {
-    sky(g, W, horizon);
-    land(g, W, H, horizon, ox, oy, iso, GW, gh);
-    for (const [nx, ny, seed] of neighbours) {
-      const p = iso(nx, ny);
-      neighbourSite(g, p.x, p.y, seed);
+  const ground = m.voxel === true ? voxelSprite(`ground-${rows}`) : null;
+  const padSprite = m.voxel === true ? voxelSprite('pad') : null;
+  const backFence = m.voxel === true ? voxelSprite('fence-back') : null;
+  const tanker = m.voxel === true ? voxelSprite('tanker') : null;
+  const poleSprite = m.voxel === true ? voxelSprite('pole') : null;
+  const neighbourSprites = neighbours.map(([, , seed]) =>
+    m.voxel === true ? voxelSprite(`neighbour-${seed}`) : null,
+  );
+  const voxelNeighbours = neighbourSprites.filter((n) => n !== null).length;
+  const key = `${m.voxel === true ? 'v' : 'p'}:${W}x${H}:${ox},${oy}:${gh}:${m.pads.length}:${m.hover ?? ''}:${ground === null ? 'px' : 'vx'}:${padSprite === null ? 'px' : 'vx'}:${backFence === null ? 'px' : 'vx'}:${tanker === null ? 'px' : 'vx'}:${voxelNeighbours}:${poleSprite === null ? 'px' : 'vx'}`;
+  if (stack !== undefined) c.clearRect(0, 0, W, H);
+  cached(c, W, H, key, stack?.base, (g) => {
+    // The voxel scene's sky and land are smooth; the pixel scene's are banded and dithered.
+    if (m.voxel === true) {
+      skySmooth(g, W, horizon);
+      landSmooth(g, W, H, horizon, ox, oy, iso, GW, gh);
+    } else {
+      sky(g, W, horizon);
+      land(g, W, H, horizon, ox, oy, iso, GW, gh);
     }
+    neighbours.forEach(([nx, ny, seed], i) => {
+      const p = iso(nx, ny);
+      const sprite = neighbourSprites[i] ?? null;
+      if (sprite === null) neighbourSite(g, p.x, p.y, seed);
+      else blit(g, sprite, p.x, p.y);
+    });
     // Power line from the horizon to the gate.
     let prev: { x: number; y: number } | null = null;
     for (let gx = -20; gx <= -1; gx += 3) {
       const p = iso(gx, 1.3);
       if (p.y < horizon + 14) continue;
-      const top = pole(g, p.x, p.y);
+      let top: { x: number; y: number };
+      if (poleSprite === null) top = pole(g, p.x, p.y);
+      else {
+        blit(g, poleSprite, p.x, p.y);
+        top = { x: p.x + 1, y: p.y - 26 };
+      }
       if (prev !== null) wire(g, prev, top);
       prev = top;
     }
-    truck(g, truckAt.x, truckAt.y);
-    // Site ground.
-    for (let gy = 0; gy < gh; gy++) {
-      for (let gx = 0; gx < GW; gx++) {
-        const p = iso(gx, gy);
-        const n = hash(gx, gy, 7);
-        diamond(g, p.x, p.y, TW, n < 0.25 ? P.groundWet : P.ground);
-        for (let k = 0; k < 4; k++) {
-          const sx = p.x - 8 + Math.floor(hash(gx, gy, 10 + k) * 16);
-          const sy = p.y + 3 + Math.floor(hash(gx, gy, 20 + k) * 10);
-          px(g, sx, sy, P.groundSpeck);
-        }
-        // Tyre marks on the yard behind the pads.
-        if (gy < 4 && n > 0.6) line(g, p.x - 6, p.y + 5, p.x + 6, p.y + 11, P.groundWet);
-      }
-    }
-    // Gravel track from the gate down the left edge.
-    for (let gy = 2; gy < gh; gy++) {
-      const p = iso(0, gy);
-      diamond(g, p.x, p.y, TW, P.gravel);
-      for (let k = 0; k < 6; k++) {
-        px(
-          g,
-          p.x - 9 + Math.floor(hash(0, gy, 30 + k) * 18),
-          p.y + 2 + Math.floor(hash(0, gy, 40 + k) * 12),
-          P.groundSpeck,
-        );
-      }
-    }
-    fenceBack(g, iso);
+    if (tanker === null) truck(g, truckAt.x, truckAt.y);
+    else blit(g, tanker, truckAt.x, truckAt.y);
+    // Site ground: the baked voxel yard, or the pixel one.
+    if (ground !== null) blit(g, ground, ox, oy);
+    else drawPixelGround(g, iso, gh);
+    if (backFence === null) fenceBack(g, iso);
+    else blit(g, backFence, ox, oy);
     slots.forEach(([gx, gy], i) => {
       const p = iso(gx, gy);
-      padTile(g, p.x, p.y, i < m.pads.length, m.hover === `pad:${i}`);
+      const open = i < m.pads.length;
+      if (padSprite === null) padTile(g, p.x, p.y, open, m.hover === `pad:${i}`);
+      // Voxel: a slab for each pad the site has; the rest are bare ground, staked out.
+      else if (open) {
+        blit(g, padSprite, p.x, p.y + TW / 2 + 1);
+        if (m.hover === `pad:${i}`) diamondEdge(g, p.x, p.y, TW * 2, P.amber);
+      }
     });
   });
   slots.forEach(([gx, gy], i) => {
@@ -253,7 +292,12 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
 
   at(3, 2, () => {
     const p = iso(1, 1);
-    shack(c, p.x, p.y, t, m.motion, m.hover === 'shack', m.crewTag, m.plaques);
+    const built = m.voxel === true ? voxelSprite('shack') : null;
+    if (built === null) shack(c, p.x, p.y, t, m.motion, m.hover === 'shack', m.crewTag, m.plaques);
+    else {
+      blit(c, built, p.x, p.y + 4);
+      shackDressing(c, p.x, p.y, t, m.motion, m.crewTag, m.plaques, true);
+    }
     // A crew flag reaches past the roof to the right: it is part of the shack too.
     const flag = m.crewTag === undefined ? 0 : Math.max(0, 15 + textWidth(m.crewTag) + 6 - 34);
     hits.push({ id: 'shack', x: p.x - 34, y: p.y - 48, w: 68 + flag, h: 74 });
@@ -264,31 +308,59 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   }
   at(6, 2, () => {
     const p = iso(5, 1);
-    tank(c, p.x, p.y + 16, m.tankFill, m.tankLow === true, m.hover === 'tank', t, m.motion);
+    const built = m.voxel === true ? voxelSprite('tank') : null;
+    if (built === null)
+      tank(c, p.x, p.y + 16, m.tankFill, m.tankLow === true, m.hover === 'tank', t, m.motion);
+    else {
+      blit(c, built, p.x, p.y + 16);
+      tankDressing(c, p.x, p.y + 16, m.tankFill, m.tankLow === true, t, m.motion);
+    }
     hits.push({ id: 'tank', x: p.x - 16, y: p.y - 26, w: 32, h: 50 });
   });
   at(10, 2, () => {
     const p = iso(9, 1);
-    container(c, p.x, p.y, m.hover === 'market');
+    const built = m.voxel === true ? voxelSprite('container') : null;
+    if (built === null) container(c, p.x, p.y, m.hover === 'market');
+    else blit(c, built, p.x, p.y + 8);
     hits.push({ id: 'market', x: p.x - 40, y: p.y - 30, w: 80, h: 56 });
   });
   {
     const p = iso(9, 1);
     lights.push({ x: p.x + 16, y: p.y + 34, r: 20, tint: P.window });
   }
+  // Yard clutter in the voxel scene: drums by the tank, crates by the Market, a cable reel by
+  // the generator, cones along the gate track, an extinguisher by the shack door.
+  if (m.voxel === true) {
+    for (const [kind, gx, gy] of CLUTTER) {
+      at(gx + 0.5, gy + 0.5, () => {
+        const sprite = voxelSprite(`clutter-${kind}`);
+        const p = iso(gx, gy);
+        if (sprite !== null) blit(c, sprite, p.x, p.y);
+      });
+    }
+  }
   at(13, 2, () => {
     const p = iso(12, 1);
-    generator(c, p.x, p.y, t, m.motion);
+    const built = m.voxel === true ? voxelSprite('generator') : null;
+    if (built === null) generator(c, p.x, p.y, t, m.motion);
+    else {
+      blit(c, built, p.x, p.y + 8);
+      generatorDressing(c, p.x, p.y, t, m.motion);
+    }
   });
   at(1, 4, () => {
     const p = iso(0.4, 3.4);
-    pipeRack(c, p.x, p.y);
+    const built = m.voxel === true ? voxelSprite('pipes') : null;
+    if (built === null) pipeRack(c, p.x, p.y);
+    else blit(c, built, p.x, p.y + 6);
   });
   for (const set of m.decor ?? []) {
     const [gx, gy] = DECOR_SPOTS[set];
     at(gx, gy, () => {
       const p = iso(gx, gy);
-      drawDecor(c, set, p.x, p.y);
+      const built = m.voxel === true ? voxelSprite(`decor-${set}`) : null;
+      if (built === null) drawDecor(c, set, p.x, p.y);
+      else blit(c, built, p.x, p.y);
     });
     // A work light on each piece, so it reads at night.
     const p = iso(gx, gy);
@@ -296,7 +368,17 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
   }
   at(7, 7, () => {
     const p = iso(7, 6.5);
-    wellhead(c, p.x, p.y + 8, t, m.motion, m.hover === 'bore', m.stratum);
+    const layer = Math.max(
+      0,
+      STRATA.findIndex((s) => s.colour === m.stratum),
+    );
+    const built = m.voxel === true ? voxelSprite(`wellhead-${layer}`) : null;
+    if (built === null) wellhead(c, p.x, p.y + 8, t, m.motion, m.hover === 'bore', m.stratum);
+    else {
+      // The cellar's back corner sits where the pixel cellar's does; the core glows by itself.
+      blit(c, built, p.x, p.y + 4);
+      if (m.hover === 'bore') diamondEdge(c, p.x, p.y + 4, 40, P.amber);
+    }
     hits.push({ id: 'bore', x: p.x - 20, y: p.y - 10, w: 40, h: 30 });
   });
   {
@@ -315,7 +397,9 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
     const on = !m.motion || Math.sin(t * 0.7 + gx + gy) > -0.97; // an occasional flicker
     at(gx, gy, () => {
       const p = iso(gx, gy);
-      lampPost(c, p.x, p.y + 8, on);
+      const built = m.voxel === true && on ? voxelSprite('lamp') : null;
+      if (built === null) lampPost(c, p.x, p.y + 8, on);
+      else blit(c, built, p.x, p.y + 8);
     });
     const p = iso(gx, gy);
     lights.push({ x: p.x, y: p.y + 6, r: 54 + (i % 2) * 6, tint: P.glow, power: on ? 1 : 0.35 });
@@ -327,7 +411,7 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
     const pad = m.pads[i];
     at(gx + 1, gy + 1, () => {
       if (i >= m.pads.length) {
-        lockSign(c, cx, cy);
+        surveyPlot(c, cx, cy);
         return;
       }
       // A pad the site just gained: dust settles and its rim flashes amber.
@@ -342,7 +426,10 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
       // A still scene (reduced motion) is drawn at t = 0: effects stamped later never play.
       const age = drop === undefined || t < drop.at ? Infinity : t - drop.at;
       const fall = age < DROP ? -((1 - age / DROP) ** 2) * 56 : 0;
-      drawRig(c, cx, cy + fall, pad.typeId, pad.running, t, m.motion, gx * 3 + gy);
+      const sprite =
+        m.voxel === true ? voxelSprite(`rig-${pad.typeId}${pad.running ? '' : '-off'}`) : null;
+      if (sprite !== null) blit(c, sprite, cx, cy + fall + 1);
+      else drawRig(c, cx, cy + fall, pad.typeId, pad.running, t, m.motion, gx * 3 + gy);
       if (age >= DROP * 0.8 && age < DROP + DUST) dust(c, cx, cy, (age - DROP * 0.8) / DUST);
     });
     if (pad?.typeId !== null && pad?.typeId !== undefined && pad.running) {
@@ -351,33 +438,48 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
       lights.push({ x: top.x, y: top.y, r: 6, tint: P.beacon, power: 0.5 });
     }
   });
+  const headlamps: Light[] = [];
   crewRounds(gh).forEach((path, i) => {
     const w = walk(path, m.motion ? t : 0, i);
     at(w.gx, w.gy, () => {
       const p = iso(w.gx, w.gy);
-      worker(c, Math.round(p.x), Math.round(p.y), w.facing, m.motion ? Math.floor(t * 4) % 2 : 0);
+      const step = m.motion ? Math.floor(t * 4) % 2 : 0;
+      const built =
+        m.voxel === true ? voxelSprite(`worker-${w.facing > 0 ? 'r' : 'l'}-${step}`) : null;
+      if (built === null) worker(c, Math.round(p.x), Math.round(p.y), w.facing, step);
+      else blit(c, built, p.x, p.y);
     });
     const p = iso(w.gx, w.gy);
-    lights.push({ x: p.x + w.facing * 5, y: p.y, r: 6, tint: null, power: 0.4 });
+    const lamp = { x: p.x + w.facing * 5, y: p.y, r: 6, tint: null, power: 0.4 };
+    // In the voxel scene a walker's lamp is a glow over the night, so the night (cut afresh
+    // whenever a light moves) does not have to follow the crew every frame.
+    if (m.voxel === true) headlamps.push(lamp);
+    else lights.push(lamp);
   });
   items.sort((a, b) => a.depth - b.depth);
   for (const it of items) it.draw();
-  fenceFront(c, iso, gh);
+  const frontFence = m.voxel === true ? voxelSprite(`fence-front-${rows}`) : null;
+  if (frontFence === null) fenceFront(c, iso, gh);
+  else blit(c, frontFence, ox, oy);
 
   // Lights out on the land: the truck's headlights and the neighbours' lamps and beacons.
   const head = truckLights(truckAt.x, truckAt.y);
   lights.push({ x: head.x, y: head.y, r: 30, tint: P.bone, power: 0.8 });
-  for (const [nx, ny, seed] of neighbours) {
+  neighbours.forEach(([nx, ny, seed], i) => {
     const p = iso(nx, ny);
     lights.push({ x: p.x, y: p.y + 18, r: 44, tint: P.glow, power: 0.55 });
-    neighbourBeacons(p.x, p.y, seed).forEach((b, k) => {
+    const beacons =
+      (neighbourSprites[i] ?? null) === null
+        ? neighbourBeacons(p.x, p.y, seed)
+        : neighbourBeaconsAt(p.x, p.y, seed);
+    beacons.forEach((b, k) => {
       const on = !m.motion || (t * 0.8 + seed * 0.3 + k * 0.4) % 1 < 0.25;
       if (on) {
         px(c, b.x, b.y, P.beacon);
         px(c, b.x - 1, b.y, P.beacon);
       }
     });
-  }
+  });
   if (m.tankLow === true && (!m.motion || Math.sin(t * 6) > 0)) {
     const p = iso(5, 1);
     lights.push({ x: p.x, y: p.y - 18, r: 10, tint: P.beacon, power: 0.8 });
@@ -390,18 +492,22 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
       lights.push({ x: tankAt.x, y: tankAt.y + 12, r: 30, tint: P.amber, power: 1 - age / 2.4 });
     }
   }
-  night(c, W, H, horizon, lights);
+  night(c, W, H, horizon, lights, m.voxel === true, stack);
+  // Over the night: sparks, the cored floats, rain.
+  const over = stack?.top ?? c;
+  if (stack !== undefined) over.clearRect(0, 0, W, H);
+  for (const l of headlamps) glow(over, l);
   for (const f of m.fx ?? []) {
     const age = t - f.at;
     if (f.kind !== 'fuel' || age < 0 || age >= 2.4) continue;
-    c.globalAlpha = 1 - age / 2.4;
+    over.globalAlpha = 1 - age / 2.4;
     for (let j = 0; j < 12; j++) {
       const a = j * 0.52 + age * 3;
       const x = tankAt.x + Math.cos(a) * (12 + (j % 3) * 2);
       const y = tankAt.y + 6 - age * 16 - (j % 4) * 3 + Math.sin(a) * 4;
-      px(c, x, y, j % 3 === 0 ? P.flareHot : P.amber);
+      px(over, x, y, j % 3 === 0 ? P.flareHot : P.amber);
     }
-    c.globalAlpha = 1;
+    over.globalAlpha = 1;
   }
   // What each drilling rig cored since its last float, rising from its crown and fading out.
   const perDp = m.yieldPerDp ?? 0;
@@ -418,12 +524,14 @@ export function drawWorld(c: Ctx, W: number, H: number, t: number, m: WorldModel
       const p = iso(gx, gy);
       const top = rigTop(pad.typeId, p.x, p.y + TW / 2);
       const k = phase / 0.4;
-      c.globalAlpha = k < 0.7 ? 1 : (1 - k) / 0.3;
-      drawText(c, top.x - textWidth(text) / 2, top.y - 10 - k * 14, text, P.cyan, P.night);
-      c.globalAlpha = 1;
+      over.globalAlpha = k < 0.7 ? 1 : (1 - k) / 0.3;
+      drawText(over, top.x - textWidth(text) / 2, top.y - 10 - k * 14, text, P.cyan, P.night);
+      over.globalAlpha = 1;
     });
   }
-  if (m.motion) rain(c, W, H, t);
+  // Rain: in the voxel scene on the glow, a small art-size canvas laid on with plus-lighter, so
+  // the screen-sized top canvas does not change every frame.
+  if (m.motion) rain(m.voxel === true && stack !== undefined ? stack.glow : over, W, H, t);
   return hits;
 }
 
@@ -482,4 +590,39 @@ function dust(c: Ctx, x: number, y: number, k: number): void {
     );
   }
   c.globalAlpha = 1;
+}
+
+/** The site's ground in pixel art: soil diamonds with specks, tyre marks and the gravel track. */
+function drawPixelGround(
+  g: Ctx,
+  iso: (gx: number, gy: number) => { x: number; y: number },
+  gh: number,
+): void {
+  for (let gy = 0; gy < gh; gy++) {
+    for (let gx = 0; gx < GW; gx++) {
+      const p = iso(gx, gy);
+      const n = hash(gx, gy, 7);
+      diamond(g, p.x, p.y, TW, n < 0.25 ? P.groundWet : P.ground);
+      for (let k = 0; k < 4; k++) {
+        const sx = p.x - 8 + Math.floor(hash(gx, gy, 10 + k) * 16);
+        const sy = p.y + 3 + Math.floor(hash(gx, gy, 20 + k) * 10);
+        px(g, sx, sy, P.groundSpeck);
+      }
+      // Tyre marks on the yard behind the pads.
+      if (gy < 4 && n > 0.6) line(g, p.x - 6, p.y + 5, p.x + 6, p.y + 11, P.groundWet);
+    }
+  }
+  // Gravel track from the gate down the left edge.
+  for (let gy = 2; gy < gh; gy++) {
+    const p = iso(0, gy);
+    diamond(g, p.x, p.y, TW, P.gravel);
+    for (let k = 0; k < 6; k++) {
+      px(
+        g,
+        p.x - 9 + Math.floor(hash(0, gy, 30 + k) * 18),
+        p.y + 2 + Math.floor(hash(0, gy, 40 + k) * 12),
+        P.groundSpeck,
+      );
+    }
+  }
 }

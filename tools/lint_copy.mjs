@@ -61,8 +61,8 @@ const names = new Set(
 );
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 
-/** Findings for one text: rule names with the matched words. */
-export function lint(text) {
+/** Findings for one text: rule names with the matched words. `known`: name hashes to look for. */
+export function lint(text, known = names) {
   // Collapse whitespace so an approved sentence wrapped over lines (JSX, MDX) still matches.
   let t = text.toLowerCase().replace(/\s+/g, ' ');
   for (const re of APPROVED) t = t.replace(re, ' ');
@@ -76,7 +76,7 @@ export function lint(text) {
     const one = tokens[i];
     const two = i + 1 < tokens.length ? `${one} ${tokens[i + 1]}` : null;
     for (const candidate of [one, one.replace(/^[@$]/, ''), two, two?.replace(' ', '')]) {
-      if (candidate && names.has(sha(candidate))) {
+      if (candidate && known.has(sha(candidate))) {
         findings.push('competitor name (docs/05 §6.4b)');
         i = tokens.length;
         break;
@@ -112,19 +112,30 @@ function selfTest() {
     ['Fill your outpost with energy', 1],
     ['Buy $MOHO now', 1],
     ['Powered by Robinhood', 1],
-    ['Better than [a competitor]', 1],
-    ['unlike [a competitor] or [a competitor]', 1],
+  ];
+  // The name check, on a made-up rival (the real names are never written out here).
+  const rival = new Set([sha('rivalgame'), sha('rival_rh')]);
+  const nameCases = [
+    ['Better than RivalGame', 1],
+    ['unlike rival game or @rival_rh', 1],
+    ['A game with no rival', 0],
   ];
   let failed = 0;
-  for (const [text, expectFindings] of cases) {
-    const got = lint(text).length > 0 ? 1 : 0;
+  const check = (text, expectFindings, known) => {
+    const got = lint(text, known).length > 0 ? 1 : 0;
     if (got !== expectFindings) {
       failed += 1;
       console.error(`self-test: "${text}" expected ${expectFindings ? 'a finding' : 'clean'}`);
     }
+  };
+  for (const [text, expectFindings] of cases) check(text, expectFindings, names);
+  for (const [text, expectFindings] of nameCases) check(text, expectFindings, rival);
+  if (names.size === 0) {
+    failed += 1;
+    console.error('self-test: tools/copy_lint_names.json lists no names');
   }
   if (failed > 0) process.exit(1);
-  console.log(`copy lint self-test: ${cases.length} cases ok`);
+  console.log(`copy lint self-test: ${cases.length + nameCases.length} cases ok`);
 }
 
 if (process.argv.includes('--self-test')) {

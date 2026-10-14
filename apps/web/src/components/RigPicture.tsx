@@ -1,23 +1,32 @@
-import { P } from '../game/pixel/palette';
-
-// The portrait's bands (src/game/pixel/portrait.ts): sky to row 24, lower sky and ridge to row 50,
-// earth below, out of 92 rows.
-const BANDS = `linear-gradient(${P.skyTop} 0 26%, ${P.skyMid} 26% 54%, ${P.earth} 54% 100%)`;
+// The portrait's own backdrop (scripts/gen-voxel.mjs): night sky to the horizon at 52 %, the plain
+// below, so a card wider than the picture carries the scene out to its edges.
+const PORTRAIT_BANDS =
+  'linear-gradient(#0a1022 0, #1a2445 31%, #2c2c50 52%, #2a2622 52%, #1f1b18 100%)';
 
 /**
- * A rig portrait PNG (drawn at build time by scripts/gen-pixel-art.mjs) at its own 300 px, so
- * every art pixel stays square; a wider card fills the sides with the scene's own bands.
+ * A rig portrait (rendered at build time by scripts/gen-voxel.mjs at 600 x 552) shown at 300 px;
+ * `running: false` shows the rig stopped, its lamps dark.
  */
-export function RigPicture({ id, name }: { id: number; name: string }) {
+export function RigPicture({
+  id,
+  name,
+  running = true,
+  className = 'w-[300px]',
+}: {
+  id: number;
+  name: string;
+  running?: boolean;
+  className?: string;
+}) {
   return (
-    <div style={{ background: BANDS }}>
+    <div style={{ background: PORTRAIT_BANDS }}>
       <img
-        src={`/rigs/rig-${id}.png`}
-        alt={`${name} on its pad at night`}
+        src={`/rigs/rig-${id}${running ? '' : '-off'}.webp`}
+        alt={`${name} on its pad at night${running ? '' : ', stopped'}`}
         width={300}
         height={276}
         loading="lazy"
-        className="pixel-canvas mx-auto h-auto w-[300px] max-w-full"
+        className={`mx-auto block h-auto max-w-full ${className}`}
       />
     </div>
   );

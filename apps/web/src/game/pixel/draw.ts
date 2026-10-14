@@ -16,6 +16,62 @@ export function px(c: Ctx, x: number, y: number, color: string): void {
   rect(c, x, y, 1, 1, color);
 }
 
+/**
+ * A context that draws nothing: every call and property is a no-op that gives itself back (and 0
+ * where a number is wanted). The voxel scene draws into it until its sprites are in, so it asks
+ * for them without painting their pixel stand-ins, which on a slow phone took whole seconds.
+ */
+const sinkFn: unknown = new Proxy(() => undefined, {
+  get: (_, key) => (key === Symbol.toPrimitive ? () => 0 : sinkFn),
+  apply: () => sinkFn,
+  set: () => true,
+});
+export const SINK = sinkFn as Ctx;
+
+/** Device pixels per art pixel of `c` (its transform's scale; 1 for a plain or fake context). */
+export function resolutionOf(c: Ctx): number {
+  const t = typeof c.getTransform === 'function' ? c.getTransform() : null;
+  return t !== null && t.a > 0 ? t.a : 1;
+}
+
+const stamps = new Map<string, HTMLCanvasElement>();
+
+/**
+ * A drawing that never changes, made of many small rectangles: painted once per resolution into
+ * a small canvas, then copied to (x, y) each frame, one call instead of hundreds. `paint` draws
+ * around the point it is given; `box` is its extent from that point: [left, top, width, height].
+ */
+export function stamp(
+  c: Ctx,
+  name: string,
+  x: number,
+  y: number,
+  box: readonly [number, number, number, number],
+  paint: (g: Ctx, x: number, y: number) => void,
+): void {
+  const [left, top, w, h] = box;
+  const r = resolutionOf(c);
+  const key = `${name}@${r}`;
+  let canvas = stamps.get(key);
+  if (canvas === undefined) {
+    const g = typeof document === 'undefined' ? null : document.createElement('canvas');
+    const ctx = g?.getContext('2d') ?? null;
+    if (g === null || ctx === null || typeof ctx.setTransform !== 'function') {
+      paint(c, x, y);
+      return;
+    }
+    // Texts come and go (the cored amounts): a full cache starts over.
+    if (stamps.size >= 256) stamps.clear();
+    g.width = Math.ceil(w * r);
+    g.height = Math.ceil(h * r);
+    ctx.setTransform(r, 0, 0, r, 0, 0);
+    paint(ctx, -left, -top);
+    canvas = g;
+    stamps.set(key, canvas);
+  }
+  c.drawImage(canvas, Math.round(x) + left, Math.round(y) + top, w, h);
+}
+
 /** Bresenham line, `t` pixels thick (a square brush). */
 export function line(
   c: Ctx,

@@ -7,8 +7,8 @@ import type { Action } from '../../game/actions';
 import { efficiency, maxRigsToBuy, withHeadroom } from '../../game/derive';
 import type { QuoteHook } from '../../game/quote';
 import { rigName } from '../../game/play';
-import { RigPortrait } from '../../game/pixel/RigPortrait';
 import type { GameState, RigType } from '../../game/state';
+import { RigPicture } from '../../components/RigPicture';
 import { formatLitres, formatMohn } from '../../lib/format';
 import { useTwoStep } from './confirm';
 import { PxButton, PxIcon } from './px';
@@ -30,9 +30,14 @@ function RigCard({
   const eff = efficiency(rig.dp, rig.burn);
   return (
     <li className="px-dark flex flex-col">
-      <div className="rig-portrait relative flex justify-center overflow-hidden border-b-[3px] border-[#0b0d10] bg-[#0d1220]">
+      <div className="relative overflow-hidden border-b-[3px] border-[#0b0d10]">
         <div className={dim ? 'opacity-50' : undefined}>
-          <RigPortrait typeId={rig.id} running={running && !dim} />
+          <RigPicture
+            id={rig.id}
+            name={rigName(rig.id)}
+            running={running && !dim}
+            className="w-[200px] sm:w-[300px]"
+          />
         </div>
         {tag !== undefined && (
           <span className="absolute top-2 right-2 bg-amber px-1.5 text-sm font-bold text-night">

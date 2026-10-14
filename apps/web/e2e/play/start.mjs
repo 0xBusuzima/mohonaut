@@ -171,7 +171,7 @@ const env = {
   NEXT_PUBLIC_E2E_ACCOUNT: ACCOUNTS[2],
   NEXT_PUBLIC_RPC_URL: RPC,
 };
-execFileSync(process.execPath, ['scripts/gen-pixel-art.mjs'], { cwd: WEB, stdio: 'inherit' });
+execFileSync(process.execPath, ['scripts/gen-voxel.mjs'], { cwd: WEB, stdio: 'inherit' });
 execFileSync(process.execPath, [require.resolve('next/dist/bin/next'), 'build'], {
   cwd: WEB,
   stdio: 'inherit',

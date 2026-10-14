@@ -22,8 +22,6 @@ export const P = {
   padSide: '#4a4e55',
   hazard: '#ff6b1a',
   hazardDark: '#16191d',
-  lockSign: '#22272d',
-  lockMetal: '#8b939c',
   fence: '#7b8692',
   fenceDark: '#56606b',
   orange: '#ff6b1a',

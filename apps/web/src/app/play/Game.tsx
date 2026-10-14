@@ -161,7 +161,7 @@ export function Game({ openConnect = false }: { openConnect?: boolean }) {
   } else if (p === null || !p.registered) {
     onboarding = (
       <PxModal title="Open your site">
-        <Steps steps={[...ONBOARDING_STEPS, 'Diesel']} at={3} />
+        <Steps steps={[...ONBOARDING_STEPS, 'First diesel']} at={3} />
         <FuelWindow state={state} action={action} first ethBalance={ethBalance} />
       </PxModal>
     );

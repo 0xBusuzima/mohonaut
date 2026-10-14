@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: 'Mohonaut training site: try the rig',
     description:
       'A drill site in your browser: no wallet, practice diesel and practice $MOHN, nothing of value.',
-    // Drawn at build time from the game's pixel art (scripts/gen-pixel-art.mjs).
+    // Rendered at build time from the game's voxel rigs (scripts/gen-voxel.mjs).
     images: [
       {
         url: '/og-train.png',

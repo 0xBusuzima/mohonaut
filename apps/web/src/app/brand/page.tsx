@@ -147,8 +147,9 @@ export default function BrandPage() {
 
       <h2 className="mt-12 font-display text-3xl font-black tracking-wide uppercase">Rigs</h2>
       <p className="mt-4 max-w-2xl">
-        The six Generation 1 rigs as they stand on a pad at night, drawn by the game itself. Scale
-        them only by whole numbers (2x, 3x) with nearest-neighbour, so the pixels stay square.
+        The six Generation 1 rigs as they stand on a pad at night, rendered from the game&apos;s own
+        voxel models (600 x 552 PNG). Use them as they are: no recolouring, no cropping into the
+        rig, nothing drawn over it.
       </p>
       <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {GEN1_RIGS.map((r) => (

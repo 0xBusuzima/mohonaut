@@ -5,8 +5,8 @@
   "type": "module",
   "description": "Game client, landing, docs and economy pages (Next.js static export).",
   "scripts": {
-    "dev": "node scripts/gen-pixel-art.mjs && next dev",
-    "build": "node scripts/gen-pixel-art.mjs && next build && node scripts/flatten-segments.mjs && node scripts/csp.mjs",
+    "dev": "node scripts/gen-voxel.mjs && next dev",
+    "build": "node scripts/gen-voxel.mjs && next build && node scripts/flatten-segments.mjs && node scripts/csp.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
@@ -30,6 +30,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "jsdom": "^30.1.2",
     "lighthouse": "^13.5.0",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4.3.3",
     "vite": "^8.3.4"
   },

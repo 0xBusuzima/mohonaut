@@ -122,6 +122,12 @@ export function SitePreview() {
     () => new URLSearchParams(window.location.search).has('decor'),
     () => false,
   );
+  // ?pixel=1: the pixel scene (low-power mode's), instead of the voxel one (docs/06 7.8).
+  const pixel = useSyncExternalStore(
+    noSubscribe,
+    () => new URLSearchParams(window.location.search).has('pixel'),
+    () => false,
+  );
   // 367 MOHN/h over 980 DP, as the sample HUD says.
   const model = useMemo(
     () => ({
@@ -129,10 +135,11 @@ export function SitePreview() {
       tankFill: 0.4 + (step % 3) * 0.2,
       yieldPerDp: 0.375,
       stratum: stratumAt(millimetres(SAMPLE.network.emitted)).current.colour,
+      ...(pixel ? { voxel: false } : {}),
       decor: decor ? DECOR_SETS : [],
       ...(decor ? { crewTag: 'NIGHT', plaques: [1, 3, 7] } : {}),
     }),
-    [pads, step, decor],
+    [pads, step, decor, pixel],
   );
   const [panel, setPanel] = useState<Panel | null>(null);
   // ?shift=1 opens the shift report a returning player sees.

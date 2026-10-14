@@ -6,7 +6,6 @@
  */
 import { existsSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { setTimeout as sleep } from 'node:timers/promises';
 import { liquidityManagerAbi } from '@mohonaut/sdk';
 import { Indexer, RpcSource, contractSet, migrate, openDatabase } from '@mohonaut/indexer';
 import { makeClients } from './chain.js';
@@ -95,9 +94,15 @@ async function main(): Promise<void> {
   });
   server.listen(cfg.metricsPort, cfg.metricsHost);
 
+  // Ctrl-C (or SIGTERM) stops at once: it says so, cuts the wait between ticks short, and lets
+  // the current tick finish; a second Ctrl-C exits without waiting.
   let stopping = false;
+  let wake: () => void = () => {};
   const stop = () => {
+    if (stopping) process.exit(130);
     stopping = true;
+    log('info', 'stopping', { hint: 'press Ctrl-C again to exit now' });
+    wake();
   };
   process.on('SIGINT', stop);
   process.on('SIGTERM', stop);
@@ -109,8 +114,16 @@ async function main(): Promise<void> {
   while (!stopping) {
     const report = await keeper.tick();
     log('info', 'tick', { ...report });
-    await sleep(cfg.tickIntervalMs);
+    if (stopping) break;
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, cfg.tickIntervalMs);
+      wake = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+    });
   }
+  log('info', 'stopped');
   server.close();
   await lock.release();
   await database.close();

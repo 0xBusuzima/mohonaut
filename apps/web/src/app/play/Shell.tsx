@@ -1,12 +1,20 @@
 'use client';
 
-import { useMemo, useSyncExternalStore } from 'react';
-import { PixelWorld } from '../../game/pixel/PixelWorld';
+import dynamic from 'next/dynamic';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { ForemanMo } from '../../game/pixel/ForemanMo';
 import type { ScenePad } from '../../game/play';
 import { inAppBrowser } from '../../game/inapp';
 import { isTestnet } from '../../game/chain-id';
 import { PxButton, PxModal, Steps } from './px';
+
+/**
+ * The scene behind the welcome window: its code loads only when it is shown, after the page has
+ * loaded and gone idle (the game itself imports it as usual).
+ */
+const PixelWorld = dynamic(() => import('../../game/pixel/PixelWorld').then((m) => m.PixelWorld), {
+  ssr: false,
+});
 
 /** A site at work behind the welcome window, before any wallet is known. */
 const DEMO_PADS: ScenePad[] = [
@@ -16,7 +24,27 @@ const DEMO_PADS: ScenePad[] = [
   { typeId: 2, running: false },
 ];
 
-export const ONBOARDING_STEPS = ['Wallet', 'Sign in', 'Your site'];
+export const ONBOARDING_STEPS = ['Wallet', 'Signature', 'Site name'];
+
+/** True once the page has loaded and gone idle: for scenery that can wait for it. */
+function useAfterLoad(): boolean {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let idle = 0;
+    const go = () => {
+      if (typeof window.requestIdleCallback === 'function')
+        idle = window.requestIdleCallback(() => setReady(true), { timeout: 2000 });
+      else setReady(true);
+    };
+    if (document.readyState === 'complete') go();
+    else window.addEventListener('load', go, { once: true });
+    return () => {
+      window.removeEventListener('load', go);
+      if (idle !== 0) window.cancelIdleCallback(idle);
+    };
+  }, []);
+  return ready;
+}
 
 /** The top-left badge: the casing mark and the name, plus the testnet tag. */
 export function Brand() {
@@ -38,13 +66,13 @@ export function Brand() {
 
 /**
  * Shown while the game code loads: a rig on its pad and a striped load bar. The rig is the PNG
- * drawn at build time (scripts/gen-pixel-art.mjs), so it is there before any script runs.
+ * rendered at build time (scripts/gen-voxel.mjs), so it is there before any script runs.
  */
 export function LoadingScreen({ text = 'Spudding in…' }: { text?: string }) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-[#0b0f17] font-pixel text-bone">
       <div className="flex flex-col items-center gap-5">
-        <img src="/rigs/rig-2.png" alt="" width={300} height={276} className="pixel-canvas block" />
+        <img src="/rigs/rig-2.webp" alt="" width={300} height={276} className="block" />
         <p className="text-xl tracking-wider uppercase">{text}</p>
         <div className="px-inset h-6 w-72 p-1">
           <div className="px-hazard h-full w-1/2 animate-[loadbar_1.6s_steps(12)_infinite]" />
@@ -78,13 +106,19 @@ function InAppNotice() {
  */
 export function PlayShell({ onConnect }: { onConnect?: () => void }) {
   const model = useMemo(() => ({ pads: DEMO_PADS, tankFill: 0.6 }), []);
+  // The welcome window comes first; the site behind it, still (it is scenery here, and kind to
+  // the battery), once the page has loaded and gone idle.
+  const scenery = useAfterLoad();
   return (
     <>
       <h1 className="sr-only">Mohonaut: your drill site</h1>
-      <PixelWorld
-        model={model}
-        label="A drill site at night: four rigs on their pads, a diesel tank, the core shack and the World Bore."
-      />
+      {scenery && (
+        <PixelWorld
+          still
+          model={model}
+          label="A drill site at night: four rigs on their pads, a diesel tank, the core shack and the World Bore."
+        />
+      )}
       <Brand />
       <PxModal title="Welcome">
         <Steps steps={ONBOARDING_STEPS} at={0} />

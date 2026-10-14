@@ -90,6 +90,9 @@ const TITLES: Partial<Record<Panel, string>> = {
  * of value. The game's own world, HUD and windows run on a local simulation at 60x speed; the
  * progress stays on this device.
  */
+/** How long after the page opens the practice clock starts ticking. */
+const CLOCK_AFTER_MS = 4000;
+
 export function TrainingGame() {
   usePixelGame();
   const toast = useToast();
@@ -102,12 +105,20 @@ export function TrainingGame() {
   const { base, state: sim } = saved;
 
   // The clock: a simulated minute every second (every 5 in low-power mode, 5 minutes at a time).
+  // It starts once the page has loaded and settled: each tick redraws the game, and on a slow
+  // phone the first seconds belong to getting the page ready.
   useEffect(() => {
     const step = lowPower ? 5 : 1;
-    const id = window.setInterval(() => {
-      setSaved((v) => ({ ...v, state: tick(v.state, SPEED * step) }));
-    }, step * 1000);
-    return () => window.clearInterval(id);
+    let id = 0;
+    const start = window.setTimeout(() => {
+      id = window.setInterval(() => {
+        setSaved((v) => ({ ...v, state: tick(v.state, SPEED * step) }));
+      }, step * 1000);
+    }, CLOCK_AFTER_MS);
+    return () => {
+      window.clearTimeout(start);
+      window.clearInterval(id);
+    };
   }, [lowPower]);
   useEffect(() => save(saved), [saved]);
   // The latest state for actions: a click must not undo a clock tick that just landed.

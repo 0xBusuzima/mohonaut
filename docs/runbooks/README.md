@@ -11,6 +11,7 @@ Her runbook dört soruyu yanıtlar: **kim**, **hangi araçla**, **hangi Safe iş
 | 5 | Zincir kesintisi | S2 | İletişim; tahakkuk kendiliğinden doğru | [05-zincir-kesintisi.md](05-zincir-kesintisi.md) |
 | 6 | Zincirin kapanma duyurusu | S1 (yavaş) | Anlık görüntü + göç planı | [06-zincir-kapanma.md](06-zincir-kapanma.md) |
 | — | Tatbikat (pause → bildirim → unpause) | — | Yılda en az bir kez, testnet'te | [tatbikat.md](tatbikat.md) |
+| — | Lansman provası (deploy → Genesis → Market Open) | — | Mainnet'ten önce testnet'te en az iki kez | [lansman-provasi.md](lansman-provasi.md) |
 
 ## Roller ve araçlar
 

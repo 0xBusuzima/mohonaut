@@ -71,7 +71,11 @@ describe('the pixel world', () => {
     const { PixelWorld } = await import('../src/game/pixel/PixelWorld');
     const { container, unmount } = render(
       <div>
-        <PixelWorld contained model={{ pads: [], tankFill: 0 }} label="A drill site" />
+        <PixelWorld
+          contained
+          model={{ pads: [], tankFill: 0, voxel: false }}
+          label="A drill site"
+        />
       </div>,
     );
     const box = container.firstChild as HTMLElement;
@@ -86,5 +90,95 @@ describe('the pixel world', () => {
     expect(Number(canvas.getAttribute('height'))).toBe(Math.ceil(600 / scale));
     unmount();
     expect(disconnected).toBe(1);
+  });
+
+  it('draws a still voxel scene again as its sprites arrive, and the pixel one in low-power mode', async () => {
+    vi.resetModules();
+    const arrive: { fn?: (() => void) | undefined } = {};
+    vi.doMock('../src/game/pixel/voxel-sprites', async (actual) => ({
+      ...(await actual<object>()),
+      onVoxelArrive: (fn: () => void) => {
+        arrive.fn = fn;
+        return () => {
+          arrive.fn = undefined;
+        };
+      },
+    }));
+    const drawn: (boolean | undefined)[] = [];
+    vi.doMock('../src/game/pixel/world', async (actual) => ({
+      ...(await actual<object>()),
+      drawWorld: (...args: unknown[]) => {
+        drawn.push((args[4] as { voxel?: boolean }).voxel);
+        return [];
+      },
+    }));
+    // Reduced motion: the scene is drawn once, not on a loop.
+    vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query: string) =>
+        ({
+          matches: true,
+          media: query,
+          addEventListener: () => undefined,
+          removeEventListener: () => undefined,
+        }) as unknown as MediaQueryList,
+    );
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      setTransform: () => undefined,
+    } as unknown as CanvasRenderingContext2D);
+    try {
+      const { PixelWorld } = await import('../src/game/pixel/PixelWorld');
+      const model = { pads: [{ typeId: 0, running: true }], tankFill: 0.5 };
+      const first = render(<PixelWorld model={model} label="A drill site" />);
+      expect(drawn.length).toBeGreaterThan(0);
+      expect(drawn.every((v) => v === true)).toBe(true);
+      const before = drawn.length;
+      expect(screen.getByRole('img').className).not.toContain('pixel-canvas');
+      // Two sprites land in the same frame: one more drawing.
+      await act(async () => {
+        arrive.fn?.();
+        arrive.fn?.();
+        await new Promise((r) => setTimeout(r, 50));
+      });
+      expect(drawn.length).toBe(before + 1);
+      first.unmount();
+      expect(arrive.fn).toBeUndefined();
+
+      window.localStorage.setItem('mohonaut.lowPower', 'on');
+      render(<PixelWorld model={model} label="A drill site" />);
+      expect(drawn.at(-1)).toBe(false);
+      expect(screen.getByRole('img').className).toContain('pixel-canvas');
+      expect(arrive.fn).toBeUndefined();
+    } finally {
+      window.localStorage.removeItem('mohonaut.lowPower');
+      vi.doUnmock('../src/game/pixel/voxel-sprites');
+      vi.doUnmock('../src/game/pixel/world');
+      vi.resetModules();
+    }
+  });
+
+  it('draws a still scene when asked to (behind a window), with no animation', async () => {
+    vi.resetModules();
+    const motions: boolean[] = [];
+    vi.doMock('../src/game/pixel/world', async (actual) => ({
+      ...(await actual<object>()),
+      drawWorld: (...args: unknown[]) => {
+        motions.push((args[4] as { motion: boolean }).motion);
+        return [];
+      },
+    }));
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      setTransform: () => undefined,
+    } as unknown as CanvasRenderingContext2D);
+    try {
+      const { PixelWorld } = await import('../src/game/pixel/PixelWorld');
+      render(
+        <PixelWorld still model={{ pads: [], tankFill: 0, voxel: false }} label="A drill site" />,
+      );
+      expect(motions.length).toBeGreaterThan(0);
+      expect(motions.every((m) => !m)).toBe(true);
+    } finally {
+      vi.doUnmock('../src/game/pixel/world');
+      vi.resetModules();
+    }
   });
 });

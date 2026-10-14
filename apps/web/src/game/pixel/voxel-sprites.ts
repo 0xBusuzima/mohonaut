@@ -1,0 +1,101 @@
+/**
+ * The baked voxel sprites (scripts/gen-voxel.mjs) for the scene, loaded on first use. Until an
+ * image has loaded (or without a DOM) it gives null, and the scene draws the pixel drawing.
+ */
+interface Meta {
+  w: number;
+  h: number;
+  /** The anchor in the image (in its own pixels): where it stands in the scene. */
+  ax: number;
+  ay: number;
+  /** Image pixels per scene art pixel (baked denser so it stays soft at screen resolution). */
+  k?: number;
+}
+
+/** Draws a sprite so its anchor lands on (x, y), in the scene's art pixels. */
+export function blit(
+  c: CanvasRenderingContext2D,
+  s: Meta & { img: HTMLImageElement },
+  x: number,
+  y: number,
+): void {
+  const k = s.k ?? 1;
+  c.drawImage(s.img, x - s.ax / k, y - s.ay / k, s.w / k, s.h / k);
+}
+
+let manifest: Record<string, Meta> | null = null;
+let asked = false;
+/**
+ * Each sprite asked for: its image, and whether it is decoded (ready to draw without a decode on
+ * the main thread, which for a whole site at once took seconds on a slow phone) or failed.
+ */
+const images = new Map<string, { img: HTMLImageElement; state: 'loading' | 'ready' | 'failed' }>();
+const listeners = new Set<() => void>();
+const arrived = () => {
+  for (const f of listeners) f();
+};
+
+/**
+ * Calls `onArrive` each time the manifest or another sprite has loaded, so a still scene (drawn
+ * once) can draw again with it. Gives back the unsubscribe.
+ */
+export function onVoxelArrive(onArrive: () => void): () => void {
+  listeners.add(onArrive);
+  return () => {
+    listeners.delete(onArrive);
+  };
+}
+
+/**
+ * True once the manifest is in and every sprite asked for so far has loaded (or failed): the
+ * scene can show without its pixel stand-ins.
+ */
+export function voxelSettled(): boolean {
+  return manifest !== null && [...images.values()].every((e) => e.state !== 'loading');
+}
+
+/** How many sprites have been asked for so far. */
+export function voxelRequested(): number {
+  return images.size;
+}
+
+/** A baked sprite by name ("rig-1", "shack", "container"), or null until it has loaded. */
+export function voxelSprite(name: string): (Meta & { img: HTMLImageElement }) | null {
+  if (typeof document === 'undefined' || typeof fetch === 'undefined') return null;
+  if (manifest === null) {
+    if (!asked) {
+      asked = true;
+      fetch('/voxel/manifest.json')
+        .then((r) => (r.ok ? (r.json() as Promise<Record<string, Meta>>) : null))
+        .then((m) => {
+          manifest = m;
+          arrived();
+        })
+        .catch(() => {
+          // No sprites: the pixel drawings stay.
+        });
+    }
+    return null;
+  }
+  const meta = manifest[name];
+  if (meta === undefined) return null;
+  let entry = images.get(name);
+  if (entry === undefined) {
+    const img = new Image();
+    img.src = `/voxel/site-${name}.webp`;
+    const e = { img, state: 'loading' as 'loading' | 'ready' | 'failed' };
+    entry = e;
+    images.set(name, e);
+    // decode() decodes off the main thread; an image drawn undecoded is decoded in the frame.
+    img
+      .decode()
+      .then(() => {
+        e.state = 'ready';
+      })
+      .catch(() => {
+        e.state = 'failed'; // the pixel drawing stays
+      })
+      .finally(arrived);
+  }
+  return entry.state === 'ready' ? { ...meta, img: entry.img } : null;
+}

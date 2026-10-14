@@ -15,7 +15,9 @@ import {
   polyline,
   px,
   rect,
+  resolutionOf,
   shade,
+  stamp,
 } from './draw';
 import type { Ctx } from './draw';
 import { drawText, textWidth } from './font';
@@ -46,20 +48,42 @@ export function padTile(c: Ctx, x: number, y: number, unlocked: boolean, hover: 
   if (hover) diamondEdge(c, x, y, w, P.amber);
 }
 
-export function lockSign(c: Ctx, x: number, y: number): void {
-  // Chain between two bollards and a sign with a padlock.
-  rect(c, x - 14, y - 8, 2, 8, P.hazard);
-  rect(c, x + 12, y - 8, 2, 8, P.hazard);
-  for (let i = -12; i < 12; i += 2) px(c, x + i, y - 6 + Math.round(Math.abs(i) / 6), P.concrete);
-  rect(c, x - 1, y - 20, 2, 14, P.steel);
-  rect(c, x - 8, y - 30, 16, 12, P.lockSign);
-  rect(c, x - 8, y - 30, 16, 1, P.steelLight);
-  // Padlock.
-  rect(c, x - 3, y - 25, 6, 5, P.lockMetal);
-  rect(c, x - 2, y - 28, 1, 3, P.lockMetal);
-  rect(c, x + 1, y - 28, 1, 3, P.lockMetal);
-  rect(c, x - 1, y - 29, 2, 1, P.lockMetal);
-  px(c, x, y - 23, P.lockSign);
+/**
+ * A pad the site has not reached yet, staked out by the surveyors: flagged stakes at its corners
+ * with hazard tape between them, and a levelling tripod in the middle (ours; not a padlock sign).
+ */
+export function surveyPlot(c: Ctx, x: number, y: number): void {
+  stamp(c, 'survey', x, y, [-27, -23, 56, 38], paintSurveyPlot);
+}
+
+function paintSurveyPlot(c: Ctx, x: number, y: number): void {
+  const corners: [number, number][] = [
+    [x - 26, y],
+    [x, y - 13],
+    [x + 26, y],
+    [x, y + 13],
+  ];
+  // Tape: dashes of hazard orange and bone from stake to stake, a little above the ground.
+  corners.forEach(([ax, ay], k) => {
+    const [bx, by] = corners[(k + 1) % 4] ?? corners[0] ?? [x, y];
+    const steps = 26;
+    for (let i = 0; i <= steps; i++) {
+      const tx = Math.round(ax + ((bx - ax) * i) / steps);
+      const ty = Math.round(ay + ((by - ay) * i) / steps) - 4;
+      px(c, tx, ty, Math.floor(i / 3) % 2 === 0 ? P.hazard : P.bone);
+    }
+  });
+  // Stakes with orange flagged tips.
+  for (const [sx, sy] of corners) {
+    rect(c, sx, sy - 7, 1, 7, P.wood);
+    rect(c, sx, sy - 9, 2, 2, P.orange);
+  }
+  // The levelling tripod and its instrument.
+  line(c, x - 4, y + 1, x, y - 11, P.woodDark);
+  line(c, x + 4, y + 1, x, y - 11, P.woodDark);
+  line(c, x, y + 3, x, y - 11, P.woodDark);
+  rect(c, x - 2, y - 15, 5, 4, P.amber);
+  px(c, x + 2, y - 14, P.night);
 }
 
 /** Lamp mast with a sodium head; `on` false during a flicker. */
@@ -113,23 +137,37 @@ export function tank(
     ],
     P.steelLight,
   );
+  // Ladder and stencil band.
+  for (let i = 0; i < h - 6; i += 3) rect(c, x - 9, top + 5 + i, 3, 1, P.concrete);
+  rect(c, x - w / 2, top + 28, w, 3, P.orange);
+  // Hose to the ground.
+  polyline(c, [x + w / 2 - 1, top + 26, x + w / 2 + 4, top + 30, x + w / 2 + 6, y], P.graphite);
+  tankDressing(c, x, y, fill, low, t, motion);
+  if (hover) rect(c, x - w / 2 - 1, top - 1, w + 2, 1, P.amber);
+}
+
+/** The tank's live parts, drawn over either tank (pixel or voxel): the gauge and the low lamp. */
+export function tankDressing(
+  c: Ctx,
+  x: number,
+  y: number,
+  fill: number,
+  low: boolean,
+  t: number,
+  motion: boolean,
+): void {
+  const top = y - 34;
   // Gauge: a window showing the fill level.
   const gh = 16;
   rect(c, x + 2, top + 9, 5, gh + 2, P.night);
   const f = Math.max(0, Math.min(1, fill));
   const filled = Math.round(gh * f);
   rect(c, x + 3, top + 10 + gh - filled, 3, filled, f < 0.15 ? P.orange : P.amber);
-  // Ladder and stencil band.
-  for (let i = 0; i < h - 6; i += 3) rect(c, x - 9, top + 5 + i, 3, 1, P.concrete);
-  rect(c, x - w / 2, top + 28, w, 3, P.orange);
-  // Hose to the ground.
-  polyline(c, [x + w / 2 - 1, top + 26, x + w / 2 + 4, top + 30, x + w / 2 + 6, y], P.graphite);
   // A warning lamp on top that blinks red when the diesel runs low.
   if (low) {
     const on = !motion || Math.sin(t * 6) > 0;
     rect(c, x - 2, top - 3, 4, 3, on ? P.beacon : '#6b1d18');
   }
-  if (hover) rect(c, x - w / 2 - 1, top - 1, w + 2, 1, P.amber);
 }
 
 export function shack(
@@ -156,6 +194,26 @@ export function shack(
   // Core trays on the left face.
   for (let i = 0; i < 3; i++)
     rect(c, x - 22, y + 6 + i * 4, 14, 2, i === 1 ? P.cyan : P.steelLight);
+  // Chimney with steam.
+  rect(c, x - 10, y - 28, 4, 8, P.steel);
+  shackDressing(c, x, y, t, motion, crewTag, plaques);
+  if (hover) diamondEdge(c, x, y - 18, 56, P.amber);
+}
+
+/**
+ * What the player's progress puts on the shack, drawn over either shack (pixel or voxel): the
+ * season plaques on its wall, the chimney's steam and the flag (the crew's, with its tag).
+ */
+export function shackDressing(
+  c: Ctx,
+  x: number,
+  y: number,
+  t: number,
+  motion: boolean,
+  crewTag?: string,
+  plaques: readonly number[] = [],
+  voxel = false,
+): void {
   [...plaques]
     .sort((a, b) => a - b)
     .slice(0, 3)
@@ -167,13 +225,24 @@ export function shack(
           : tier === 'silver'
             ? [P.boneDark, P.bone]
             : [P.orangeDark, P.orange];
+      if (voxel) {
+        // On the voxel shack's left wall (its +y face, at y = 13, under the core trays), sheared
+        // to the wall's slope: the shack sprite has voxel (0, 0, 0) at (x, y + 4), 2 art pixels
+        // a voxel, so a point (vx, 13, vz) of the wall is at (x + 2 (vx - 13), y + 17 + vx - 2 vz).
+        const vx = 2 + i * 3;
+        c.save();
+        c.transform(1, 0.5, 0, 1, x + 2 * (vx - 13), y + 17 + vx - 2 * 2.5);
+        rect(c, 0, 0, 5, 4, P.graphite);
+        rect(c, 1, 1, 3, 2, face);
+        rect(c, 1, 1, 1, 1, shine);
+        c.restore();
+        return;
+      }
       const left = x - 23 + i * 6;
       rect(c, left, y + 19, 5, 4, P.graphite);
       rect(c, left + 1, y + 20, 3, 2, face);
       rect(c, left + 1, y + 20, 1, 1, shine);
     });
-  // Chimney with steam.
-  rect(c, x - 10, y - 28, 4, 8, P.steel);
   if (motion) puff(c, x - 8, y - 32, t, 0);
   if (crewTag === undefined) {
     // Flag on the roof ridge: the casing mark colours, waving.
@@ -193,7 +262,6 @@ export function shack(
     }
     drawText(c, x + 19, y - 44, text, P.bone, P.orangeDark);
   }
-  if (hover) diamondEdge(c, x, y - 18, 56, P.amber);
 }
 
 export function container(c: Ctx, x: number, y: number, hover: boolean): void {
@@ -252,6 +320,11 @@ export function generator(c: Ctx, x: number, y: number, t: number, motion: boole
   box(c, x, y + 8, 26, 11, P.steelLight, P.steel, P.graphite);
   for (let i = 0; i < 4; i++) rect(c, x - 10 + i * 3, y + 14 + i * 1.5, 1, 4, P.graphite);
   rect(c, x + 5, y + 1, 2, 7, P.night);
+  generatorDressing(c, x, y, t, motion);
+}
+
+/** The generator's live parts, over either generator: the run LED and the exhaust. */
+export function generatorDressing(c: Ctx, x: number, y: number, t: number, motion: boolean): void {
   rect(c, x - 3, y + 10, 2, 1, motion && Math.sin(t * 6) > 0 ? P.led : P.teal);
   if (motion) puff(c, x + 6, y - 2, t, 0.3);
 }
@@ -324,13 +397,20 @@ export function rigTop(typeId: number, x: number, y: number): { x: number; y: nu
 
 /** Steam: three pixel puffs rising and fading. */
 function puff(c: Ctx, x: number, y: number, t: number, seed: number): void {
+  // On a high-resolution canvas (the voxel scene) the steam is soft round puffs.
+  const smooth = resolutionOf(c) > 1;
   for (let k = 0; k < 3; k++) {
     const phase = (t * 0.6 + seed * 0.37 + k / 3) % 1;
     const yy = y - phase * 18;
     const xx = x + Math.sin(phase * 6 + seed) * 3;
     const r = 1 + Math.floor(phase * 3);
     c.globalAlpha = 0.45 * (1 - phase);
-    rect(c, xx - r, yy - r, r * 2, r * 2, P.bone);
+    if (smooth) {
+      c.fillStyle = P.bone;
+      c.beginPath();
+      c.arc(xx, yy, r * 1.4 + phase * 2, 0, Math.PI * 2);
+      c.fill();
+    } else rect(c, xx - r, yy - r, r * 2, r * 2, P.bone);
   }
   c.globalAlpha = 1;
 }
@@ -403,6 +483,16 @@ export function pole(c: Ctx, x: number, y: number): { x: number; y: number } {
 
 /** A sagging wire between two pole tops. */
 export function wire(c: Ctx, a: { x: number; y: number }, b: { x: number; y: number }): void {
+  // On a high-resolution canvas (the voxel scene) it is one thin smooth curve.
+  if (resolutionOf(c) > 1 && typeof c.quadraticCurveTo === 'function') {
+    c.beginPath();
+    c.moveTo(a.x, a.y);
+    c.quadraticCurveTo((a.x + b.x) / 2, (a.y + b.y) / 2 + 8, b.x, b.y);
+    c.strokeStyle = P.wire;
+    c.lineWidth = 0.7;
+    c.stroke();
+    return;
+  }
   const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 + 4 };
   polyline(
     c,
