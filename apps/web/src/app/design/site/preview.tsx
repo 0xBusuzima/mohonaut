@@ -122,6 +122,12 @@ export function SitePreview() {
     () => new URLSearchParams(window.location.search).has('decor'),
     () => false,
   );
+  // ?hd=1: no pixel budget, for recording video of the scene (brand clips).
+  const hd = useSyncExternalStore(
+    noSubscribe,
+    () => new URLSearchParams(window.location.search).has('hd'),
+    () => false,
+  );
   // ?pixel=1: the pixel scene (low-power mode's), instead of the voxel one (docs/06 7.8).
   const pixel = useSyncExternalStore(
     noSubscribe,
@@ -170,6 +176,7 @@ export function SitePreview() {
     <>
       <PixelWorld
         model={model}
+        pixels={hd ? 16_000_000 : undefined}
         onSelect={(hit) => {
           if (hit === 'market') setPanel('market');
           else if (hit.startsWith('pad:')) setPanel('rigs');

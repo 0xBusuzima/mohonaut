@@ -40,6 +40,7 @@ export function PixelWorld({
   describe,
   contained = false,
   still = false,
+  pixels,
 }: {
   model: Omit<WorldModel, 'hover' | 'motion' | 'pan' | 'fx'>;
   onSelect?: ((hit: Hit) => void) | undefined;
@@ -49,6 +50,8 @@ export function PixelWorld({
   contained?: boolean;
   /** A still scene (drawn once, and on changes), e.g. behind a window that covers it. */
   still?: boolean;
+  /** Device pixels per canvas, overriding the budget (the design preview's ?hd=1, for video). */
+  pixels?: number | undefined;
 }) {
   // The interactive canvas, on top; under it the still layer, the scene, the night and the glow.
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -139,7 +142,8 @@ export function PixelWorld({
       : 1;
   // Within a pixel budget: each frame the browser lays the five canvases together, which a phone
   // without GPU compositing (and Lighthouse's mobile run) pays for per pixel.
-  const budget = still ? PIXELS_STILL : size.w * size.scale < 768 ? PIXELS_PHONE : PIXELS_LARGE;
+  const budget =
+    pixels ?? (still ? PIXELS_STILL : size.w * size.scale < 768 ? PIXELS_PHONE : PIXELS_LARGE);
   const res = Math.max(1, Math.min(6, ratio, Math.sqrt(budget / Math.max(1, size.w * size.h))));
 
   // Sprites arrive after the first frame; a still scene draws again once per animation frame.
