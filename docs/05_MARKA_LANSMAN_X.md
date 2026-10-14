@@ -473,7 +473,7 @@ Kural: Kullanılan her aracın ticari kullanım koşulları (ücretsiz kademeler
 | Kuyu logu bileşeni: 8 litoloji bandı dokusu, Kola/Moho çizgileri, "we are here" çizgisi, metre cetveli | SVG + doku | T−36 |
 | UI kit: kuyu logu, dizel tank göstergesi (ℓ, ℓ/h, bitiş zamanı), yakıt hattı göstergesi, DP payı, timelock kuyruğu bileşeni, "Unaudited" bandı, "SIMULATION" ve "TESTNET" şeritleri | Figma/Penpot + SVG | T−36 |
 | Training Site paylaşım kartı | 1200×630 | T−36 — ✅ 2026-10-13: `apps/web/scripts/gen-voxel.mjs` derlemede oyunun kendi voxel kulelerinden üretiyor (`/og-train.png`; 2026-10-13 piksel sürümünden voxel'e geçti) |
-| Teaser (15–20 sn) | MP4, 16:9 + 9:16 | T−36 |
+| Teaser (15–20 sn) | MP4, 16:9 + 9:16 | T−36. Taslak 2026-10-14: 14 sn, oyunun kendi voxel sahnesinden; `apps/web/scripts/capture-scene.mjs` + `tools/brand/teaser.sh` (videolar repoda değil, `brand/video/`). Müzik yok. |
 | Dinamik OG: katkı kartı, kilometre taşı, Survey bulgusu, Crew, Shift Report, Pioneer rozeti | 1200×630 + 1080×1350 | T−29 |
 | Paylaşım kartı şablonları (Satori) | JSX + font dosyaları | T−29 |
 | Pioneer rozeti | SVG/PNG | T−29 |
