@@ -112,8 +112,15 @@ async function main(): Promise<void> {
     dryRun: clients.walletClient === null,
   });
   while (!stopping) {
-    const report = await keeper.tick();
-    log('info', 'tick', { ...report });
+    // A tick that fails outright (the RPC or the database gone for a moment) is logged and the
+    // next one tries again: the keeper must outlive an outage, not end on it.
+    try {
+      const report = await keeper.tick();
+      log('info', 'tick', { ...report });
+    } catch (err) {
+      metrics.errors.inc({ task: 'tick' });
+      log('error', 'tick failed', { error: err instanceof Error ? err.message : String(err) });
+    }
     if (stopping) break;
     await new Promise<void>((resolve) => {
       const timer = setTimeout(resolve, cfg.tickIntervalMs);
