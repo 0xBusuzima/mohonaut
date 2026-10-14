@@ -52,6 +52,12 @@ Sorumlular: **K** kurucu (anahtarlar, Safe'ler, X), **Ke** keeper servisi (otoma
 
   Bu bir ekonomi hatası değil, nüfus farkı. Season 0'da gerçek oyuncularla yeniden bakılır.
 
+**3. gün raporu (2026-10-14 18:13 UTC):** [docs/kanit/beta/2026-10-14-testnet-gun3.md](../kanit/beta/2026-10-14-testnet-gun3.md).
+
+- **2. gün:** emisyonu artık takvimle birebir (keeper eksik saatleri sonradan kapattı).
+- **3. gün:** %21,6 eksik. Gün bitmedi, ve keeper 08:20'den beri kapalı olduğu için checkpoint'ler açık.
+- **Yakma:** bandın altında kalmaya devam ediyor; nedeni önceki raporla aynı (iki hesap, Market Open öncesi).
+
 ### Prova 2
 
 Prova 1 kapandıktan sonra `redeploy.ps1` ile yeni bir dağıtım yapılır (K). Aynı tablo doldurulur.
