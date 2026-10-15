@@ -62,3 +62,5 @@ contracts/cache-*/
 
 # Devlog clips and stills rendered from the game (large; the founder posts them)
 brand/devlog/
+# The reveal teaser and other brand video (tools/brand/teaser.sh)
+brand/video/

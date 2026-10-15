@@ -1,6 +1,6 @@
 /**
- * Gen-1 rig drawings (docs/05 §2.9): one shape per rig type, in two states, as plain drawing
- * primitives so the pixel site (game/pixel) and the SVG style sheet (brand/sprites) draw the same thing.
+ * Gen-1 rig drawings for the pixel scene (low-power mode; the default scene uses the voxel rigs,
+ * src/game/voxel): one shape per rig type, in two states, as plain drawing primitives.
  * Origin = the pad centre on the ground; y grows downwards. Rigs are painted safety orange while
  * running (sodium lamp lit, steam at the top) and steel grey when switched off (docs/05 §2.4).
  */
@@ -126,24 +126,4 @@ function rigParts(typeId: number, running: boolean): Primitive[] {
         lamp(0, -43, running),
       ];
   }
-}
-
-const hex = (c: number) => `#${c.toString(16).padStart(6, '0')}`;
-
-/** One rig as SVG elements, for the style sheet and tests. */
-export function rigSvg(shape: RigShape): string {
-  return shape.parts
-    .map((p) => {
-      switch (p.kind) {
-        case 'line':
-          return `<polyline points="${p.points.join(' ')}" fill="none" stroke="${hex(p.color)}" stroke-width="${p.width}" stroke-linecap="round" stroke-linejoin="round"/>`;
-        case 'poly':
-          return `<polygon points="${p.points.join(' ')}" fill="${hex(p.fill)}"/>`;
-        case 'rect':
-          return `<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" fill="${hex(p.fill)}"/>`;
-        default:
-          return `<circle cx="${p.x}" cy="${p.y}" r="${p.r}" fill="${hex(p.fill)}"/>`;
-      }
-    })
-    .join('');
 }

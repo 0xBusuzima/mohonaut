@@ -41,8 +41,15 @@ export class Keeper {
     this.metrics.lockHeld.set(active ? 1 : 0);
     if (!active) return { active, outcomes: {} };
     const read = this.clients.publicClient;
-    this.metrics.balance.set(Number(await read.getBalance({ address: this.clients.address })));
     const outcomes: Record<string, string> = {};
+    // A failed read (the RPC down for a moment) is reported and the jobs still run: on testnet a
+    // single failed balance read once stopped the keeper for ten hours.
+    try {
+      this.metrics.balance.set(Number(await read.getBalance({ address: this.clients.address })));
+    } catch (err) {
+      this.metrics.errors.inc({ task: 'balance' });
+      outcomes['balance'] = errorText(err);
+    }
     if (this.beforeJobs !== undefined) {
       try {
         await this.beforeJobs();

@@ -34,6 +34,9 @@ mkdirSync(join(brand, 'png'), { recursive: true });
 out(join(brand, 'png/x-avatar-400.png'), png('social/x-avatar.svg', 400));
 out(join(brand, 'png/x-banner-1500x500.png'), png('social/x-banner.svg', 1500));
 out(join(brand, 'png/og-1200x630.png'), png('social/og.svg', 1200));
+// Incident cards for X (docs/05 7.3).
+for (const name of ['delay', 'known-issue', 'paused', 'mint-limit', 'resolved'])
+  out(join(brand, `png/incident-${name}.png`), png(`social/incident-${name}.svg`, 1200));
 for (const name of [
   'mohonaut-wordmark',
   'mohonaut-wordmark-on-charcoal',

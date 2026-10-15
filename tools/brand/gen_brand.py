@@ -30,6 +30,8 @@ CHARCOAL = "#16191D"
 STEEL = "#39414A"
 CONCRETE = "#8B939C"
 CYAN = "#2EE6D6"
+AMBER = "#FFB31A"
+ALARM = "#FF3D2E"
 BLACK = "#0E1013"
 STRATA = ["#B08A5E", "#D8C8A0", "#B79A9A", "#7E8288", "#4A4444", "#6E7D3C", "#D2512B", "#FFE27A"]
 
@@ -156,6 +158,51 @@ def text(face: Face, s: str, x: float, baseline: float, cap_px: float, color: st
     return f'<path d="{face.path(s, x, baseline, cap_px / face.cap)}" fill="{color}"/>'
 
 
+def hazard_band(w: float, h: float, color: str) -> str:
+    """A band of diagonal hazard stripes across the top, `h` tall, in `color` on charcoal."""
+    parts = [f'<rect width="{num(w)}" height="{num(h)}" fill="{CHARCOAL}"/>']
+    step = h * 2
+    x = -h
+    while x < w:
+        parts.append(f'<polygon points="{num(x)},{num(h)} {num(x + h)},0 {num(x + 2 * h)},0 '
+                     f'{num(x + h)},{num(h)}" fill="{color}"/>')
+        x += step
+    return "".join(parts)
+
+
+# Incident cards for X (docs/05 2.9 and 7.3): 1200 x 675, the status in a word, one plain line,
+# where to read more. The full text goes in the post itself (docs/05 7.3 templates).
+INCIDENTS = (
+    ("delay", "DELAYED", AMBER, ("The new time and the reason are posted on our status page.",),
+     "mohonaut.com/status"),
+    ("known-issue", "KNOWN ISSUE", AMBER,
+     ("On-chain state is fine. Workaround and fix time are on our status page.",),
+     "mohonaut.com/status"),
+    ("paused", "PAUSED", ALARM,
+     ("Guardian pause: it ends by itself within 72 hours.",
+      "We never DM you. Ignore any fix or refund link."),
+     "mohonaut.com/status"),
+    ("mint-limit", "MINT LIMIT REACHED", AMBER,
+     ("The contract's hourly safety limit, working as designed.",
+      "Minting resumes as the hour rolls on; nothing waits for us."),
+     "mohonaut.com/status"),
+    ("resolved", "RESOLVED", CYAN, ("Back to normal. A post-mortem follows within 72 hours.",),
+     "mohonaut.com/security"),
+)
+
+
+def incident(title: str, color: str, lines: tuple[str, ...], link: str) -> str:
+    w, h = 1200, 675
+    body, _ = wordmark(72, 64, 44, ORANGE, (ORANGE, BONE, ORANGE), CONCRETE)
+    # The title as large as fits the width (at most 150 px cap height).
+    cap = min(150, (w - 144) / (BLACK_FACE.width(title) / BLACK_FACE.cap))
+    out = hazard_band(w, 24, color) + body + text(BLACK_FACE, title, 72, 380, cap, color)
+    for i, line in enumerate(lines):
+        out += text(BARLOW, line, 72, 470 + i * 48, 30, BONE)
+    out += text(BARLOW, link, 72, 610, 30, CONCRETE)
+    return svg(w, h, out, CHARCOAL)
+
+
 # ------------------------------------------------------------------ files
 
 
@@ -208,6 +255,9 @@ def files() -> dict[str, str]:
           + text(BARLOW, "An on-chain idle drilling game. One shared bore.", 72, 585, 26, CONCRETE)
           + bore_log(1050, 40, 90, 550, 0.47))
     out["social/og.svg"] = svg(1200, 630, og, CHARCOAL)
+
+    for name, title, color, lines, link in INCIDENTS:
+        out[f"social/incident-{name}.svg"] = incident(title, color, lines, link)
     return out
 
 

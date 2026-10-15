@@ -473,17 +473,17 @@ Kural: Kullanılan her aracın ticari kullanım koşulları (ücretsiz kademeler
 | Kuyu logu bileşeni: 8 litoloji bandı dokusu, Kola/Moho çizgileri, "we are here" çizgisi, metre cetveli | SVG + doku | T−36 |
 | UI kit: kuyu logu, dizel tank göstergesi (ℓ, ℓ/h, bitiş zamanı), yakıt hattı göstergesi, DP payı, timelock kuyruğu bileşeni, "Unaudited" bandı, "SIMULATION" ve "TESTNET" şeritleri | Figma/Penpot + SVG | T−36 |
 | Training Site paylaşım kartı | 1200×630 | T−36 — ✅ 2026-10-13: `apps/web/scripts/gen-voxel.mjs` derlemede oyunun kendi voxel kulelerinden üretiyor (`/og-train.png`; 2026-10-13 piksel sürümünden voxel'e geçti) |
-| Teaser (15–20 sn) | MP4, 16:9 + 9:16 | T−36 |
+| Teaser (15–20 sn) | MP4, 16:9 + 9:16 | T−36. Taslak 2026-10-14: 14 sn, oyunun kendi voxel sahnesinden; `apps/web/scripts/capture-scene.mjs` + `tools/brand/teaser.sh` (videolar repoda değil, `brand/video/`). Müzik yok. |
 | Dinamik OG: katkı kartı, kilometre taşı, Survey bulgusu, Crew, Shift Report, Pioneer rozeti | 1200×630 + 1080×1350 | T−29 |
 | Paylaşım kartı şablonları (Satori) | JSX + font dosyaları | T−29 |
 | Pioneer rozeti | SVG/PNG | T−29 |
 | Müzik: stratum başına industrial ambient döngü + kule SFX | OGG/MP3 | T−29 |
-| Maskot karakter sayfası (7 poz) | SVG/PNG | T−27 |
+| Maskot karakter sayfası (7 poz) | SVG/PNG | T−27. Taslak 2026-10-14: `brand/png/foreman-mo-poses.png` (`tools/brand/gen_mo_sheet.py`; temel poz oyunun kendi çizimi). İşaret etme ve el sallama kolları elle rötuş adayı |
 | Survey / Core Collection kozmetikleri (karot numuneleri, fosiller, eski matkap uçları, tarihî sondaj ekipmanı) | Sprite | T−25 |
 | Stratum tema paketleri | Regolith T−36; diğerleri eşik yaklaştıkça | — |
 | Basın kiti (/brand): logo paketi, ekran görüntüleri, kurucu fotoğrafı, tek sayfalık özet | ZIP + sayfa | T−18 |
 | Trailer (45–60 sn), devlog video şablonu | MP4 | T−10 |
-| Olay grafikleri: delay, known issue, paused, breaker, resolved | 1200×675 | T−10 |
+| Olay grafikleri: delay, known issue, paused, breaker, resolved | 1200×675 | T−10. ✅ 2026-10-14: `brand/png/incident-*.png` (`tools/brand/gen_brand.py`; "breaker" yerine kontrattaki davranışa uygun "mint limit", §7.3) |
 | Crew sancak/amblem şablonları | SVG | T+10 |
 
 ---

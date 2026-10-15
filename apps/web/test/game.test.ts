@@ -25,7 +25,7 @@ import {
 import { textWidth } from '../src/game/pixel/font';
 import { siteRows } from '../src/game/pixel/world';
 import { formatEthInput } from '../src/lib/format';
-import { rigShape, rigSvg } from '../src/game/rigs';
+import { rigShape } from '../src/game/rigs';
 import { GEN1_RIGS } from '../src/lib/catalog';
 
 const E18 = 10n ** 18n;
@@ -149,12 +149,14 @@ describe('play screen helpers', () => {
   });
 
   it('draws every Gen-1 rig differently, and running differently from switched off', () => {
-    const drawings = GEN1_RIGS.map((_, i) => rigSvg(rigShape(i, true)));
+    const drawn = (i: number, running: boolean) => JSON.stringify(rigShape(i, running).parts);
+    const drawings = GEN1_RIGS.map((_, i) => drawn(i, true));
     expect(new Set(drawings).size).toBe(GEN1_RIGS.length);
     for (let i = 0; i < GEN1_RIGS.length; i++) {
       const on = rigShape(i, true);
-      expect(rigSvg(rigShape(i, false))).not.toBe(rigSvg(on));
-      expect(rigSvg(on)).toContain('#ff6b1a'); // safety orange while drilling
+      expect(drawn(i, false)).not.toBe(drawn(i, true));
+      // Safety orange while drilling.
+      expect(on.parts.some((p) => (p.kind === 'line' ? p.color : p.fill) === 0xff6b1a)).toBe(true);
       // Steam rises from above the highest part of the drawing.
       const top = Math.min(
         ...on.parts.map((p) =>
@@ -167,7 +169,7 @@ describe('play screen helpers', () => {
       );
       expect(on.steamY).toBeLessThanOrEqual(top);
     }
-    expect(rigSvg(rigShape(99, true))).toBe(rigSvg(rigShape(1, true))); // unknown: Rotary Rig
+    expect(drawn(99, true)).toBe(drawn(1, true)); // unknown: Rotary Rig
   });
 
   it('reads the referrer only from a valid ?ref= address', () => {
