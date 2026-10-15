@@ -72,8 +72,15 @@ export default function SecurityPage() {
         <a href={LINKS.security} className="text-data underline">
           security@mohonaut.com
         </a>
-        . Please do not post details publicly before we answer. Bug bounty rules are published with
-        the public code review.
+        . Please do not post details publicly before we answer. The code is public on{' '}
+        <a href={LINKS.code} className="text-data underline">
+          GitHub
+        </a>
+        ; the bug bounty rules and rewards are in its{' '}
+        <a href={LINKS.bounty} className="text-data underline">
+          SECURITY.md
+        </a>
+        .
       </p>
 
       <h2 className="mt-10 font-display text-3xl font-black tracking-wide uppercase">
@@ -89,8 +96,8 @@ export default function SecurityPage() {
         </li>
         <li>Valid findings are credited on this page by name or handle, if you want that.</li>
         <li>
-          If the same issue would affect the mainnet contracts, it also qualifies for the mainnet
-          bug bounty once that is published.
+          If the same issue would affect the mainnet contracts, it also qualifies for the bug bounty
+          rewards.
         </li>
         <li>
           Testing must stay on testnet and on your own accounts: no attacks on other players, no
