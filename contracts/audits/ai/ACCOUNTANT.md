@@ -6,7 +6,7 @@ buckets, VRGDA counters, rate-limit state). Date: 2026-10-12. Scope: `contracts/
 This is **not** an independent audit. Nothing under `src/`, `script/`, `test/` or `foundry.toml` was
 changed; every artefact of this review lives in `contracts/audit-tests/accountant/`.
 
-How to run (from `contracts/`, Git Bash: `export PATH="$PATH:/c/Users/yazic/.foundry/bin"` first):
+How to run (from `contracts/`, Git Bash: `export PATH="$PATH:$HOME/.foundry/bin"` first):
 
 ```bash
 FOUNDRY_TEST=audit-tests/accountant FOUNDRY_OUT=out-accountant FOUNDRY_CACHE_PATH=cache-accountant forge test -vv

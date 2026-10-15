@@ -7,7 +7,7 @@ Repo gizliyken GitHub'ın ücretsiz Actions dakikası CI'a yetmiyor: bir koşu y
 1. **Token al.** GitHub → repo → *Settings → Actions → Runners → New self-hosted runner* → Linux. Sayfadaki `./config.sh ... --token XXXX` satırındaki token'ı kopyala. Token bir sırdır ve bir saat geçerlidir; Claude'a veya sohbete yazma.
 2. **WSL terminalinde** (Ubuntu) proje klasöründen çalıştır:
    ```bash
-   cd /mnt/c/Users/yazic/Desktop/crypto-game-project
+   cd /mnt/c/Users/<you>/Desktop/crypto-game-project   # the repository folder
    bash infra/ci-runner/setup-wsl.sh
    ```
    Betik önce sudo parolanı, sonra token'ı sorar; ikisi de ekranda görünmez. Ardından şunları yapar:

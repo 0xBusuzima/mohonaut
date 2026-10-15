@@ -39,7 +39,7 @@ Robinhood Chain (chain ID 4663 / testnet 46630) üzerinde, adil madencilik lansm
 - Ücretli harici araç (ör. görsel üretim kredisi) kullanmadan önce maliyeti söyle ve onay al.
 
 ## Komutlar (Faz 1, 2026-10-11)
-Windows'ta Foundry PATH'te değilse: `export PATH="$PATH:/c/Users/yazic/.foundry/bin"` (Git Bash).
+Windows'ta Foundry PATH'te değilse: `export PATH="$PATH:$HOME/.foundry/bin"` (Git Bash).
 npm komutlarını Git Bash yerine `cmd.exe /c "..."` veya PowerShell ile çalıştır (Git Bash'te npm/pnpm stdin yüzünden takılabiliyor). pnpm 12 bu makinede takılıyor; paket yöneticisi **npm workspaces**.
 
 | İş | Komut (kökten) |
@@ -53,14 +53,14 @@ npm komutlarını Git Bash yerine `cmd.exe /c "..."` veya PowerShell ile çalı�
 | Simülatör testleri | `cd sim && .venv\Scripts\python.exe -m unittest discover -s tests -t .` |
 | Simülatör lint / ölü kod | `cd sim && .venv\Scripts\python.exe -m ruff check . && .venv\Scripts\python.exe -m vulture engine tests run_scenarios.py make_vectors.py beta_report.py --min-confidence 80` |
 | Vektörleri yeniden üret | `cd sim && .venv\Scripts\python.exe make_vectors.py` (çıktı değişmemeli) |
-| Slither (yerel, WSL) | `wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/yazic/Desktop/crypto-game-project/contracts && forge clean && ~/halmos-venv/bin/slither . --config-file slither.config.json --fail-medium"` |
-| Halmos (yerel, WSL) | `wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/yazic/Desktop/crypto-game-project/contracts && ~/halmos-venv/bin/halmos --function prove_"` |
-| Aderyn (yerel, WSL; Windows sürümü yok) | `wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/yazic/Desktop/crypto-game-project/contracts && ~/bin/aderyn . --output /tmp/ad.md; grep '^## H-' /tmp/ad.md"` (çıktı boş olmalı) |
+| Slither (yerel, WSL) | `wsl -d Ubuntu -- bash -lc "cd contracts && forge clean && ~/halmos-venv/bin/slither . --config-file slither.config.json --fail-medium"` |
+| Halmos (yerel, WSL) | `wsl -d Ubuntu -- bash -lc "cd contracts && ~/halmos-venv/bin/halmos --function prove_"` |
+| Aderyn (yerel, WSL; Windows sürümü yok) | `wsl -d Ubuntu -- bash -lc "cd contracts && ~/bin/aderyn . --output /tmp/ad.md; grep '^## H-' /tmp/ad.md"` (çıktı boş olmalı) |
 | Medusa / Echidna (property harness `test/recon/`) | WSL: `cd /mnt/c/.../contracts && PATH=$HOME/halmos-venv/bin:$HOME/bin:$PATH medusa fuzz --timeout 21600` ve `echidna . --contract CryticTester --config echidna.yaml`; gece CI'da 6'şar saat. Foundry'de: `forge test --match-contract CryticToFoundry` |
 | SDK ABI'lerini üret / kontrol et | `node tools/gen_abis.mjs` (`forge build` sonrası; CI `--check` ile denetler) |
 | İndeksleyici (testnet, yerel PGlite) | `cd services/indexer && cp .env.example .env` → `node dist/main.js sync` (başa kadar indeksle, çık) veya `node dist/main.js` (sürekli; `/metrics`) |
 | Keeper (anahtarsız deneme) | `cd services/keeper && cp .env.example .env` → `DRY_RUN=true node dist/main.js once` |
-| Keeper uçtan uca (anvil) | `cd services/keeper && KEEPER_E2E=1 FOUNDRY_BIN=~/.foundry/bin npx vitest run test/e2e` (Windows: `cmd.exe /c "set KEEPER_E2E=1&& set FOUNDRY_BIN=C:\Users\yazic\.foundry\bin&& npx vitest run test/e2e"`) |
+| Keeper uçtan uca (anvil) | `cd services/keeper && KEEPER_E2E=1 FOUNDRY_BIN=~/.foundry/bin npx vitest run test/e2e` (Windows: `cmd.exe /c "set KEEPER_E2E=1&& set FOUNDRY_BIN=%USERPROFILE%\.foundry\bin&& npx vitest run test/e2e"`) |
 | API (yerel) | `cd services/api && cp .env.example .env` → `node dist/main.js` (OpenAPI: `/openapi.json`); yük: `k6 run services/api/k6/load.js` |
 | İzleme yapılandırması ve uyarı kuralı testleri | CI `monitoring` işi (Docker ile `promtool check config` / `promtool test rules infra/monitoring/prometheus/tests/mohonaut_test.yml`, `amtool`, Loki, Alloy); panolar: `python tools/gen_dashboards.py` (`--check`) |
 | Web (Next.js statik) | `cd apps/web && npm run build` (out/); `npx playwright test` (e2e + axe; görsel anlık görüntüler `VISUAL=1` ile CI Linux imajında); oyun E2E'si anvil üzerinde `FOUNDRY_BIN=... npm run e2e:play` (out/'u yerel zincir için yeniden derler; sonra `npm run build`); `npm run budget` (JS bütçesi) ve `npm run lighthouse` (mobil kapı); metin denetimi `node tools/lint_copy.mjs` |
