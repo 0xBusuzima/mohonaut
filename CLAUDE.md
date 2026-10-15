@@ -7,7 +7,7 @@ Robinhood Chain (chain ID 4663 / testnet 46630) üzerinde, adil madencilik lansm
 - `docs/03_TEKNIK_MIMARI.md` — kontrat ve servis mimarisi, roller, ADR'ler.
 - `docs/04_GUVENLIK_TEST_DENETIM.md` — tehdit modeli, invariant kataloğu, test ve CI kuralları.
 - `docs/06_YOL_HARITASI_VE_PROMPTLAR.md` — hangi fazdayız, sıradaki adım ne.
-- `reports/Robinhood Chain mining oyunu araştırması.md` — araştırma ve "yapmamız / asla yapmamamız gerekenler".
+- Araştırma raporu, rakip karşılaştırması, kurucu yapılacaklar listesi (`docs/KURUCU_YAPILACAKLAR.md`), takvim, hibe taslakları ve hukuk soruları **özel** `0xBusuzima/mohonaut-internal` reposundadır (yerelde `~/Desktop/mohonaut-internal`). Bu herkese açık repoya (`origin`) asla iç belge ya da rakip adı push edilmez; yerel `pre-push` kancası bunu engeller.
 
 ## Kırmızı çizgiler (asla)
 - Tokende owner, ikinci minter, transfer vergisi, blacklist, pause, yükseltilebilirlik.
@@ -16,7 +16,7 @@ Robinhood Chain (chain ID 4663 / testnet 46630) üzerinde, adil madencilik lansm
 - Makine başına sabit verim; mevcut makine istatistiklerini değiştirmek (geriye dönük nerf).
 - Sınırsız döngü, push ile ETH ödemesi, sunucuda ödül imzalayan anahtar.
 - Metinlerde ROI / APY / APR / passive income / guaranteed / "X days payback" / fiyat hedefi / listeleme vaadi; Türkçe "token al" çağrısı.
-- Herkese açık hiçbir içerikte (site, oyun içi metin, X gönderisi, herkese açık dokümanlar, hibe başvuruları) rakip proje adları geçmez: [a competitor] / [a competitor] / [a competitor], [a competitor] / [a competitor] ve diğerleri. Rakip karşılaştırması yalnızca iç dokümanlarda (`reports/`, `research_notes/`, `docs/05 §9`). Oyun mekaniği, görselleri ve isimlendirmesi de bu projelere benzememeli.
+- Herkese açık hiçbir içerikte (site, oyun içi metin, X gönderisi, bu repo, hibe başvuruları) rakip proje adları geçmez. Adlar ve karşılaştırma yalnızca özel `mohonaut-internal` reposunda (`research_notes/`); `tools/lint_copy.mjs` onları yalnızca hash olarak bilir. Oyun mekaniği, görselleri ve isimlendirmesi de rakiplere benzememeli.
 - Test yazılmadan özellik "bitti" demek; CI kırmızıyken birleştirmek; ölü kod bırakmak.
 - Gerçek özel anahtarları, `.env` dosyalarını, seed ifadelerini repoya koymak.
 

@@ -7,6 +7,8 @@ export const LINKS = {
   security: 'mailto:security@mohonaut.com',
   hello: 'mailto:hello@mohonaut.com',
   status: 'https://status.mohonaut.com',
+  code: 'https://github.com/0xBusuzima/mohonaut',
+  bounty: 'https://github.com/0xBusuzima/mohonaut/blob/main/SECURITY.md#rewards',
 };
 
 /** Where the site points for live data. Mainnet replaces this at launch (docs/06 Phase 9). */

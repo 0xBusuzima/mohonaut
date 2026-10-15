@@ -310,7 +310,7 @@ Sen bağımsız bir akıllı kontrat denetçisisin ve rolün: <SALDIRGAN | MUHAS
 ```
 
 - Ardından bulgular tek tek düzeltilir (aşağıdaki prompt). Ek olarak başka bir AI asistanının ücretsiz katmanıyla aynı kapsam bir kez daha taranır.
-- **Herkese açık inceleme:** repo ve kontratlar mainnet'ten ≥ 4 hafta önce herkese açık; SECURITY.md'de bulgu bildirimi ve ödül kuralları (hazine payından MOHN + ops gelirinden ETH taahhüdü).
+- **Herkese açık inceleme:** repo ve kontratlar mainnet'ten ≥ 4 hafta önce herkese açık; SECURITY.md'de bulgu bildirimi ve ödül kuralları (hazine payından MOHN + ops gelirinden ETH taahhüdü). **Durum (2026-10-15):** repo herkese açık: [github.com/0xBusuzima/mohonaut](https://github.com/0xBusuzima/mohonaut), MIT lisanslı, ödül tablosu SECURITY.md'de. Mainnet 10 Kasım olduğu için inceleme süresi kurucu kararıyla kısaldı (docs/04 §8.1). İç notlar ayrı ve özel bir repoda; açılmadan önce geçmiş temizlendi.
 - **Gelirle denetim:** bağımsız denetim lansmandan sonra, ops kasası 08 §3'teki eşiğe ulaşınca.
 
 ```text
