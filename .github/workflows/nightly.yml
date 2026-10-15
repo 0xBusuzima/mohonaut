@@ -18,10 +18,10 @@ jobs:
       run:
         working-directory: contracts
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           submodules: recursive
-      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
         with:
           version: v1.8.5
       - name: Deep fuzz and invariant campaign
@@ -34,22 +34,22 @@ jobs:
       run:
         working-directory: contracts
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           submodules: recursive
       - name: Check for property harness
         id: harness
         run: |
           if [ -f test/recon/CryticTester.sol ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
-      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
         if: steps.harness.outputs.present == 'true'
         with:
           version: v1.8.5
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         if: steps.harness.outputs.present == 'true'
         with:
           go-version: "1.24"
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         if: steps.harness.outputs.present == 'true'
         with:
           python-version: "3.12"
@@ -61,14 +61,14 @@ jobs:
           "$(go env GOPATH)/bin/medusa" fuzz --timeout ${{ vars.FUZZ_SECONDS || 21600 }}
       - name: Echidna
         if: steps.harness.outputs.present == 'true'
-        uses: crytic/echidna-action@v2
+        uses: crytic/echidna-action@f7e374e42bf7131f7307a92f5549ed6b2fd17c9d # v2
         with:
           files: contracts
           contract: CryticTester
           config: contracts/echidna.yaml
       - name: Echidna (market layer)
         if: steps.harness.outputs.present == 'true'
-        uses: crytic/echidna-action@v2
+        uses: crytic/echidna-action@f7e374e42bf7131f7307a92f5549ed6b2fd17c9d # v2
         with:
           files: contracts
           contract: CryticMarketTester

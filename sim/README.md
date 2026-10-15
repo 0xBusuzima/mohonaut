@@ -27,12 +27,12 @@ sim/
   results/v02/, charts/v02/  v0.2 outputs; results/ and charts/ top level hold the v0.1 study used in RAPOR.md §1–10
 ```
 
-## Setup (Windows PowerShell, from `crypto-game-project\sim`)
+## Setup (Windows PowerShell, from the repository root)
 
 You need Python 3.12. The simulator needs numpy; the charts need matplotlib.
 
 ```powershell
-cd C:\Users\yazic\Desktop\crypto-game-project\sim
+cd sim
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install numpy matplotlib
 ```
